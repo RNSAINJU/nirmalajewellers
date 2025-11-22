@@ -15,3 +15,4 @@ Optionally pass a remote and set your name/email:
 - sudo apt update && sudo apt install -y gh
 - gh auth login
 - gh repo create <username>/nirmalajewellers --source=. --private --push
+# nirmalajewellers
