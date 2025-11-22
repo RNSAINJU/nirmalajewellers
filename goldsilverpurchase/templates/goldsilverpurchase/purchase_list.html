@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Gold/Silver Purchases</title>
+  </head>
+  <body>
+    <h1>Gold/Silver Purchases</h1>
+    <p><a href="{% url 'gsp:create' %}">Create Purchase</a></p>
+
+    <table border="1" cellpadding="6">
+      <thead>
+        <tr>
+          <th>Bill No</th>
+          <th>Bill Date</th>
+          <th>Party</th>
+          <th>PAN No</th>
+          <th>Gold Qty</th>
+          <th>Silver Qty</th>
+          <th>Rate</th>
+          <th>Wages</th>
+          <th>Amount</th>
+          <th>Payment</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in purchases %}
+        <tr>
+          <td>{{ p.bill_no }}</td>
+          <td>{{ p.bill_date }}</td>
+          <td>{{ p.party_name }}</td>
+          <td>{{ p.panno }}</td>
+          <td>{{ p.gold_quantity }}</td>
+          <td>{{ p.silver_quantity }}</td>
+          <td>{{ p.rate }}</td>
+          <td>{{ p.wages }}</td>
+          <td>{{ p.amount }}</td>
+          <td>{{ p.get_payment_mode_display }}</td>
+          <td>
+            <a href="{% url 'gsp:update' p.pk %}">Edit</a> |
+            <a href="{% url 'gsp:delete' p.pk %}">Delete</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="11">No purchases yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </body>
+</html>

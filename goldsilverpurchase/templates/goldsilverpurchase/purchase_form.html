@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+  <head><title>Purchase</title></head>
+  <body>
+    <h1>{{ object|default:'Create Purchase' }}</h1>
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit">Save</button>
+      <a href="{% url 'gsp:list' %}">Cancel</a>
+    </form>
+  </body>
+</html>

@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+  <head><title>Delete Purchase</title></head>
+  <body>
+    <h1>Delete Purchase</h1>
+    <p>Are you sure you want to delete purchase {{ object.bill_no }} ({{ object.party_name }})?</p>
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit">Confirm Delete</button>
+      <a href="{% url 'gsp:list' %}">Cancel</a>
+    </form>
+  </body>
+</html>
