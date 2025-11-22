@@ -28,7 +28,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'main',  # added
-    'goldsilverpurchase'
+    'goldsilverpurchase',
+    'order'
 ]
 
 MIDDLEWARE = [
