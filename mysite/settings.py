@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-nk_sd$(^2bzq3^9p3@e12d+=(==h7%$q)on$1732_n8dpude#2
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['nirmalajewellers.pythonanywhere.com']
 
 
 # Application definition
