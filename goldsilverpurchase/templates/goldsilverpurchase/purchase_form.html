@@ -65,6 +65,22 @@
                 {% if form.panno.errors %}<div class="text-danger small">{{ form.panno.errors }}</div>{% endif %}
               </div>
 
+              <div class="col-md-6">
+                <label for="particular" class="form-label">Particular</label>
+                <input
+                  id="particular"
+                  name="particular"
+                  class="form-control"
+                  value="{{ form.particular.value|default:'' }}"
+                  placeholder="Enter particulars"
+                  required
+                >
+              
+              </>
+
+                {% if form.particular.errors %}<div class="text-danger small">{{ form.particular.errors }}</div>{% endif %}
+              </div>
+
                <div class="col-md-6">
                 <label for="metal_type" class="form-label">Metal Type</label>
                 <select
