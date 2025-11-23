@@ -1,0 +1,47 @@
+# Database
+db.sqlite3
+
+# Python bytecode
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.pyc
+
+# Django migrations bytecode
+goldsilverpurchase/migrations/__pycache__/
+order/migrations/__pycache__/
+
+# Specific compiled files (if present)
+goldsilverpurchase/__pycache__/admin.cpython-310.pyc
+goldsilverpurchase/__pycache__/models.cpython-310.pyc
+goldsilverpurchase/__pycache__/views.cpython-310.pyc
+goldsilverpurchase/migrations/__pycache__/0001_initial.cpython-310.pyc
+goldsilverpurchase/migrations/__pycache__/0002_goldsilverpurchase_panno.cpython-310.pyc
+goldsilverpurchase/migrations/__pycache__/0003_alter_goldsilverpurchase_panno.cpython-310.pyc
+goldsilverpurchase/migrations/__pycache__/0004_alter_goldsilverpurchase_panno.cpython-310.pyc
+goldsilverpurchase/migrations/__pycache__/0005_alter_goldsilverpurchase_panno.cpython-310.pyc
+goldsilverpurchase/migrations/__pycache__/0006_alter_goldsilverpurchase_panno.cpython-310.pyc
+mysite/__pycache__/settings.cpython-310.pyc
+order/__pycache__/forms.cpython-310.pyc
+order/__pycache__/models.cpython-310.pyc
+order/__pycache__/urls.cpython-310.pyc
+order/__pycache__/views.cpython-310.pyc
+
+# Environments and IDE
+.env
+.venv/
+venv/
+env/
+.idea/
+.vscode/
+
+# Test / packaging
+.coverage
+.pytest_cache/
+dist/
+build/
+*.egg-info/
+
+# OS
+.DS_Store
+Thumbs.db
