@@ -29,7 +29,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'main',  # added
     'goldsilverpurchase',
-    'order'
+    'order',
+    'nepali_datetime_field', # added for nepali date field
 ]
 
 MIDDLEWARE = [

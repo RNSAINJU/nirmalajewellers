@@ -14,7 +14,7 @@ class PurchaseCreateView(CreateView):
     model = GoldSilverPurchase
     fields = [
         'bill_no', 'bill_date', 'party_name', 'panno',
-        'particular', 'gold_quantity', 'silver_quantity',
+        'particular', 'metal_type', 'quantity',
         'rate', 'wages', 'amount', 'payment_mode'
     ]
     template_name = 'goldsilverpurchase/purchase_form.html'
@@ -25,7 +25,7 @@ class PurchaseUpdateView(UpdateView):
     model = GoldSilverPurchase
     fields = [
         'bill_no', 'bill_date', 'party_name', 'panno',
-        'particular', 'gold_quantity', 'silver_quantity',
+        'particular', 'metal_type', 'quantity',
         'rate', 'wages', 'amount', 'payment_mode'
     ]
     template_name = 'goldsilverpurchase/purchase_form.html'

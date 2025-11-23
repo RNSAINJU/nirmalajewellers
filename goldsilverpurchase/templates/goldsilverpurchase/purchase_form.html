@@ -28,17 +28,15 @@
                   placeholder="Enter Bill No"
                   required
                 />
+                {% if form.bill_no.errors %}<div class="text-danger small">{{ form.bill_no.errors }}</div>{% endif %}
+
               </div>
               <div class="col-md-6">
-                <label for="bill_date" class="form-label">Bill Date</label>
-                <input
-                  type="date"
-                  id="bill_date"
-                  name="bill_date"
-                  class="form-control"
-                  value="{{ form.bill_date.value|default:'' }}"
-                  required
-                />
+                 <label class="form-label" for="{{ form.bill_date.id_for_label }}">Bill Date (BS)</label>
+                {{ form.bill_date }}
+                {% if form.bill_date.errors %}<div class="text-danger small">{{ form.bill_date.errors }}</div>{% endif %}
+
+                
               </div>
               <div class="col-md-6">
                 <label for="party_name" class="form-label">Party Name</label>
@@ -51,6 +49,7 @@
                   placeholder="Enter Party Name"
                   required
                 />
+                {% if form.party_name.errors %}<div class="text-danger small">{{ form.party_name.errors }}</div>{% endif %}
               </div>
               <div class="col-md-6">
                 <label for="panno" class="form-label">PAN No</label>
@@ -63,31 +62,42 @@
                   placeholder="Enter PAN No"
                   required
                 />
+                {% if form.panno.errors %}<div class="text-danger small">{{ form.panno.errors }}</div>{% endif %}
               </div>
+
+               <div class="col-md-6">
+                <label for="metal_type" class="form-label">Metal Type</label>
+                <select
+                  id="metal_type"
+                  name="metal_type"
+                  class="form-select"
+                  required
+                >
+                  <option value="" disabled selected>Select Metal Type</option>
+                  {% for key, value in form.metal_type.field.choices %}
+                  <option value="{{ key }}" {% if form.metal_type.value == key %}selected{% endif %}>
+                    {{ value }}
+                  </option>
+                  {% endfor %}
+                </select>
+
+                {% if form.metal_type.errors %}<div class="text-danger small">{{ form.metal_type.errors }}</div>{% endif %}
+              </div>
+
               <div class="col-md-6">
-                <label for="gold_quantity" class="form-label">Gold Quantity</label>
+                <label for="quantity" class="form-label">Quantity</label>
                 <input
                   type="number"
-                  id="gold_quantity"
-                  name="gold_quantity"
+                  id="quantity"
+                  name="quantity"
                   class="form-control"
-                  value="{{ form.gold_quantity.value|default:'' }}"
-                  placeholder="Enter Gold Quantity"
+                  value="{{ form.quantity.value|default:'' }}"
+                  placeholder="Enter Gold/Silver Quantity"
                   required
                 />
+                {% if form.quantity.errors %}<div class="text-danger small">{{ form.quantity.errors }}</div>{% endif %}
               </div>
-              <div class="col-md-6">
-                <label for="silver_quantity" class="form-label">Silver Quantity</label>
-                <input
-                  type="number"
-                  id="silver_quantity"
-                  name="silver_quantity"
-                  class="form-control"
-                  value="{{ form.silver_quantity.value|default:'' }}"
-                  placeholder="Enter Silver Quantity"
-                  required
-                />
-              </div>
+
               <div class="col-md-6">
                 <label for="rate" class="form-label">Rate</label>
                 <input
@@ -99,6 +109,7 @@
                   placeholder="Enter Rate"
                   required
                 />
+                {% if form.rate.errors %}<div class="text-danger small">{{ form.rate.errors }}</div>{% endif %}
               </div>
               <div class="col-md-6">
                 <label for="wages" class="form-label">Wages</label>
@@ -111,6 +122,7 @@
                   placeholder="Enter Wages"
                   required
                 />
+                {% if form.wages.errors %}<div class="text-danger small">{{ form.wages.errors }}</div>{% endif %}
               </div>
               <div class="col-md-6">
                 <label for="amount" class="form-label">Amount</label>
@@ -123,6 +135,7 @@
                   placeholder="Enter Amount"
                   required
                 />
+                {% if form.amount.errors %}<div class="text-danger small">{{ form.amount.errors }}</div>{% endif %}
               </div>
               <div class="col-md-6">
                 <label for="payment_mode" class="form-label">Payment Mode</label>
@@ -139,6 +152,8 @@
                   </option>
                   {% endfor %}
                 </select>
+
+                {% if form.payment_mode.errors %}<div class="text-danger small">{{ form.payment_mode.errors }}</div>{% endif %}
               </div>
             </div>
             <div class="d-flex justify-content-end mt-4">
@@ -150,5 +165,25 @@
       </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+   {% comment %} <script src="{% static 'js/jquery.min.js' %}"></script>
+    <script src="{% static 'nepali-datepicker/nepali.datepicker.min.js' %}"></script>
+    <script>
+      (function($){
+        $(function(){
+          var $inp = $('#id_bill_date'); // Django default id for field named bill_date
+          if (!$inp.length) { $inp = $('[name="bill_date"]'); }
+          if ($inp.length && $.fn.nepaliDatePicker) {
+            $inp.nepaliDatePicker({
+              // options: adjust per the picker you installed
+              // keep ndpEnglishInput false so the input gets BS value like '2082-01-01'
+              ndpEnglishInput: false,
+              // show month/year dropdowns
+              ndpYear: true,
+              ndpMonth: true
+            });
+          }
+        });
+      })(jQuery);
+    </script> {% endcomment %}
   </body>
 </html>

@@ -23,8 +23,8 @@
               <th>Bill Date</th>
               <th>Party</th>
               <th>PAN No</th>
-              <th>Gold Qty</th>
-              <th>Silver Qty</th>
+              <th>Metal</th>
+              <th>Qty</th>
               <th>Rate</th>
               <th>Wages</th>
               <th>Amount</th>
@@ -36,11 +36,11 @@
             {% for p in purchases %}
             <tr>
               <td>{{ p.bill_no }}</td>
-              <td>{{ p.bill_date }}</td>
+              <td>{{ p.bill_date}}</td>
               <td>{{ p.party_name }}</td>
               <td>{{ p.panno }}</td>
-              <td>{{ p.gold_quantity }}</td>
-              <td>{{ p.silver_quantity }}</td>
+              <td>{{ p.metal_type }}</td>
+              <td>{{ p.quantity }}</td>
               <td>{{ p.rate }}</td>
               <td>{{ p.wages }}</td>
               <td>{{ p.amount }}</td>
