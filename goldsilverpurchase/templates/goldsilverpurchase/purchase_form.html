@@ -25,19 +25,26 @@
                   name="bill_no"
                   class="form-control"
                   value="{{ form.bill_no.value|default:'' }}"
-                  placeholder="Enter Bill No"
+                  placeholder="Enter Bill No "
                   required
                 />
                 {% if form.bill_no.errors %}<div class="text-danger small">{{ form.bill_no.errors }}</div>{% endif %}
 
               </div>
               <div class="col-md-6">
-                 <label class="form-label" for="{{ form.bill_date.id_for_label }}">Bill Date (BS)</label>
-                {{ form.bill_date }}
+                <label for="bill_date" class="form-label">Bill Date (BS)</label>
+                <input
+                  type="text"
+                  id="id_bill_date"
+                  name="bill_date"
+                  class="form-control"
+                  placeholder="Enter Bill Date (BS) (YYYY-MM-DD)"
+                  value="{{ form.bill_date.value|default:'' }}"
+                  required
+                />
                 {% if form.bill_date.errors %}<div class="text-danger small">{{ form.bill_date.errors }}</div>{% endif %}
-
-                
               </div>
+
               <div class="col-md-6">
                 <label for="party_name" class="form-label">Party Name</label>
                 <input
@@ -146,10 +153,12 @@
                   type="number"
                   id="amount"
                   name="amount"
-                  class="form-control"
+                  class="form-control bg-light"
                   value="{{ form.amount.value|default:'' }}"
-                  placeholder="Enter Amount"
-                  required
+                  placeholder="Amount (auto-calculated)"
+                  step="0.01"
+                  readonly
+                  aria-readonly="true"
                 />
                 {% if form.amount.errors %}<div class="text-danger small">{{ form.amount.errors }}</div>{% endif %}
               </div>

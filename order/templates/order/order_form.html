@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -16,14 +17,125 @@
         <div class="card-body">
           <form method="post" novalidate>
             {% csrf_token %}
-            {{ form.as_p }}
-            <div class="d-flex justify-content-end mt-4">
-              <button type="submit" class="btn btn-success me-2">Save</button>
+            
+            <!-- Order fields -->
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">{{ form.order_date.label }}</label>
+                {{ form.order_date }}
+
+                
+                {% if form.order_date.errors %}<div class="text-danger small">{{ form.order_date.errors }}</div>{% endif %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">{{ form.deliver_date.label }}</label>
+                {{ form.deliver_date }}
+                {% if form.deliver_date.errors %}<div class="text-danger small">{{ form.deliver_date.errors }}</div>{% endif %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">{{ form.customer_name.label }}</label>
+                {{ form.customer_name }}
+                {% if form.customer_name.errors %}<div class="text-danger small">{{ form.customer_name.errors }}</div>{% endif %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">{{ form.phone_number.label }}</label>
+                {{ form.phone_number }}
+                {% if form.phone_number.errors %}<div class="text-danger small">{{ form.phone_number.errors }}</div>{% endif %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">{{ form.payment_mode.label }}</label>
+                {{ form.payment_mode }}
+                {% if form.payment_mode.errors %}<div class="text-danger small">{{ form.payment_mode.errors }}</div>{% endif %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">{{ form.status.label }}</label>
+                {{ form.status }}
+                {% if form.status.errors %}<div class="text-danger small">{{ form.status.errors }}</div>{% endif %}
+              </div>
+            </div>
+
+            <!-- Ornaments Formset -->
+            <hr class="my-4" />
+            <h5 class="mb-3">Ornaments (Add one or more)</h5>
+            
+            {{ formset.management_form }}
+            
+            {% if formset.non_form_errors %}<div class="alert alert-danger">{{ formset.non_form_errors }}</div>{% endif %}
+
+            <div class="table-responsive">
+              <table class="table table-bordered table-sm">
+                <thead class="table-light">
+                  <tr>
+                    <th>Ornament Name</th>
+                    <th>Metal Type</th>
+                    <th>Weight</th>
+                    <th>Jarti</th>
+                    <th>Jyala</th>
+                    <th>Rate</th>
+                    <th>Size</th>
+                    <th>Stone</th>
+                    <th>Total</th>
+                    <th>Delete</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for form in formset %}
+                  <tr>
+                    <td>
+                      {{ form.ornament_name }}
+                      {% if form.ornament_name.errors %}<div class="text-danger small">{{ form.ornament_name.errors }}</div>{% endif %}
+                    </td>
+                    <td>
+                      {{ form.metal_type }}
+                      {% if form.metal_type.errors %}<div class="text-danger small">{{ form.metal_type.errors }}</div>{% endif %}
+                    </td>
+                    <td>
+                      {{ form.weight }}
+                      {% if form.weight.errors %}<div class="text-danger small">{{ form.weight.errors }}</div>{% endif %}
+                    </td>
+                    <td>
+                      {{ form.jarti }}
+                      {% if form.jarti.errors %}<div class="text-danger small">{{ form.jarti.errors }}</div>{% endif %}
+                    </td>
+                    <td>
+                      {{ form.jyala }}
+                      {% if form.jyala.errors %}<div class="text-danger small">{{ form.jyala.errors }}</div>{% endif %}
+                    </td>
+                    <td>
+                      {{ form.rate }}
+                      {% if form.rate.errors %}<div class="text-danger small">{{ form.rate.errors }}</div>{% endif %}
+                    </td>
+                    <td>
+                      {{ form.size }}
+                      {% if form.size.errors %}<div class="text-danger small">{{ form.size.errors }}</div>{% endif %}
+                    </td>
+                    <td>
+                      {{ form.stone }}
+                      {% if form.stone.errors %}<div class="text-danger small">{{ form.stone.errors }}</div>{% endif %}
+                    </td>
+                    <td>
+                      {{ form.total }}
+                      {% if form.total.errors %}<div class="text-danger small">{{ form.total.errors }}</div>{% endif %}
+                    </td>
+                    <td class="text-center">
+                      {{ form.DELETE }}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Submit buttons -->
+            <div class="mt-4 d-flex justify-content-end gap-2">
+              <button type="submit" class="btn btn-success">Save Order</button>
               <a href="{% url 'order:list' %}" class="btn btn-secondary">Cancel</a>
             </div>
           </form>
         </div>
       </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
   </body>
 </html>
