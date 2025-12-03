@@ -58,6 +58,7 @@ class Ornament(models.Model):
         verbose_name="ग्राहकको नाम",
     )
 
+    order = models.ForeignKey('order.Order', on_delete=models.SET_NULL, related_name='ornaments', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

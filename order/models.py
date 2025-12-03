@@ -27,7 +27,6 @@ class Order(models.Model):
     payment_mode = models.CharField(max_length=10, choices=PAYMENT_CHOICES)
     payment_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='order')
-    ornament = models.ManyToManyField('ornament.Ornament', related_name='orders')
     
     def __str__(self):
         return f"Order {self.sn} - {self.customer_name}"

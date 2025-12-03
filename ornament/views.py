@@ -6,7 +6,7 @@ from .forms import OrnamentForm
 
 class OrnamentListView(ListView):
     model = Ornament
-    template_name = 'ornament/templates/ornament_list.html'
+    template_name = 'ornament/ornament_list.html'
     context_object_name = 'ornaments'
     ordering = ['-ornament_date', '-created_at']
 
