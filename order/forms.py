@@ -1,6 +1,7 @@
 from django import forms
 from django.forms import inlineformset_factory
-from .models import Order, Ornament
+from .models import Order
+from ornament.models import Ornament
 import nepali_datetime as ndt
 from nepali_datetime_field.forms import NepaliDateField
 from django.core.exceptions import ValidationError
@@ -26,13 +27,8 @@ class OrderForm(forms.ModelForm):
 class OrnamentForm(forms.ModelForm):
     class Meta:
         model = Ornament
-        fields = ('ornament_name', 'metal_type', 'weight', 'jarti', 'jyala', 'rate', 'size', 'stone', 'total')
-        widgets = {
-            'weight': forms.NumberInput(attrs={'step': '0.001'}),
-            'jyala': forms.NumberInput(attrs={'step': '0.001'}),
-            'rate': forms.NumberInput(attrs={'step': '0.01'}),
-            'total': forms.NumberInput(attrs={'step': '0.01'}),
-        }
+        fields = ('ornament_date','code','ornament_name',  'weight', 'jarti', 'kaligar', 'ornament_type', 'customer_name')
+
 
 OrnamentFormSet = inlineformset_factory(
     Order, Ornament,

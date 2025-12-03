@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Ornament List</h2>
+<a href="{% url 'ornament:create' %}" class="btn btn-primary mb-2">New Ornament</a>
+
+<table class="table table-bordered table-sm">
+    <thead>
+    <tr>
+        <th>SN</th>
+        <th>Date</th>
+        <th>Code</th>
+        <th>Ornament Name</th>
+        <th>Type</th>
+        <th>Weight</th>
+        <th>Diamond Weight</th>
+        <th>Jarti</th>
+        <th>Kaligar</th>
+        <th>Ornament Type</th>
+        <th>Customer Name</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for o in ornaments %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ o.ornament_date }}</td>
+            <td>{{ o.code }}</td>
+            <td>{{ o.ornament_name }}</td>
+            <td>{{ o.get_type_display }}</td>
+            <td>{{ o.weight }}</td>
+            <td>{{ o.diamond_weight }}</td>
+            <td>{{ o.jarti }}</td>
+            <td>{{ o.kaligar }}</td>
+            <td>{{ o.get_ornament_type_display }}</td>
+            <td>{{ o.customer_name }}</td>
+            <td>
+                <a href="{% url 'ornament:update' o.pk %}">Edit</a> |
+                <a href="{% url 'ornament:delete' o.pk %}">Delete</a>
+            </td>
+        </tr>
+    {% empty %}
+        <tr><td colspan="11">No records.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -157,7 +157,7 @@
                   value="{{ form.amount.value|default:'' }}"
                   placeholder="Amount (auto-calculated)"
                   step="0.01"
-                  readonly
+                  
                   aria-readonly="true"
                 />
                 {% if form.amount.errors %}<div class="text-danger small">{{ form.amount.errors }}</div>{% endif %}

@@ -1,7 +1,6 @@
 from django.db import models
 from django.core.validators import MinValueValidator, RegexValidator
 from nepali_datetime_field.models import NepaliDateField
-from common.nepali_utils import ad_to_bs_date_str, ad_to_bs_datetime_str
 from decimal import Decimal
 
 class GoldSilverPurchase(models.Model):
@@ -77,13 +76,6 @@ class GoldSilverPurchase(models.Model):
     def __str__(self):
         return f"{self.bill_no} - {self.party_name}"
 
-    @property
-    def bill_date_bs(self):
-        return ad_to_bs_date_str(self.bill_date)
-
-    @property
-    def created_at_bs(self):
-        return ad_to_bs_datetime_str(self.created_at)
 
     def save(self, *args, **kwargs):
         # normalize blank/None to Decimal('0.00')

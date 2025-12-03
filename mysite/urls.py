@@ -22,4 +22,5 @@ urlpatterns = [
     path('', include('main.urls')),  # added home route
     path('purchase/', include('goldsilverpurchase.urls')),  # added
     path('order/', include('order.urls')),
+    path('ornament/', include('ornament.urls')),
 ]

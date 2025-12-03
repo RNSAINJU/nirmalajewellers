@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'main',  # added
     'goldsilverpurchase',
     'order',
+    'ornament',
     'nepali_datetime_field', # added for nepali date field
 ]
 
