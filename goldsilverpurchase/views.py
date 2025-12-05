@@ -1,6 +1,6 @@
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
-from .models import GoldSilverPurchase
+from .models import GoldSilverPurchase, Party
 
 
 class PurchaseListView(ListView):
@@ -8,6 +8,14 @@ class PurchaseListView(ListView):
     template_name = 'goldsilverpurchase/purchase_list.html'
     context_object_name = 'purchases'
     ordering = ['-bill_date', '-created_at']
+
+class PartyCreateView(CreateView):
+    model = Party
+    fields = [
+        'party_name', 'panno'
+    ]
+    template_name = 'goldsilverpurchase/party_form.html'
+    success_url = reverse_lazy('gsp:list')
 
 
 class PurchaseCreateView(CreateView):

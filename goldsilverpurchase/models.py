@@ -16,6 +16,11 @@ class Party(models.Model):
         help_text='Enter 9-digit PAN number.'
     )
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['party_name', 'panno'], name='unique_party_name_panno')
+        ]
+        
     def __str__(self):
         return self.party_name
 

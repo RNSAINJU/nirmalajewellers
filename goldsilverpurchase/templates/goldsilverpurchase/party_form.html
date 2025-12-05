@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+    <div class="container mt-5">
+      <h1 class="text-center mb-4">{{ form_title }}</h1>
+      <div class="card shadow">
+        <div class="card-body">
+          <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="row g-3">
+
+              <div class="col-md-6">
+                <label for="party_name" class="form-label">Party Name</label>
+                <input
+                  type="text"
+                  id="party_name"
+                  name="party_name"
+                  class="form-control"
+                  value="{{ form.party_name.value|default:'' }}"
+                  placeholder="Enter Party Name "
+                  required
+                />
+                {% if form.party_name.errors %}<div class="text-danger small">{{ form.party_name.errors }}</div>{% endif %}
+
+              </div>
+            
+
+              <div class="col-md-6">
+                <label for="panno" class="form-label">Pan no</label>
+                <input
+                  id="panno"
+                  name="panno"
+                  class="form-control"
+                  value="{{ form.panno.value|default:'' }}"
+                  placeholder="Enter Pan no"
+                  required
+                >
+              
+              </>
+
+                {% if form.panno.errors %}<div class="text-danger small">{{ form.panno.errors }}</div>{% endif %}
+              </div>
+
+            </div>
+
+            <div class="d-flex justify-content-end mt-4">
+              <button type="submit" class="btn btn-success me-2">Save</button>
+              <a href="{% url 'gsp:list' %}" class="btn btn-secondary">Cancel</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  
+    {% endblock %}
