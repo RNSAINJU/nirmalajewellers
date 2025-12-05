@@ -1,5 +1,5 @@
 from django import forms
-from .models import GoldSilverPurchase
+from .models import GoldSilverPurchase, Party
 from nepali_datetime_field.forms import NepaliDateField
 from django.core.exceptions import ValidationError
 import nepali_datetime as ndt
@@ -13,3 +13,7 @@ class PurchaseForm(forms.ModelForm):
         fields = '__all__'
 
 
+class PartyForm(forms.ModelForm):
+    class Meta:
+        model = Party
+        fields = '__all__'

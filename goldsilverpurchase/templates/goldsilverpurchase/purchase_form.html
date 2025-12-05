@@ -38,31 +38,27 @@
               </div>
 
               <div class="col-md-6">
-                <label for="party_name" class="form-label">Party Name</label>
-                <input
-                  type="text"
-                  id="party_name"
-                  name="party_name"
-                  class="form-control"
-                  value="{{ form.party_name.value|default:'' }}"
-                  placeholder="Enter Party Name"
-                  required
-                />
-                {% if form.party_name.errors %}<div class="text-danger small">{{ form.party_name.errors }}</div>{% endif %}
-              </div>
-              <div class="col-md-6">
-                <label for="panno" class="form-label">PAN No</label>
-                <input
-                  type="text"
-                  id="panno"
-                  name="panno"
-                  class="form-control"
-                  value="{{ form.panno.value|default:'' }}"
-                  placeholder="Enter PAN No"
-                  required
-                />
-                {% if form.panno.errors %}<div class="text-danger small">{{ form.panno.errors }}</div>{% endif %}
-              </div>
+                <label for="party" class="form-label">Party</label>
+                <select id="party" name="party" class="form-select" required>
+                    
+                    <option value="" disabled {% if not form.party.value %}selected{% endif %}>
+                        Select Party
+                    </option>
+            
+                    {% for party in form.fields.party.queryset %}
+                        <option value="{{ party.pk }}"
+                            {% if form.party.value == party.pk %}selected{% endif %}>
+                            {{ party.party_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            
+                {% if form.party.errors %}
+                    <div class="text-danger small">{{ form.party.errors }}</div>
+                {% endif %}
+            </div>
+            
+
 
               <div class="col-md-6">
                 <label for="particular" class="form-label">Particular</label>

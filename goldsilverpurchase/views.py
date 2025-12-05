@@ -13,7 +13,7 @@ class PurchaseListView(ListView):
 class PurchaseCreateView(CreateView):
     model = GoldSilverPurchase
     fields = [
-        'bill_no', 'bill_date', 'party_name', 'panno',
+        'bill_no', 'bill_date', 'party',
         'particular', 'metal_type', 'quantity',
         'rate', 'wages', 'amount', 'payment_mode'
     ]
@@ -24,7 +24,7 @@ class PurchaseCreateView(CreateView):
 class PurchaseUpdateView(UpdateView):
     model = GoldSilverPurchase
     fields = [
-        'bill_no', 'bill_date', 'party_name', 'panno',
+        'bill_no', 'bill_date', 'party',
         'particular', 'metal_type', 'quantity',
         'rate', 'wages', 'amount', 'payment_mode'
     ]
