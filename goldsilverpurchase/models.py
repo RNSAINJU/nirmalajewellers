@@ -94,7 +94,7 @@ class GoldSilverPurchase(models.Model):
         self.wages = self.wages or Decimal('0.00')
 
         # Calculate amount automatically
-        calculated_amount = (self.quantity / Decimal('11.6638038')) * self.rate
+        calculated_amount = self.quantity  * self.rate
         self.amount = (calculated_amount + self.wages).quantize(Decimal('0.01'))
 
         super().save(*args, **kwargs)
