@@ -1,7 +1,11 @@
 # Database
 db.sqlite3
-
 db.sqlite3
+*.sqlite3
+
+*.pyc
+__pycache__/
+
 order/__pycache__/admin.cpython-310.pyc
 order/__pycache__/forms.cpython-310.pyc
 order/__pycache__/models.cpython-310.pyc
