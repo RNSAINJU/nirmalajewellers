@@ -2,59 +2,150 @@
 
 {% block content %}
 <div class="container mt-5">
-  <h1 class="text-center mb-4">Gold/Silver Purchases</h1>
-  <div class="d-flex justify-content-end mb-3">
-    <a href="{% url 'gsp:createparty' %}" class="btn btn-success">Create Party</a>
-    <a href="{% url 'gsp:create' %}" class="btn btn-primary p-5">Create Purchase</a>
-  </div>
-  <div class="table-responsive">
-    <table class="table table-bordered table-striped">
-      <thead class="table-dark">
-        <tr>
-          <th>Bill No</th>
-          <th>Bill Date</th>
-          <th>Party</th>
-          <th>PAN No</th>
-          <th>Particulars</th>
-          <th>Metal</th>
-          <th>Qty</th>
-          <th>Rate</th>
-          <th>Wages</th>
-          <th>Amount</th>
-          <th>Payment</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for p in purchases %}
-        <tr>
-          <td>{{ p.bill_no }}</td>
-          <td>{{ p.bill_date}}</td>
-          <td>{{ p.party.party_name }}</td>
-          <td>{{ p.party.panno }}</td>
-          <td>{{ p.particular }}</td>
-          <td>{{ p.metal_type }}</td>
-          <td>{{ p.quantity }}</td>
-          <td>{{ p.rate }}</td>
-          <td>{{ p.wages }}</td>
-          <td>{{ p.amount }}</td>
-          <td>{{ p.get_payment_mode_display }}</td>
-          <td>
-            <a href="{% url 'gsp:update' p.pk %}" class="btn btn-sm btn-warning">Edit</a>
-            <a href="{% url 'gsp:delete' p.pk %}" class="btn btn-sm btn-danger">Delete</a>
-          </td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="11" class="text-center">No purchases yet.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+    <h1 class="text-center mb-4">Gold/Silver Purchases</h1>
+
+    <!-- Create buttons -->
+    <div class="d-flex justify-content-end mb-3 gap-2">
+        <a href="{% url 'gsp:createparty' %}" class="btn btn-success">
+            <i class="bi bi-person-plus-fill me-1"></i> Create Party
+        </a>
+        <a href="{% url 'gsp:create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle-fill me-1"></i> Create Purchase
+        </a>
+    </div>
+
+    <!-- Filter Form -->
+    <form method="get" class="mb-3 row g-2 align-items-end">
+        <div class="col-auto">
+            <label>Single Date (BS)</label>
+            <input type="text" name="date" id="date" class="form-control" value="{{ date }}" placeholder="YYYY-MM-DD">
+        </div>
+        <div class="col-auto">
+            <label>Start Date (BS)</label>
+            <input type="text" name="start_date" id="start_date" class="form-control" value="{{ start_date }}" placeholder="YYYY-MM-DD">
+        </div>
+        <div class="col-auto">
+            <label>End Date (BS)</label>
+            <input type="text" name="end_date" id="end_date" class="form-control" value="{{ end_date }}" placeholder="YYYY-MM-DD">
+        </div>
+        <div class="col-auto">
+            <label>Party</label>
+            <select name="party" class="form-select">
+                <option value="">All Parties</option>
+                {% for p in parties %}
+                    <option value="{{ p.id }}" {% if selected_party == p.id|stringformat:"s" %}selected{% endif %}>
+                        {{ p.party_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-funnel-fill me-1"></i> Filter
+            </button>
+            <a href="{% url 'gsp:list' %}" class="btn btn-secondary">
+                <i class="bi bi-x-circle-fill me-1"></i> Reset
+            </a>
+        </div>
+    </form>
+
+    <!-- Purchases Table -->
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Bill No</th>
+                    <th>Bill Date</th>
+                    <th>Party</th>
+                    <th>PAN No</th>
+                    <th>Particulars</th>
+                    <th>Metal</th>
+                    <th>Qty</th>
+                    <th>Rate</th>
+                    <th>Wages</th>
+                    <th>Amount</th>
+                    <th>Payment</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in purchases %}
+                <tr>
+                    <td>{{ p.bill_no }}</td>
+                    <td>{{ p.bill_date }}</td>
+                    <td>{{ p.party.party_name }}</td>
+                    <td>{{ p.party.panno }}</td>
+                    <td>{{ p.particular }}</td>
+                    <td>{{ p.metal_type|title }}</td>
+                    <td>{{ p.quantity|floatformat:2 }}</td>
+                    <td>{{ p.rate|floatformat:2 }}</td>
+                    <td>{{ p.wages|floatformat:2 }}</td>
+                    <td>{{ p.amount|floatformat:0 }}</td>
+                    <td>{{ p.get_payment_mode_display }}</td>
+                    <td>
+                        <a href="{% url 'gsp:update' p.pk %}" class="btn btn-sm btn-warning">
+                            <i class="bi bi-pencil-square"></i> Edit
+                        </a>
+                        <a href="{% url 'gsp:delete' p.pk %}" class="btn btn-sm btn-danger">
+                            <i class="bi bi-trash-fill"></i> Delete
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="12" class="text-center">No purchases yet.</td>
+                </tr>
+                {% endfor %}
+
+                <!-- Total row -->
+                <tr class="table-secondary">
+                    <td colspan="9" class="text-end"><strong>Total</strong></td>
+                    <td><strong>{{ total_amount|floatformat:0 }}</strong></td>
+                    <td colspan="2"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if purchases.has_other_pages %}
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center mt-3">
+            {% if purchases.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?{% if date %}date={{ date }}&{% endif %}{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if selected_party %}party={{ selected_party }}&{% endif %}page={{ purchases.previous_page_number }}" aria-label="Previous">
+                    &laquo;
+                </a>
+            </li>
+            {% endif %}
+            {% for num in purchases.paginator.page_range %}
+            <li class="page-item {% if purchases.number == num %}active{% endif %}">
+                <a class="page-link" href="?page={{ num }}{% if date %}&date={{ date }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if selected_party %}&party={{ selected_party }}{% endif %}">{{ num }}</a>
+            </li>
+            {% endfor %}
+            {% if purchases.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?{% if date %}date={{ date }}&{% endif %}{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if selected_party %}party={{ selected_party }}&{% endif %}page={{ purchases.next_page_number }}" aria-label="Next">
+                    &raquo;
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
 </div>
 
+<!-- Nepali Date Picker -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nepali-datepicker-v3@3.7.0/dist/css/nepali.datepicker.min.css">
+<script src="https://cdn.jsdelivr.net/npm/nepali-datepicker-v3@3.7.0/dist/js/nepali.datepicker.min.js"></script>
+<script>
+    window.addEventListener('DOMContentLoaded', function() {
+        const options = { ndpYear: true, ndpMonth: true, ndpYearCount: 10 };
+        new NepaliDatePicker({ target: '#date', ...options });
+        new NepaliDatePicker({ target: '#start_date', ...options });
+        new NepaliDatePicker({ target: '#end_date', ...options });
+    });
+</script>
 
 {% endblock %}
-
-
