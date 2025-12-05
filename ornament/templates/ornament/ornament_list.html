@@ -1,48 +1,161 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Ornament List</h2>
-<a href="{% url 'ornament:create' %}" class="btn btn-primary mb-2">New Ornament</a>
+<div class="container mt-5">
 
-<table class="table table-bordered table-sm">
-    <thead>
-    <tr>
-        <th>SN</th>
-        <th>Date</th>
-        <th>Code</th>
-        <th>Ornament Name</th>
-        <th>Type</th>
-        <th>Weight</th>
-        <th>Diamond Weight</th>
-        <th>Jarti</th>
-        <th>Kaligar</th>
-        <th>Ornament Type</th>
-        <th>Customer Name</th>
-        <th></th>
-    </tr>
-    </thead>
-    <tbody>
-    {% for o in ornaments %}
-        <tr>
-            <td>{{ forloop.counter }}</td>
-            <td>{{ o.ornament_date }}</td>
-            <td>{{ o.code }}</td>
-            <td>{{ o.ornament_name }}</td>
-            <td>{{ o.get_type_display }}</td>
-            <td>{{ o.weight }}</td>
-            <td>{{ o.diamond_weight }}</td>
-            <td>{{ o.jarti }}</td>
-            <td>{{ o.kaligar }}</td>
-            <td>{{ o.get_ornament_type_display }}</td>
-            <td>{{ o.customer_name }}</td>
-            <td>
-                <a href="{% url 'ornament:update' o.pk %}">Edit</a> |
-                <a href="{% url 'ornament:delete' o.pk %}">Delete</a>
-            </td>
-        </tr>
-    {% empty %}
-        <tr><td colspan="11">No records.</td></tr>
-    {% endfor %}
-    </tbody>
-</table>
+    <h1 class="text-center mb-4">Ornaments List</h1>
+
+    <div class="d-flex justify-content-end mb-3 gap-2">
+        <a href="{% url 'ornament:create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Add Ornament
+        </a>
+    </div>
+
+    <!-- Filters -->
+    <form method="get" class="row g-2 mb-4">
+        <div class="col-md-2">
+            <label>Single Date (BS)</label>
+            <input type="text" name="date" id="date" class="form-control" value="{{ date }}" placeholder="YYYY-MM-DD">
+        </div>
+
+        <div class="col-md-2">
+            <label>Start Date</label>
+            <input type="text" name="start_date" id="start_date" class="form-control" value="{{ start_date }}">
+        </div>
+
+        <div class="col-md-2">
+            <label>End Date</label>
+            <input type="text" name="end_date" id="end_date" class="form-control" value="{{ end_date }}">
+        </div>
+
+        <div class="col-md-2">
+            <label>Type</label>
+            <select name="type" class="form-select">
+                <option value="">All</option>
+                <option value="gold" {% if type == 'gold' %}selected{% endif %}>Gold</option>
+                <option value="silver" {% if type == 'silver' %}selected{% endif %}>Silver</option>
+                <option value="diamond" {% if type == 'diamond' %}selected{% endif %}>Diamond</option>
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <label>Search</label>
+            <input type="text" name="search" class="form-control" placeholder="Code/Name/Customer" value="{{ search }}">
+        </div>
+
+        <div class="col-md-2 align-self-end">
+            <button class="btn btn-primary">Filter</button>
+            <a href="{% url 'ornament:list' %}" class="btn btn-secondary">Reset</a>
+        </div>
+    </form>
+
+    <!-- Table -->
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Date</th>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Weight</th>
+                    <th>Diamond Wt</th>
+                    <th>Jarti</th>
+                    <th>Kaligar</th>
+                    <th>Customer</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for o in ornaments %}
+                <tr>
+                    <td>{{ o.ornament_date }}</td>
+                    <td>{{ o.code }}</td>
+                    <td>{{ o.ornament_name }}</td>
+                    <td>{{ o.type|title }}</td>
+                    <td>{{ o.weight|floatformat:2 }}</td>
+                    <td>{{ o.diamond_weight|floatformat:2 }}</td>
+                    <td>{{ o.jarti }}</td>
+                    <td>{{ o.kaligar }}</td>
+                    <td>{{ o.customer_name }}</td>
+                    <td>
+                        <a href="{% url 'ornament:update' o.pk %}" class="btn btn-sm btn-warning">Edit</a>
+                        <a href="{% url 'ornament:delete' o.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="10" class="text-center">No ornaments found.</td>
+                </tr>
+                {% endfor %}
+
+                <!-- Total Row -->
+                <tr class="table-secondary fw-bold">
+                    <td colspan="4" class="text-end">TOTAL</td>
+                    <td>{{ total_weight|floatformat:2 }}</td>
+                    <td>{{ total_diamond|floatformat:2 }}</td>
+                    <td colspan="4"></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="d-flex justify-content-between mt-3">
+
+            <div>
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-sm btn-primary">Previous</a>
+                {% endif %}
+            </div>
+        
+            <div class="align-self-center">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            </div>
+        
+            <div>
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}" class="btn btn-sm btn-primary">Next</a>
+                {% endif %}
+            </div>
+        
+        </div>
+
+        
+    </div>
+
+    <!-- Pagination -->
+    {% if ornaments.has_other_pages %}
+    <nav class="mt-3">
+        <ul class="pagination justify-content-center">
+            {% if ornaments.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ ornaments.previous_page_number }}">«</a></li>
+            {% endif %}
+
+            {% for num in ornaments.paginator.page_range %}
+                <li class="page-item {% if ornaments.number == num %}active{% endif %}">
+                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                </li>
+            {% endfor %}
+
+            {% if ornaments.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ ornaments.next_page_number }}">»</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<!-- Nepali date picker -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nepali-datepicker-v3@3.7.0/dist/css/nepali.datepicker.min.css">
+<script src="https://cdn.jsdelivr.net/npm/nepali-datepicker-v3@3.7.0/dist/js/nepali.datepicker.min.js"></script>
+
+<script>
+    window.addEventListener("DOMContentLoaded", () => {
+        const opt = { ndpYear: true, ndpMonth: true, ndpYearCount: 10 };
+        new NepaliDatePicker({ target: "#date", ...opt });
+        new NepaliDatePicker({ target: "#start_date", ...opt });
+        new NepaliDatePicker({ target: "#end_date", ...opt });
+    });
+</script>
+
 {% endblock %}
