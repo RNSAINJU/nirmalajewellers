@@ -7,10 +7,27 @@ from django.views.generic import ListView, CreateView, UpdateView
 from django.urls import reverse
 from .models import Order
 from .forms import OrderForm, OrnamentFormSet
-
+from ornament.models import Ornament
+from django.views import View
 
 app_name = 'order'
 
+class OrnamentCreateView(View):
+    template_name = 'ornament/ornament_form.html'
+    success_url = reverse_lazy('ornament:list')
+
+    def get(self, request):
+        formset = OrnamentFormSet(queryset=Ornament.objects.none())
+        return render(request, self.template_name, {"formset": formset})
+
+    def post(self, request):
+        formset = OrnamentFormSet(request.POST)
+
+        if formset.is_valid():
+            formset.save()
+            return redirect(self.success_url)
+
+        return render(request, self.template_name, {"formset": formset})
 
 class OrderListView(ListView):
     model = Order
@@ -18,23 +35,6 @@ class OrderListView(ListView):
     context_object_name = 'orders'
     ordering = ['-sn']
 
-# To add a button for "Add Ornament" on the OrderCreate page,
-# We typically add context data or signals for where the button should be displayed,
-# but the main work is to make sure the context in OrderCreateView gives the formset.
-# The button itself is added in the template, but for the backend, you may want to pass extra context.
-
-# However, to assist template rendering, we can add a context variable here
-# indicating this is the create view (helpful for templates).
-
-# No backend code is strictly necessary for a button, but for good practice:
-def get_context_data(self, **kwargs):
-    context = super(OrderCreateView, self).get_context_data(**kwargs)
-    if self.request.POST:
-        context['ornament_formset'] = OrnamentFormSet(self.request.POST)
-    else:
-        context['ornament_formset'] = OrnamentFormSet()
-    context['show_add_ornament_button'] = True  # Template flag for button display
-    return context
 
 class OrderCreateView(CreateView):
     model = Order

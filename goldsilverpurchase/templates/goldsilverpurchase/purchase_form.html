@@ -1,15 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Purchase Form</title>
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-  </head>
-  <body>
+{% extends 'base.html' %}
+
+{% block content %}
+
     <div class="container mt-5">
       <h1 class="text-center mb-4">{{ form_title }}</h1>
       <div class="card shadow">
@@ -189,26 +181,5 @@
         </div>
       </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
-   {% comment %} <script src="{% static 'js/jquery.min.js' %}"></script>
-    <script src="{% static 'nepali-datepicker/nepali.datepicker.min.js' %}"></script>
-    <script>
-      (function($){
-        $(function(){
-          var $inp = $('#id_bill_date'); // Django default id for field named bill_date
-          if (!$inp.length) { $inp = $('[name="bill_date"]'); }
-          if ($inp.length && $.fn.nepaliDatePicker) {
-            $inp.nepaliDatePicker({
-              // options: adjust per the picker you installed
-              // keep ndpEnglishInput false so the input gets BS value like '2082-01-01'
-              ndpEnglishInput: false,
-              // show month/year dropdowns
-              ndpYear: true,
-              ndpMonth: true
-            });
-          }
-        });
-      })(jQuery);
-    </script> {% endcomment %}
-  </body>
-</html>
+  
+    {% endblock %}
