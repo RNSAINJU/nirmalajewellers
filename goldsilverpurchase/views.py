@@ -66,7 +66,7 @@ class PurchaseCreateView(CreateView):
     fields = [
         'bill_no', 'bill_date', 'party',
         'particular', 'metal_type', 'quantity',
-        'rate', 'wages', 'amount', 'payment_mode'
+        'rate', 'wages', 'discount','amount', 'payment_mode'
     ]
     template_name = 'goldsilverpurchase/purchase_form.html'
     success_url = reverse_lazy('gsp:list')

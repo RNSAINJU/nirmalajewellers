@@ -135,6 +135,21 @@
                 />
                 {% if form.wages.errors %}<div class="text-danger small">{{ form.wages.errors }}</div>{% endif %}
               </div>
+
+              <div class="col-md-6">
+                <label for="discount" class="form-label">Discount</label>
+                <input
+                  type="number"
+                  id="discount"
+                  name="discount"
+                  class="form-control"
+                  value="{{ form.discount.value|default:'' }}"
+                  placeholder="Enter Discount"
+                  required
+                />
+                {% if form.discount.errors %}<div class="text-danger small">{{ form.discount.errors }}</div>{% endif %}
+              </div>
+
               <div class="col-md-6">
                 <label for="amount" class="form-label">Amount</label>
                 <input

@@ -71,6 +71,13 @@ class GoldSilverPurchase(models.Model):
         default=Decimal('0.00')
     )
 
+    discount = models.DecimalField(
+        max_digits=12, decimal_places=2,
+        validators=[MinValueValidator(0)],
+        null=True, blank=True,
+        default=Decimal('0.00')
+    )
+
     amount = models.DecimalField(
         max_digits=12, decimal_places=2,
         validators=[MinValueValidator(0)],
@@ -95,6 +102,6 @@ class GoldSilverPurchase(models.Model):
 
         # Calculate amount automatically
         calculated_amount = self.quantity  * self.rate
-        self.amount = (calculated_amount + self.wages).quantize(Decimal('0.01'))
+        self.amount = (calculated_amount + self.wages - self.discount).quantize(Decimal('0.01'))
 
         super().save(*args, **kwargs)

@@ -63,6 +63,7 @@
                     <th>Qty</th>
                     <th>Rate</th>
                     <th>Wages</th>
+                    <th>Discount</th>
                     <th>Amount</th>
                     <th>Payment</th>
                     <th>Actions</th>
@@ -80,6 +81,7 @@
                     <td>{{ p.quantity|floatformat:2 }}</td>
                     <td>{{ p.rate|floatformat:2 }}</td>
                     <td>{{ p.wages|floatformat:2 }}</td>
+                    <td>{{ p.discount|floatformat:2 }}</td>
                     <td>{{ p.amount|floatformat:0 }}</td>
                     <td>{{ p.get_payment_mode_display }}</td>
                     <td>

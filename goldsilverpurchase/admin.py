@@ -18,6 +18,7 @@ class GoldSilverPurchaseAdmin(admin.ModelAdmin):
         'quantity',
         'rate',
         'wages',
+        'discount',
         'amount',
         'payment_mode'
     )
