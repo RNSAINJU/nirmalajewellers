@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import (
     PartyCreateView, PurchaseListView, PurchaseCreateView,
-    PurchaseUpdateView, PurchaseDeleteView
+    PurchaseUpdateView, PurchaseDeleteView, export_excel, print_view
 )
 
 app_name = 'gsp'
@@ -12,4 +12,6 @@ urlpatterns = [
     path('createparty/', PartyCreateView.as_view(), name='createparty'),
     path('<int:pk>/edit/', PurchaseUpdateView.as_view(), name='update'),
     path('<int:pk>/delete/', PurchaseDeleteView.as_view(), name='delete'),
+    path("print/", print_view, name="print_view"),
+    path("export-excel/", export_excel, name="export_excel"),
 ]

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Print Purchases</title>
+    <style>
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid black; padding: 6px; font-size: 14px; }
+        th { background: #ddd; }
+        @media print {
+            button { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<h2>Gold/Silver Purchases</h2>
+<button onclick="window.print()">Print</button>
+
+<table>
+    <thead>
+        <tr>
+            <th>Bill No</th>
+            <th>Date (BS)</th>
+            <th>Party</th>
+            <th>Metal</th>
+            <th>Particular</th>
+            <th>Qty</th>
+            <th>Rate</th>
+            <th>Wages</th>
+            <th>Amount</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for p in purchases %}
+        <tr>
+            <td>{{ p.bill_no }}</td>
+            <td>{{ p.bill_date }}</td>
+            <td>{{ p.party.party_name }}</td>
+            <td>{{ p.metal_type }}</td>
+            <td>{{ p.particular }}</td>
+            <td>{{ p.quantity }}</td>
+            <td>{{ p.rate }}</td>
+            <td>{{ p.wages }}</td>
+            <td>{{ p.amount }}</td>
+        </tr>
+    {% endfor %}
+        <tr>
+            <td colspan="8" style="text-align:right;"><strong>Total</strong></td>
+            <td><strong>{{ total_amount|floatformat:0 }}</strong></td>
+        </tr>
+    </tbody>
+</table>
+
+</body>
+</html>
