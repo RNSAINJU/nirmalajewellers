@@ -9,7 +9,7 @@ class PurchaseListView(ListView):
     template_name = 'goldsilverpurchase/purchase_list.html'
     context_object_name = 'purchases'
     ordering = ['-bill_date', '-created_at']
-    paginate_by = 20  # 20 purchases per page
+    paginate_by = 5  # 20 purchases per page
 
     def get_queryset(self):
         queryset = super().get_queryset()
