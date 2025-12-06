@@ -17,6 +17,7 @@ class PurchaseListView(ListView):
         start_date_str = self.request.GET.get('start_date')
         end_date_str = self.request.GET.get('end_date')
         party_id = self.request.GET.get('party')
+        metal_type=self.request.GET.get('metal_type')
 
         # Single date filter
         if date_str:
@@ -42,16 +43,21 @@ class PurchaseListView(ListView):
         if party_id:
             queryset = queryset.filter(party_id=party_id)
 
+        if metal_type:
+            queryset = queryset.filter(metal_type=metal_type)
+        
         return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['total_quantity'] = self.get_queryset().aggregate(total=Sum('quantity'))['total'] or 0
         context['total_amount'] = self.get_queryset().aggregate(total=Sum('amount'))['total'] or 0
         context['date'] = self.request.GET.get('date', '')
         context['start_date'] = self.request.GET.get('start_date', '')
         context['end_date'] = self.request.GET.get('end_date', '')
         context['parties'] = Party.objects.all()
         context['selected_party'] = self.request.GET.get('party', '')
+        context['metal_type']=self.request.GET.get('metal_type')
         return context
 
 class PartyCreateView(CreateView):

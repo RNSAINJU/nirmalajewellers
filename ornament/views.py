@@ -10,10 +10,10 @@ class OrnamentListView(ListView):
     template_name = 'ornament/ornament_list.html'
     context_object_name = 'ornaments'
     ordering = ['-ornament_date', '-created_at']
-    paginate_by = 25
 
     def get_queryset(self):
         qs = super().get_queryset()
+
         # --- Filters ---
         code = self.request.GET.get("code")
         name = self.request.GET.get("name")

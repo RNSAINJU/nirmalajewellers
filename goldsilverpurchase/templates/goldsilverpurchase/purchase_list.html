@@ -15,37 +15,53 @@
     </div>
 
     <!-- Filter Form -->
-    <form method="get" class="mb-3 row g-2 align-items-end">
-        <div class="col-auto">
-            <label>Single Date (BS)</label>
-            <input type="text" name="date" id="date" class="form-control" value="{{ date }}" placeholder="YYYY-MM-DD">
-        </div>
-        <div class="col-auto">
-            <label>Start Date (BS)</label>
-            <input type="text" name="start_date" id="start_date" class="form-control" value="{{ start_date }}" placeholder="YYYY-MM-DD">
-        </div>
-        <div class="col-auto">
-            <label>End Date (BS)</label>
-            <input type="text" name="end_date" id="end_date" class="form-control" value="{{ end_date }}" placeholder="YYYY-MM-DD">
-        </div>
-        <div class="col-auto">
-            <label>Party</label>
-            <select name="party" class="form-select">
-                <option value="">All Parties</option>
-                {% for p in parties %}
-                    <option value="{{ p.id }}" {% if selected_party == p.id|stringformat:"s" %}selected{% endif %}>
-                        {{ p.party_name }}
-                    </option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-auto">
-            <button type="submit" class="btn btn-primary">
-                <i class="bi bi-funnel-fill me-1"></i> Filter
-            </button>
-            <a href="{% url 'gsp:list' %}" class="btn btn-secondary">
-                <i class="bi bi-x-circle-fill me-1"></i> Reset
-            </a>
+    <form method="get" class="card p-3 mb-3">
+
+        <div class="row">
+            <div class="col-md-2">
+                <label>Single Date (BS)</label>
+                <input type="text" name="date" id="date" class="form-control" value="{{ date }}" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-2">
+                <label>Start Date (BS)</label>
+                <input type="text" name="start_date" id="start_date" class="form-control" value="{{ start_date }}" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-2">
+                <label>End Date (BS)</label>
+                <input type="text" name="end_date" id="end_date" class="form-control" value="{{ end_date }}" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-2">
+                <label>Party</label>
+                <select name="party" class="form-select">
+                    <option value="">All Parties</option>
+                    {% for p in parties %}
+                        <option value="{{ p.id }}" {% if selected_party == p.id|stringformat:"s" %}selected{% endif %}>
+                            {{ p.party_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- NEW Metal Type Filter -->
+            <div class="col-md-2">
+                <label>Metal Type</label>
+                <select name="metal_type" class="form-select">
+                    <option value="">All</option>
+                    <option value="gold" {% if metal_type == "gold" %}selected{% endif %}>Gold</option>
+                    <option value="silver" {% if metal_type == "silver" %}selected{% endif %}>Silver</option>
+                </select>
+            </div>
+
+
+            <div class="col-md-1">
+                <label></label>
+                <button type="submit" class="btn btn-success w-100">Filter</button>
+            </div>
+
+            <div class="col-md-1">
+                <label></label>
+            <a href="{% url 'gsp:list' %}" class="btn btn-secondary w-100"">Reset</a>
+            </div>
         </div>
     </form>
 
@@ -84,14 +100,24 @@
                     <td>{{ p.discount|floatformat:2 }}</td>
                     <td>{{ p.amount|floatformat:0 }}</td>
                     <td>{{ p.get_payment_mode_display }}</td>
-                    <td>
-                        <a href="{% url 'gsp:update' p.pk %}" class="btn btn-sm btn-warning">
-                            <i class="bi bi-pencil-square"></i> Edit
-                        </a>
-                        <a href="{% url 'gsp:delete' p.pk %}" class="btn btn-sm btn-danger">
-                            <i class="bi bi-trash-fill"></i> Delete
-                        </a>
+                    <td class="text-center">
+
+                        <div class="btn-group">
+                            <a href="{% url 'gsp:update' p.pk %}" 
+                               class="btn btn-sm btn-outline-warning"
+                               title="Edit">
+                                <i class="bi bi-pencil-square"></i>
+                            </a>
+                    
+                            <a href="{% url 'gsp:delete' p.pk %}" 
+                               class="btn btn-sm btn-outline-danger"
+                               title="Delete">
+                                <i class="bi bi-trash-fill"></i>
+                            </a>
+                        </div>
+                    
                     </td>
+                    
                 </tr>
                 {% empty %}
                 <tr>
@@ -101,7 +127,10 @@
 
                 <!-- Total row -->
                 <tr class="table-secondary">
-                    <td colspan="9" class="text-end"><strong>Total</strong></td>
+                    <td colspan="3" class="text-end"><strong>Total</strong></td>
+                    <td colspan="4" class="text-end"><strong></strong></td>
+                    <td><strong>{{ total_quantity|floatformat:2 }}</strong></td>
+                    <td colspan="3" class="text-end"><strong></strong></td>
                     <td><strong>{{ total_amount|floatformat:0 }}</strong></td>
                     <td colspan="2"></td>
                 </tr>
