@@ -6,9 +6,10 @@ import nepali_datetime as ndt
 import openpyxl
 from openpyxl.utils import get_column_letter
 from django.http import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.db.models import Q
-
+from io import BytesIO
+from django.contrib import messages
 
 class PurchaseListView(ListView):
     model = GoldSilverPurchase
@@ -123,7 +124,7 @@ def print_view(request):
     })
 
 
-from io import BytesIO
+
 
 def export_excel(request):
     view = PurchaseListView()
@@ -135,7 +136,7 @@ def export_excel(request):
     ws.title = "Purchases"
 
     headers = [
-        "Bill No", "Bill Date (BS)", "Party", "Metal",
+        "Bill No", "Bill Date (BS)", "Party Name","Pan No", "Metal",
         "Particular", "Qty", "Rate", "Wages", "Amount", "Payment"
     ]
     ws.append(headers)
@@ -145,6 +146,7 @@ def export_excel(request):
             p.bill_no,
             str(p.bill_date),
             p.party.party_name,
+            p.party.panno,
             p.metal_type,
             p.particular,
             p.quantity,
@@ -177,3 +179,86 @@ def export_excel(request):
     return response
 
 
+
+def import_excel(request):
+    if request.method == "POST":
+        file = request.FILES.get("file")
+
+        if not file:
+            messages.error(request, "Please upload an Excel file.")
+            return redirect("gsp_import_excel")
+
+        try:
+            wb = openpyxl.load_workbook(file)
+            ws = wb.active
+
+            imported_count = 0
+            skipped_count = 0
+
+            for row in ws.iter_rows(min_row=2, values_only=True):
+                if not any(row):
+                    continue
+
+                (
+                    bill_no,
+                    bill_date_bs,
+                    party_name,
+                    party_pan,
+                    metal_type,
+                    particular,
+                    qty,
+                    rate,
+                    wages,
+                    amount,
+                    payment_mode,
+                ) = row
+
+                # ========================
+                # 1️⃣ CHECK BILL NUMBER DUPLICATE
+                # ========================
+                if GoldSilverPurchase.objects.filter(bill_no=str(bill_no)).exists():
+                    skipped_count += 1
+                    continue  # Skip creating duplicate row
+
+                # ========================
+                # 2️⃣ FIND / CREATE PARTY
+                # ========================
+                party = None
+                if party_pan:
+                    party = Party.objects.filter(panno=str(party_pan)).first()
+
+                if not party:
+                    party = Party.objects.create(
+                        party_name=party_name,
+                        panno=str(party_pan)
+                    )
+
+                # ========================
+                # 3️⃣ CREATE PURCHASE RECORD
+                # ========================
+                GoldSilverPurchase.objects.create(
+                    bill_no=bill_no,
+                    bill_date=bill_date_bs,  # already BS
+                    party=party,
+                    metal_type=metal_type,
+                    particular=particular,
+                    quantity=qty,
+                    rate=rate,
+                    wages=wages,
+                    amount=amount,
+                    payment_mode=payment_mode,
+                )
+
+                imported_count += 1
+
+            messages.success(
+                request,
+                f"✅ Imported: {imported_count} rows | ❌ Skipped duplicates: {skipped_count}"
+            )
+            return redirect("gsp:list")
+
+        except Exception as e:
+            messages.error(request, f"Error while importing: {e}")
+            return redirect("gsp:gsp_import_excel")
+
+    return render(request, "goldsilverpurchase/import_excel.html")

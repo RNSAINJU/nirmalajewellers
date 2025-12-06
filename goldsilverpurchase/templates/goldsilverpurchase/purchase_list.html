@@ -75,6 +75,12 @@
             </form>
         
             <div class="d-flex" style="gap:10px;">
+
+                <a href="{% url 'gsp:gsp_import_excel' %}" class="btn btn-success">
+                    <i class="bi bi-file-earmark-arrow-up"></i> Import Excel
+                </a>
+
+                
                 <a href="{% url 'gsp:export_excel' %}" class="btn btn-success">
                     <i class="bi bi-file-earmark-excel-fill"></i> Excel
                 </a>
@@ -85,7 +91,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Purchases Table -->
     <div class="table-responsive">
         <table class="table table-bordered table-striped table-hover">
@@ -149,7 +155,7 @@
                 <!-- Total row -->
                 <tr class="table-secondary">
                     <td colspan="3" class="text-end"><strong>Total</strong></td>
-                    <td colspan="4" class="text-end"><strong></strong></td>
+                    <td colspan="3" class="text-end"><strong></strong></td>
                     <td><strong>{{ total_quantity|floatformat:2 }}</strong></td>
                     <td colspan="3" class="text-end"><strong></strong></td>
                     <td><strong>{{ total_amount|floatformat:0 }}</strong></td>
