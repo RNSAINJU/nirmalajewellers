@@ -151,17 +151,17 @@
                     <td colspan="12" class="text-center">No purchases yet.</td>
                 </tr>
                 {% endfor %}
-
-                <!-- Total row -->
-                <tr class="table-secondary">
-                    <td colspan="3" class="text-end"><strong>Total</strong></td>
-                    <td colspan="3" class="text-end"><strong></strong></td>
-                    <td><strong>{{ total_quantity|floatformat:2 }}</strong></td>
-                    <td colspan="3" class="text-end"><strong></strong></td>
-                    <td><strong>{{ total_amount|floatformat:0 }}</strong></td>
-                    <td colspan="2"></td>
-                </tr>
             </tbody>
+
+            <tfoot>
+                <tr class="table-info">
+                    <th colspan="3">TOTAL WEIGHT</th>
+                    <th>{{ total_quantity }}</th>
+                    <th colspan="3"></th>
+                    <td>{{ total_amount|floatformat:0 }}</strong></td>
+                </tr>
+            </tfoot>
+
         </table>
     </div>
 

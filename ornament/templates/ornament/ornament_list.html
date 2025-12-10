@@ -1,127 +1,226 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<h2>Ornament List</h2>
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Ornaments</h1>
 
-<div class="d-flex justify-content-between mb-3">
-    <a href="{% url 'ornament:create' %}" class="btn btn-primary">New Ornament</a>
-</div>
-
-<!-- FILTER FORM -->
-<form method="get" class="card p-3 mb-3">
-
-    <div class="row">
-        <div class="col-md-2">
-            <input type="text" name="code" class="form-control" placeholder="Code"
-                   value="{{ request.GET.code }}">
-        </div>
-
-        <div class="col-md-2">
-            <input type="text" name="name" class="form-control" placeholder="Name"
-                   value="{{ request.GET.name }}">
-        </div>
-
-        <div class="col-md-2">
-            <input type="text" name="customer" class="form-control" placeholder="Customer"
-                   value="{{ request.GET.customer }}">
-        </div>
-
-        <div class="col-md-2">
-            <select name="type" class="form-control">
-                <option value="">Type</option>
-                {% for val,text in ornaments.model.TYPE_CHOICES %}
-                    <option value="{{ val }}" {% if request.GET.type == val %}selected{% endif %}>{{ text }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <div class="col-md-2">
-            <select name="otype" class="form-control">
-                <option value="">Ornament Type</option>
-                {% for val,text in ornaments.model.ORNAMENT_TYPE_CHOICES %}
-                    <option value="{{ val }}" {% if request.GET.otype == val %}selected{% endif %}>{{ text }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
+    <!-- Create buttons -->
+    <div class="d-flex justify-content-end mb-3 gap-2">
+        <a href="" class="btn btn-success">
+            <i class="bi bi-person-plus-fill me-1"></i> Create Kaligar
+        </a>
+        <a href="{% url 'ornament:create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle-fill me-1"></i> Create Ornament
+        </a>
     </div>
 
-    <div class="row mt-2">
+    <!-- FILTER FORM -->
+    <form method="get" class="card p-3 mb-3">
+
+        <div class="row">
+
+            <div class="col-md-2">
+                <input type="text" name="code" class="form-control" placeholder="Code"
+                       value="{{ request.GET.code }}">
+            </div>
+
+            <div class="col-md-2">
+                <input type="text" name="name" class="form-control" placeholder="Name"
+                       value="{{ request.GET.name }}">
+            </div>
+
+            <div class="col-md-2">
+                <label>Metal Type</label>
+                <select name="metal_type" class="form-select">
+                    <option value="">All</option>
+                    {% for mt, mt_label in metal_types %}
+                        <option value="{{ mt }}" {% if request.GET.metal_type == mt %}selected{% endif %}>
+                            {{ mt_label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label>Type</label>
+                <select name="type" class="form-select">
+                    <option value="">All</option>
+                    {% for t, t_label in types %}
+                        <option value="{{ t }}" {% if request.GET.type == t %}selected{% endif %}>
+                            {{ t_label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label>Ornament Type</label>
+                <select name="ornament_type" class="form-select">
+                    <option value="">All</option>
+                    {% for ot, ot_label in ornament_types %}
+                        <option value="{{ ot }}" {% if request.GET.ornament_type == ot %}selected{% endif %}>
+                            {{ ot_label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label>Kaligar</label>
+                <select name="kaligar" class="form-select">
+                    <option value="">All Kaligar</option>
+                    {% for k in kaligar %}
+                        <option value="{{ k.id }}" {% if request.GET.kaligar == k.id|stringformat:"s" %}selected{% endif %}>
+                            {{ k.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+        </div>
 
         <!-- Nepali start-end date -->
-        <div class="col-md-2">
-            <input type="text" name="start_date" placeholder="Start Date"
-                   class="form-control" value="{{ request.GET.start_date }}">
+        <div class="row mt-2">
+            <div class="col-2">
+                <input type="text" name="start_date" placeholder="Start Date"
+                       class="form-control" value="{{ request.GET.start_date }}">
+            </div>
+
+            <div class="col-2">
+                <input type="text" name="end_date" placeholder="End Date"
+                       class="form-control" value="{{ request.GET.end_date }}">
+            </div>
+
+            <div class="col-md-2">
+                <button class="btn btn-success w-100">Filter</button>
+            </div>
+
+            <div class="col-md-2">
+                <a href="{% url 'ornament:list' %}" class="btn btn-secondary w-100">Reset</a>
+            </div>
         </div>
 
-        <div class="col-md-2">
-            <input type="text" name="end_date" placeholder="End Date"
-                   class="form-control" value="{{ request.GET.end_date }}">
-        </div>
+    </form>
 
-        <div class="col-md-2">
-            <button class="btn btn-success w-100">Filter</button>
-        </div>
+    <!-- ORNAMENT TABLE -->
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>SN</th>
+                    <th>Image</th>
+                    <th>Date</th>
+                    <th>Code</th>
+                    <th>Ornament Name</th>
+                    <th>Type</th>
+                    <th>Weight</th>
+                    <th>Diamond Weight</th>
+                    <th>Jarti</th>
+                    <th>Kaligar</th>
+                    <th>Ornament Type</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
 
-        <div class="col-md-2">
-            <a href="{% url 'ornament:list' %}" class="btn btn-secondary w-100">Reset</a>
-        </div>
+            <tbody>
+                {% for o in ornaments %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
 
+
+                    <!-- IMAGE THUMBNAIL -->
+                    <td>
+                        {% if o.image %}
+                            <img src="{{ o.image.url }}" width="50" height="50" class="rounded border">
+                        {% else %}
+                            <span class="text-muted">No Image</span>
+                        {% endif %}
+                    </td>
+
+                    <td>{{ o.ornament_date }}</td>
+                    <td>{{ o.code }}</td>
+                    <td>{{ o.ornament_name }}</td>
+                    <td>{{ o.get_type_display }}</td>
+                    <td>{{ o.weight }}</td>
+                    <td>{{ o.diamond_weight }}</td>
+                    <td>{{ o.jarti }}</td>
+                    <td>{{ o.kaligar }}</td>
+                    <td>{{ o.get_ornament_type_display }}</td>
+
+                    <td class="text-center">
+
+                        <div class="btn-group">
+                            <a href="{% url 'ornament:update' o.pk %}" 
+                               class="btn btn-sm btn-outline-warning"
+                               title="Edit">
+                                <i class="bi bi-pencil-square"></i>
+                            </a>
+                    
+                            <a href="{% url 'ornament:delete' o.pk %}" 
+                               class="btn btn-sm btn-outline-danger"
+                               title="Delete">
+                                <i class="bi bi-trash-fill"></i>
+                            </a>
+                        </div>
+                    
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="12" class="text-center">No records found.</td></tr>
+                {% endfor %}
+            </tbody>
+
+            <tfoot>
+                <tr class="table-info">
+                    <th colspan="6">TOTAL WEIGHT</th>
+                    <th>{{ total_weight|floatformat:3 }}</th>
+                    <th colspan="6"></th>
+                </tr>
+            </tfoot>
+
+        </table>
     </div>
 
-</form>
+    <!-- PAGINATION -->
+    {% if is_paginated %}
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
 
-<!-- TABLE -->
-<table class="table table-bordered table-sm">
-    <thead>
-        <tr>
-            <th>SN</th>
-            <th>Date</th>
-            <th>Code</th>
-            <th>Ornament Name</th>
-            <th>Type</th>
-            <th>Weight</th>
-            <th>Diamond Weight</th>
-            <th>Jarti</th>
-            <th>Kaligar</th>
-            <th>Ornament Type</th>
-            <th>Customer Name</th>
-            <th></th>
-        </tr>
-    </thead>
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link"
+                       href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}">
+                       Previous
+                    </a>
+                </li>
+            {% endif %}
 
-    <tbody>
-    {% for o in ornaments %}
-        <tr>
-            <td>{{ forloop.counter }}</td>
-            <td>{{ o.ornament_date }}</td>
-            <td>{{ o.code }}</td>
-            <td>{{ o.ornament_name }}</td>
-            <td>{{ o.get_type_display }}</td>
-            <td>{{ o.weight }}</td>
-            <td>{{ o.diamond_weight }}</td>
-            <td>{{ o.jarti }}</td>
-            <td>{{ o.kaligar }}</td>
-            <td>{{ o.get_ornament_type_display }}</td>
-            <td>{{ o.customer_name }}</td>
-            <td>
-                <a href="{% url 'ornament:update' o.pk %}">Edit</a> |
-                <a href="{% url 'ornament:delete' o.pk %}">Delete</a>
-            </td>
-        </tr>
-    {% empty %}
-        <tr><td colspan="12" class="text-center">No records found.</td></tr>
-    {% endfor %}
-    </tbody>
+            {% for page in paginator.page_range %}
+                {% if page == page_obj.number %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ page }}</span>
+                    </li>
+                {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page }}&{{ request.GET.urlencode }}">
+                            {{ page }}
+                        </a>
+                    </li>
+                {% endif %}
+            {% endfor %}
 
-    <!-- TOTAL ROW -->
-    <tfoot>
-        <tr class="table-info">
-            <th colspan="5">TOTAL WEIGHT</th>
-            <th>{{ total_weight }}</th>
-            <th colspan="6"></th>
-        </tr>
-    </tfoot>
-</table>
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link"
+                       href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}">
+                       Next
+                    </a>
+                </li>
+            {% endif %}
+
+        </ul>
+    </nav>
+    {% endif %}
+</div>
 
 {% endblock %}

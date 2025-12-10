@@ -29,7 +29,7 @@ OrnamentFormSet = modelformset_factory(
     Ornament,
     fields=[
         'ornament_date', 'code', 'ornament_name', 'type', 'weight',
-        'diamond_weight', 'jarti', 'kaligar', 'ornament_type', 'customer_name'
+        'diamond_weight', 'jarti', 'kaligar', 'ornament_type', 'metal_type',
     ],
     extra=1,
     can_delete=True

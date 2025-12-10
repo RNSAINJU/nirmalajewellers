@@ -10,6 +10,16 @@ from django.shortcuts import render, redirect
 from django.db.models import Q
 from io import BytesIO
 from django.contrib import messages
+from decimal import Decimal
+
+def D(value):
+    """Convert None, empty, float, int safely to Decimal."""
+    if value is None or value == "":
+        return Decimal("0.00")
+    try:
+        return Decimal(str(value))
+    except:
+        return Decimal("0.00")
 
 class PurchaseListView(ListView):
     model = GoldSilverPurchase
@@ -180,80 +190,102 @@ def export_excel(request):
 
 
 
+def to_decimal(val):
+    if val is None or val == "":
+        return Decimal("0")
+    return Decimal(str(val))   # SAFE conversion from float → Decimal
+
+
 def import_excel(request):
     if request.method == "POST":
         file = request.FILES.get("file")
 
         if not file:
             messages.error(request, "Please upload an Excel file.")
-            return redirect("gsp_import_excel")
+            return redirect("gsp:gsp_import_excel")
 
         try:
             wb = openpyxl.load_workbook(file)
             ws = wb.active
 
-            imported_count = 0
-            skipped_count = 0
+            imported = 0
+            skipped = 0
 
             for row in ws.iter_rows(min_row=2, values_only=True):
-                if not any(row):
+
+                if not any(row):   # skip empty rows
                     continue
 
-                (
-                    bill_no,
-                    bill_date_bs,
-                    party_name,
-                    party_pan,
-                    metal_type,
-                    particular,
-                    qty,
-                    rate,
-                    wages,
-                    amount,
-                    payment_mode,
-                ) = row
+                try:
+                    (
+                        bill_no,
+                        bill_date_bs,
+                        party_name,
+                        party_pan,
+                        metal_type,
+                        particular,
+                        qty,
+                        rate,
+                        wages,
+                        discount,
+                        amount,
+                        payment_mode,
+                    ) = row
+                except Exception:
+                    messages.error(request, "Excel format is incorrect. Columns mismatch.")
+                    return redirect("gsp:gsp_import_excel")
 
-                # ========================
-                # 1️⃣ CHECK BILL NUMBER DUPLICATE
-                # ========================
+                # =============== 1️⃣ Duplicate Bill Check ===============
                 if GoldSilverPurchase.objects.filter(bill_no=str(bill_no)).exists():
-                    skipped_count += 1
-                    continue  # Skip creating duplicate row
+                    skipped += 1
+                    continue
 
-                # ========================
-                # 2️⃣ FIND / CREATE PARTY
-                # ========================
+                # =============== 2️⃣ Find/Create Party ===============
                 party = None
+
                 if party_pan:
                     party = Party.objects.filter(panno=str(party_pan)).first()
 
                 if not party:
                     party = Party.objects.create(
-                        party_name=party_name,
-                        panno=str(party_pan)
+                        party_name=party_name or "Unknown",
+                        panno=str(party_pan) if party_pan else "",
                     )
 
-                # ========================
-                # 3️⃣ CREATE PURCHASE RECORD
-                # ========================
+                # =============== 3️⃣ Convert BS Date ===============
+                try:
+                    y, m, d = map(int, str(bill_date_bs).split("-"))
+                    bill_date = ndt.date(y, m, d)
+                except:
+                    bill_date = ndt.date.today()
+
+                # =============== 4️⃣ Convert all decimals safely ===============
+                qty = to_decimal(qty)
+                rate = to_decimal(rate)
+                wages = to_decimal(wages)
+                amount = to_decimal(amount)
+                discount=to_decimal(discount)
+
+                # =============== 5️⃣ Create Purchase ===============
                 GoldSilverPurchase.objects.create(
-                    bill_no=bill_no,
-                    bill_date=bill_date_bs,  # already BS
+                    bill_no=str(bill_no),
+                    bill_date=bill_date,
                     party=party,
                     metal_type=metal_type,
                     particular=particular,
                     quantity=qty,
                     rate=rate,
                     wages=wages,
-                    amount=amount,
+                    amount = amount,
+                    discount = discount,
                     payment_mode=payment_mode,
                 )
 
-                imported_count += 1
+                imported += 1
 
             messages.success(
                 request,
-                f"✅ Imported: {imported_count} rows | ❌ Skipped duplicates: {skipped_count}"
+                f"Imported: {imported} | Skipped duplicates: {skipped}"
             )
             return redirect("gsp:list")
 

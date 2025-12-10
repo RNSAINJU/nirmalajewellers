@@ -1,12 +1,315 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
-<h2>{{ view.object.pk|default:'New' }} Ornament</h2>
+<div class="container mt-5">
+    <h2 class="mb-4">
+        {% if view.object %} Edit Ornament {% else %} Add New Ornament {% endif %}
+    </h2>
 
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-primary">Save</button>
-    <a href="{% url 'ornament:list' %}" class="btn btn-secondary">Cancel</a>
-</form>
+    <div class="card shadow">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row g-3">
+
+                    <!-- Ornament Date -->
+                    <div class="col-sm-3 col-md-2 mb-3">
+                        <label class="form-label">Ornament Date</label>
+                        <input
+                            type="text"
+                            id="ornament_date"
+                            name="ornament_date"
+                            class="form-control nepali-date"
+                            value="{{ form.ornament_date.value|default:'' }}"
+                            placeholder="Enter Date (YYYY-MM-DD)"
+                            required
+                        />
+                        {% if form.ornament_date.errors %}
+                            <div class="text-danger small">{{ form.ornament_date.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Ornament Type -->
+                    <div class="col-md-2 mb-3 col-sm-3">
+                        <label class="form-label">Ornament Type</label>
+                        <select id="ornament_type" name="ornament_type" class="form-select" required>
+                            <option value="" disabled {% if not form.ornament_type.value %}selected{% endif %}>Select Ornament Type</option>
+                            {% for key, value in form.fields.ornament_type.choices %}
+                                <option value="{{ key }}" {% if form.ornament_type.value == key %}selected{% endif %}>{{ value }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if form.ornament_type.errors %}
+                            <div class="text-danger small">{{ form.ornament_type.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Metal Type -->
+                    <div class="col-md-2 mb-3 col-sm-3">
+                      <!-- {{ form.metal_type }} -->
+                      <label class="form-label">Metal Type</label>
+                        <select id="metal_type" name="metal_type" class="form-select" required>
+                            <option value="" disabled {% if not form.metal_type.value %}selected{% endif %}>Select Metal Type</option>
+                            {% for key, value in form.fields.metal_type.choices %}
+                                <option value="{{ key }}" {% if form.metal_type.value == key %}selected{% endif %}>{{ value }}</option>
+                            {% endfor %}
+                        </select>
+                        
+                        {% if form.metal_type.errors %}
+                            <div class="text-danger small">{{ form.metal_type.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Gold Type (Purity) -->
+                    <div class="col-md-2 mb-3 col-sm-3">
+                        <label class="form-label">Gold Type</label>
+                        <select id="type" name="type" class="form-select" required>
+                            <option value="" disabled {% if not form.type.value %}selected{% endif %}>Select Gold Type</option>
+                            {% for key, value in form.fields.type.choices %}
+                                <option value="{{ key }}" {% if form.type.value == key %}selected{% endif %}>{{ value }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if form.type.errors %}
+                            <div class="text-danger small">{{ form.type.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    
+                    <!-- Main-Category -->
+                    <div class="col-md-2 mb-3 col-sm-3">
+                        <label class="form-label">Main Category</label>
+                        <select id="id_maincategory" name="maincategory" class="form-select" required>
+                        <option value="" disabled {% if not form.maincategory.value %}selected{% endif %}>Select Main-Category</option>
+                            {% for maincategory in form.fields.maincategory.queryset %}
+                        <option value="{{ maincategory.pk }}" {% if form.maincategory.value == maincategory.pk %}selected{% endif %}>{{ maincategory.name }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if form.maincategory.errors %}
+                            <div class="text-danger small">{{ form.maincategory.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    
+                    <!-- Sub-Category -->
+                    <div class="col-md-2 mb-3 col-sm-3">
+                        <label class="form-label">Sub-Category</label>
+                        <select id="id_subcategory" name="subcategory" class="form-select" required>
+                        <option value="" disabled {% if not form.subcategory.value %}selected{% endif %}>Select Sub-Category</option>
+                            {% for subcategory in form.fields.subcategory.queryset %}
+                        <option value="{{ subcategory.pk }}" {% if form.subcategory.value == subcategory.pk %}selected{% endif %}>{{ subcategory.name }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if form.subcategory.errors %}
+                            <div class="text-danger small">{{ form.subcategory.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Ornament Code (auto-generated) -->
+                    <!-- <div class="col-md-6">
+                      <label class="form-label">Ornament Code</label>
+                      <input
+                          type="text"
+                          id="id_code_preview"
+                          class="form-control"
+                          placeholder="Code will be generated automatically"
+                          readonly
+                      />
+                    </div> -->
+
+                    <!-- Ornament Name -->
+                    <div class="col-md-2 mb-3">
+                        <label class="form-label">Ornament Name</label>
+                        <input
+                            type="text"
+                            id="id_ornament_name"
+                            name="ornament_name"
+                            class="form-control"
+                            placeholder="Enter Ornament Name"
+                            value="{{ form.ornament_name.value|default:'' }}"
+                            required
+                        />
+                        {% if form.ornament_name.errors %}
+                            <div class="text-danger small">{{ form.ornament_name.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Metal Weight -->
+                    <div class="col-md-2 mb-2">
+                        <label class="form-label">Metal Weight (तोल)</label>
+                        <input
+                            type="number"
+                            id="weight"
+                            name="weight"
+                            class="form-control"
+                            step="0.001"
+                            value="{{ form.weight.value|default:'' }}"
+                            placeholder="Enter Metal Weight"
+                            required
+                        />
+                        {% if form.weight.errors %}
+                            <div class="text-danger small">{{ form.weight.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Diamond Weight -->
+                    <div class="col-md-2 mb-2">
+                        <label class="form-label">Diamond Weight</label>
+                        <input
+                            type="number"
+                            id="diamond_weight"
+                            name="diamond_weight"
+                            class="form-control"
+                            step="0.001"
+                            value="{{ form.diamond_weight.value|default:'' }}"
+                            placeholder="Enter Diamond/Stones weight"
+                        />
+                        {% if form.diamond_weight.errors %}
+                            <div class="text-danger small">{{ form.diamond_weight.errors }}</div>
+                        {% endif %}
+                    </div>
+
+          
+                    <!-- Jarti Field -->
+                    <div class="col-md-2 mb-2">
+                        <label for="jarti" class="form-label">Jarti</label>
+                        <input
+                        type="number"
+                        id="id_jarti"
+                        name="jarti"
+                        class="form-control"
+                        step="0.001"
+                        value="{{ form.jarti.value|default:'' }}"
+                        placeholder="Enter Jarti"
+                    />
+                    </div>
+
+                    
+                    <!-- Jarti Buttons -->
+                    <div class="col-md-4">
+                        <label class="form-label">Select Jarti %</label><br>
+                        <div class="d-flex flex-wrap gap-2 mt-1">
+                            <button type="button" class="btn btn-outline-primary jarti-btn" data-value="4.0">4%</button>
+                            <button type="button" class="btn btn-outline-primary jarti-btn" data-value="4.5">4.5%</button>
+                            <button type="button" class="btn btn-outline-primary jarti-btn" data-value="5.0">5%</button>
+                            <button type="button" class="btn btn-outline-primary jarti-btn" data-value="6.5">6.5%</button>
+                            <button type="button" class="btn btn-outline-primary jarti-btn" data-value="8.0">8%</button>
+                        </div>
+                    </div>
+
+                    <!-- Kaligar -->
+                    <div class="col-md-6">
+                        <label class="form-label">Kaligar</label>
+                        <select id="id_kaligar" name="kaligar" class="form-select" required>
+                        <option value="" disabled {% if not form.kaligar.value %}selected{% endif %}>Select Kaligar</option>
+                            {% for kaligar in form.fields.kaligar.queryset %}
+                        <option value="{{ kaligar.pk }}" {% if form.kaligar.value == kaligar.pk %}selected{% endif %}>{{ kaligar.name }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if form.kaligar.errors %}
+                            <div class="text-danger small">{{ form.kaligar.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Ornament Image</label>
+                        {% if form.instance and form.instance.image %}
+                        <img id="image-preview" src="{{ form.instance.image.url }}"
+                             alt="Current Image" style="max-width:200px; max-height:200px; margin-bottom:10px;">
+                      {% else %}
+                        <img id="image-preview" src="" alt="Preview" style="max-width:200px; max-height:200px; display:none; margin-bottom:10px;">
+                      {% endif %}
+                        
+                      <br>
+                        {{ form.image }}
+
+                        {% if form.image.errors %}
+                        <div class="text-danger small">{{ form.image.errors }}</div>
+                      {% endif %}
+                    </div>
+
+                    
+                </div>
+
+                <!-- Form Buttons -->
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-success">Save</button>
+                    <a href="{% url 'ornament:list' %}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Jarti Button Script -->
+
+<script>
+    $(document).ready(function() {
+        // Initialize all inputs with class 'nepali-date'
+        $(".nepali-date").nepaliDatePicker({
+            dateFormat: "YYYY-MM-DD",
+            closeOnDateSelect: true
+        });
+    });
+    </script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const buttons = document.querySelectorAll(".jarti-btn");
+    const jartiInput = document.getElementById("id_jarti");
+    const weightInput = document.getElementById("weight");
+
+    function calculateJarti(percent) {
+        const weight = parseFloat(weightInput.value) || 0;
+        const jarti = (weight * (percent / 100)).toFixed(3);
+        jartiInput.value = jarti;
+    }
+
+    buttons.forEach(btn => {
+        btn.addEventListener("click", function () {
+            const percent = parseFloat(this.dataset.value);
+            calculateJarti(percent);
+
+            // Highlight selected button
+            buttons.forEach(b => b.classList.remove("btn-primary"));
+            buttons.forEach(b => b.classList.add("btn-outline-primary"));
+
+            this.classList.remove("btn-outline-primary");
+            this.classList.add("btn-primary");
+        });
+    });
+
+    // Keep selection active after form reload
+    const currentValue = parseFloat(jartiInput.value) || 0;
+    if (currentValue && weightInput.value) {
+        buttons.forEach(btn => {
+            const percent = parseFloat(btn.dataset.value);
+            const expected = (parseFloat(weightInput.value) * (percent / 100)).toFixed(3);
+            if (expected == currentValue.toFixed(3)) {
+                btn.classList.remove("btn-outline-primary");
+                btn.classList.add("btn-primary");
+            }
+        });
+    }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+    const fileInput = document.getElementById("id_image");
+    const preview = document.getElementById("image-preview");
+    if (fileInput) {
+      fileInput.addEventListener("change", function () {
+        const file = this.files[0];
+        if (file) {
+          preview.src = URL.createObjectURL(file);
+          preview.style.display = "block";
+        } else {
+          preview.src = "";
+          preview.style.display = "none";
+        }
+      });
+    }
+  });
+
+</script>
+
+
 {% endblock %}

@@ -98,10 +98,17 @@ class GoldSilverPurchase(models.Model):
         return f"{self.bill_no} - {self.particular}"
 
     def save(self, *args, **kwargs):
+        self.quantity = self.quantity or Decimal('0.00')
+        self.rate = self.rate or Decimal('0.00')
         self.wages = self.wages or Decimal('0.00')
+        self.discount = self.discount or Decimal('0.00')
 
         # Calculate amount automatically
         calculated_amount = self.quantity  * self.rate
         self.amount = (calculated_amount + self.wages - self.discount).quantize(Decimal('0.01'))
+
+        # Optional: prevent negative amount
+        if self.amount < 0:
+            self.amount = Decimal('0.00')
 
         super().save(*args, **kwargs)

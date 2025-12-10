@@ -3,8 +3,16 @@ from django.core.exceptions import ValidationError
 from nepali_datetime_field.forms import NepaliDateField
 from .models import Ornament
 
+JARTI_CHOICES = [
+    (4.0, "4%"),
+    (4.5, "4.5%"),
+    (5.0, "5%"),
+    (6.5, "6.5%"),
+    (8.0, "8%"),
+]
 
 class OrnamentForm(forms.ModelForm):
+    jarti = forms.DecimalField(max_digits=5, decimal_places=2, required=False)
     ornament_date = NepaliDateField(required=False)
 
     class Meta:
@@ -38,3 +46,17 @@ class OrnamentForm(forms.ModelForm):
         if diamond_weight is not None and diamond_weight < 0:
             raise ValidationError("Stone weight cannot be negative.")
         return diamond_weight
+
+    def clean_jarti(self):
+        j = self.cleaned_data.get('jarti')
+        if j in [None, ""]:
+            return None
+
+        # Convert string values like "4%" to float
+        if isinstance(j, str):
+            j = j.replace("%", "").strip()
+
+        try:
+            return float(j)
+        except:
+            raise ValidationError("Invalid Jarti value.")

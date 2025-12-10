@@ -32,7 +32,28 @@ INSTALLED_APPS = [
     'order',
     'ornament',
     'nepali_datetime_field', # added for nepali date field
+    'cloudinary',
+    'cloudinary_storage',
 ]
+
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+
+
+cloudinary.config(
+    cloud_name="dutjtpdhn",
+    api_key="891116228766476",
+    api_secret="dHak4tSRQb5PctRTS5qEClOHXis",
+    secure=True
+)
+
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+MEDIA_URL = '/media/'
+
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -44,7 +65,11 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+
 ROOT_URLCONF = 'mysite.urls'
+
+
+
 
 TEMPLATES = [
     {
