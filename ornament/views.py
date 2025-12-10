@@ -1,8 +1,26 @@
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.db.models import Sum
-from .models import Kaligar, Ornament
+from .models import Kaligar, Ornament, MainCategory, SubCategory
 from .forms import OrnamentForm
+
+class MainCategoryCreateView(CreateView):
+    model = MainCategory
+    fields = ['name']
+    template_name = 'ornament/maincategory_form.html'
+    success_url = reverse_lazy('ornament:list')
+
+class SubCategoryCreateView(CreateView):
+    model = SubCategory
+    fields = ['name']
+    template_name = 'ornament/subcategory_form.html'
+    success_url = reverse_lazy('ornament:list')
+
+class KaligarCreateView(CreateView):
+    model = Kaligar
+    fields = ['name','phone_no','panno','address','stamp']
+    template_name = 'ornament/kaligar_form.html'
+    success_url = reverse_lazy('ornament:list')
 
 
 class OrnamentListView(ListView):

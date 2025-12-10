@@ -4,10 +4,19 @@
 <div class="container mt-5">
     <h1 class="text-center mb-4">Ornaments</h1>
 
+
     <!-- Create buttons -->
     <div class="d-flex justify-content-end mb-3 gap-2">
-        <a href="" class="btn btn-success">
+        <a href="{% url 'ornament:createkaligar' %}" class="btn btn-success">
             <i class="bi bi-person-plus-fill me-1"></i> Create Kaligar
+        </a>
+
+        <a href="{% url 'ornament:createmaincategory' %}" class="btn btn-success">
+            <i class="bi bi-person-plus-fill me-1"></i> Create MainCategory
+        </a>
+
+        <a href="{% url 'ornament:createsubcategory' %}" class="btn btn-success">
+            <i class="bi bi-person-plus-fill me-1"></i> Create Sub-Category
         </a>
         <a href="{% url 'ornament:create' %}" class="btn btn-primary">
             <i class="bi bi-plus-circle-fill me-1"></i> Create Ornament
