@@ -3,6 +3,15 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.db.models import Sum
 from .models import Kaligar, Ornament, MainCategory, SubCategory
 from .forms import OrnamentForm
+from django.http import HttpResponse
+from django.shortcuts import render, redirect
+from django.db.models import Q
+from io import BytesIO
+from django.contrib import messages
+from decimal import Decimal
+import openpyxl
+from openpyxl.utils import get_column_letter
+import nepali_datetime as ndt
 
 class MainCategoryCreateView(CreateView):
     model = MainCategory
@@ -136,3 +145,220 @@ class OrnamentDeleteView(DeleteView):
     model = Ornament
     template_name = 'ornament/ornament_confirm_delete.html'
     success_url = reverse_lazy('ornament:list')
+
+
+def print_view(request):
+    view = OrnamentListView()
+    view.request = request  # attach request
+    ornament = view.get_queryset()
+
+    total_weight = ornament.aggregate(total=Sum('weight'))['total'] or 0
+    return render(request, "ornament/print_view.html", {
+        "ornament": ornament,
+        "total_weight": total_weight
+    })
+
+
+def export_excel(request):
+    view = OrnamentListView()
+    view.request = request  # attach request
+    ornaments = view.get_queryset()
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Ornaments"
+
+    headers = [
+        "Ornament Date", "Code", "Metal Type","Type", "Ornament Type",
+        "MainCategory", "SubCategory", "Ornament Name", "Weight", "Diamond/Stones Weight", 
+        "Jarti","Kaligar","Image","Order","Created at","Updated at"
+    ]
+    ws.append(headers)
+
+    for o in ornaments:
+        ws.append([
+            str(o.ornament_date),
+            o.code,
+            o.metal_type,
+            o.type,
+            o.ornament_type,
+            o.maincategory.name,
+            o.subcategory.name,
+            o.ornament_name,
+            o.weight,
+            o.diamond_weight,
+            o.jarti,
+            o.kaligar.name,
+            str(o.image) if o.image else "",   # ★ convert Cloudinary resource to URL
+            o.order,
+            str(o.created_at),
+            str(o.updated_at)
+        ])
+
+    # Auto column width
+    for col in ws.columns:
+        max_length = 0
+        col_letter = get_column_letter(col[0].column)
+        for cell in col:
+            if cell.value:
+                max_length = max(max_length, len(str(cell.value)))
+        ws.column_dimensions[col_letter].width = max_length + 2
+
+    # Create virtual file
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    response = HttpResponse(
+        output.getvalue(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response['Content-Disposition'] = 'attachment; filename="ornaments.xlsx"'
+
+    return response
+
+
+
+def to_decimal(val):
+    if val is None or val == "":
+        return Decimal("0")
+    return Decimal(str(val))   # SAFE conversion from float → Decimal
+
+
+def import_excel(request):
+    if request.method == "POST":
+        file = request.FILES.get("file")
+
+        if not file:
+            messages.error(request, "Please upload an Excel file.")
+            return redirect("ornament:import_excel")
+
+        try:
+            wb = openpyxl.load_workbook(file)
+            ws = wb.active
+
+            imported = 0
+            skipped = 0
+
+            for row in ws.iter_rows(min_row=2, values_only=True):
+
+                if not any(row):   # skip empty rows
+                    continue
+
+                try:
+                    (
+                        ornament_date_bs,
+                        code,
+                        metal_type,
+                        type,
+                        ornament_type,
+                        maincategory_name,
+                        subcategory_name,
+                        ornament_name,
+                        weight,
+                        diamond_weight,
+                        jarti,
+                        kaligar_name,
+                        image,
+                        order,
+                        created_at,
+                        updated_at
+                    ) = row
+                except Exception:
+                    messages.error(request, "Excel format is incorrect. Columns mismatch.")
+                    return redirect("gsp:gsp_import_excel")
+
+                # =============== 1️⃣ Duplicate Bill Check ===============
+                if Ornament.objects.filter(code=str(code)).exists():
+                    skipped += 1
+                    continue
+
+                # =============== 2️⃣ Find/Create Main Category ===============
+                maincategory = None
+
+                if maincategory_name:
+                    maincategory = MainCategory.objects.filter(name=str(maincategory_name)).first()
+
+                if not maincategory_name:
+                    maincategory = MainCategory.objects.create(
+                        name=maincategory_name or "Unknown",
+                    )
+
+                # =============== 2️⃣ Find/Create Sub Category ===============
+                subcategory = None
+
+                if subcategory_name:
+                    subcategory = SubCategory.objects.filter(name=str(subcategory_name)).first()
+
+                if not subcategory_name:
+                    subcategory = SubCategory.objects.create(
+                        name=subcategory_name or "Unknown",
+                    )
+
+                # =============== 2️⃣ Find/Create Kaligar ===============
+                kaligar = None
+
+                if kaligar_name:
+                    kaligar = Kaligar.objects.filter(name=str(kaligar_name)).first()
+
+                if not kaligar_name:
+                    kaligar = Kaligar.objects.create(
+                        name=kaligar_name or "Unknown",
+                    )
+
+                # =============== 2️⃣ Find/Create Order ===============
+                Order = None
+
+                if order:
+                    Order = Order.objects.filter(name=str(order)).first()
+
+                # if not order:
+                #     kaligar = Kaligar.objects.create(
+                #         name=kaligar_name or "Unknown",
+                #     )
+
+                # =============== 3️⃣ Convert BS Date ===============
+                try:
+                    y, m, d = map(int, str(ornament_date_bs).split("-"))
+                    ornament_date = ndt.date(y, m, d)
+                except:
+                    ornament_date = ndt.date.today()
+
+                # =============== 4️⃣ Convert all decimals safely ===============
+                    weight = to_decimal(weight),
+                    diamond_weight = to_decimal(diamond_weight),
+                    jarti=to_decimal(jarti)
+
+                # =============== 5️⃣ Create Purchase ===============
+                Ornament.objects.create(
+                    ornament_date=str(ornament_date),
+                    code=code,
+                    metal_type=metal_type,
+                    type=type,
+                    ornament_type=ornament_type,
+                    maincategory=maincategory,
+                    subcategory=subcategory,
+                    ornament_name=ornament_name,
+                    weight = weight,
+                    diamond_weight = diamond_weight,
+                    jarti=jarti,
+                    kaligar=kaligar,
+                    image=image,
+                    order=Order,
+                    created_at=created_at,
+                    updated_at=updated_at,
+                )
+
+                imported += 1
+
+            messages.success(
+                request,
+                f"Imported: {imported} | Skipped duplicates: {skipped}"
+            )
+            return redirect("gsp:list")
+
+        except Exception as e:
+            messages.error(request, f"Error while importing: {e}")
+            return redirect("ornament:import_excel")
+
+    return render(request, "ornament/import_excel.html")

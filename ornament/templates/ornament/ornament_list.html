@@ -111,6 +111,33 @@
 
     </form>
 
+
+    <div class="row">
+        <div class="d-flex justify-content-between mb-3">
+            <form method="get" class="d-flex" style="gap:10px;">
+                <input type="text" name="search" class="form-control" placeholder="Search..." value="{{ request.GET.search }}">
+                <button class="btn btn-primary">Search</button>
+                <a href="{% url 'ornament:list' %}" class="btn btn-secondary">Reset</a>
+            </form>
+        
+            <div class="d-flex" style="gap:10px;">
+
+                <a href="{% url 'ornament:import_excel' %}" class="btn btn-success">
+                    <i class="bi bi-file-earmark-arrow-up"></i> Import Excel
+                </a>
+
+                
+                <a href="{% url 'ornament:export_excel' %}" class="btn btn-success">
+                    <i class="bi bi-file-earmark-excel-fill"></i> Excel
+                </a>
+        
+                <a href="{% url 'ornament:print_view' %}" class="btn btn-dark" target="_blank">
+                    <i class="bi bi-printer-fill"></i> Print
+                </a>
+            </div>
+        </div>
+    </div>
+
     <!-- ORNAMENT TABLE -->
     <div class="table-responsive">
         <table class="table table-bordered table-striped table-hover">
@@ -121,10 +148,17 @@
                     <th>Date</th>
                     <th>Code</th>
                     <th>Ornament Name</th>
-                    <th>Type</th>
+                    <th>Metal Type</th>
+                    <th>Karat</th>
+                    <th>Main Category</th>
+                    <th>Sub Category</th>
+                    <th>Gross Weight</th>
                     <th>Weight</th>
                     <th>Diamond Weight</th>
+                    <th>Ziron Weight</th>
+                    <th>Stone Weight</th>
                     <th>Jarti</th>
+                    <th>Jyala</th>
                     <th>Kaligar</th>
                     <th>Ornament Type</th>
                     <th>Actions</th>
@@ -149,10 +183,17 @@
                     <td>{{ o.ornament_date }}</td>
                     <td>{{ o.code }}</td>
                     <td>{{ o.ornament_name }}</td>
+                    <td>{{ o.get_metal_type_display }}</td>
                     <td>{{ o.get_type_display }}</td>
+                    <td>{{ o.maincategory.name }}</td>
+                    <td>{{ o.subcategory.name }}</td>
+                    <td>{{ o.gross_weight }}</td>
                     <td>{{ o.weight }}</td>
                     <td>{{ o.diamond_weight }}</td>
+                    <td>{{ o.zircon_weight }}</td>
+                    <td>{{ o.stone_weight }}</td>
                     <td>{{ o.jarti }}</td>
+                    <td>{{ o.jyala }}</td>
                     <td>{{ o.kaligar }}</td>
                     <td>{{ o.get_ornament_type_display }}</td>
 

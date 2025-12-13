@@ -150,6 +150,12 @@ class Ornament(models.Model):
     maincategory = models.ForeignKey(MainCategory, on_delete=models.CASCADE, null=True, blank=True)
     subcategory = models.ForeignKey(SubCategory, on_delete=models.CASCADE, null=True, blank=True)
     ornament_name = models.CharField(max_length=255, verbose_name="गहना")
+    gross_weight = models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        default=Decimal('0.000'),
+        verbose_name="Gross Weight (तोल)",
+    )
     weight = models.DecimalField(
         max_digits=10,
         decimal_places=3,
@@ -165,8 +171,36 @@ class Ornament(models.Model):
         blank=True,
         null=True
     )
-
-    jarti = models.CharField(max_length=50, blank=True, verbose_name="जर्ती")
+    zircon_weight=models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        default=Decimal('0.000'),
+        verbose_name="Zircon Weight",
+        blank=True,
+        null=True
+    )
+    stone_weight=models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        default=Decimal('0.000'),
+        verbose_name="Stone Weight (पत्थर तौल)",
+        blank=True,
+        null=True
+    )
+    jarti = models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        default=Decimal('0.000'),
+        blank=True,
+        null=True
+    )
+    jyala= models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        default=Decimal('0.000'),
+        blank=True,
+        null=True
+    )
     kaligar = models.ForeignKey(Kaligar, on_delete=models.CASCADE, related_name="ornaments")
     image=CloudinaryField('image',folder='ornaments/', blank=True, null=True)
     order = models.ForeignKey("order.Order", on_delete=models.SET_NULL, null=True, blank=True)

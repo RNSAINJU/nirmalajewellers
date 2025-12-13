@@ -3,10 +3,25 @@
 
 {% block content %}
 <div class="container mt-5">
+
     <h2 class="mb-4">
         {% if view.object %} Edit Ornament {% else %} Add New Ornament {% endif %}
     </h2>
 
+    <!-- Create buttons -->
+    <div class="d-flex justify-content-end mb-3 gap-2">
+        <a href="{% url 'ornament:createkaligar' %}" class="btn btn-success">
+            <i class="bi bi-person-plus-fill me-1"></i> Create Kaligar
+        </a>
+
+        <a href="{% url 'ornament:createmaincategory' %}" class="btn btn-success">
+            <i class="bi bi-person-plus-fill me-1"></i> Create MainCategory
+        </a>
+
+        <a href="{% url 'ornament:createsubcategory' %}" class="btn btn-success">
+            <i class="bi bi-person-plus-fill me-1"></i> Create Sub-Category
+        </a>
+    </div>
     <div class="card shadow">
         <div class="card-body">
             <form method="post" enctype="multipart/form-data">
@@ -77,13 +92,17 @@
                     
                     <!-- Main-Category -->
                     <div class="col-md-2 mb-3 col-sm-3">
-                        <label class="form-label">Main Category</label>
+                        <label class="form-label">Main Category
+                        </label>
                         <select id="id_maincategory" name="maincategory" class="form-select" required>
                         <option value="" disabled {% if not form.maincategory.value %}selected{% endif %}>Select Main-Category</option>
                             {% for maincategory in form.fields.maincategory.queryset %}
                         <option value="{{ maincategory.pk }}" {% if form.maincategory.value == maincategory.pk %}selected{% endif %}>{{ maincategory.name }}</option>
                             {% endfor %}
                         </select>
+
+
+
                         {% if form.maincategory.errors %}
                             <div class="text-danger small">{{ form.maincategory.errors }}</div>
                         {% endif %}
@@ -133,6 +152,24 @@
                         {% endif %}
                     </div>
 
+                    <!-- Gross Weight -->
+                    <div class="col-md-2 mb-2">
+                        <label class="form-label">Gross Weight (तोल)</label>
+                        <input
+                            type="number"
+                            id="gross_weight"
+                            name="gross_weight"
+                            class="form-control"
+                            step="0.001"
+                            value="{{ form.gross_weight.value|default:'' }}"
+                            placeholder="Enter Gross Weight"
+                            required
+                        />
+                        {% if form.weight.errors %}
+                            <div class="text-danger small">{{ form.gross_weight.errors }}</div>
+                        {% endif %}
+                    </div>
+
                     <!-- Metal Weight -->
                     <div class="col-md-2 mb-2">
                         <label class="form-label">Metal Weight (तोल)</label>
@@ -168,6 +205,40 @@
                         {% endif %}
                     </div>
 
+                    <!-- Zircon Weight -->
+                    <div class="col-md-2 mb-2">
+                        <label class="form-label">Zircon Weight</label>
+                        <input
+                            type="number"
+                            id="zircon_weight"
+                            name="zircon_weight"
+                            class="form-control"
+                            step="0.001"
+                            value="{{ form.zircon_weight.value|default:'' }}"
+                            placeholder="Enter Zircon weight"
+                        />
+                        {% if form.zircon_weight.errors %}
+                            <div class="text-danger small">{{ form.zircon_weight.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Stone Weight -->
+                    <div class="col-md-2 mb-2">
+                        <label class="form-label">Stone Weight</label>
+                        <input
+                            type="number"
+                            id="stone_weight"
+                            name="stone_weight"
+                            class="form-control"
+                            step="0.001"
+                            value="{{ form.stone_weight.value|default:'' }}"
+                            placeholder="Enter Diamond/Stones weight"
+                        />
+                        {% if form.stone_weight.errors %}
+                            <div class="text-danger small">{{ form.stone_weight.errors }}</div>
+                        {% endif %}
+                    </div>
+
           
                     <!-- Jarti Field -->
                     <div class="col-md-2 mb-2">
@@ -196,8 +267,25 @@
                         </div>
                     </div>
 
+                    <!-- Jyala Field -->
+                    <div class="col-md-2 mb-2">
+                        <label for="jyala" class="form-label">Jyala</label>
+                        <input
+                        type="number"
+                        id="id_jyala"
+                        name="jyala"
+                        class="form-control"
+                        step="0.001"
+                        value="{{ form.jyala.value|default:'' }}"
+                        placeholder="Enter Jyala"
+                    />
+                    {% if form.jyala.errors %}
+                    <div class="text-danger small">{{ form.jyala.errors }}</div>
+                {% endif %}
+                    </div>
+
                     <!-- Kaligar -->
-                    <div class="col-md-6">
+                    <div class="col-md-2">
                         <label class="form-label">Kaligar</label>
                         <select id="id_kaligar" name="kaligar" class="form-select" required>
                         <option value="" disabled {% if not form.kaligar.value %}selected{% endif %}>Select Kaligar</option>

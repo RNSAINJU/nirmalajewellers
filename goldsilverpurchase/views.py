@@ -134,8 +134,6 @@ def print_view(request):
     })
 
 
-
-
 def export_excel(request):
     view = PurchaseListView()
     view.request = request  # attach request
