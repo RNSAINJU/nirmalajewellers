@@ -145,7 +145,7 @@ def export_excel(request):
 
     headers = [
         "Bill No", "Bill Date (BS)", "Party Name","Pan No", "Metal",
-        "Particular", "Qty", "Rate", "Wages", "Amount", "Payment"
+        "Particular", "Qty", "Rate", "Wages", "Discount","Amount", "Payment"
     ]
     ws.append(headers)
 
@@ -160,6 +160,7 @@ def export_excel(request):
             p.quantity,
             p.rate,
             p.wages,
+            p.discount,
             p.amount,
             p.get_payment_mode_display()
         ])
