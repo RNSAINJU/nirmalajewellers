@@ -180,7 +180,7 @@ def export_excel(request):
     headers = [
         "Ornament Date", "Code", "Metal Type","Type", "Ornament Type",
         "MainCategory", "SubCategory", "Ornament Name", "Weight", "Diamond/Stones Weight", 
-        "Jarti","Kaligar","Image","Order","Created at","Updated at"
+        "Jarti","Jyala","Kaligar","Image","Order","Created at","Updated at"
     ]
     ws.append(headers)
 
@@ -197,6 +197,7 @@ def export_excel(request):
             o.weight,
             o.diamond_weight,
             o.jarti,
+            o.jyala,
             o.kaligar.name,
             str(o.image) if o.image else "",   # ★ convert Cloudinary resource to URL
             o.order,
@@ -267,6 +268,7 @@ def import_excel(request):
                         weight,
                         diamond_weight,
                         jarti,
+                        jyala,
                         kaligar_name,
                         image,
                         order,
@@ -337,6 +339,7 @@ def import_excel(request):
                     weight = to_decimal(weight),
                     diamond_weight = to_decimal(diamond_weight),
                     jarti=to_decimal(jarti)
+                    jyala=to_decimal(jyala)
 
                 # =============== 5️⃣ Create Purchase ===============
                 Ornament.objects.create(
@@ -351,6 +354,7 @@ def import_excel(request):
                     weight = weight,
                     diamond_weight = diamond_weight,
                     jarti=jarti,
+                    jyala=jyala,
                     kaligar=kaligar,
                     image=image,
                     order=Order,
