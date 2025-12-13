@@ -193,6 +193,23 @@ class Ornament(models.Model):
         blank=True,
         null=True
     )
+    stone_percaratprice=models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        default=Decimal('0.000'),
+        verbose_name="Stone Price",
+        blank=True,
+        null=True
+    )
+    
+    stone_totalprice=models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        default=Decimal('0.000'),
+        verbose_name="Stone Price",
+        blank=True,
+        null=True
+    )
     jarti = models.DecimalField(
         max_digits=10,
         decimal_places=3,
@@ -225,6 +242,7 @@ class Ornament(models.Model):
             weight_digits = str(self.weight).replace('.', '')[:2].ljust(2, '0')
             kaligar_letter = self.kaligar.name[0].upper()
             ornament_type_letter = self.ornament_type[0].upper()
-
+            stone_totalprice=self.stone_percaratprice * self.stone_weight
+            self.stone_totalprice=stone_totalprice
             self.code = f"{self.pk}{name_letter}{weight_digits}{kaligar_letter}{ornament_type_letter}"
-            super().save(update_fields=['code'])
+            super().save(update_fields=['code', 'stone_totalprice'])

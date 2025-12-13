@@ -239,6 +239,39 @@
                         {% endif %}
                     </div>
 
+                    <!-- Stone Weight -->
+                    <div class="col-md-2 mb-2">
+                        <label class="form-label">Stone perctprice</label>
+                        <input
+                            type="number"
+                            id="stone_percaratprice"
+                            name="stone_percaratprice"
+                            class="form-control"
+                            step="0.001"
+                            value="{{ form.stone_percaratprice.value|default:'' }}"
+                            placeholder="Enter Stone Per Carat Price"
+                        />
+                        {% if form.stone_percaratprice.errors %}
+                            <div class="text-danger small">{{ form.stone_percaratprice.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Stone Weight -->
+                    <div class="col-md-2 mb-2">
+                        <label class="form-label">Stone Total Price</label>
+                        <input
+                            type="number"
+                            id="stone_totalprice"
+                            name="stone_totalprice"
+                            class="form-control"
+                            step="0.001"
+                            value="{{ form.stone_totalprice.value|default:'' }}"
+                            placeholder="Enter Stone Total Price"
+                        />
+                        {% if form.stone_totalprice.errors %}
+                            <div class="text-danger small">{{ form.stone_totalprice.errors }}</div>
+                        {% endif %}
+                    </div>
           
                     <!-- Jarti Field -->
                     <div class="col-md-2 mb-2">

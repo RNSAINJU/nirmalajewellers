@@ -179,7 +179,9 @@ def export_excel(request):
 
     headers = [
         "Ornament Date", "Code", "Metal Type","Type", "Ornament Type",
-        "MainCategory", "SubCategory", "Ornament Name", "Weight", "Diamond/Stones Weight", 
+        "MainCategory", "SubCategory", "Ornament Name","Gross Weight",
+        "Weight", "Diamond/Stones Weight","Zircon Weight","Stone Weight",
+        "Stone Price Per Carat","Stone Total Price",
         "Jarti","Jyala","Kaligar","Image","Order","Created at","Updated at"
     ]
     ws.append(headers)
@@ -194,8 +196,13 @@ def export_excel(request):
             o.maincategory.name,
             o.subcategory.name,
             o.ornament_name,
+            o.gross_weight,
             o.weight,
             o.diamond_weight,
+            o.zircon_weight,
+            o.stone_weight,
+            o.stone_percaratprice,
+            o.stone_totalprice,
             o.jarti,
             o.jyala,
             o.kaligar.name,
@@ -265,8 +272,13 @@ def import_excel(request):
                         maincategory_name,
                         subcategory_name,
                         ornament_name,
+                        gross_weight,
                         weight,
                         diamond_weight,
+                        zircon_weight,
+                        stone_weight,
+                        stone_percaratprice,
+                        stone_totalprice,
                         jarti,
                         jyala,
                         kaligar_name,
@@ -336,10 +348,16 @@ def import_excel(request):
                     ornament_date = ndt.date.today()
 
                 # =============== 4️⃣ Convert all decimals safely ===============
+                    gross_weight= to_decimal(gross_weight),
                     weight = to_decimal(weight),
                     diamond_weight = to_decimal(diamond_weight),
+                    zircon_weight = to_decimal(zircon_weight),
+                    stone_weight    = to_decimal(stone_weight),
+                    stone_percaratprice= to_decimal(stone_percaratprice),    
+                    stone_totalprice=to_decimal(stone_totalprice),
                     jarti=to_decimal(jarti)
                     jyala=to_decimal(jyala)
+                    
 
                 # =============== 5️⃣ Create Purchase ===============
                 Ornament.objects.create(
@@ -351,8 +369,13 @@ def import_excel(request):
                     maincategory=maincategory,
                     subcategory=subcategory,
                     ornament_name=ornament_name,
+                    gross_weight=gross_weight,
                     weight = weight,
                     diamond_weight = diamond_weight,
+                    zircon_weight=zircon_weight,
+                    stone_weight=stone_weight,
+                    stone_percaratprice=stone_percaratprice,
+                    stone_totalprice=stone_totalprice,
                     jarti=jarti,
                     jyala=jyala,
                     kaligar=kaligar,
