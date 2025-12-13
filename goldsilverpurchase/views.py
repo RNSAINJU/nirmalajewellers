@@ -90,7 +90,7 @@ class PartyCreateView(CreateView):
     model = Party
     fields = ['party_name', 'panno']
     template_name = 'goldsilverpurchase/party_form.html'
-    success_url = reverse_lazy('gsp:list')
+    success_url = reverse_lazy('gsp:purchaselist')
 
 
 class PurchaseCreateView(CreateView):
@@ -101,7 +101,7 @@ class PurchaseCreateView(CreateView):
         'rate', 'wages', 'discount','amount', 'payment_mode'
     ]
     template_name = 'goldsilverpurchase/purchase_form.html'
-    success_url = reverse_lazy('gsp:list')
+    success_url = reverse_lazy('gsp:purchaselist')
 
 
 class PurchaseUpdateView(UpdateView):
@@ -109,16 +109,17 @@ class PurchaseUpdateView(UpdateView):
     fields = [
         'bill_no', 'bill_date', 'party',
         'particular', 'metal_type', 'quantity',
-        'rate', 'wages','discount', 'amount', 'payment_mode'
+        'rate', 'wages','discount', 'amount', 'payment_mode',
+        'is_paid', 'remarks'
     ]
     template_name = 'goldsilverpurchase/purchase_form.html'
-    success_url = reverse_lazy('gsp:list')
+    success_url = reverse_lazy('gsp:purchaselist')
 
 
 class PurchaseDeleteView(DeleteView):
     model = GoldSilverPurchase
     template_name = 'goldsilverpurchase/purchase_confirm_delete.html'
-    success_url = reverse_lazy('gsp:list')
+    success_url = reverse_lazy('gsp:purchaselist')
 
 
 
@@ -145,7 +146,7 @@ def export_excel(request):
 
     headers = [
         "Bill No", "Bill Date (BS)", "Party Name","Pan No", "Metal",
-        "Particular", "Qty", "Rate", "Wages", "Discount","Amount", "Payment"
+        "Particular", "Qty", "Rate", "Wages", "Discount","Amount", "Payment","Paid", "Remarks"
     ]
     ws.append(headers)
 
@@ -162,7 +163,9 @@ def export_excel(request):
             p.wages,
             p.discount,
             p.amount,
-            p.get_payment_mode_display()
+            p.payment_mode,
+            p.is_paid,
+            p.remarks
         ])
 
     # Auto column width
@@ -229,6 +232,8 @@ def import_excel(request):
                         discount,
                         amount,
                         payment_mode,
+                        is_paid,
+                        remarks
                     ) = row
                 except Exception:
                     messages.error(request, "Excel format is incorrect. Columns mismatch.")
@@ -278,6 +283,8 @@ def import_excel(request):
                     amount = amount,
                     discount = discount,
                     payment_mode=payment_mode,
+                    is_paid=bool(is_paid),
+                    remarks=remarks
                 )
 
                 imported += 1

@@ -267,22 +267,28 @@
                         </div>
                     </div>
 
-                    <!-- Jyala Field -->
+                                    <!-- Jyala Field -->
                     <div class="col-md-2 mb-2">
-                        <label for="jyala" class="form-label">Jyala</label>
-                        <input
-                        type="number"
-                        id="id_jyala"
-                        name="jyala"
-                        class="form-control"
-                        step="0.001"
-                        value="{{ form.jyala.value|default:'' }}"
-                        placeholder="Enter Jyala"
-                    />
-                    {% if form.jyala.errors %}
-                    <div class="text-danger small">{{ form.jyala.errors }}</div>
-                {% endif %}
+                        <label for="id_jyala" class="form-label">Jyala</label>
+                        <div class="input-group">
+                            <input
+                                type="number"
+                                id="id_jyala"
+                                name="jyala"
+                                class="form-control"
+                                step="0.001"
+                                value="{{ form.jyala.value|default:'' }}"
+                                placeholder="Enter Jyala"
+                                readonly
+                            />
+                            <button class="btn btn-outline-secondary" id="calculateButton" type="button">Calculate</button>
+                        </div>
+                       
+                        {% if form.jyala.errors %}
+                        <div class="text-danger small">{{ form.jyala.errors }}</div>
+                        {% endif %}
                     </div>
+
 
                     <!-- Kaligar -->
                     <div class="col-md-2">
@@ -397,6 +403,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+</script>
+<script>
+document.getElementById("calculateButton").addEventListener("click", function() {
+    // Get the value from the Gross Weight input
+    const grossWeight = parseFloat(document.getElementById("weight").value) || 0;
+
+    // Calculate Jyala
+    const jyala = grossWeight * 1800;
+
+    // Set the calculated value to the Jyala input field
+    document.getElementById("id_jyala").value = jyala.toFixed(3); // Set to 3 decimal places
+});
 </script>
 
 

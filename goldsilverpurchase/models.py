@@ -30,9 +30,8 @@ class GoldSilverPurchase(models.Model):
     class PaymentMode(models.TextChoices):
         CASH = 'cash', 'Cash'
         CARD = 'card', 'Card'
-        UPI = 'upi', 'UPI'
         BANK_TRANSFER = 'bank', 'Bank Transfer'
-        OTHER = 'other', 'Other'
+        FONEPAY = 'fonepay', 'Fonepay'
 
     bill_no = models.CharField(max_length=20, unique=True)
     bill_date = NepaliDateField(null=True, blank=True)
@@ -47,8 +46,8 @@ class GoldSilverPurchase(models.Model):
 
     particular = models.CharField(max_length=255, null=True, blank=True)
     metal_type = models.CharField(
-        max_length=6,
-        choices=[('gold', 'Gold'), ('silver', 'Silver')],
+        max_length=10,
+        choices=[('gold', 'Gold'), ('silver', 'Silver'),('diamond', 'Diamond')],
         default='gold'
     )
 
@@ -56,7 +55,7 @@ class GoldSilverPurchase(models.Model):
         max_digits=10,
         decimal_places=3,
         validators=[MinValueValidator(0)],
-        default=0
+        default=Decimal('0.000')
     )
 
     rate = models.DecimalField(
@@ -91,14 +90,30 @@ class GoldSilverPurchase(models.Model):
         default=PaymentMode.CASH
     )
 
+    # Status and tracking
+    is_paid = models.BooleanField(default=True)
+    remarks = models.TextField(blank=True, null=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        verbose_name = "Gold/Silver Purchase"
+        verbose_name_plural = "Gold/Silver Purchases"
+        ordering = ['-bill_date', '-created_at']
+        indexes = [
+            models.Index(fields=['bill_no']),
+            models.Index(fields=['party', 'bill_date']),
+            models.Index(fields=['metal_type', 'bill_date']),
+        ]
+    
     def __str__(self):
-        return f"{self.bill_no} - {self.particular}"
+        return f"{self.bill_no} - {self.particular or self.product_name}"
 
     def save(self, *args, **kwargs):
-        self.quantity = self.quantity or Decimal('0.00')
+            # Ensure Decimal values
+        if isinstance(self.quantity, (int, float)):
+            self.quantity = Decimal(str(self.quantity))
         self.rate = self.rate or Decimal('0.00')
         self.wages = self.wages or Decimal('0.00')
         self.discount = self.discount or Decimal('0.00')
@@ -112,3 +127,35 @@ class GoldSilverPurchase(models.Model):
             self.amount = Decimal('0.00')
 
         super().save(*args, **kwargs)
+
+    @property
+    def subtotal(self):
+        """Calculate subtotal without wages and discount"""
+        return (self.quantity * self.rate).quantize(Decimal('0.01'))
+    
+    # @property
+    # def total_weight(self):
+    #     """Get total weight in grams"""
+    #     return self.quantity  # Already in grams if that's your unit
+    
+    # @property
+    # def net_amount(self):
+    #     """Calculate net amount (same as amount field)"""
+    #     return (self.subtotal + self.wages - self.discount).quantize(Decimal('0.01'))
+    
+    # def clean(self):
+    #     """Additional validation"""
+    #     from django.core.exceptions import ValidationError
+        
+    #     # Ensure quantity is positive if rate is positive
+    #     if self.rate > 0 and self.quantity <= 0:
+    #         raise ValidationError({
+    #             'quantity': 'Quantity must be greater than 0 when rate is positive.'
+    #         })
+        
+    #     # Ensure discount doesn't exceed subtotal + wages
+    #     max_discount = self.subtotal + self.wages
+    #     if self.discount > max_discount:
+    #         raise ValidationError({
+    #             'discount': f'Discount cannot exceed {max_discount}.'
+    #         })
