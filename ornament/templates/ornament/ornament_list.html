@@ -38,27 +38,24 @@
                        value="{{ request.GET.name }}">
             </div>
 
+            <!-- NEW Metal Type Filter -->
             <div class="col-md-2">
                 <label>Metal Type</label>
                 <select name="metal_type" class="form-select">
                     <option value="">All</option>
-                    {% for mt, mt_label in metal_types %}
-                        <option value="{{ mt }}" {% if request.GET.metal_type == mt %}selected{% endif %}>
-                            {{ mt_label }}
-                        </option>
-                    {% endfor %}
+                    <option value="Gold" {% if metal_type == "Gold" %}selected{% endif %}>Gold</option>
+                    <option value="Silver" {% if metal_type == "Silver" %}selected{% endif %}>Silver</option>
                 </select>
             </div>
 
             <div class="col-md-2">
-                <label>Type</label>
+                <label>Karat</label>
                 <select name="type" class="form-select">
                     <option value="">All</option>
-                    {% for t, t_label in types %}
-                        <option value="{{ t }}" {% if request.GET.type == t %}selected{% endif %}>
-                            {{ t_label }}
-                        </option>
-                    {% endfor %}
+                    <option value="24KARAT" {% if type == "Gold" %}selected{% endif %}>24 Karat</option>
+                    <option value="22KARAT" {% if type == "Silver" %}selected{% endif %}>22 Karat'</option>
+                    <option value="18KARAT" {% if type == "Silver" %}selected{% endif %}>18 Karat</option>
+                    <option value="14KARAT" {% if type == "Silver" %}selected{% endif %}>14 Karat</option>
                 </select>
             </div>
 
@@ -66,11 +63,8 @@
                 <label>Ornament Type</label>
                 <select name="ornament_type" class="form-select">
                     <option value="">All</option>
-                    {% for ot, ot_label in ornament_types %}
-                        <option value="{{ ot }}" {% if request.GET.ornament_type == ot %}selected{% endif %}>
-                            {{ ot_label }}
-                        </option>
-                    {% endfor %}
+                    <option value="stock" {% if type == "stock" %}selected{% endif %}>Stock</option>
+                    <option value="order" {% if type == "order" %}selected{% endif %}>Order</option>
                 </select>
             </div>
 
@@ -222,9 +216,9 @@
 
             <tfoot>
                 <tr class="table-info">
-                    <th colspan="6">TOTAL WEIGHT</th>
+                    <th colspan="10">TOTAL WEIGHT</th>
                     <th>{{ total_weight|floatformat:3 }}</th>
-                    <th colspan="6"></th>
+                    <th colspan="12"></th>
                 </tr>
             </tfoot>
 

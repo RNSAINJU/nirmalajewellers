@@ -51,6 +51,15 @@ class OrnamentListView(ListView):
         start_date = self.request.GET.get("start_date")
         end_date = self.request.GET.get("end_date")
         kaligar_id = self.request.GET.get('kaligar')
+        search=self.request.GET.get('search')
+
+        if search:
+            qs = qs.filter(
+            Q(weight__icontains=search) |
+            Q(diamond_weight__icontains=search) |
+            Q(ornament_name__icontains=search) |
+            Q(gross_weight__icontains=search)
+    )
 
         if code:
             qs = qs.filter(code__icontains=code)

@@ -9,8 +9,14 @@ from cloudinary.models import CloudinaryField
 class MainCategory(models.Model):
     name = models.CharField(max_length=255)
 
+    def __str__(self):
+        return self.name
+
 class SubCategory(models.Model):
     name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
 
 class Kaligar(models.Model):
     name = models.CharField(max_length=255)
@@ -123,17 +129,17 @@ class Ornament(models.Model):
         FOURTEENKARAT = '14KARAT', '14 Karat'
     
     class MetalTypeCategory(models.TextChoices):
-        Gold = 'Gold', 'gold'
-        Silver = 'Silver', 'silver'
-        Diamond = 'Diamond', 'diamond'
-        Others = 'Others', 'others'
+        GOLD = 'Gold', 'Gold'
+        SILVER = 'Silver', 'Silver'
+        DIAMOND = 'Diamond', 'Diamond'
+        OTHERS = 'Others', 'Others'
 
     ornament_date = NepaliDateField(null=True, blank=True)
     code = models.CharField(max_length=50, verbose_name="Code / नं.", null=True, blank=True, unique=True)
     metal_type=models.CharField(
         max_length=50,
         choices=MetalTypeCategory.choices,
-        default= MetalTypeCategory.Gold,
+        default= MetalTypeCategory.GOLD,
         )
     type = models.CharField(
         max_length=10,
@@ -211,49 +217,14 @@ class Ornament(models.Model):
         return f"{self.code or 'NEW'} - {self.ornament_name}"
 
     def save(self, *args, **kwargs):
-        # Generate code only for create or when required fields have changed
-        is_new = self._state.adding or self.pk is None
+        creating = self.pk is None
+        super().save(*args, **kwargs)
 
-        super_save = super().save
-
-            # We defer code generation until after first save (so instance gets an id)
-        if is_new:
-            # Temporarily set code to empty to avoid unique constraint error
-            self.code = ""
-            super_save(*args, **kwargs)
-            pk_str = str(self.pk)
-            name_letter = (self.ornament_name[0].upper() if self.ornament_name else "")
-            weight_str = f"{self.weight:.3f}" if self.weight is not None else "0.000"
-            weight_digits = weight_str.replace(".", "")[:2]  # first two significant digits (ignoring dot)
-            if len(weight_digits) < 2:
-                weight_digits = weight_digits.ljust(2, "0")
+        if creating:
+            name_letter = self.ornament_name[0].upper()
+            weight_digits = str(self.weight).replace('.', '')[:2].ljust(2, '0')
             kaligar_letter = self.kaligar.name[0].upper()
             ornament_type_letter = self.ornament_type[0].upper()
-            gen_code = f"{pk_str}{name_letter}{weight_digits}{kaligar_letter}{ornament_type_letter}"
-            self.code = gen_code
-            # Save again to update the code field
-            update_fields = ["code"]
-            super().save(update_fields=update_fields)
-        else:
-            # For update, regenerate if any of the relevant fields have changed
-            orig = type(self).objects.filter(pk=self.pk).first()
-            code_fields = ['ornament_name', 'weight', 'kaligar', 'ornament_type']
-            should_update = False
-            if orig:
-                for field in code_fields:
-                    if getattr(orig, field) != getattr(self, field):
-                        should_update = True
-                        break
-            if should_update:
-                pk_str = str(self.pk)
-                name_letter = (self.ornament_name[0].upper() if self.ornament_name else "")
-                weight_str = f"{self.weight:.3f}" if self.weight is not None else "0.000"
-                weight_digits = weight_str.replace(".", "")[:2]
-                if len(weight_digits) < 2:
-                    weight_digits = weight_digits.ljust(2, "0")
-                kaligar_letter =self.kaligar.name[0].upper()
-                ornament_type_letter = self.ornament_type[0].upper()
-                gen_code = f"{pk_str}{name_letter}{weight_digits}{kaligar_letter}{ornament_type_letter}"
-                self.code = gen_code
-            super_save(*args, **kwargs)
-        return
+
+            self.code = f"{self.pk}{name_letter}{weight_digits}{kaligar_letter}{ornament_type_letter}"
+            super().save(update_fields=['code'])

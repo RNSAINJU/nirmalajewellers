@@ -293,3 +293,12 @@ def import_excel(request):
             return redirect("gsp:gsp_import_excel")
 
     return render(request, "goldsilverpurchase/import_excel.html")
+
+
+def dashboard(request):
+    total_purchase = GoldSilverPurchase.objects.aggregate(Sum('amount'))['amount__sum'] or 0
+    
+    context = {
+        'total_purchase': total_purchase,
+    }
+    return render(request, 'goldsilverpurchase/dashboard.html', context)
