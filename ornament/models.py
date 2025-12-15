@@ -226,18 +226,7 @@ class Ornament(models.Model):
 
         if not self.code:
             name_letter = self.ornament_name[0].upper() if self.ornament_name else 'X'
-
-            # Weight: 1 integer digit + 1 decimal digit
-            weight_int = int(self.weight)
-            weight_decimal = int((self.weight % 1) * 10)
-            weight_digits = f"{weight_int}{weight_decimal}"
-
-            # Diamond weight: 3 digits total, 2 decimal digits
-            diamond_value = float(self.diamond_weight or 0)
-            diamond_digits = str(int(round(diamond_value * 100))).zfill(3)
-
             kaligar_letter = self.kaligar.name[0].upper() if self.kaligar else 'X'
             ornament_type_letter = self.ornament_type[0].upper() if self.ornament_type else 'X'
-
-            self.code = f"{self.pk}{name_letter}{weight_digits}{diamond_digits}{kaligar_letter}{ornament_type_letter}"
+            self.code = f"{name_letter}{kaligar_letter}{ornament_type_letter}{self.pk}"
             super().save(update_fields=['code'])

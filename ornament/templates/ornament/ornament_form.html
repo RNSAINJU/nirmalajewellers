@@ -423,8 +423,6 @@ document.getElementById("calculateButton").addEventListener("click", function() 
 document.addEventListener("DOMContentLoaded", function () {
 
 const nameInput = document.getElementById("id_ornament_name");
-const weightInput = document.getElementById("weight");
-const diamondweightInput = document.getElementById("diamond_weight");
 const kaligarSelect = document.getElementById("id_kaligar");
 const ornamentTypeSelect = document.getElementById("ornament_type");
 const codePreview = document.getElementById("id_code_preview");
@@ -432,8 +430,6 @@ const codePreview = document.getElementById("id_code_preview");
 function generateCode() {
     if (
         !nameInput.value ||
-        !weightInput.value ||
-        !diamondweightInput.value ||
         !kaligarSelect.value ||
         !ornamentTypeSelect.value
     ) {
@@ -442,23 +438,13 @@ function generateCode() {
     }
 
     const nameLetter = nameInput.value.trim().charAt(0).toUpperCase();
-
-    // Weight: 1 integer digit + 1 decimal digit
-    let weightValue = parseFloat(weightInput.value);
-    let weightDigits = Math.floor(weightValue).toString() + 
-                       Math.floor((weightValue % 1) * 10).toString();
-
-    // Diamond weight: 3 digits including 2 decimal digits
-    let diamondValue = parseFloat(diamondweightInput.value);
-    let diamondDigits = Math.floor(diamondValue * 100).toString().padStart(3, '0');
-
     const kaligarLetter =
         kaligarSelect.options[kaligarSelect.selectedIndex].text.trim().charAt(0).toUpperCase();
     const ornamentTypeLetter =
         ornamentTypeSelect.options[ornamentTypeSelect.selectedIndex].text.trim().charAt(0).toUpperCase();
 
     // Temporary PK placeholder
-    codePreview.value = `PK${nameLetter}${weightDigits}${diamondDigits}${kaligarLetter}${ornamentTypeLetter}`;
+    codePreview.value = `${nameLetter}${weightDigits}${diamondDigits}${kaligarLetter}${ornamentTypeLetter}PK`;
 }
 
 [nameInput, weightInput, diamondweightInput, kaligarSelect, ornamentTypeSelect].forEach(el => {
