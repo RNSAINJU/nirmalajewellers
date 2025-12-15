@@ -20,14 +20,15 @@
     <thead>
         <tr>
             <th>SN</th>
-            <th>Image</th>
             <th>Date</th>
             <th>Code</th>
             <th>Ornament Name</th>
             <th>Type</th>
+            <th>Gross Weight</th>
             <th>Weight</th>
             <th>Diamond Weight</th>
-            <th>Jarti</th>
+            <th>Zircon Weight</th>
+            <th>Stone Weight</th>
             <th>Kaligar</th>
             <th>Ornament Type</th>
         </tr>
@@ -36,20 +37,16 @@
     {% for o in ornament %}
         <tr>
             <td>{{ o.id }}</td>
-            <td> {% if o.image %}
-                <img src="{{ o.image.url }}" width="50" height="50" class="rounded border">
-            {% else %}
-                <span class="text-muted">No Image</span>
-            {% endif %}
-            </td>
             <td>{{ o.ornament_date }}</td>
             <td>{{ o.code }}</td>
             <td>{{ o.ornament_name }}</td>
-            <td>{{ o.get_type_display }}</td>
-            <td>{{ o.weight }}</td>
-            <td>{{ o.diamond_weight }}</td>
-            <td>{{ o.jarti }}</td>
-            <td>{{ o.kaligar }}</td>
+            <td>{{ o.get_metal_type_display }}</td>
+            <td>{{ o.gross_weight }}</td>
+            <td>{{ o.weight }}g</td>
+            <td>{{ o.diamond_weight }}ct</td>
+            <td>{{ o.zircon_weight }}ct</td>
+            <td>{{ o.diamond_weight }}ct</td>
+            <td>{{ o.stone_weight }}</td>
             <td>{{ o.get_ornament_type_display }}</td>
         </tr>
     {% endfor %}
