@@ -63,7 +63,7 @@
                     <div class="col-md-2 mb-3 col-sm-3">
                       <!-- {{ form.metal_type }} -->
                       <label class="form-label">Metal Type</label>
-                        <select id="metal_type" name="metal_type" class="form-select" required>
+                        <select id="id_metal_type" name="metal_type" class="form-select" required>
                             <option value="" disabled {% if not form.metal_type.value %}selected{% endif %}>Select Metal Type</option>
                             {% for key, value in form.fields.metal_type.choices %}
                                 <option value="{{ key }}" {% if form.metal_type.value == key %}selected{% endif %}>{{ value }}</option>
@@ -423,6 +423,9 @@ document.getElementById("calculateButton").addEventListener("click", function() 
 document.addEventListener("DOMContentLoaded", function () {
 
 const nameInput = document.getElementById("id_ornament_name");
+const metaltypeSelect = document.getElementById("id_metal_type");
+const maincategorySelect = document.getElementById("id_maincategory");
+const subcategorySelect = document.getElementById("id_subcategory");
 const kaligarSelect = document.getElementById("id_kaligar");
 const ornamentTypeSelect = document.getElementById("ornament_type");
 const codePreview = document.getElementById("id_code_preview");
@@ -430,6 +433,9 @@ const codePreview = document.getElementById("id_code_preview");
 function generateCode() {
     if (
         !nameInput.value ||
+        !metaltypeSelect ||
+        !maincategorySelect.value ||
+        !subcategorySelect.value ||
         !kaligarSelect.value ||
         !ornamentTypeSelect.value
     ) {
@@ -438,16 +444,22 @@ function generateCode() {
     }
 
     const nameLetter = nameInput.value.trim().charAt(0).toUpperCase();
+    const metaltypeLetter =
+    metaltypeSelect.options[metaltypeSelect.selectedIndex].text.trim().charAt(0).toUpperCase();
+    const maincategoryLetter =
+    maincategorySelect.options[maincategorySelect.selectedIndex].text.trim().charAt(0).toUpperCase();
+    const subcategoryLetter =
+    subcategorySelect.options[subcategorySelect.selectedIndex].text.trim().charAt(0).toUpperCase();
     const kaligarLetter =
         kaligarSelect.options[kaligarSelect.selectedIndex].text.trim().charAt(0).toUpperCase();
     const ornamentTypeLetter =
         ornamentTypeSelect.options[ornamentTypeSelect.selectedIndex].text.trim().charAt(0).toUpperCase();
 
     // Temporary PK placeholder
-    codePreview.value = `${nameLetter}${weightDigits}${diamondDigits}${kaligarLetter}${ornamentTypeLetter}PK`;
+    codePreview.value = `${nameLetter}${metaltypeLetter}${subcategoryLetter}${maincategoryLetter}${kaligarLetter}${ornamentTypeLetter}PK`;
 }
 
-[nameInput, weightInput, diamondweightInput, kaligarSelect, ornamentTypeSelect].forEach(el => {
+[nameInput,metaltypeSelect,maincategorySelect,subcategorySelect,kaligarSelect, ornamentTypeSelect].forEach(el => {
     el.addEventListener("input", generateCode);
     el.addEventListener("change", generateCode);
 });

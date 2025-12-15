@@ -226,7 +226,9 @@ class Ornament(models.Model):
 
         if not self.code:
             name_letter = self.ornament_name[0].upper() if self.ornament_name else 'X'
+            sub_category= self.subcategory.name[0].upper() if self.subcategory else 'X'
+            main_category= self.maincategory.name[0].upper() if self.maincategory else 'X'
             kaligar_letter = self.kaligar.name[0].upper() if self.kaligar else 'X'
             ornament_type_letter = self.ornament_type[0].upper() if self.ornament_type else 'X'
-            self.code = f"{name_letter}{kaligar_letter}{ornament_type_letter}{self.pk}"
+            self.code = f"{name_letter}{sub_category}{main_category}{kaligar_letter}{ornament_type_letter}{self.pk}"
             super().save(update_fields=['code'])

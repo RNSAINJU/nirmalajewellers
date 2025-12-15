@@ -157,11 +157,12 @@ class OrnamentDeleteView(DeleteView):
 
 
 def print_view(request):
-    view = OrnamentListView()
-    view.request = request  # attach request
-    ornament = view.get_queryset()
+    ornament = Ornament.objects.filter(id__gte=1).order_by('id')
 
-    total_weight = ornament.aggregate(total=Sum('weight'))['total'] or 0
+    total_weight = ornament.aggregate(
+        total=Sum('weight')
+    )['total'] or 0
+
     return render(request, "ornament/print_view.html", {
         "ornament": ornament,
         "total_weight": total_weight
