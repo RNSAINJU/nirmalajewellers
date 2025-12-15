@@ -123,17 +123,17 @@
                         {% endif %}
                     </div>
 
-                    <!-- Ornament Code (auto-generated) -->
-                    <!-- <div class="col-md-6">
-                      <label class="form-label">Ornament Code</label>
-                      <input
-                          type="text"
-                          id="id_code_preview"
-                          class="form-control"
-                          placeholder="Code will be generated automatically"
-                          readonly
-                      />
-                    </div> -->
+                    <div class="col-md-3 mb-2">
+                        <label class="form-label">Ornament Code</label>
+                        <input
+                            type="text"
+                            id="id_code_preview"
+                            class="form-control bg-light"
+                            placeholder="Code will be generated automatically"
+                            readonly
+                        />
+                    </div>
+                    
 
                     <!-- Ornament Name -->
                     <div class="col-md-2 mb-3">
@@ -301,7 +301,7 @@
                     </div>
 
                                     <!-- Jyala Field -->
-                    <div class="col-md-2 mb-2">
+                    <div class="col-md-3">
                         <label for="id_jyala" class="form-label">Jyala</label>
                         <div class="input-group">
                             <input
@@ -370,73 +370,41 @@
 <!-- Jarti Button Script -->
 
 <script>
-    $(document).ready(function() {
-        // Initialize all inputs with class 'nepali-date'
-        $(".nepali-date").nepaliDatePicker({
-            dateFormat: "YYYY-MM-DD",
-            closeOnDateSelect: true
+    document.addEventListener("DOMContentLoaded", function () {
+    
+        const buttons = document.querySelectorAll(".jarti-btn");
+        const jartiInput = document.getElementById("id_jarti");
+        const weightInput = document.getElementById("weight");
+    
+        buttons.forEach(button => {
+            button.addEventListener("click", function () {
+    
+                const percent = parseFloat(this.dataset.value);
+                const weight = parseFloat(weightInput.value);
+    
+                if (!weight || weight <= 0) {
+                    alert("Please enter Metal Weight first");
+                    return;
+                }
+    
+                const jarti = (weight * percent) / 100;
+                jartiInput.value = jarti.toFixed(3);
+    
+                // Button highlight
+                buttons.forEach(btn => {
+                    btn.classList.remove("btn-primary");
+                    btn.classList.add("btn-outline-primary");
+                });
+    
+                this.classList.remove("btn-outline-primary");
+                this.classList.add("btn-primary");
+            });
         });
+    
     });
     </script>
 
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    const buttons = document.querySelectorAll(".jarti-btn");
-    const jartiInput = document.getElementById("id_jarti");
-    const weightInput = document.getElementById("weight");
-
-    function calculateJarti(percent) {
-        const weight = parseFloat(weightInput.value) || 0;
-        const jarti = (weight * (percent / 100)).toFixed(3);
-        jartiInput.value = jarti;
-    }
-
-    buttons.forEach(btn => {
-        btn.addEventListener("click", function () {
-            const percent = parseFloat(this.dataset.value);
-            calculateJarti(percent);
-
-            // Highlight selected button
-            buttons.forEach(b => b.classList.remove("btn-primary"));
-            buttons.forEach(b => b.classList.add("btn-outline-primary"));
-
-            this.classList.remove("btn-outline-primary");
-            this.classList.add("btn-primary");
-        });
-    });
-
-    // Keep selection active after form reload
-    const currentValue = parseFloat(jartiInput.value) || 0;
-    if (currentValue && weightInput.value) {
-        buttons.forEach(btn => {
-            const percent = parseFloat(btn.dataset.value);
-            const expected = (parseFloat(weightInput.value) * (percent / 100)).toFixed(3);
-            if (expected == currentValue.toFixed(3)) {
-                btn.classList.remove("btn-outline-primary");
-                btn.classList.add("btn-primary");
-            }
-        });
-    }
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-    const fileInput = document.getElementById("id_image");
-    const preview = document.getElementById("image-preview");
-    if (fileInput) {
-      fileInput.addEventListener("change", function () {
-        const file = this.files[0];
-        if (file) {
-          preview.src = URL.createObjectURL(file);
-          preview.style.display = "block";
-        } else {
-          preview.src = "";
-          preview.style.display = "none";
-        }
-      });
-    }
-  });
-
-</script>
+    <!-- Jyala javascript -->
 <script>
 document.getElementById("calculateButton").addEventListener("click", function() {
     // Get the value from the Gross Weight input
@@ -448,7 +416,61 @@ document.getElementById("calculateButton").addEventListener("click", function() 
     // Set the calculated value to the Jyala input field
     document.getElementById("id_jyala").value = jyala.toFixed(3); // Set to 3 decimal places
 });
+
 </script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+const nameInput = document.getElementById("id_ornament_name");
+const weightInput = document.getElementById("weight");
+const diamondweightInput = document.getElementById("diamond_weight");
+const kaligarSelect = document.getElementById("id_kaligar");
+const ornamentTypeSelect = document.getElementById("ornament_type");
+const codePreview = document.getElementById("id_code_preview");
+
+function generateCode() {
+    if (
+        !nameInput.value ||
+        !weightInput.value ||
+        !diamondweightInput.value ||
+        !kaligarSelect.value ||
+        !ornamentTypeSelect.value
+    ) {
+        codePreview.value = "";
+        return;
+    }
+
+    const nameLetter = nameInput.value.trim().charAt(0).toUpperCase();
+
+    // Weight: 1 integer digit + 1 decimal digit
+    let weightValue = parseFloat(weightInput.value);
+    let weightDigits = Math.floor(weightValue).toString() + 
+                       Math.floor((weightValue % 1) * 10).toString();
+
+    // Diamond weight: 3 digits including 2 decimal digits
+    let diamondValue = parseFloat(diamondweightInput.value);
+    let diamondDigits = Math.floor(diamondValue * 100).toString().padStart(3, '0');
+
+    const kaligarLetter =
+        kaligarSelect.options[kaligarSelect.selectedIndex].text.trim().charAt(0).toUpperCase();
+    const ornamentTypeLetter =
+        ornamentTypeSelect.options[ornamentTypeSelect.selectedIndex].text.trim().charAt(0).toUpperCase();
+
+    // Temporary PK placeholder
+    codePreview.value = `PK${nameLetter}${weightDigits}${diamondDigits}${kaligarLetter}${ornamentTypeLetter}`;
+}
+
+[nameInput, weightInput, diamondweightInput, kaligarSelect, ornamentTypeSelect].forEach(el => {
+    el.addEventListener("input", generateCode);
+    el.addEventListener("change", generateCode);
+});
+
+});
+
+
+</script>
+
 
 
 {% endblock %}

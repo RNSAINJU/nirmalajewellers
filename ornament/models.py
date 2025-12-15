@@ -174,8 +174,6 @@ class Ornament(models.Model):
         decimal_places=3,
         default=Decimal('0.000'),
         verbose_name="Diamond Weight (हिरा / पत्थर तौल)",
-        blank=True,
-        null=True
     )
     zircon_weight=models.DecimalField(
         max_digits=10,
@@ -190,16 +188,12 @@ class Ornament(models.Model):
         decimal_places=3,
         default=Decimal('0.000'),
         verbose_name="Stone Weight (पत्थर तौल)",
-        blank=True,
-        null=True
     )
     stone_percaratprice=models.DecimalField(
         max_digits=10,
         decimal_places=3,
         default=Decimal('0.000'),
         verbose_name="Stone Price",
-        blank=True,
-        null=True
     )
     
     stone_totalprice=models.DecimalField(
@@ -207,22 +201,16 @@ class Ornament(models.Model):
         decimal_places=3,
         default=Decimal('0.000'),
         verbose_name="Stone Price",
-        blank=True,
-        null=True
     )
     jarti = models.DecimalField(
         max_digits=10,
         decimal_places=3,
         default=Decimal('0.000'),
-        blank=True,
-        null=True
     )
     jyala= models.DecimalField(
         max_digits=10,
         decimal_places=3,
         default=Decimal('0.000'),
-        blank=True,
-        null=True
     )
     kaligar = models.ForeignKey(Kaligar, on_delete=models.CASCADE, related_name="ornaments")
     image=CloudinaryField('image',folder='ornaments/', blank=True, null=True)
@@ -234,15 +222,22 @@ class Ornament(models.Model):
         return f"{self.code or 'NEW'} - {self.ornament_name}"
 
     def save(self, *args, **kwargs):
-        creating = self.pk is None
-        super().save(*args, **kwargs)
+        super().save(*args, **kwargs)  # Save first to get PK
 
-        if creating:
-            name_letter = self.ornament_name[0].upper()
-            weight_digits = str(self.weight).replace('.', '')[:2].ljust(2, '0')
-            kaligar_letter = self.kaligar.name[0].upper()
-            ornament_type_letter = self.ornament_type[0].upper()
-            stone_totalprice=self.stone_percaratprice * self.stone_weight
-            self.stone_totalprice=stone_totalprice
-            self.code = f"{self.pk}{name_letter}{weight_digits}{kaligar_letter}{ornament_type_letter}"
-            super().save(update_fields=['code', 'stone_totalprice'])
+        if not self.code:
+            name_letter = self.ornament_name[0].upper() if self.ornament_name else 'X'
+
+            # Weight: 1 integer digit + 1 decimal digit
+            weight_int = int(self.weight)
+            weight_decimal = int((self.weight % 1) * 10)
+            weight_digits = f"{weight_int}{weight_decimal}"
+
+            # Diamond weight: 3 digits total, 2 decimal digits
+            diamond_value = float(self.diamond_weight or 0)
+            diamond_digits = str(int(round(diamond_value * 100))).zfill(3)
+
+            kaligar_letter = self.kaligar.name[0].upper() if self.kaligar else 'X'
+            ornament_type_letter = self.ornament_type[0].upper() if self.ornament_type else 'X'
+
+            self.code = f"{self.pk}{name_letter}{weight_digits}{diamond_digits}{kaligar_letter}{ornament_type_letter}"
+            super().save(update_fields=['code'])

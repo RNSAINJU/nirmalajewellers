@@ -182,7 +182,7 @@ def export_excel(request):
         "MainCategory", "SubCategory", "Ornament Name","Gross Weight",
         "Weight", "Diamond/Stones Weight","Zircon Weight","Stone Weight",
         "Stone Price Per Carat","Stone Total Price",
-        "Jarti","Jyala","Kaligar","Image","Order","Created at","Updated at"
+        "Jarti","Jyala","Kaligar","Image","Order","Created at","Updated at","Status"
     ]
     ws.append(headers)
 
@@ -209,7 +209,8 @@ def export_excel(request):
             str(o.image) if o.image else "",   # ★ convert Cloudinary resource to URL
             o.order,
             str(o.created_at),
-            str(o.updated_at)
+            str(o.updated_at),
+            "fetched"
         ])
 
     # Auto column width
@@ -285,11 +286,18 @@ def import_excel(request):
                         image,
                         order,
                         created_at,
-                        updated_at
+                        updated_at,
+                        status
                     ) = row
                 except Exception:
                     messages.error(request, "Excel format is incorrect. Columns mismatch.")
-                    return redirect("gsp:gsp_import_excel")
+                    return redirect("ornament:import_excel")
+
+                # =============== 1️⃣ Status  Check if it already fetched===============
+                if status == "fetched":
+                    skipped += 1
+                    continue
+
 
                 # =============== 1️⃣ Duplicate Bill Check ===============
                 if Ornament.objects.filter(code=str(code)).exists():
@@ -302,9 +310,9 @@ def import_excel(request):
                 if maincategory_name:
                     maincategory = MainCategory.objects.filter(name=str(maincategory_name)).first()
 
-                if not maincategory_name:
+                if not maincategory:
                     maincategory = MainCategory.objects.create(
-                        name=maincategory_name or "Unknown",
+                        name=maincategory_name or "Unknown"
                     )
 
                 # =============== 2️⃣ Find/Create Sub Category ===============
@@ -313,7 +321,7 @@ def import_excel(request):
                 if subcategory_name:
                     subcategory = SubCategory.objects.filter(name=str(subcategory_name)).first()
 
-                if not subcategory_name:
+                if not subcategory:
                     subcategory = SubCategory.objects.create(
                         name=subcategory_name or "Unknown",
                     )
@@ -324,9 +332,13 @@ def import_excel(request):
                 if kaligar_name:
                     kaligar = Kaligar.objects.filter(name=str(kaligar_name)).first()
 
-                if not kaligar_name:
+                if not kaligar:
                     kaligar = Kaligar.objects.create(
                         name=kaligar_name or "Unknown",
+                        phone_no="",
+                        panno=123456789,
+                        address="",
+                        stamp=""
                     )
 
                 # =============== 2️⃣ Find/Create Order ===============
@@ -391,7 +403,7 @@ def import_excel(request):
                 request,
                 f"Imported: {imported} | Skipped duplicates: {skipped}"
             )
-            return redirect("gsp:list")
+            return redirect("ornament:list")
 
         except Exception as e:
             messages.error(request, f"Error while importing: {e}")
