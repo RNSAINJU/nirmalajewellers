@@ -3,8 +3,8 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from .models import GoldSilverPurchase, Party
 from django.db.models import Sum
 import nepali_datetime as ndt
-import openpyxl
-from openpyxl.utils import get_column_letter
+# import openpyxl
+# from openpyxl.utils import get_column_letter
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.db.models import Q
@@ -300,12 +300,3 @@ def import_excel(request):
             return redirect("gsp:gsp_import_excel")
 
     return render(request, "goldsilverpurchase/import_excel.html")
-
-
-def dashboard(request):
-    total_purchase = GoldSilverPurchase.objects.aggregate(Sum('amount'))['amount__sum'] or 0
-    
-    context = {
-        'total_purchase': total_purchase,
-    }
-    return render(request, 'goldsilverpurchase/dashboard.html', context)

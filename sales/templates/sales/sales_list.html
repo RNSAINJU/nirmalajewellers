@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% load bs_filters %}
+
+{% block content %}
+
+<div class="container mt-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">Sales List</h1>
+    <div class="d-flex" style="gap:10px;">
+      <a href="{% url 'sales:sale_create' %}" class="btn btn-primary">Create Sale</a>
+      <a href="{% url 'sales:import_excel' %}" class="btn btn-success">
+        <i class="bi bi-file-earmark-arrow-up"></i> Import Excel
+      </a>
+      <a href="{% url 'sales:export_excel' %}" class="btn btn-success">
+        <i class="bi bi-file-earmark-excel-fill"></i> Excel
+      </a>
+      <a href="{% url 'sales:print_view' %}" class="btn btn-dark" target="_blank">
+        <i class="bi bi-printer-fill"></i> Print
+      </a>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped">
+      <thead class="table-dark">
+        <tr>
+          <th>Bill No</th>
+          <th>Sale Date</th>
+          <th>Order No</th>
+          <th>Order Date</th>
+          <th>Customer</th>
+          <th>Phone</th>
+          <th>Ornaments</th>
+          <th>Amount</th>
+          <th>Discount</th>
+          <th>Subtotal</th>
+          <th>Tax</th>
+          <th>Total</th>
+          <th>Paid</th>
+          <th>Remaining</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sale in sales %}
+        {% with order=sale.order %}
+        <tr>
+          <td>{{ sale.bill_no }}</td>
+          <td>{{ sale.sale_date|bs_date }}</td>
+          <td>{{ order.sn }}</td>
+          <td>{{ order.order_date|bs_date }}</td>
+          <td>{{ order.customer_name }}</td>
+          <td>{{ order.phone_number }}</td>
+          <td>
+            {% for ornament in order.ornaments.all %}
+              <small>{{ ornament.ornament_name }} ({{ ornament.metal_type }})</small><br/>
+            {% empty %}
+              <small class="text-muted">No ornaments</small>
+            {% endfor %}
+          </td>
+          <td>{{ order.amount }}</td>
+          <td>{{ order.discount }}</td>
+          <td>{{ order.subtotal }}</td>
+          <td>{{ order.tax }}</td>
+          <td>{{ order.total }}</td>
+          <td>{{ order.payment_amount }} ({{ order.get_payment_mode_display }})</td>
+          <td>{{ order.remaining_amount }}</td>
+          <td><span class="badge bg-info">{{ order.get_status_display }}</span></td>
+          <td>
+            <!-- Edit Sale (then edit order from summary if needed) -->
+            <a href="{% url 'sales:sale_update' sale.pk %}" class="btn btn-sm btn-primary mb-1">Edit Sale</a>
+            <!-- Delete Sale -->
+            <a href="{% url 'sales:sale_delete' sale.pk %}" class="btn btn-sm btn-danger mb-1">Delete</a>
+          </td>
+        </tr>
+        {% endwith %}
+        {% empty %}
+        <tr><td colspan="15" class="text-center">No sales yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

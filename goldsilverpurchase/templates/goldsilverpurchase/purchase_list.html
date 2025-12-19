@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load bs_filters %}
 
 {% block content %}
 
@@ -118,7 +119,7 @@
                 {% for p in purchases %}
                 <tr>
                     <td>{{ p.bill_no }}</td>
-                    <td>{{ p.bill_date }}</td>
+                    <td>{{ p.bill_date|bs_date }}</td>
                     <td>{{ p.party.party_name }}</td>
                     <td>{{ p.party.panno }}</td>
                     <td>{{ p.particular }}</td>

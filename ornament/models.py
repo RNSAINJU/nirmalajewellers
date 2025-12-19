@@ -214,21 +214,20 @@ class Ornament(models.Model):
     )
     kaligar = models.ForeignKey(Kaligar, on_delete=models.CASCADE, related_name="ornaments")
     image=CloudinaryField('image',folder='ornaments/', blank=True, null=True)
-    order = models.ForeignKey("order.Order", on_delete=models.SET_NULL, null=True, blank=True)
+    order = models.ForeignKey(
+        "order.Order",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="ornaments",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.code or 'NEW'} - {self.ornament_name}"
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)  # Save first to get PK
-
-        if not self.code:
-            name_letter = self.ornament_name[0].upper() if self.ornament_name else 'X'
-            sub_category= self.subcategory.name[0].upper() if self.subcategory else 'X'
-            main_category= self.maincategory.name[0].upper() if self.maincategory else 'X'
-            kaligar_letter = self.kaligar.name[0].upper() if self.kaligar else 'X'
-            ornament_type_letter = self.ornament_type[0].upper() if self.ornament_type else 'X'
-            self.code = f"{name_letter}{sub_category}{main_category}{kaligar_letter}{ornament_type_letter}{self.pk}"
-            super().save(update_fields=['code'])
+    
+    class Meta:
+        ordering = ["id"]
+    # Code generation for `code` moved to `ornament.signals.generate_ornament_code`
+    # to keep model `save()` simple and avoid coupling persistence logic.

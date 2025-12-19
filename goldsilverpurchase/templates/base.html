@@ -182,9 +182,6 @@
                 <a href="{% url 'gsp:purchaselist' %}" class="nav-link ms-3 {% if request.resolver_match.url_name == 'purchaselist' %}active{% endif %}">
                     Gold/Silver Purchase
                 </a>
-                <a href="{% url 'gsp:dashboard' %}" class="nav-link ms-3 {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-                    Dashboard
-                </a>
             </div>
         </li>
 
@@ -202,6 +199,29 @@
                     Ornament List
                 </a>
             </div>
+        </li>
+
+        <!-- Orders -->
+        <li class="nav-item">
+            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#orderMenu">
+                <i class="bi bi-bag me-2"></i> Orders
+                <i class="bi bi-chevron-down float-end"></i>
+            </a>
+            <div class="collapse {% if request.resolver_match.app_name == 'order' %}show{% endif %}" id="orderMenu">
+                <a href="{% url 'order:create' %}" class="nav-link ms-3 {% if request.resolver_match.app_name == 'order' and request.resolver_match.url_name == 'create' %}active{% endif %}">
+                    Create Order
+                </a>
+                <a href="{% url 'order:list' %}" class="nav-link ms-3 {% if request.resolver_match.app_name == 'order' and request.resolver_match.url_name == 'list' %}active{% endif %}">
+                    Order List
+                </a>
+            </div>
+        </li>
+
+        <!-- Sales (separate tab) -->
+        <li class="nav-item">
+            <a href="{% url 'sales:sales_list' %}" class="nav-link {% if request.resolver_match.app_name == 'sales' and request.resolver_match.url_name == 'sales_list' %}active{% endif %}">
+                <i class="bi bi-receipt me-2"></i> Sales
+            </a>
         </li>
 
         <hr class="text-secondary">

@@ -1,0 +1,283 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+  .dashboard-header {
+    margin-bottom: 40px;
+    text-align: center;
+  }
+
+  .dashboard-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 10px;
+  }
+
+  .dashboard-header p {
+    color: #7f8c8d;
+    font-size: 1rem;
+  }
+
+  .stats-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    margin-bottom: 40px;
+  }
+
+  .stat-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    padding: 30px;
+    color: white;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 180px;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+  }
+
+  .stat-card.ornaments {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  }
+
+  .stat-card.orders {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  }
+
+  .stat-card.purchases {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  }
+
+  .stat-card.sales {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  }
+
+  .stat-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+
+  .stat-card-title {
+    font-size: 0.95rem;
+    font-weight: 500;
+    opacity: 0.95;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .stat-card-icon {
+    font-size: 2rem;
+    opacity: 0.7;
+  }
+
+  .stat-card-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 10px;
+  }
+
+  .stat-card-link {
+    font-size: 0.85rem;
+    opacity: 0.9;
+    margin-top: auto;
+    display: inline-block;
+  }
+
+  .action-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-top: 30px;
+  }
+
+  .btn-action {
+    background-color: #34495e;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    text-align: center;
+    font-weight: 600;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+    border: none;
+    cursor: pointer;
+  }
+
+  .btn-action:hover {
+    background-color: #2c3e50;
+    transform: scale(1.05);
+    text-decoration: none;
+    color: white;
+  }
+
+  .btn-action.ornaments-btn {
+    background-color: #f5576c;
+  }
+
+  .btn-action.orders-btn {
+    background-color: #00f2fe;
+    color: #2c3e50;
+  }
+
+  .btn-action.purchases-btn {
+    background-color: #43e97b;
+    color: #2c3e50;
+  }
+
+  .btn-action.ornaments-btn:hover {
+    background-color: #d63447;
+  }
+
+  .btn-action.orders-btn:hover {
+    background-color: #00c5cc;
+  }
+
+  .btn-action.purchases-btn:hover {
+    background-color: #2cc463;
+  }
+
+  .btn-action.sales-btn {
+    background-color: #fa709a;
+  }
+
+  .btn-action.sales-btn:hover {
+    background-color: #e85a84;
+  }
+
+  .stock-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .stock-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .stock-card-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #555;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .stock-card-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #333;
+  }
+
+  .stock-card-note {
+    font-size: 0.75rem;
+    color: #999;
+  }
+</style>
+
+<div class="dashboard-header">
+  <h1>💎 Dashboard</h1>
+  <p>Welcome to Nirmal Jewellers Management System</p>
+</div>
+
+<div class="stats-container">
+  <!-- Ornaments Card -->
+  <div class="stat-card ornaments">
+    <div class="stat-card-header">
+      <div class="stat-card-title">Total Ornaments</div>
+      <span class="stat-card-icon">👑</span>
+    </div>
+    <div class="stat-card-value">{{ total_ornaments }}</div>
+    <a href="/ornament/" class="stat-card-link">View Ornaments →</a>
+  </div>
+
+  <!-- Orders Card -->
+  <div class="stat-card orders">
+    <div class="stat-card-header">
+      <div class="stat-card-title">Total Orders</div>
+      <span class="stat-card-icon">📦</span>
+    </div>
+    <div class="stat-card-value">{{ total_orders }}</div>
+    <a href="/order/" class="stat-card-link">View Orders →</a>
+  </div>
+
+  <!-- Purchase Amount Card -->
+  <div class="stat-card purchases">
+    <div class="stat-card-header">
+      <div class="stat-card-title">Total Purchase Amount</div>
+      <span class="stat-card-icon">💰</span>
+    </div>
+    <div class="stat-card-value">₹{{ total_purchase_amount|floatformat:0 }}</div>
+    <a href="/purchase/" class="stat-card-link">View Purchases →</a>
+  </div>
+
+  <!-- Sales Amount Card -->
+  <div class="stat-card sales">
+    <div class="stat-card-header">
+      <div class="stat-card-title">Total Sales Amount</div>
+      <span class="stat-card-icon">📈</span>
+    </div>
+    <div class="stat-card-value">₹{{ total_order_amount|floatformat:0 }}</div>
+    <a href="/order/" class="stat-card-link">View Sales →</a>
+  </div>
+</div>
+
+<!-- Stock Summary -->
+<div class="stock-cards">
+  <div class="stock-card">
+    <div class="stock-card-title">
+      <span>Gold Stock</span>
+      <span>🥇</span>
+    </div>
+    <div class="stock-card-value">{{ gold_stock|default:"0" }}</div>
+    <div class="stock-card-note">Total metal weight in stock (Gold)</div>
+  </div>
+
+  <div class="stock-card">
+    <div class="stock-card-title">
+      <span>Silver Stock</span>
+      <span>🥈</span>
+    </div>
+    <div class="stock-card-value">{{ silver_stock|default:"0" }}</div>
+    <div class="stock-card-note">Total metal weight in stock (Silver)</div>
+  </div>
+
+  <div class="stock-card">
+    <div class="stock-card-title">
+      <span>Diamond Stock</span>
+      <span>💎</span>
+    </div>
+    <div class="stock-card-value">{{ diamond_stock|default:"0" }}</div>
+    <div class="stock-card-note">Total metal weight in stock (Diamond)</div>
+  </div>
+</div>
+
+<div class="action-buttons">
+  <a href="/ornament/" class="btn-action ornaments-btn">👑 Ornaments</a>
+  <a href="/order/" class="btn-action orders-btn">📦 Orders</a>
+  <a href="/purchase/" class="btn-action purchases-btn">💰 Purchases</a>
+  <a href="/order/" class="btn-action sales-btn">📈 Sales</a>
+  <a href="/monthly-stock-report/" class="btn-action" style="background-color: #9b59b6;">📊 Stock Report</a>
+  <a href="/admin/" class="btn-action">⚙️ Admin</a>
+</div>
+
+{% endblock %}

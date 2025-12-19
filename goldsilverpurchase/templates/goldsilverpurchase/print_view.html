@@ -31,10 +31,11 @@
         </tr>
     </thead>
     <tbody>
+    {% load bs_filters %}
     {% for p in purchases %}
         <tr>
             <td>{{ p.bill_no }}</td>
-            <td>{{ p.bill_date }}</td>
+            <td>{{ p.bill_date|bs_date }}</td>
             <td>{{ p.party.party_name }}</td>
             <td>{{ p.metal_type }}</td>
             <td>{{ p.particular }}</td>

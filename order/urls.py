@@ -1,5 +1,18 @@
 from django.urls import path
-from .views import OrderListView, OrderCreateView, OrderUpdateView, OrderDeleteView
+from .views import (
+    OrderListView,
+    OrderCreateView,
+    OrderUpdateView,
+    OrderDeleteView,
+    SearchOrnamentsAPI,
+    CreateSaleFromOrderView,
+    SalesListView,
+    SaleUpdateView,
+    SaleDeleteView,
+    order_print_view,
+    order_export_excel,
+    order_import_excel,
+)
 
 app_name = 'order'
 
@@ -8,4 +21,13 @@ urlpatterns = [
     path('create/', OrderCreateView.as_view(), name='create'),
     path('update/<int:pk>/', OrderUpdateView.as_view(), name='update'),
     path('delete/<int:pk>/', OrderDeleteView.as_view(), name='delete'),
+    path('print/', order_print_view, name='print_view'),
+    path('export-excel/', order_export_excel, name='export_excel'),
+    path('import-excel/', order_import_excel, name='import_excel'),
+    # Kept for backward compatibility; these delegate into the `sales` app
+    path('sales/', SalesListView.as_view(), name='sales_list'),
+    path('sales/create-from-order/<int:pk>/', CreateSaleFromOrderView.as_view(), name='create_sale_from_order'),
+    path('sales/<int:pk>/edit/', SaleUpdateView.as_view(), name='sale_update'),
+    path('sales/<int:pk>/delete/', SaleDeleteView.as_view(), name='sale_delete'),
+    path('api/search-ornaments/', SearchOrnamentsAPI.as_view(), name='search_ornaments'),
 ]

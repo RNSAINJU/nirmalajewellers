@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load bs_filters %}
 
 {% block content %}
 
@@ -6,8 +7,21 @@
 
 
     <div class="container mt-5">
-      <h1 class="mb-4">Order List</h1>
-      <a href="{% url 'order:create' %}" class="btn btn-primary mb-3">+ Create Order</a>
+      <div class="d-flex justify-content-between mb-3">
+        <h1 class="mb-0">Order List</h1>
+        <div class="d-flex" style="gap:10px;">
+          <a href="{% url 'order:create' %}" class="btn btn-primary">+ Create Order</a>
+          <a href="{% url 'order:import_excel' %}" class="btn btn-success">
+            <i class="bi bi-file-earmark-arrow-up"></i> Import Excel
+          </a>
+          <a href="{% url 'order:export_excel' %}" class="btn btn-success">
+            <i class="bi bi-file-earmark-excel-fill"></i> Excel
+          </a>
+          <a href="{% url 'order:print_view' %}" class="btn btn-dark" target="_blank">
+            <i class="bi bi-printer-fill"></i> Print
+          </a>
+        </div>
+      </div>
 
       <div class="table-responsive">
         <table class="table table-bordered table-striped">
@@ -18,6 +32,13 @@
               <th>Customer</th>
               <th>Phone</th>
               <th>Ornaments</th>
+              <th>Amount</th>
+              <th>Discount</th>
+              <th>Subtotal</th>
+              <th>Tax</th>
+              <th>Total</th>
+              <th>Paid</th>
+              <th>Remaining</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
@@ -26,7 +47,7 @@
             {% for order in orders %}
             <tr>
               <td>{{ order.sn }}</td>
-              <td>{{ order.order_date }}</td>
+              <td>{{ order.order_date|bs_date }}</td>
               <td>{{ order.customer_name }}</td>
               <td>{{ order.phone_number }}</td>
               <td>
@@ -36,14 +57,30 @@
                   <small class="text-muted">No ornaments</small>
                 {% endfor %}
               </td>
+              <td>{{ order.amount }}</td>
+              <td>{{ order.discount }}</td>
+              <td>{{ order.subtotal }}</td>
+              <td>{{ order.tax }}</td>
+              <td>{{ order.total }}</td>
+              <td>{{ order.payment_amount }} ({{ order.get_payment_mode_display }})</td>
+              <td>{{ order.remaining_amount }}</td>
               <td><span class="badge bg-info">{{ order.get_status_display }}</span></td>
               <td>
-                <a href="{% url 'order:update' order.sn %}" class="btn btn-sm btn-warning">Edit</a>
-                <a href="{% url 'order:delete' order.sn %}" class="btn btn-sm btn-danger">Delete</a>
+                <a href="{% url 'order:update' order.sn %}" class="btn btn-sm btn-warning mb-1">Edit</a>
+                <a href="{% url 'order:delete' order.sn %}" class="btn btn-sm btn-danger mb-1">Delete</a>
+
+                {% if order.sale %}
+                  <span class="badge bg-success d-block">In Sales</span>
+                {% else %}
+                  <form method="post" action="{% url 'order:create_sale_from_order' order.sn %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-primary">Add to Sales</button>
+                  </form>
+                {% endif %}
               </td>
             </tr>
             {% empty %}
-            <tr><td colspan="7" class="text-center">No orders yet.</td></tr>
+            <tr><td colspan="12" class="text-center">No orders yet.</td></tr>
             {% endfor %}
           </tbody>
         </table>

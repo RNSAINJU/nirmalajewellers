@@ -9,8 +9,9 @@ from django.db.models import Q
 from io import BytesIO
 from django.contrib import messages
 from decimal import Decimal
-import openpyxl
-from openpyxl.utils import get_column_letter
+from django.forms import modelformset_factory
+# import openpyxl
+# from openpyxl.utils import get_column_letter
 import nepali_datetime as ndt
 
 class MainCategoryCreateView(CreateView):
@@ -36,7 +37,8 @@ class OrnamentListView(ListView):
     model = Ornament
     template_name = 'ornament/ornament_list.html'
     context_object_name = 'ornaments'
-    ordering = ['-ornament_date', '-created_at']
+    # Order serially by primary key (id)
+    ordering = ['id']
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -154,6 +156,33 @@ class OrnamentDeleteView(DeleteView):
     model = Ornament
     template_name = 'ornament/ornament_confirm_delete.html'
     success_url = reverse_lazy('ornament:list')
+
+
+def multiple_ornament_create(request):
+    """Create multiple ornaments at once using a model formset.
+
+    This provides a separate page where you can enter several ornaments in
+    one go, similar in spirit to the order create page.
+    """
+
+    OrnamentFormSet = modelformset_factory(
+        Ornament,
+        form=OrnamentForm,
+        extra=5,
+        can_delete=False,
+    )
+
+    if request.method == "POST":
+        formset = OrnamentFormSet(request.POST, request.FILES, queryset=Ornament.objects.none())
+        if formset.is_valid():
+            formset.save()
+            return redirect('ornament:list')
+    else:
+        formset = OrnamentFormSet(queryset=Ornament.objects.none())
+
+    return render(request, 'ornament/ornament_bulk_form.html', {
+        'formset': formset,
+    })
 
 
 def print_view(request):

@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load bs_filters %}
+{% block content %}
+<h2 class="mt-4 mb-3">Print Orders</h2>
+<button class="btn btn-primary mb-3" onclick="window.print()">Print</button>
+
+<div class="table-responsive">
+  <table class="table table-bordered table-striped">
+    <thead class="table-dark">
+      <tr>
+        <th>Order No</th>
+        <th>Order Date</th>
+        <th>Deliver Date</th>
+        <th>Customer</th>
+        <th>Phone</th>
+        <th>Status</th>
+        <th>Amount</th>
+        <th>Discount</th>
+        <th>Subtotal</th>
+        <th>Tax</th>
+        <th>Total</th>
+        <th>Paid</th>
+        <th>Remaining</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for o in orders %}
+      <tr>
+        <td>{{ o.sn }}</td>
+        <td>{{ o.order_date|bs_date }}</td>
+        <td>{{ o.deliver_date|bs_date }}</td>
+        <td>{{ o.customer_name }}</td>
+        <td>{{ o.phone_number }}</td>
+        <td>{{ o.get_status_display }}</td>
+        <td>{{ o.amount }}</td>
+        <td>{{ o.discount }}</td>
+        <td>{{ o.subtotal }}</td>
+        <td>{{ o.tax }}</td>
+        <td>{{ o.total }}</td>
+        <td>{{ o.payment_amount }} ({{ o.get_payment_mode_display }})</td>
+        <td>{{ o.remaining_amount }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="13" class="text-center">No orders.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -10,7 +10,8 @@ from .views import (
     KaligarCreateView,
     print_view,
     export_excel,
-    import_excel
+    import_excel,
+    multiple_ornament_create,
 )
 
 app_name = 'ornament'
@@ -18,6 +19,7 @@ app_name = 'ornament'
 urlpatterns = [
     path('', OrnamentListView.as_view(), name='list'),
     path('create/', OrnamentCreateView.as_view(), name='create'),
+    path('create-multiple/', multiple_ornament_create, name='create_multiple'),
     path('<int:pk>/edit/', OrnamentUpdateView.as_view(), name='update'),
     path('<int:pk>/delete/', OrnamentDeleteView.as_view(), name='delete'),
     path('createmaincategory/', MainCategoryCreateView.as_view(), name='createmaincategory'),

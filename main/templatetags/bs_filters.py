@@ -39,7 +39,9 @@ def split_filter(value, sep):
     if value is None:
         return []
     text = str(value)
-    # Handle empty separator safely, returning characters.
+    # Django templates sometimes pass an empty string as the separator,
+    # e.g. "1234"|split:"" to iterate characters. Python's str.split("")
+    # raises ValueError, so handle that case explicitly.
     if sep == "":
         return list(text)
     return text.split(sep)
