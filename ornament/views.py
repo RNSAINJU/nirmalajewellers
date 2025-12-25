@@ -123,6 +123,38 @@ class OrnamentListView(ListView):
         )['total'] or 0
         context['diamond_total_amount'] = total_diamond_amount+total_gold_amount+total_jyala+total_stone_amount
 
+        # Gold total amount calculation
+        gold_ornaments = Ornament.objects.filter(metal_type__icontains='Gold')
+        total_gold_ornament_jarti = gold_ornaments.aggregate(
+            total=Sum(F('jarti')* gold_rate, output_field=DecimalField())
+        )['total'] or 0
+        total_gold_ornament_weight = gold_ornaments.aggregate(
+            total=Sum('weight')
+        )['total'] or 0
+        context['gold_total_weight'] = total_gold_ornament_weight
+        
+        # Gold weight breakdown by individual karat type
+        gold_24k_weight = gold_ornaments.filter(type='24KARAT').aggregate(
+            total=Sum('weight')
+        )['total'] or Decimal('0')
+        gold_22k_weight = gold_ornaments.filter(type='22KARAT').aggregate(
+            total=Sum('weight')
+        )['total'] or Decimal('0')
+        gold_18k_weight = gold_ornaments.filter(type='18KARAT').aggregate(
+            total=Sum('weight')
+        )['total'] or Decimal('0')
+        gold_14k_weight = gold_ornaments.filter(type='14KARAT').aggregate(
+            total=Sum('weight')
+        )['total'] or Decimal('0')
+        gold_24k_finalweight= gold_24k_weight + (gold_22k_weight * Decimal('0.92'))+ (gold_18k_weight * Decimal('0.75')) + (gold_14k_weight * Decimal('0.58'))
+        total_gold_ornament_amount=gold_24k_finalweight * gold_rate
+        context['gold_total_amount'] = total_gold_ornament_amount + total_gold_ornament_jarti
+        context['gold_24k_finalweight'] = gold_24k_finalweight
+        context['gold_24k_weight'] = gold_24k_weight
+        context['gold_22k_weight'] = gold_22k_weight
+        context['gold_18k_weight'] = gold_18k_weight
+        context['gold_14k_weight'] = gold_14k_weight
+
         # Filters back to template
         context['metal_type'] = self.request.GET.get('metal_type')
         context['ornament_type'] = self.request.GET.get('ornament_type')
