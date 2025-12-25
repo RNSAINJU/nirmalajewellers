@@ -2,236 +2,262 @@
 
 {% block content %}
 <style>
-  .report-header {
-    margin-bottom: 30px;
+  .sheet {
+    background: #fff;
+    padding: 24px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  }
+
+  .sheet-header {
     text-align: center;
+    margin-bottom: 18px;
   }
 
-  .report-header h1 {
-    font-size: 2rem;
-    color: #2c3e50;
-    margin-bottom: 10px;
+  .sheet-header .title {
+    font-weight: 700;
+    font-size: 1.4rem;
   }
 
-  .month-selector {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-  }
-
-  .month-selector input,
-  .month-selector select,
-  .month-selector button {
-    padding: 8px 15px;
-    border: 1px solid #bdc3c7;
-    border-radius: 5px;
+  .sheet-header .subtitle {
+    color: #4b5563;
     font-size: 0.95rem;
   }
 
-  .month-selector button {
-    background-color: #3498db;
-    color: white;
-    cursor: pointer;
-    font-weight: 600;
-    transition: background-color 0.3s;
+  .note {
+    margin-top: 14px;
   }
 
-  .month-selector button:hover {
-    background-color: #2980b9;
+  .note-title {
+    font-weight: 700;
+    margin-bottom: 6px;
   }
 
-  .report-table-container {
-    overflow-x: auto;
-    margin-bottom: 30px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  }
-
-  .report-table {
+  .note-table {
     width: 100%;
     border-collapse: collapse;
-    background-color: white;
+    margin-bottom: 18px;
   }
 
-  .report-table thead {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    font-weight: 600;
+  .note-table th,
+  .note-table td {
+    border: 1px solid #1f2937;
+    padding: 8px 10px;
+    font-size: 0.95rem;
+  }
+
+  .note-table th {
+    background: #e5e7eb;
     text-align: center;
   }
 
-  .report-table th {
-    padding: 15px;
-    border: 1px solid #ddd;
-    font-size: 0.9rem;
-    text-transform: uppercase;
+  .note-table td:nth-child(1) {
+    text-align: center;
   }
 
-  .report-table td {
-    padding: 12px 15px;
-    border: 1px solid #ddd;
+  .note-table td:nth-child(3),
+  .note-table td:nth-child(5) {
     text-align: right;
-    font-size: 0.9rem;
   }
 
-  .report-table tbody tr:nth-child(odd) {
-    background-color: #f8f9fa;
-  }
-
-  .report-table tbody tr:hover {
-    background-color: #ecf0f1;
-  }
-
-  .report-table .party-name {
-    text-align: left;
-    font-weight: 600;
-    color: #2c3e50;
-  }
-
-  .report-table .total-row {
-    background-color: #ecf0f1;
+  .total-row {
     font-weight: 700;
-    color: #2c3e50;
-    border-top: 3px solid #667eea;
+    background: #f3f4f6;
   }
 
-  .report-table .total-row td {
-    border-top: 3px solid #667eea;
-    border-bottom: 3px solid #667eea;
+  .actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 14px;
   }
 
-  .action-links {
-    text-align: center;
-    margin-top: 20px;
-  }
-
-  .action-links a,
-  .action-links button {
-    background-color: #2c3e50;
-    color: white;
-    padding: 10px 20px;
-    border-radius: 5px;
-    text-decoration: none;
-    margin: 5px;
+  .actions a,
+  .actions button {
+    padding: 10px 16px;
+    border-radius: 6px;
+    border: 1px solid #111827;
+    background: #111827;
+    color: #fff;
     font-weight: 600;
-    display: inline-block;
-    border: none;
     cursor: pointer;
-    transition: background-color 0.3s;
-  }
-
-  .action-links a:hover,
-  .action-links button:hover {
-    background-color: #1a252f;
     text-decoration: none;
   }
 
-  .print-btn {
-    background-color: #27ae60 !important;
-  }
-
-  .print-btn:hover {
-    background-color: #229954 !important;
+  .actions .secondary {
+    background: #fff;
+    color: #111827;
   }
 
   @media print {
-    .month-selector,
-    .action-links {
-      display: none;
+    .actions,
+    .navbar,
+    .sidebar,
+    #sidebarOverlay,
+    .btn,
+    .alert {
+      display: none !important;
+    }
+
+    .content {
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #fff;
     }
   }
 </style>
 
 {% load bs_filters %}
 
-<div class="report-header">
-  <h1>📊 Monthly Stock Report</h1>
-  <p>{{ month_name }} {{ year }}</p>
-</div>
+<div class="sheet">
+  <div class="sheet-header">
+    <div class="title">Nirmala Jewellers Pvt.Ltd.</div>
+    <div class="subtitle">SuryaBinayak Municipality 08, Bhaktapur</div>
+    <div class="subtitle">Fiscal Year: 2078-079 (32 Asadh 2079, 16 July 2022)</div>
+    <div class="subtitle">PAN 610085158</div>
+  </div>
 
-<div class="month-selector">
-  <form method="get" style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
-    <select name="month" required>
-      {% for m in months %}
-        <option value="{{ m.value }}" {% if m.value == month %}selected{% endif %}>
-          {{ m.label }}
-        </option>
-      {% endfor %}
-    </select>
-    <select name="year" required>
-      {% for y in years %}
-        <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
-      {% endfor %}
-    </select>
-    <input
-      type="text"
-      name="from_date"
-      placeholder="From (YYYY-MM-DD BS)"
-      value="{{ from_date|default:'' }}"
-    />
-    <input
-      type="text"
-      name="to_date"
-      placeholder="To (YYYY-MM-DD BS)"
-      value="{{ to_date|default:'' }}"
-    />
-    <button type="submit">📅 Filter</button>
-  </form>
-  
-</div>
+  <div class="note">
+    <div class="note-title">Note 13.1 : Detail of Previous Year Remaining Stock</div>
+    <table class="note-table">
+      <thead>
+        <tr>
+          <th>S.N.</th>
+          <th>Item Details</th>
+          <th>Qty.</th>
+          <th>Unit</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in opening_stock_rows %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ row.label }}</td>
+            <td>{{ row.qty|floatformat:2 }}</td>
+            <td>Gms.</td>
+            <td>{{ row.amount|floatformat:2 }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="5" style="text-align: center; color: #999;">No opening stock data available</td>
+          </tr>
+        {% endfor %}
+        {% if opening_stock_rows %}
+        <tr class="total-row">
+          <td colspan="2">Totals</td>
+          <td>{{ opening_stock_totals.qty|floatformat:2 }}</td>
+          <td></td>
+          <td>{{ opening_stock_totals.amount|floatformat:2 }}</td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
 
-<div class="report-table-container">
-  <table class="report-table">
-    <thead>
-      <tr>
-        <th colspan="2">Party Name</th>
-        <th colspan="2">Gold Purchase</th>
-        <th colspan="2">Silver Purchase</th>
-        <th>Customer (Amount)</th>
-        <th colspan="2">Sales</th>
-        <th colspan="2">Gold Stock</th>
-        <th colspan="2">Silver Stock</th>
-      </tr>
-      <tr>
-        <th></th>
-        <th></th>
-        <th>Amount</th>
-        <th>Weight</th>
-        <th>Amount</th>
-        <th>Weight</th>
-        <th></th>
-        <th>Amount</th>
-        <th>Weight</th>
-        <th>Amount</th>
-        <th>Weight</th>
-        <th>Amount</th>
-        <th>Weight</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr class="total-row">
-        <td colspan="2">TOTAL ({{ month_name }} {{ year }})</td>
-        <td>{{ totals.gold_purchase_amount|floatformat:0 }}</td>
-        <td>{{ totals.gold_purchase_weight|floatformat:2 }}</td>
-        <td>{{ totals.silver_purchase_amount|floatformat:0 }}</td>
-        <td>{{ totals.silver_purchase_weight|floatformat:2 }}</td>
-        <td>{{ totals.customer_amount|floatformat:0 }}</td>
-        <td>0</td>
-        <td>0</td>
-        <td>{{ totals.gold_stock_amount|floatformat:0 }}</td>
-        <td>{{ totals.gold_stock_weight|floatformat:2 }}</td>
-        <td>{{ totals.silver_stock_amount|floatformat:0 }}</td>
-        <td>{{ totals.silver_stock_weight|floatformat:2 }}</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+  <div class="note">
+    <div class="note-title">Note 14.1 : Detail of Sales</div>
+    <table class="note-table">
+      <thead>
+        <tr>
+          <th>S.N.</th>
+          <th>Item Details</th>
+          <th>Qty.</th>
+          <th>Unit</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in sales_rows %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ row.label }}</td>
+            <td>{{ row.qty|floatformat:2 }}</td>
+            <td>Gms.</td>
+            <td>{{ row.amount|floatformat:2 }}</td>
+          </tr>
+        {% endfor %}
+        <tr class="total-row">
+          <td colspan="2">Totals</td>
+          <td>{{ sales_totals.qty|floatformat:2 }}</td>
+          <td></td>
+          <td>{{ sales_totals.amount|floatformat:2 }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 
-<div class="action-links">
-  <a href="/">← Back to Dashboard</a>
-  <button class="print-btn" onclick="window.print()">🖨️ Print Report</button>
+  <div class="note">
+    <div class="note-title">Note 15.1 : Detail of Purchase</div>
+    <table class="note-table">
+      <thead>
+        <tr>
+          <th>S.N.</th>
+          <th>Item Details</th>
+          <th>Qty.</th>
+          <th>Unit</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in purchase_rows %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ row.label }}</td>
+            <td>{{ row.qty|floatformat:2 }}</td>
+            <td>Gms.</td>
+            <td>{{ row.amount|floatformat:2 }}</td>
+          </tr>
+        {% endfor %}
+        <tr class="total-row">
+          <td colspan="2">Totals</td>
+          <td>{{ purchase_totals.qty|floatformat:2 }}</td>
+          <td></td>
+          <td>{{ purchase_totals.amount|floatformat:2 }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note">
+    <div class="note-title">Note 16.1 : Detail of Stock</div>
+    <table class="note-table">
+      <thead>
+        <tr>
+          <th>S.N.</th>
+          <th>Item Details</th>
+          <th>Qty.</th>
+          <th>Unit</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in stock_rows %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ row.label }}</td>
+            <td>{{ row.qty|floatformat:2 }}</td>
+            <td>Gms.</td>
+            <td>{{ row.amount|floatformat:2 }}</td>
+          </tr>
+        {% endfor %}
+        <tr class="total-row">
+          <td colspan="2">Totals</td>
+          <td>{{ stock_totals.qty|floatformat:2 }}</td>
+          <td></td>
+          <td>{{ stock_totals.amount|floatformat:2 }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="actions">
+    <a class="secondary" href="/">Back to Dashboard</a>
+    <button type="button" onclick="window.print()">Print</button>
+  </div>
 </div>
 
 {% endblock %}

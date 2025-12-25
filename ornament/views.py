@@ -96,6 +96,11 @@ class OrnamentListView(ListView):
         # Total weight calculation
         context['total_weight'] = qs.aggregate(total=Sum('weight'))['total'] or 0
 
+        # Ornament counts by metal type
+        context['gold_count'] = Ornament.objects.filter(metal_type__icontains='Gold').count()
+        context['silver_count'] = Ornament.objects.filter(metal_type__icontains='Silver').count()
+        context['diamond_count'] = Ornament.objects.filter(metal_type__icontains='Diamond').count()
+
         # Filters back to template
         context['metal_type'] = self.request.GET.get('metal_type')
         context['ornament_type'] = self.request.GET.get('ornament_type')

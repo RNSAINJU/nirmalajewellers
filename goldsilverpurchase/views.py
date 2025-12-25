@@ -78,6 +78,21 @@ class PurchaseListView(ListView):
         context = super().get_context_data(**kwargs)
         context['total_quantity'] = self.get_queryset().aggregate(total=Sum('quantity'))['total'] or 0
         context['total_amount'] = self.get_queryset().aggregate(total=Sum('amount'))['total'] or 0
+        
+        # Gold and Silver purchase totals (all-time)
+        context['gold_purchase'] = (
+            GoldSilverPurchase.objects.filter(metal_type__icontains="gold")
+            .aggregate(total=Sum("quantity"))
+            .get("total")
+            or 0
+        )
+        context['silver_purchase'] = (
+            GoldSilverPurchase.objects.filter(metal_type__icontains="silver")
+            .aggregate(total=Sum("quantity"))
+            .get("total")
+            or 0
+        )
+        
         context['date'] = self.request.GET.get('date', '')
         context['start_date'] = self.request.GET.get('start_date', '')
         context['end_date'] = self.request.GET.get('end_date', '')

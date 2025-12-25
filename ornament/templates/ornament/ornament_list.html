@@ -1,133 +1,274 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<div class="container mt-5">
-    <h1 class="text-center mb-4">Ornaments</h1>
+<style>
+    .filter-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        padding: 25px;
+        color: white;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    .filter-section label {
+        color: white;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+    .filter-section .form-control,
+    .filter-section .form-select {
+        border-radius: 8px;
+        border: 2px solid rgba(255,255,255,0.3);
+        background: rgba(255,255,255,0.95);
+    }
+    .search-section {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 20px;
+        border: 2px solid #e9ecef;
+    }
+    .action-buttons {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+    .btn-create {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 10px;
+        padding: 12px 24px;
+        font-weight: 600;
+        transition: all 0.3s;
+        color: white;
+    }
+    .btn-create:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+    .btn-action {
+        border-radius: 10px;
+        padding: 10px 20px;
+        font-weight: 600;
+        transition: all 0.3s;
+        border: 2px solid;
+    }
+    .btn-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .btn-import {
+        background: #10b981;
+        border-color: #10b981;
+        color: white;
+    }
+    .btn-import:hover {
+        background: #059669;
+        border-color: #059669;
+        color: white;
+    }
+    .btn-export {
+        background: #0ea5e9;
+        border-color: #0ea5e9;
+        color: white;
+    }
+    .btn-export:hover {
+        background: #0284c7;
+        border-color: #0284c7;
+        color: white;
+    }
+    .btn-print {
+        background: #1f2937;
+        border-color: #1f2937;
+        color: white;
+    }
+    .btn-print:hover {
+        background: #111827;
+        border-color: #111827;
+        color: white;
+    }
+    .stats-card {
+        border-radius: 12px;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15) !important;
+    }
+</style>
 
+<div class="container mt-5">
+    <h1 class="text-center mb-4" style="color: #667eea; font-weight: 700;">Ornaments</h1>
+
+    <!-- Ornament Stats by Metal Type -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm stats-card" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);">
+                <div class="card-body text-center text-white">
+                    <h5 class="card-title fw-bold mb-3"><i class="bi bi-gem me-2"></i>Gold Ornaments</h5>
+                    <h2 class="fw-bold mb-0">{{ gold_count }} <small style="font-size: 0.5em; opacity: 0.9;">items</small></h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm stats-card" style="background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);">
+                <div class="card-body text-center text-white">
+                    <h5 class="card-title fw-bold mb-3"><i class="bi bi-gem me-2"></i>Silver Ornaments</h5>
+                    <h2 class="fw-bold mb-0">{{ silver_count }} <small style="font-size: 0.5em; opacity: 0.9;">items</small></h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm stats-card" style="background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);">
+                <div class="card-body text-center text-white">
+                    <h5 class="card-title fw-bold mb-3"><i class="bi bi-gem me-2"></i>Diamond Ornaments</h5>
+                    <h2 class="fw-bold mb-0">{{ diamond_count }} <small style="font-size: 0.5em; opacity: 0.9;">items</small></h2>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Create buttons -->
-    <div class="d-flex justify-content-end mb-3 gap-2">
-        <a href="{% url 'ornament:createkaligar' %}" class="btn btn-success">
-            <i class="bi bi-person-plus-fill me-1"></i> Create Kaligar
+    <div class="d-flex justify-content-center mb-4 gap-3 flex-wrap">
+        <a href="{% url 'ornament:createkaligar' %}" class="btn btn-create">
+            <i class="bi bi-person-plus-fill me-2"></i> Create Kaligar
         </a>
-
-        <a href="{% url 'ornament:createmaincategory' %}" class="btn btn-success">
-            <i class="bi bi-person-plus-fill me-1"></i> Create MainCategory
+        <a href="{% url 'ornament:createmaincategory' %}" class="btn btn-create">
+            <i class="bi bi-tag-fill me-2"></i> Create MainCategory
         </a>
-
-        <a href="{% url 'ornament:createsubcategory' %}" class="btn btn-success">
-            <i class="bi bi-person-plus-fill me-1"></i> Create Sub-Category
+        <a href="{% url 'ornament:createsubcategory' %}" class="btn btn-create">
+            <i class="bi bi-tags-fill me-2"></i> Create Sub-Category
         </a>
-        <a href="{% url 'ornament:create' %}" class="btn btn-primary">
-            <i class="bi bi-plus-circle-fill me-1"></i> Create Ornament
+        <a href="{% url 'ornament:create' %}" class="btn btn-create">
+            <i class="bi bi-plus-circle-fill me-2"></i> Create Ornament
         </a>
     </div>
 
-    <!-- FILTER FORM -->
-    <form method="get" class="card p-3 mb-3">
+    <!-- Search, Filter Toggle, and Actions Toggle Row -->
+    <div class="row mb-4 g-3 align-items-center">
+        <!-- Search Box -->
+        <div class="col-md-6">
+            <div class="search-section">
 
-        <div class="row">
-
-            <div class="col-md-2">
-                <input type="text" name="code" class="form-control" placeholder="Code"
-                       value="{{ request.GET.code }}">
-            </div>
-
-            <div class="col-md-2">
-                <input type="text" name="name" class="form-control" placeholder="Name"
-                       value="{{ request.GET.name }}">
-            </div>
-
-            <!-- NEW Metal Type Filter -->
-            <div class="col-md-2">
-                <label>Metal Type</label>
-                <select name="metal_type" class="form-select">
-                    <option value="">All</option>
-                    <option value="Gold" {% if metal_type == "Gold" %}selected{% endif %}>Gold</option>
-                    <option value="Silver" {% if metal_type == "Silver" %}selected{% endif %}>Silver</option>
-                </select>
-            </div>
-
-            <div class="col-md-2">
-                <label>Karat</label>
-                <select name="type" class="form-select">
-                    <option value="">All</option>
-                    <option value="24KARAT" {% if type == "Gold" %}selected{% endif %}>24 Karat</option>
-                    <option value="22KARAT" {% if type == "Silver" %}selected{% endif %}>22 Karat'</option>
-                    <option value="18KARAT" {% if type == "Silver" %}selected{% endif %}>18 Karat</option>
-                    <option value="14KARAT" {% if type == "Silver" %}selected{% endif %}>14 Karat</option>
-                </select>
-            </div>
-
-            <div class="col-md-2">
-                <label>Ornament Type</label>
-                <select name="ornament_type" class="form-select">
-                    <option value="">All</option>
-                    <option value="stock" {% if type == "stock" %}selected{% endif %}>Stock</option>
-                    <option value="order" {% if type == "order" %}selected{% endif %}>Order</option>
-                </select>
-            </div>
-
-            <div class="col-md-2">
-                <label>Kaligar</label>
-                <select name="kaligar" class="form-select">
-                    <option value="">All Kaligar</option>
-                    {% for k in kaligar %}
-                        <option value="{{ k.id }}" {% if request.GET.kaligar == k.id|stringformat:"s" %}selected{% endif %}>
-                            {{ k.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-        </div>
-
-        <!-- Nepali start-end date -->
-        <div class="row mt-2">
-            <div class="col-2">
-                <input type="text" name="start_date" placeholder="Start Date"
-                       class="form-control" value="{{ request.GET.start_date }}">
-            </div>
-
-            <div class="col-2">
-                <input type="text" name="end_date" placeholder="End Date"
-                       class="form-control" value="{{ request.GET.end_date }}">
-            </div>
-
-            <div class="col-md-2">
-                <button class="btn btn-success w-100">Filter</button>
-            </div>
-
-            <div class="col-md-2">
-                <a href="{% url 'ornament:list' %}" class="btn btn-secondary w-100">Reset</a>
+                <form method="get" class="d-flex gap-2">
+                    <input type="text" name="search" class="form-control" placeholder="Search by code, name, metal type..." value="{{ request.GET.search }}">
+                    <button class="btn btn-primary fw-bold" style="min-width: 100px;">Search</button>
+                    <a href="{% url 'ornament:list' %}" class="btn btn-outline-secondary fw-bold">Clear</a>
+                </form>
             </div>
         </div>
 
-    </form>
+        <!-- Filter Toggle Button -->
+        <div class="col-md-3">
+            <div class="text-center" style="padding-top: 35px;">
+                <button class="btn btn-create w-100" type="button" data-bs-toggle="collapse" data-bs-target="#filterSection" aria-expanded="false" aria-controls="filterSection">
+                    <i class="bi bi-funnel-fill me-2"></i>Show Filters
+                </button>
+            </div>
+        </div>
 
+        <!-- Import/Export Toggle Button -->
+        <div class="col-md-3">
+            <div class="text-center" style="padding-top: 35px;">
+                <button class="btn btn-create w-100" type="button" data-bs-toggle="collapse" data-bs-target="#actionsSection" aria-expanded="false" aria-controls="actionsSection">
+                    <i class="bi bi-gear-fill me-2"></i>Import/Export
+                </button>
+            </div>
+        </div>
+    </div>
 
-    <div class="row">
-        <div class="d-flex justify-content-between mb-3">
-            <form method="get" class="d-flex" style="gap:10px;">
-                <input type="text" name="search" class="form-control" placeholder="Search..." value="{{ request.GET.search }}">
-                <button class="btn btn-primary">Search</button>
-                <a href="{% url 'ornament:list' %}" class="btn btn-secondary">Reset</a>
-            </form>
-        
-            <div class="d-flex" style="gap:10px;">
+    <!-- Filter Section -->
+    <div class="collapse" id="filterSection">
+        <div class="filter-section mb-4">
+            <h5 class="mb-3"><i class="bi bi-funnel-fill me-2"></i>Filters</h5>
+            <form method="get">
+            <div class="row g-3">
+                <div class="col-md-2">
+                    <label>Code</label>
+                    <input type="text" name="code" class="form-control" placeholder="Code" value="{{ request.GET.code }}">
+                </div>
+                <div class="col-md-2">
+                    <label>Name</label>
+                    <input type="text" name="name" class="form-control" placeholder="Name" value="{{ request.GET.name }}">
+                </div>
+                <div class="col-md-2">
+                    <label>Metal Type</label>
+                    <select name="metal_type" class="form-select">
+                        <option value="">All</option>
+                        <option value="Gold" {% if metal_type == "Gold" %}selected{% endif %}>Gold</option>
+                        <option value="Silver" {% if metal_type == "Silver" %}selected{% endif %}>Silver</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label>Karat</label>
+                    <select name="type" class="form-select">
+                        <option value="">All</option>
+                        <option value="24KARAT" {% if type == "24KARAT" %}selected{% endif %}>24 Karat</option>
+                        <option value="22KARAT" {% if type == "22KARAT" %}selected{% endif %}>22 Karat</option>
+                        <option value="18KARAT" {% if type == "18KARAT" %}selected{% endif %}>18 Karat</option>
+                        <option value="14KARAT" {% if type == "14KARAT" %}selected{% endif %}>14 Karat</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label>Ornament Type</label>
+                    <select name="ornament_type" class="form-select">
+                        <option value="">All</option>
+                        <option value="stock" {% if ornament_type == "stock" %}selected{% endif %}>Stock</option>
+                        <option value="order" {% if ornament_type == "order" %}selected{% endif %}>Order</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label>Kaligar</label>
+                    <select name="kaligar" class="form-select">
+                        <option value="">All Kaligar</option>
+                        {% for k in kaligar %}
+                            <option value="{{ k.id }}" {% if request.GET.kaligar == k.id|stringformat:"s" %}selected{% endif %}>
+                                {{ k.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="row g-3 mt-2">
+                <div class="col-md-2">
+                    <label>Start Date</label>
+                    <input type="text" name="start_date" placeholder="YYYY-MM-DD" class="form-control" value="{{ request.GET.start_date }}">
+                </div>
+                <div class="col-md-2">
+                    <label>End Date</label>
+                    <input type="text" name="end_date" placeholder="YYYY-MM-DD" class="form-control" value="{{ request.GET.end_date }}">
+                </div>
+                <div class="col-md-2 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-light flex-fill fw-bold">
+                        <i class="bi bi-search me-1"></i> Filter
+                    </button>
+                    <a href="{% url 'ornament:list' %}" class="btn btn-outline-light flex-fill fw-bold">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
+                    </a>
+                </div>
+            </div>
+        </form>
+        </div>
+    </div>
 
-                <a href="{% url 'ornament:import_excel' %}" class="btn btn-success">
-                    <i class="bi bi-file-earmark-arrow-up"></i> Import Excel
-                </a>
-
-                
-                <a href="{% url 'ornament:export_excel' %}" class="btn btn-success">
-                    <i class="bi bi-file-earmark-excel-fill"></i> Excel
-                </a>
-        
-                <a href="{% url 'ornament:print_view' %}" class="btn btn-dark" target="_blank">
-                    <i class="bi bi-printer-fill"></i> Print
-                </a>
+    <!-- Import/Export Actions Section -->
+    <div class="collapse" id="actionsSection">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="action-buttons">
+                    <h6 class="mb-3 fw-bold"><i class="bi bi-gear-fill me-2"></i>Actions</h6>
+                    <div class="d-flex gap-2 flex-wrap justify-content-center">
+                        <a href="{% url 'ornament:import_excel' %}" class="btn btn-import btn-action">
+                            <i class="bi bi-file-earmark-arrow-up me-1"></i> Import Excel
+                        </a>
+                        <a href="{% url 'ornament:export_excel' %}" class="btn btn-export btn-action">
+                            <i class="bi bi-file-earmark-excel-fill me-1"></i> Export Excel
+                        </a>
+                        <a href="{% url 'ornament:print_view' %}" class="btn btn-print btn-action" target="_blank">
+                            <i class="bi bi-printer-fill me-1"></i> Print
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -164,7 +305,6 @@
                 <tr>
                     <td>{{ forloop.counter }}</td>
 
-
                     <!-- IMAGE THUMBNAIL -->
                     <td>
                         {% if o.image %}
@@ -192,7 +332,6 @@
                     <td>{{ o.get_ornament_type_display }}</td>
 
                     <td class="text-center">
-
                         <div class="btn-group">
                             <a href="{% url 'ornament:update' o.pk %}" 
                                class="btn btn-sm btn-outline-warning"
@@ -206,11 +345,10 @@
                                 <i class="bi bi-trash-fill"></i>
                             </a>
                         </div>
-                    
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="12" class="text-center">No records found.</td></tr>
+                <tr><td colspan="19" class="text-center">No records found.</td></tr>
                 {% endfor %}
             </tbody>
 
@@ -218,7 +356,7 @@
                 <tr class="table-info">
                     <th colspan="10">TOTAL WEIGHT</th>
                     <th>{{ total_weight|floatformat:3 }}</th>
-                    <th colspan="12"></th>
+                    <th colspan="8"></th>
                 </tr>
             </tfoot>
 

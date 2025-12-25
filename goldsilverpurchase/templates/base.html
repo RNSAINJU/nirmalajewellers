@@ -24,7 +24,8 @@
     .sidebar {
         width: 260px;
         height: 100vh;
-        background: #212529;
+        background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+        border-right: 1px solid rgba(255,255,255,0.08);
         position: fixed;
         top: 0;
         left: 0;
@@ -42,10 +43,11 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0.5rem 1rem;
+        padding: 0.5rem 0.75rem;
         font-weight: 500;
-        color: #adb5bd;
-        transition: background 0.3s, color 0.3s;
+        color: #cbd5e1;
+        border-radius: 8px;
+        transition: background 0.2s, color 0.2s, transform 0.2s;
     }
 
     .sidebar .nav-link i {
@@ -53,21 +55,23 @@
     }
 
     .sidebar .nav-link:hover {
-        background: #0d6efd;
+        background: rgba(59,130,246,0.15);
         color: #fff;
+        transform: translateX(2px);
     }
 
     .sidebar .nav-link.active {
-        background: #0d6efd;
+        background: rgba(59,130,246,0.25);
         color: #fff;
+        box-shadow: inset 0 0 0 1px rgba(59,130,246,0.4);
     }
 
     /* Submenu links */
     .sidebar .collapse .nav-link {
-        padding-left: 2rem;
-        font-size: 0.95rem;
+        padding-left: 1.75rem;
+        font-size: 0.93rem;
         border-left: 3px solid transparent;
-        transition: all 0.3s;
+        transition: all 0.2s;
     }
 
     .sidebar .collapse .nav-link.active {
@@ -78,15 +82,15 @@
 
     /* Chevron rotation */
     .sidebar .nav-link[data-bs-toggle="collapse"] i.bi-chevron-down {
-        transition: transform 0.3s;
+        transition: transform 0.25s;
     }
 
-    .sidebar .nav-link[data-bs-toggle="collapse"].collapsed i.bi-chevron-down {
-        transform: rotate(0deg);
-    }
-
-    .sidebar .nav-link[data-bs-toggle="collapse"]:not(.collapsed) i.bi-chevron-down {
+    .sidebar .nav-link[aria-expanded="true"] i.bi-chevron-down {
         transform: rotate(180deg);
+    }
+
+    .sidebar .nav-link[aria-expanded="false"] i.bi-chevron-down {
+        transform: rotate(0deg);
     }
 
     /* CONTENT */
@@ -127,7 +131,7 @@
     }
 
     body.dark .sidebar {
-        background: #1e1e1e;
+        background: linear-gradient(180deg, #0b0f14 0%, #0b0f14 100%);
     }
 
 </style>
@@ -157,7 +161,7 @@
 <nav class="sidebar" id="sidebar">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <div class="text-white fw-bold fs-5">
-            <i class="bi bi-gem"></i> Nirmala Jewellers
+            <i class="bi bi-gem me-2"></i> Nirmala Jewellers
         </div>
 
         <!-- CLOSE BUTTON (DESKTOP + MOBILE) -->
@@ -170,14 +174,14 @@
 
         <!-- Gold/Silver Purchase -->
         <li class="nav-item">
-            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#purchaseMenu">
-                <i class="bi bi-gem me-2"></i> Gold/Silver Purchase
+            <a class="nav-link collapsed" data-bs-toggle="collapse" data-bs-target="#purchaseMenu" role="button" aria-expanded="{% if request.resolver_match.url_name == 'createpurchase' or request.resolver_match.url_name == 'purchaselist' %}true{% else %}false{% endif %}" aria-controls="purchaseMenu">
+                <i class="bi bi-gem me-2"></i> Purchase
                 <i class="bi bi-chevron-down float-end"></i>
             </a>
             <div class="collapse {% if request.resolver_match.url_name == 'createpurchase' or request.resolver_match.url_name == 'purchaselist' %}show{% endif %}" id="purchaseMenu">
 
                 <a href="{% url 'gsp:createpurchase' %}" class="nav-link ms-3 {% if request.resolver_match.url_name == 'createpurchase' %}active{% endif %}">
-                    New Purchase
+                    Create Purchase
                 </a>
                 <a href="{% url 'gsp:purchaselist' %}" class="nav-link ms-3 {% if request.resolver_match.url_name == 'purchaselist' %}active{% endif %}">
                     Gold/Silver Purchase
@@ -187,7 +191,7 @@
 
         <!-- Ornament -->
         <li class="nav-item">
-            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#ornamentMenu">
+            <a class="nav-link collapsed" data-bs-toggle="collapse" data-bs-target="#ornamentMenu" role="button" aria-expanded="{% if request.resolver_match.url_name == 'ornament_create' or request.resolver_match.url_name == 'ornament_list' %}true{% else %}false{% endif %}" aria-controls="ornamentMenu">
                 <i class="bi bi-gem me-2"></i> Ornament
                 <i class="bi bi-chevron-down float-end"></i>
             </a>
@@ -203,7 +207,7 @@
 
         <!-- Orders -->
         <li class="nav-item">
-            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#orderMenu">
+            <a class="nav-link collapsed" data-bs-toggle="collapse" data-bs-target="#orderMenu" role="button" aria-expanded="{% if request.resolver_match.app_name == 'order' %}true{% else %}false{% endif %}" aria-controls="orderMenu">
                 <i class="bi bi-bag me-2"></i> Orders
                 <i class="bi bi-chevron-down float-end"></i>
             </a>
@@ -217,23 +221,33 @@
             </div>
         </li>
 
-        <!-- Sales (separate tab) -->
+        <!-- Sales -->
         <li class="nav-item">
-            <a href="{% url 'sales:sales_list' %}" class="nav-link {% if request.resolver_match.app_name == 'sales' and request.resolver_match.url_name == 'sales_list' %}active{% endif %}">
+            <a class="nav-link collapsed" data-bs-toggle="collapse" data-bs-target="#salesMenu" role="button" aria-expanded="false" aria-controls="salesMenu">
                 <i class="bi bi-receipt me-2"></i> Sales
+                <i class="bi bi-chevron-down float-end"></i>
             </a>
+            <div class="collapse" id="salesMenu">
+
+                <a href="{% url 'sales:sales_list' %}" class="nav-link ms-3">
+                    Sales List
+                </a>
+                <a href="{% url 'sales:sale_create' %}" class="nav-link ms-3">
+                    Create Sale
+                </a>
+            </div>
         </li>
 
         <hr class="text-secondary">
 
         <!-- Reports -->
         <li class="nav-item">
-            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#reportMenu">
+            <a class="nav-link collapsed" data-bs-toggle="collapse" data-bs-target="#reportMenu" role="button" aria-expanded="{% if request.resolver_match.url_name == 'monthly_stock_report' %}true{% else %}false{% endif %}" aria-controls="reportMenu">
                 <i class="bi bi-bar-chart me-2"></i> Reports
                 <i class="bi bi-chevron-down float-end"></i>
             </a>
-            <div class="collapse" id="reportMenu">
-                <a href="#" class="nav-link ms-3">Stock Report</a>
+            <div class="collapse {% if request.resolver_match.url_name == 'monthly_stock_report' %}show{% endif %}" id="reportMenu">
+                <a href="{% url 'monthly_stock_report' %}" class="nav-link ms-3 {% if request.resolver_match.url_name == 'monthly_stock_report' %}active{% endif %}">Stock Report</a>
                 <a href="#" class="nav-link ms-3">Order Report</a>
             </div>
         </li>

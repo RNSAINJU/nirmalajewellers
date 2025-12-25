@@ -1,231 +1,147 @@
 {% extends 'base.html' %}
-
 {% block content %}
 
-    <div class="container mt-5">
-      <h1 class="text-center mb-4">{{ form_title }}</h1>
-      <div class="card shadow">
+<div class="container mt-5">
+  <h1 class="text-center mb-4">{{ form_title }}</h1>
+
+  <form method="post" novalidate class="row g-4">
+    {% csrf_token %}
+
+    <!-- Left: Bill & Party -->
+    <div class="col-lg-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-light fw-semibold">Bill & Party</div>
         <div class="card-body">
-          <form method="post" novalidate>
-            {% csrf_token %}
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label for="bill_no" class="form-label">Bill No</label>
-                <input
-                  type="text"
-                  id="bill_no"
-                  name="bill_no"
-                  class="form-control"
-                  value="{{ form.bill_no.value|default:'' }}"
-                  placeholder="Enter Bill No "
-                  required
-                />
-                {% if form.bill_no.errors %}<div class="text-danger small">{{ form.bill_no.errors }}</div>{% endif %}
-
-              </div>
-              <div class="col-md-6">
-                <label for="bill_date" class="form-label">Bill Date (BS)</label>
-                <input
-                  type="text"
-                  id="id_bill_date"
-                  name="bill_date"
-                  class="form-control"
-                  placeholder="Enter Bill Date (BS) (YYYY-MM-DD)"
-                  value="{{ form.bill_date.value|default:'' }}"
-                  required
-                />
-                {% if form.bill_date.errors %}<div class="text-danger small">{{ form.bill_date.errors }}</div>{% endif %}
-              </div>
-
-              <div class="col-md-6">
-                <label for="party" class="form-label">Party</label>
-                <select id="party" name="party" class="form-select" required>
-                    
-                    <option value="" disabled {% if not form.party.value %}selected{% endif %}>
-                        Select Party
-                    </option>
-            
-                    {% for party in form.fields.party.queryset %}
-                        <option value="{{ party.pk }}"
-                            {% if form.party.value == party.pk %}selected{% endif %}>
-                            {{ party.party_name }}
-                        </option>
-                    {% endfor %}
-                </select>
-            
-                {% if form.party.errors %}
-                    <div class="text-danger small">{{ form.party.errors }}</div>
-                {% endif %}
-            </div>
-            
-
-
-              <div class="col-md-6">
-                <label for="particular" class="form-label">Particular</label>
-                <input
-                  id="particular"
-                  name="particular"
-                  class="form-control"
-                  value="{{ form.particular.value|default:'' }}"
-                  placeholder="Enter particulars"
-                  required
-                >
-              
-              </>
-
-                {% if form.particular.errors %}<div class="text-danger small">{{ form.particular.errors }}</div>{% endif %}
-              </div>
-
-               <div class="col-md-6">
-                <label for="metal_type" class="form-label">Metal Type</label>
-                <select
-                  id="metal_type"
-                  name="metal_type"
-                  class="form-select"
-                  required
-                >
-                  <option value="" disabled selected>Select Metal Type</option>
-                  {% for key, value in form.metal_type.field.choices %}
-                  <option value="{{ key }}" {% if form.metal_type.value == key %}selected{% endif %}>
-                    {{ value }}
-                  </option>
-                  {% endfor %}
-                </select>
-
-                {% if form.metal_type.errors %}<div class="text-danger small">{{ form.metal_type.errors }}</div>{% endif %}
-              </div>
-
-              <div class="col-md-6">
-                <label for="quantity" class="form-label">Quantity</label>
-                <input
-                  type="number"
-                  id="quantity"
-                  name="quantity"
-                  class="form-control"
-                  value="{{ form.quantity.value|default:'' }}"
-                  placeholder="Enter Gold/Silver Quantity"
-                  required
-                />
-                {% if form.quantity.errors %}<div class="text-danger small">{{ form.quantity.errors }}</div>{% endif %}
-              </div>
-
-              <div class="col-md-6">
-                <label for="rate" class="form-label">Rate</label>
-                <input
-                  type="number"
-                  id="rate"
-                  name="rate"
-                  class="form-control"
-                  value="{{ form.rate.value|default:'' }}"
-                  placeholder="Enter Rate"
-                  required
-                />
-                {% if form.rate.errors %}<div class="text-danger small">{{ form.rate.errors }}</div>{% endif %}
-              </div>
-              <div class="col-md-6">
-                <label for="wages" class="form-label">Wages</label>
-                <input
-                  type="number"
-                  id="wages"
-                  name="wages"
-                  class="form-control"
-                  value="{{ form.wages.value|default:'' }}"
-                  placeholder="Enter Wages"
-                  required
-                />
-                {% if form.wages.errors %}<div class="text-danger small">{{ form.wages.errors }}</div>{% endif %}
-              </div>
-
-              <div class="col-md-6">
-                <label for="discount" class="form-label">Discount</label>
-                <input
-                  type="number"
-                  id="discount"
-                  name="discount"
-                  class="form-control"
-                  value="{{ form.discount.value|default:'' }}"
-                  placeholder="Enter Discount"
-                  required
-                />
-                {% if form.discount.errors %}<div class="text-danger small">{{ form.discount.errors }}</div>{% endif %}
-              </div>
-
-              <div class="col-md-6">
-                <label for="amount" class="form-label">Amount</label>
-                <input
-                  type="number"
-                  id="amount"
-                  name="amount"
-                  class="form-control bg-light"
-                  value="{{ form.amount.value|default:'' }}"
-                  placeholder="Amount (auto-calculated)"
-                  step="0.01"
-                  
-                  aria-readonly="true"
-                />
-                {% if form.amount.errors %}<div class="text-danger small">{{ form.amount.errors }}</div>{% endif %}
-              </div>
-
-              <div class="col-md-6">
-                <label for="payment_mode" class="form-label">Payment Mode</label>
-                <select
-                  id="payment_mode"
-                  name="payment_mode"
-                  class="form-select"
-                  required
-                >
-                  <option value="" disabled selected>Select Payment Mode</option>
-                  {% for key, value in form.payment_mode.field.choices %}
-                  <option value="{{ key }}" {% if form.payment_mode.value == key %}selected{% endif %}>
-                    {{ value }}
-                  </option>
-                  {% endfor %}
-                </select>
-
-                {% if form.payment_mode.errors %}<div class="text-danger small">{{ form.payment_mode.errors }}</div>{% endif %}
-              </div>
-
-              <!-- Payment Status -->
-              <div class="col-md-6 mb-3">
-                  <div class="form-check form-switch">
-                      <input type="checkbox" 
-                            class="form-check-input" 
-                            name="is_paid" 
-                            id="id_is_paid" 
-                            {% if form.is_paid.value %}checked{% endif %}>
-                      <label class="form-check-label" for="id_is_paid">
-                          Payment Status
-                      </label>
-                  </div>
-                  <div class="form-text">Check if the payment has been completed</div>
-                  {% if form.is_paid.errors %}
-                      <div class="text-danger">{{ form.is_paid.errors }}</div>
-                  {% endif %}
-              </div>
-
-              <!-- Remarks -->
-              <div class="col-md-12 mb-3">
-                  <label for="id_remarks" class="form-label">Remarks</label>
-                  <textarea class="form-control" 
-                            name="remarks" 
-                            id="id_remarks" 
-                            rows="3" 
-                            placeholder="Any additional notes or comments...">{% if form.remarks.value %}{{ form.remarks.value }}{% endif %}</textarea>
-                  <div class="form-text">Optional notes about this purchase</div>
-                  {% if form.remarks.errors %}
-                      <div class="text-danger">{{ form.remarks.errors }}</div>
-                  {% endif %}
-              </div>
+          <div class="mb-3">
+            <label for="bill_no" class="form-label mb-1">Bill No</label>
+            <input type="text" id="bill_no" name="bill_no" class="form-control form-control-sm" value="{{ form.bill_no.value|default:'' }}" placeholder="Bill number" required>
+            {% if form.bill_no.errors %}<div class="text-danger small">{{ form.bill_no.errors }}</div>{% endif %}
           </div>
 
-            </div>
-            <div class="d-flex justify-content-end mt-4">
-              <button type="submit" class="btn btn-success me-2">Save</button>
-              <a href="{% url 'gsp:purchaselist' %}" class="btn btn-secondary">Cancel</a>
-            </div>
-          </form>
+          <div class="mb-3">
+            <label for="id_bill_date" class="form-label mb-1">Bill Date (BS)</label>
+            <input type="text" id="id_bill_date" name="bill_date" class="form-control form-control-sm" placeholder="YYYY-MM-DD" value="{{ form.bill_date.value|default:'' }}" required>
+            {% if form.bill_date.errors %}<div class="text-danger small">{{ form.bill_date.errors }}</div>{% endif %}
+          </div>
+
+          <div class="mb-3">
+            <label for="party" class="form-label mb-1">Party</label>
+            <select id="party" name="party" class="form-select form-select-sm" required>
+              <option value="" disabled {% if not form.party.value %}selected{% endif %}>Select Party</option>
+              {% for party in form.fields.party.queryset %}
+              <option value="{{ party.pk }}" {% if form.party.value == party.pk %}selected{% endif %}>{{ party.party_name }}</option>
+              {% endfor %}
+            </select>
+            {% if form.party.errors %}<div class="text-danger small">{{ form.party.errors }}</div>{% endif %}
+          </div>
+
+          <div class="mb-3">
+            <label for="metal_type" class="form-label mb-1">Metal Type</label>
+            <select id="metal_type" name="metal_type" class="form-select form-select-sm" required>
+              <option value="" disabled>Select Metal Type</option>
+              {% for key, value in form.metal_type.field.choices %}
+              <option value="{{ key }}" {% if form.metal_type.value == key %}selected{% endif %}>{{ value }}</option>
+              {% endfor %}
+            </select>
+            {% if form.metal_type.errors %}<div class="text-danger small">{{ form.metal_type.errors }}</div>{% endif %}
+          </div>
+
+          <div class="mb-1">
+            <label for="particular" class="form-label mb-1">Particular</label>
+            <input id="particular" name="particular" class="form-control form-control-sm" value="{{ form.particular.value|default:'' }}" placeholder="Particular details" required>
+            {% if form.particular.errors %}<div class="text-danger small">{{ form.particular.errors }}</div>{% endif %}
+          </div>
         </div>
       </div>
     </div>
-  
-    {% endblock %}
+
+    <!-- Right: Amounts & Payment -->
+    <div class="col-lg-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-light fw-semibold">Amounts & Payment</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="quantity" class="form-label mb-1">Quantity</label>
+              <input type="number" id="quantity" name="quantity" class="form-control form-control-sm" value="{{ form.quantity.value|default:'' }}" placeholder="Qty" step="0.001" required>
+              {% if form.quantity.errors %}<div class="text-danger small">{{ form.quantity.errors }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label for="rate" class="form-label mb-1">Rate</label>
+              <input type="number" id="rate" name="rate" class="form-control form-control-sm" value="{{ form.rate.value|default:'' }}" placeholder="Rate" step="0.01" required>
+              {% if form.rate.errors %}<div class="text-danger small">{{ form.rate.errors }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label for="wages" class="form-label mb-1">Wages</label>
+              <input type="number" id="wages" name="wages" class="form-control form-control-sm" value="{{ form.wages.value|default:'' }}" placeholder="Wages" step="0.01">
+              {% if form.wages.errors %}<div class="text-danger small">{{ form.wages.errors }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label for="discount" class="form-label mb-1">Discount</label>
+              <input type="number" id="discount" name="discount" class="form-control form-control-sm" value="{{ form.discount.value|default:'' }}" placeholder="Discount" step="0.01">
+              {% if form.discount.errors %}<div class="text-danger small">{{ form.discount.errors }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label for="amount" class="form-label mb-1">Amount</label>
+              <input type="number" id="amount" name="amount" class="form-control form-control-sm bg-light" value="{{ form.amount.value|default:'' }}" placeholder="Auto-calculated" step="0.01" readonly>
+              {% if form.amount.errors %}<div class="text-danger small">{{ form.amount.errors }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label for="payment_mode" class="form-label mb-1">Payment Mode</label>
+              <select id="payment_mode" name="payment_mode" class="form-select form-select-sm" required>
+                <option value="" disabled>Select Payment Mode</option>
+                {% for key, value in form.payment_mode.field.choices %}
+                <option value="{{ key }}" {% if form.payment_mode.value == key %}selected{% endif %}>{{ value }}</option>
+                {% endfor %}
+              </select>
+              {% if form.payment_mode.errors %}<div class="text-danger small">{{ form.payment_mode.errors }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <div class="form-check form-switch mt-4">
+                <input type="checkbox" class="form-check-input" name="is_paid" id="id_is_paid" {% if form.is_paid.value %}checked{% endif %}>
+                <label class="form-check-label" for="id_is_paid">Payment Completed</label>
+              </div>
+              {% if form.is_paid.errors %}<div class="text-danger small">{{ form.is_paid.errors }}</div>{% endif %}
+            </div>
+            <div class="col-12">
+              <label for="id_remarks" class="form-label mb-1">Remarks</label>
+              <textarea class="form-control form-control-sm" name="remarks" id="id_remarks" rows="3" placeholder="Notes...">{% if form.remarks.value %}{{ form.remarks.value }}{% endif %}</textarea>
+              {% if form.remarks.errors %}<div class="text-danger small">{{ form.remarks.errors }}</div>{% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 d-flex justify-content-end">
+      <button type="submit" class="btn btn-success me-2">Save</button>
+      <a href="{% url 'gsp:purchaselist' %}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+
+<!-- Nepali Date Picker + auto amount calc -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nepali-datepicker-v3@3.7.0/dist/css/nepali.datepicker.min.css">
+<script src="https://cdn.jsdelivr.net/npm/nepali-datepicker-v3@3.7.0/dist/js/nepali.datepicker.min.js"></script>
+<script>
+  window.addEventListener('DOMContentLoaded', function () {
+    const options = { ndpYear: true, ndpMonth: true, ndpYearCount: 10 };
+    new NepaliDatePicker({ target: '#id_bill_date', ...options });
+
+    const $q = document.getElementById('quantity');
+    const $r = document.getElementById('rate');
+    const $w = document.getElementById('wages');
+    const $d = document.getElementById('discount');
+    const $a = document.getElementById('amount');
+    function D(x){ const n = parseFloat(x); return isNaN(n) ? 0 : n; }
+    function recalc(){
+      const subtotal = D($q.value) * D($r.value);
+      const amt = subtotal + D($w.value) - D($d.value);
+      $a.value = amt.toFixed(2);
+    }
+    [$q,$r,$w,$d].forEach(el => el && el.addEventListener('input', recalc));
+    recalc();
+  });
+  </script>
+
+{% endblock %}
