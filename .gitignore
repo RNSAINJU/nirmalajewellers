@@ -28,6 +28,9 @@ ornament/migrations/
 # Ignore all migration files in order app
 order/migrations/
 
+# Ignore all migration files in order app
+main/migrations/
+
 # Python bytecode
 __pycache__/
 **/__pycache__/
