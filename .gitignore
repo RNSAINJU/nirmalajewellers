@@ -25,6 +25,9 @@ order/__pycache__/views.cpython-310.pyc
 # Ignore all migration files in ornament app
 ornament/migrations/
 
+# Ignore all migration files in order app
+order/migrations/
+
 # Python bytecode
 __pycache__/
 **/__pycache__/
