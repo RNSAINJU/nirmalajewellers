@@ -233,6 +233,23 @@
                                         {% endif %}
                                     </div>
 
+                                    <!-- Diamond Rate -->
+                                    <div class="col-md-6 col-xl-4">
+                                        <label class="form-label mb-1">Diamond Rate</label>
+                                        <input
+                                            type="number"
+                                            id="diamond_rate"
+                                            name="diamond_rate"
+                                            class="form-control form-control-sm"
+                                            step="0.01"
+                                            value="{{ form.diamond_rate.value|default:'' }}"
+                                            placeholder="Diamond rate"
+                                        />
+                                        {% if form.diamond_rate.errors %}
+                                            <div class="text-danger small">{{ form.diamond_rate.errors }}</div>
+                                        {% endif %}
+                                    </div>
+
                                     <!-- Zircon Weight -->
                                     <div class="col-md-6 col-xl-4">
                                         <label class="form-label mb-1">Zircon Weight</label>

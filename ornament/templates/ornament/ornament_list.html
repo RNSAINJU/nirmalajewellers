@@ -290,6 +290,7 @@
                     <th>Gross Weight</th>
                     <th>Weight</th>
                     <th>Diamond Weight</th>
+                    <th>Diamond Rate</th>
                     <th>Ziron Weight</th>
                     <th>Stone Weight</th>
                     <th>Jarti</th>
@@ -324,6 +325,7 @@
                     <td>{{ o.gross_weight }}</td>
                     <td>{{ o.weight }}</td>
                     <td>{{ o.diamond_weight }}</td>
+                    <td>{{ o.diamond_rate }}</td>
                     <td>{{ o.zircon_weight }}</td>
                     <td>{{ o.stone_weight }}</td>
                     <td>{{ o.jarti }}</td>
@@ -356,7 +358,7 @@
                 <tr class="table-info">
                     <th colspan="10">TOTAL WEIGHT</th>
                     <th>{{ total_weight|floatformat:3 }}</th>
-                    <th colspan="8"></th>
+                    <th colspan="9"></th>
                 </tr>
             </tfoot>
 

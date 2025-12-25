@@ -175,6 +175,13 @@ class Ornament(models.Model):
         default=Decimal('0.000'),
         verbose_name="Diamond Weight (हिरा / पत्थर तौल)",
     )
+    diamond_rate = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        verbose_name="Diamond Rate (per gram)",
+        help_text="Rate used for diamond valuation",
+    )
     zircon_weight=models.DecimalField(
         max_digits=10,
         decimal_places=3,
