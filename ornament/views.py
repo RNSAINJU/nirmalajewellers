@@ -10,8 +10,8 @@ from io import BytesIO
 from django.contrib import messages
 from decimal import Decimal
 from django.forms import modelformset_factory
-# import openpyxl
-# from openpyxl.utils import get_column_letter
+import openpyxl
+from openpyxl.utils import get_column_letter
 import nepali_datetime as ndt
 
 class MainCategoryCreateView(CreateView):
@@ -215,7 +215,7 @@ def export_excel(request):
     headers = [
         "Ornament Date", "Code", "Metal Type","Type", "Ornament Type",
         "MainCategory", "SubCategory", "Ornament Name","Gross Weight",
-        "Weight", "Diamond/Stones Weight","Zircon Weight","Stone Weight",
+        "Weight", "Diamond/Stones Weight","Diamond Rate","Zircon Weight","Stone Weight",
         "Stone Price Per Carat","Stone Total Price",
         "Jarti","Jyala","Kaligar","Image","Order","Created at","Updated at","Status"
     ]
@@ -234,6 +234,7 @@ def export_excel(request):
             o.gross_weight,
             o.weight,
             o.diamond_weight,
+            o.diamond_rate,
             o.zircon_weight,
             o.stone_weight,
             o.stone_percaratprice,
@@ -311,6 +312,7 @@ def import_excel(request):
                         gross_weight,
                         weight,
                         diamond_weight,
+                        diamond_rate,
                         zircon_weight,
                         stone_weight,
                         stone_percaratprice,
@@ -398,6 +400,7 @@ def import_excel(request):
                     gross_weight= to_decimal(gross_weight),
                     weight = to_decimal(weight),
                     diamond_weight = to_decimal(diamond_weight),
+                    diamond_rate = to_decimal(diamond_rate),
                     zircon_weight = to_decimal(zircon_weight),
                     stone_weight    = to_decimal(stone_weight),
                     stone_percaratprice= to_decimal(stone_percaratprice),    
@@ -419,6 +422,7 @@ def import_excel(request):
                     gross_weight=gross_weight,
                     weight = weight,
                     diamond_weight = diamond_weight,
+                    diamond_rate = diamond_rate,
                     zircon_weight=zircon_weight,
                     stone_weight=stone_weight,
                     stone_percaratprice=stone_percaratprice,
