@@ -1,6 +1,7 @@
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
-from django.db.models import Sum
+from django.db.models import Sum, F, DecimalField
+from django.db.models.functions import Coalesce
 from .models import Kaligar, Ornament, MainCategory, SubCategory
 from .forms import OrnamentForm
 from django.http import HttpResponse
@@ -13,6 +14,7 @@ from django.forms import modelformset_factory
 import openpyxl
 from openpyxl.utils import get_column_letter
 import nepali_datetime as ndt
+from main.models import Stock
 
 class MainCategoryCreateView(CreateView):
     model = MainCategory
@@ -100,6 +102,23 @@ class OrnamentListView(ListView):
         context['gold_count'] = Ornament.objects.filter(metal_type__icontains='Gold').count()
         context['silver_count'] = Ornament.objects.filter(metal_type__icontains='Silver').count()
         context['diamond_count'] = Ornament.objects.filter(metal_type__icontains='Diamond').count()
+        
+        # Diamond total amount calculation
+        diamond_ornaments = Ornament.objects.filter(metal_type__icontains='Diamond')
+        total_diamond_amount = diamond_ornaments.aggregate(
+            total=Sum(F('diamond_weight') * F('diamond_rate'), output_field=DecimalField())
+        )['total'] or 0
+        gold_rate=Stock.objects.get(year=2082).gold_rate
+        total_jyala= diamond_ornaments.aggregate(
+            total=Sum(F('jyala'), output_field=DecimalField())
+        )['total'] or 0
+        total_stone_amount=diamond_ornaments.aggregate(
+            total=Sum(F('stone_totalprice'), output_field=DecimalField())
+        )['total'] or 0
+        total_gold_amount = diamond_ornaments.aggregate(
+            total=Sum((F('weight') * 0.59 )* (gold_rate), output_field=DecimalField())
+        )['total'] or 0
+        context['diamond_total_amount'] = total_diamond_amount+total_gold_amount+total_jyala+total_stone_amount
 
         # Filters back to template
         context['metal_type'] = self.request.GET.get('metal_type')
