@@ -3,8 +3,8 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from .models import GoldSilverPurchase, Party
 from django.db.models import Sum
 import nepali_datetime as ndt
-# import openpyxl
-# from openpyxl.utils import get_column_letter
+import openpyxl
+from openpyxl.utils import get_column_letter
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.db.models import Q
@@ -308,7 +308,7 @@ def import_excel(request):
                 request,
                 f"Imported: {imported} | Skipped duplicates: {skipped}"
             )
-            return redirect("gsp:list")
+            return redirect("gsp:purchaselist")
 
         except Exception as e:
             messages.error(request, f"Error while importing: {e}")

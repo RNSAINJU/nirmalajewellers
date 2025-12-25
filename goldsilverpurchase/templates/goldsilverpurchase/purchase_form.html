@@ -26,12 +26,17 @@
 
           <div class="mb-3">
             <label for="party" class="form-label mb-1">Party</label>
-            <select id="party" name="party" class="form-select form-select-sm" required>
-              <option value="" disabled {% if not form.party.value %}selected{% endif %}>Select Party</option>
-              {% for party in form.fields.party.queryset %}
-              <option value="{{ party.pk }}" {% if form.party.value == party.pk %}selected{% endif %}>{{ party.party_name }}</option>
-              {% endfor %}
-            </select>
+            <div class="input-group input-group-sm">
+              <select id="party" name="party" class="form-select form-select-sm" required>
+                <option value="" disabled {% if not form.party.value %}selected{% endif %}>Select Party</option>
+                {% for party in form.fields.party.queryset %}
+                <option value="{{ party.pk }}" {% if form.party.value == party.pk %}selected{% endif %}>{{ party.party_name }}</option>
+                {% endfor %}
+              </select>
+              <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#partiesModal" title="View All Parties">
+                <i class="bi bi-list"></i>
+              </button>
+            </div>
             {% if form.party.errors %}<div class="text-danger small">{{ form.party.errors }}</div>{% endif %}
           </div>
 
@@ -140,6 +145,145 @@
       $a.value = amt.toFixed(2);
     }
     [$q,$r,$w,$d].forEach(el => el && el.addEventListener('input', recalc));
+  });
+
+  // Party selection from modal
+  function selectParty(partyId, partyName) {
+    document.getElementById('party').value = partyId;
+    const modal = bootstrap.Modal.getInstance(document.getElementById('partiesModal'));
+    if (modal) modal.hide();
+  }
+
+  // Toggle between parties list and add form
+  function showAddPartyForm() {
+    document.getElementById('partiesTableView').style.display = 'none';
+    document.getElementById('partiesFormView').style.display = 'block';
+  }
+
+  function showPartiesList() {
+    document.getElementById('partiesTableView').style.display = 'block';
+    document.getElementById('partiesFormView').style.display = 'none';
+    document.getElementById('addPartyForm').reset();
+  }
+
+  // Handle party form submission
+  document.addEventListener('DOMContentLoaded', function() {
+    const addPartyForm = document.getElementById('addPartyForm');
+    if (addPartyForm) {
+      addPartyForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(addPartyForm);
+        
+        fetch('{% url "gsp:createparty" %}', {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+          },
+          body: formData
+        })
+        .then(response => {
+          if (response.ok) {
+            // Reload the page to refresh the party list
+            location.reload();
+          } else {
+            alert('Error adding party. Please check the form.');
+          }
+        })
+        .catch(error => console.error('Error:', error));
+      });
+    }
+  });
+</script>
+
+<!-- Parties Modal -->
+<div class="modal fade" id="partiesModal" tabindex="-1" aria-labelledby="partiesModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="partiesModalLabel">All Parties</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        
+        <!-- Parties Table View -->
+        <div id="partiesTableView">
+          <div class="table-responsive">
+            <table class="table table-striped table-hover table-sm">
+              <thead class="table-light">
+                <tr>
+                  <th>Party Name</th>
+                  <th>PAN No</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for party in form.fields.party.queryset %}
+                <tr>
+                  <td>{{ party.party_name }}</td>
+                  <td>{{ party.panno }}</td>
+                  <td>
+                    <button type="button" class="btn btn-sm btn-primary" onclick="selectParty({{ party.pk }}, '{{ party.party_name }}')">
+                      Select
+                    </button>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="3" class="text-center text-muted">No parties found</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Add Party Form View -->
+        <div id="partiesFormView" style="display: none;">
+          <form id="addPartyForm">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label for="newPartyName" class="form-label">Party Name</label>
+              <input type="text" id="newPartyName" name="party_name" class="form-control" placeholder="Enter Party Name" required>
+            </div>
+            <div class="mb-3">
+              <label for="newPartyPan" class="form-label">PAN No</label>
+              <input type="text" id="newPartyPan" name="panno" class="form-control" placeholder="Enter 9-digit PAN" pattern="\d{9}" maxlength="9" required>
+              <small class="text-muted">Must be 9 digits</small>
+            </div>
+          </form>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <div id="tableFooter">
+          <button type="button" class="btn btn-success btn-sm" onclick="showAddPartyForm()">+ Add New Party</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+        <div id="formFooter" style="display: none;">
+          <button type="button" class="btn btn-secondary" onclick="showPartiesList()">Back to List</button>
+          <button type="submit" form="addPartyForm" class="btn btn-success">Save Party</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Update footer buttons visibility when switching views
+  const origShowAddForm = showAddPartyForm;
+  showAddPartyForm = function() {
+    origShowAddForm();
+    document.getElementById('tableFooter').style.display = 'none';
+    document.getElementById('formFooter').style.display = 'flex';
+  };
+
+  const origShowList = showPartiesList;
+  showPartiesList = function() {
+    origShowList();
+    document.getElementById('tableFooter').style.display = 'flex';
+    document.getElementById('formFooter').style.display = 'none';
+  };
+</script>
     recalc();
   });
   </script>

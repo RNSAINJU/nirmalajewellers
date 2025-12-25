@@ -124,6 +124,7 @@ class Ornament(models.Model):
 
     class TypeCategory(models.TextChoices):
         TWENTYFOURKARAT = '24KARAT', '24 Karat'
+        TWENTHREEKARAT = '23KARAT', '23 Karat'
         TWENTYTWOKARAT = '22KARAT', '22 Karat'
         EIGHTEENKARAT = '18KARAT', '18 Karat'
         FOURTEENKARAT = '14KARAT', '14 Karat'

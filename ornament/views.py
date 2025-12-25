@@ -108,7 +108,10 @@ class OrnamentListView(ListView):
         total_diamond_amount = diamond_ornaments.aggregate(
             total=Sum(F('diamond_weight') * F('diamond_rate'), output_field=DecimalField())
         )['total'] or 0
-        gold_rate=Stock.objects.get(year=2082).gold_rate
+        try:
+            gold_rate = Stock.objects.get(year=2082).gold_rate
+        except Stock.DoesNotExist:
+            gold_rate = Decimal('0')
         total_jyala= diamond_ornaments.aggregate(
             total=Sum(F('jyala'), output_field=DecimalField())
         )['total'] or 0
