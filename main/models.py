@@ -1,6 +1,29 @@
 from django.db import models
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, date
+
+class DailyRate(models.Model):
+    """Store daily gold and silver rates from FENEGOSIDA."""
+    date = models.DateField(default=date.today, unique=True)
+    bs_date = models.CharField(max_length=50, blank=True, help_text="Nepali date as shown on site, e.g., '11 Poush 2082'")
+
+    # Per tola rates
+    gold_rate = models.DecimalField(max_digits=12, decimal_places=2, help_text="Gold rate per tola")
+    silver_rate = models.DecimalField(max_digits=12, decimal_places=2, help_text="Silver rate per tola")
+
+    # Per 10 gram derived rates
+    gold_rate_10g = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'), help_text="Gold rate per 10 grams")
+    silver_rate_10g = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'), help_text="Silver rate per 10 grams")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-date']
+    
+    def __str__(self):
+        return f"Rates - {self.date} ({self.bs_date})"
+
 
 class Stock(models.Model):
     """

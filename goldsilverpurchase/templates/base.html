@@ -151,9 +151,17 @@
 
         <span class="navbar-brand mb-0 h1">Nirmala Jewellers</span>
 
-        <button class="btn btn-outline-light" onclick="toggleTheme()">
-            <i class="bi bi-moon-fill"></i>
-        </button>
+        <div class="d-flex align-items-center gap-3 ms-auto">
+            {% if latest_rate %}
+            <div class="text-end text-white small">
+                <div class="fw-semibold">{{ latest_rate.bs_date|default:latest_rate.date }}</div>
+                <div>Gold: रु{{ latest_rate.gold_rate }} | Silver: रु{{ latest_rate.silver_rate }}</div>
+            </div>
+            {% endif %}
+            <button class="btn btn-outline-light" onclick="toggleTheme()">
+                <i class="bi bi-moon-fill"></i>
+            </button>
+        </div>
     </div>
 </nav>
 
