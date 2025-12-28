@@ -1,6 +1,5 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from django.conf import settings
 from main.models import DailyRate
 from datetime import date
 from decimal import Decimal, InvalidOperation
@@ -8,7 +7,6 @@ import re
 import urllib.request
 import urllib.error
 import logging
-import os
 
 # Optional deps
 try:
@@ -28,23 +26,10 @@ class Command(BaseCommand):
         parser.add_argument(
             '--dry-run', action='store_true', dest='dry_run', help='Print detected rates without saving'
         )
-        parser.add_argument(
-            '--proxy', type=str, default=None, help='HTTP proxy URL (e.g., http://proxy.example.com:8080)'
-        )
 
     def handle(self, *args, **options):
         try:
             url = 'https://www.fenegosida.org/'
-            
-            # Get proxy from command argument, environment variable, or settings
-            proxy = options.get('proxy') or os.environ.get('HTTP_PROXY') or os.environ.get('HTTPS_PROXY')
-            if not proxy and hasattr(settings, 'HTTP_PROXY'):
-                proxy = settings.HTTP_PROXY
-            
-            if proxy:
-                logger.info(f"Using proxy: {proxy}")
-                self.stdout.write(self.style.SUCCESS(f"Using proxy: {proxy}"))
-            
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -54,20 +39,14 @@ class Command(BaseCommand):
                 'Connection': 'keep-alive',
                 'Upgrade-Insecure-Requests': '1',
             }
+            req = urllib.request.Request(url, headers=headers)
             
             page_text = None
             soup = None
 
-            # Try with requests library first (better proxy support)
             if HAS_SOUP:
                 try:
-                    proxies = None
-                    if proxy:
-                        proxies = {
-                            'http': proxy,
-                            'https': proxy,
-                        }
-                    resp = requests.get(url, headers=headers, proxies=proxies, timeout=15, verify=False)
+                    resp = requests.get(url, headers=headers, timeout=10)
                     resp.raise_for_status()
                     page_text = resp.text
                     soup = BeautifulSoup(page_text, 'html.parser')
@@ -75,32 +54,17 @@ class Command(BaseCommand):
                     logger.warning(f"Requests failed: {e}. Falling back to urllib...")
                     pass
             
-            # Fallback to urllib with proxy
             if page_text is None:
                 try:
-                    if proxy:
-                        # Setup proxy for urllib
-                        proxy_handler = urllib.request.ProxyHandler({
-                            'http': proxy,
-                            'https': proxy,
-                        })
-                        opener = urllib.request.build_opener(proxy_handler)
-                        urllib.request.install_opener(opener)
-                    
-                    req = urllib.request.Request(url, headers=headers)
-                    with urllib.request.urlopen(req, timeout=15) as response:
+                    with urllib.request.urlopen(req, timeout=10) as response:
                         page_text = response.read().decode('utf-8', errors='ignore')
                 except urllib.error.HTTPError as e:
-                    logger.error(f"HTTP Error {e.code}: {e.reason}")
-                    self.stdout.write(self.style.ERROR(f"Error fetching rates: HTTP {e.code} - {e.reason}"))
+                    logger.error(f"HTTP Error {e.code}: {e.reason} - Network error")
+                    self.stdout.write(self.style.ERROR(f"Error fetching rates: Network error - {e}"))
                     return
                 except urllib.error.URLError as e:
                     logger.error(f"URL Error: {e.reason}")
-                    self.stdout.write(self.style.ERROR(f"Error fetching rates: Network error - {e.reason}"))
-                    return
-                except Exception as e:
-                    logger.error(f"Unexpected error: {e}")
-                    self.stdout.write(self.style.ERROR(f"Error fetching rates: {e}"))
+                    self.stdout.write(self.style.ERROR(f"Error fetching rates: Network error - {e}"))
                     return
             
             # Normalize whitespace and Devanagari digits
