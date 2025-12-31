@@ -24,18 +24,17 @@ app_name = 'order'
 class SearchOrnamentsAPI(View):
     def get(self, request):
         query = request.GET.get('q', '').strip()
-        # Only show ornaments that are still in stock (not attached to any order)
-        ornaments = Ornament.objects.filter(order__isnull=True, ornament_type='stock')
+        # Show ALL ornaments - ignore any category/subcategory filters
+        ornaments = Ornament.objects.all().order_by('-id')
         
         if query:
             ornaments = ornaments.filter(
                 Q(ornament_name__icontains=query) |
-                Q(code__icontains=query) |
-                Q(metal_type__icontains=query)
+                Q(code__icontains=query) 
             )
         
         data = []
-        for ornament in ornaments[:20]:  # Limit to 20 results
+        for ornament in ornaments[:50]:  # Increased limit to 50 results
             data.append({
                 'id': ornament.id,
                 'code': ornament.code or 'N/A',
