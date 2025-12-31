@@ -146,7 +146,7 @@
             </a>
         
             <!-- Dropdown menu -->
-            <div class="collapse {% if request.resolver_match.url_name in 'create list' %}show{% endif %}" id="ornamentMenu">
+            <div class="collapse {% if request.resolver_match.url_name in 'create list report' %}show{% endif %}" id="ornamentMenu">
         
                 <a href="{% url 'ornament:create' %}" 
                    class="nav-link ms-3 {% if request.resolver_match.url_name == 'create' %}active{% endif %}">
@@ -156,6 +156,11 @@
                 <a href="{% url 'ornament:list' %}" 
                    class="nav-link ms-3 {% if request.resolver_match.url_name == 'list' %}active{% endif %}">
                     Ornament List
+                </a>
+        
+                <a href="{% url 'ornament:report' %}" 
+                   class="nav-link ms-3 {% if request.resolver_match.url_name == 'report' %}active{% endif %}">
+                    Category Report
                 </a>
         
             </div>

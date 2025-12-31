@@ -199,16 +199,19 @@
 
         <!-- Ornament -->
         <li class="nav-item">
-            <a class="nav-link collapsed" data-bs-toggle="collapse" data-bs-target="#ornamentMenu" role="button" aria-expanded="{% if request.resolver_match.url_name == 'ornament_create' or request.resolver_match.url_name == 'ornament_list' %}true{% else %}false{% endif %}" aria-controls="ornamentMenu">
+            <a class="nav-link collapsed" data-bs-toggle="collapse" data-bs-target="#ornamentMenu" role="button" aria-expanded="{% if request.resolver_match.url_name == 'ornament_create' or request.resolver_match.url_name == 'ornament_list' or request.resolver_match.url_name == 'report' %}true{% else %}false{% endif %}" aria-controls="ornamentMenu">
                 <i class="bi bi-gem me-2"></i> Ornament
                 <i class="bi bi-chevron-down float-end"></i>
             </a>
-            <div class="collapse {% if request.resolver_match.url_name == 'ornament_create' or request.resolver_match.url_name == 'ornament_list' %}show{% endif %}" id="ornamentMenu">
+            <div class="collapse {% if request.resolver_match.url_name == 'ornament_create' or request.resolver_match.url_name == 'ornament_list' or request.resolver_match.url_name == 'report' %}show{% endif %}" id="ornamentMenu">
                 <a href="{% url 'ornament:create' %}" class="nav-link ms-3 {% if request.resolver_match.url_name == 'ornament_create' %}active{% endif %}">
                     New Ornament
                 </a>
                 <a href="{% url 'ornament:list' %}" class="nav-link ms-3 {% if request.resolver_match.url_name == 'ornament_list' %}active{% endif %}">
                     Ornament List
+                </a>
+                <a href="{% url 'ornament:report' %}" class="nav-link ms-3 {% if request.resolver_match.url_name == 'report' %}active{% endif %}">
+                    Category Report
                 </a>
             </div>
         </li>
@@ -250,12 +253,13 @@
 
         <!-- Reports -->
         <li class="nav-item">
-            <a class="nav-link collapsed" data-bs-toggle="collapse" data-bs-target="#reportMenu" role="button" aria-expanded="{% if request.resolver_match.url_name == 'monthly_stock_report' %}true{% else %}false{% endif %}" aria-controls="reportMenu">
+            <a class="nav-link collapsed" data-bs-toggle="collapse" data-bs-target="#reportMenu" role="button" aria-expanded="{% if request.resolver_match.url_name == 'monthly_stock_report' or request.resolver_match.url_name == 'weight_report' %}true{% else %}false{% endif %}" aria-controls="reportMenu">
                 <i class="bi bi-bar-chart me-2"></i> Reports
                 <i class="bi bi-chevron-down float-end"></i>
             </a>
-            <div class="collapse {% if request.resolver_match.url_name == 'monthly_stock_report' %}show{% endif %}" id="reportMenu">
+            <div class="collapse {% if request.resolver_match.url_name == 'monthly_stock_report' or request.resolver_match.url_name == 'weight_report' %}show{% endif %}" id="reportMenu">
                 <a href="{% url 'monthly_stock_report' %}" class="nav-link ms-3 {% if request.resolver_match.url_name == 'monthly_stock_report' %}active{% endif %}">Stock Report</a>
+                <a href="{% url 'ornament:weight_report' %}" class="nav-link ms-3 {% if request.resolver_match.url_name == 'weight_report' %}active{% endif %}">Ornament Weight Report</a>
                 <a href="#" class="nav-link ms-3">Order Report</a>
             </div>
         </li>

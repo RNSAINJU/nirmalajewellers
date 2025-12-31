@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from nepali_datetime_field.forms import NepaliDateField
 from decimal import Decimal
 from .models import Ornament
+import nepali_datetime as ndt
 
 
 class OrnamentForm(forms.ModelForm):
@@ -20,6 +21,10 @@ class OrnamentForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # Set default date to today's Nepali date for new instances
+        if not self.instance.pk and not self.initial.get('ornament_date'):
+            self.initial['ornament_date'] = ndt.date.today()
 
         # Code is auto-generated
         if 'code' in self.fields:

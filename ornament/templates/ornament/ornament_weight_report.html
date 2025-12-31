@@ -1,0 +1,625 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<style>
+    .report-header {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        border-radius: 15px;
+        padding: 30px;
+        color: white;
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        margin-bottom: 30px;
+    }
+    
+    .report-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0;
+        text-align: center;
+    }
+    
+    .report-subtitle {
+        text-align: center;
+        margin-top: 10px;
+        opacity: 0.9;
+        font-size: 1.1rem;
+    }
+    
+    .metal-card {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .metal-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 6px;
+        height: 100%;
+        background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+    }
+    
+    .metal-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+    }
+    
+    .metal-card.gold::before {
+        background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 100%);
+    }
+    
+    .metal-card.silver::before {
+        background: linear-gradient(180deg, #94a3b8 0%, #64748b 100%);
+    }
+    
+    .metal-card.diamond::before {
+        background: linear-gradient(180deg, #a78bfa 0%, #7c3aed 100%);
+    }
+    
+    .metal-type-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .metal-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 2rem;
+        margin-right: 20px;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+    
+    .metal-icon.gold {
+        background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    }
+    
+    .metal-icon.silver {
+        background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+    }
+    
+    .metal-icon.diamond {
+        background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%);
+    }
+    
+    .metal-name {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #1f2937;
+    }
+    
+    .weight-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+    
+    .weight-item {
+        background: #f9fafb;
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+    }
+    
+    .weight-label {
+        font-size: 0.9rem;
+        color: #6b7280;
+        margin-bottom: 8px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    
+    .weight-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #10b981;
+    }
+    
+    .weight-value.gold {
+        color: #f59e0b;
+    }
+    
+    .weight-value.silver {
+        color: #64748b;
+    }
+    
+    .weight-value.diamond {
+        color: #7c3aed;
+    }
+    
+    .weight-unit {
+        font-size: 1rem;
+        color: #9ca3af;
+        margin-left: 5px;
+    }
+    
+    .count-badge {
+        display: inline-flex;
+        align-items: center;
+        background: #10b981;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    
+    .count-badge.gold {
+        background: #f59e0b;
+    }
+    
+    .count-badge.silver {
+        background: #64748b;
+    }
+    
+    .count-badge.diamond {
+        background: #7c3aed;
+    }
+    
+    .total-card {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        border-radius: 15px;
+        padding: 40px;
+        color: white;
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        margin-top: 40px;
+    }
+    
+    .total-header {
+        font-size: 1.5rem;
+        font-weight: 600;
+        text-align: center;
+        margin-bottom: 30px;
+        opacity: 0.95;
+    }
+    
+    .total-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 25px;
+    }
+    
+    .total-item {
+        background: rgba(255, 255, 255, 0.15);
+        padding: 25px;
+        border-radius: 12px;
+        text-align: center;
+        backdrop-filter: blur(10px);
+    }
+    
+    .total-label {
+        font-size: 1rem;
+        margin-bottom: 10px;
+        opacity: 0.9;
+        font-weight: 500;
+    }
+    
+    .total-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+    }
+    
+    .back-btn {
+        background: white;
+        color: #10b981;
+        border: 2px solid white;
+        border-radius: 10px;
+        padding: 10px 25px;
+        font-weight: 600;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .back-btn:hover {
+        background: #10b981;
+        color: white;
+        border-color: white;
+        transform: translateY(-2px);
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+        color: #6b7280;
+    }
+    
+    .empty-state i {
+        font-size: 5rem;
+        margin-bottom: 25px;
+        color: #d1d5db;
+    }
+    
+    .empty-state h3 {
+        margin-bottom: 15px;
+        color: #374151;
+        font-size: 1.8rem;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="report-header">
+        <h1 class="report-title">
+            <i class="bi bi-calculator me-3"></i>Ornament Weight Report
+        </h1>
+        <p class="report-subtitle">Total net weight analysis by metal type</p>
+        <div class="text-center mt-3">
+            <a href="{% url 'ornament:list' %}" class="back-btn">
+                <i class="bi bi-arrow-left me-2"></i>Back to Ornament List
+            </a>
+        </div>
+    </div>
+
+    {% if weight_by_metal %}
+        <div class="row">
+            {% for item in weight_by_metal %}
+                <div class="col-lg-6 col-xl-4">
+                    <div class="metal-card {{ item.metal_type|lower }}">
+                        <div class="metal-type-header">
+                            <div class="metal-icon {{ item.metal_type|lower }}">
+                                {% if item.metal_type == 'Gold' %}
+                                    <i class="bi bi-coin"></i>
+                                {% elif item.metal_type == 'Silver' %}
+                                    <i class="bi bi-circle"></i>
+                                {% elif item.metal_type == 'Diamond' %}
+                                    <i class="bi bi-gem"></i>
+                                {% else %}
+                                    <i class="bi bi-hexagon"></i>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <div class="metal-name">{{ item.metal_type }}</div>
+                                <span class="count-badge {{ item.metal_type|lower }}">
+                                    <i class="bi bi-box-seam me-2"></i>{{ item.ornament_count }} items
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="weight-grid">
+                            <div class="weight-item">
+                                <div class="weight-label">Net Weight</div>
+                                <div class="weight-value {{ item.metal_type|lower }}">
+                                    {{ item.total_weight|floatformat:3|default:"0.000" }}
+                                    <span class="weight-unit">तोल</span>
+                                </div>
+                            </div>
+                            
+                            <div class="weight-item">
+                                <div class="weight-label" style="font-size: 0.8rem;">Gross Weight</div>
+                                <div class="weight-value {{ item.metal_type|lower }}" style="font-size: 1.5rem;">
+                                    {{ item.total_gross_weight|floatformat:3|default:"0.000" }}
+                                    <span class="weight-unit" style="font-size: 0.7rem;">तोल</span>
+                                </div>
+                            </div>
+
+                            <div class="weight-item">
+                                <div class="weight-label" style="font-size: 0.8rem;">Jarti</div>
+                                <div class="weight-value {{ item.metal_type|lower }}" style="font-size: 1.5rem;">
+                                    {{ item.total_jarti|floatformat:3|default:"0.000" }}
+                                    <span class="weight-unit" style="font-size: 0.7rem;">तोल</span>
+                                </div>
+                            </div>
+
+                            <div class="weight-item">
+                                <div class="weight-label" style="font-size: 0.8rem;">Jyala</div>
+                                <div class="weight-value {{ item.metal_type|lower }}" style="font-size: 1.5rem;">
+                                    {{ item.total_jyala|floatformat:3|default:"0.000" }}
+                                    <span class="weight-unit" style="font-size: 0.7rem;">तोल</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if item.metal_type == 'Gold' and item.gold_24k %}
+                        <div style="margin-top: 25px; padding-top: 25px; border-top: 2px solid #e5e7eb;">
+                            <div style="font-size: 0.8rem; color: #6b7280; font-weight: 600; margin-bottom: 12px; text-transform: uppercase;">Karat Breakdown</div>
+                            <div class="weight-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;">
+                                {% if item.gold_24k > 0 %}
+                                <div class="weight-item" style="padding: 12px;">
+                                    <div class="weight-label" style="font-size: 0.75rem; margin-bottom: 5px;">24 Karat</div>
+                                    <div class="weight-value gold" style="font-size: 1.3rem;">
+                                        {{ item.gold_24k|floatformat:3 }}
+                                        <span class="weight-unit" style="font-size: 0.65rem;">तोल</span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% if item.gold_22k > 0 %}
+                                <div class="weight-item" style="padding: 12px;">
+                                    <div class="weight-label" style="font-size: 0.75rem; margin-bottom: 5px;">22 Karat</div>
+                                    <div class="weight-value gold" style="font-size: 1.3rem;">
+                                        {{ item.gold_22k|floatformat:3 }}
+                                        <span class="weight-unit" style="font-size: 0.65rem;">तोल</span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% if item.gold_18k > 0 %}
+                                <div class="weight-item" style="padding: 12px;">
+                                    <div class="weight-label" style="font-size: 0.75rem; margin-bottom: 5px;">18 Karat</div>
+                                    <div class="weight-value gold" style="font-size: 1.3rem;">
+                                        {{ item.gold_18k|floatformat:3 }}
+                                        <span class="weight-unit" style="font-size: 0.65rem;">तोल</span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% if item.gold_14k > 0 %}
+                                <div class="weight-item" style="padding: 12px;">
+                                    <div class="weight-label" style="font-size: 0.75rem; margin-bottom: 5px;">14 Karat</div>
+                                    <div class="weight-value gold" style="font-size: 1.3rem;">
+                                        {{ item.gold_14k|floatformat:3 }}
+                                        <span class="weight-unit" style="font-size: 0.65rem;">तोल</span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div style="margin-top: 15px; padding: 15px; background: #fff3cd; border-radius: 10px; border: 2px solid #fbbf24;">
+                                <div style="font-size: 0.85rem; color: #856404; font-weight: 600; margin-bottom: 8px;">Total 24K Equivalent</div>
+                                <div style="font-size: 1.8rem; font-weight: 700; color: #f59e0b;">
+                                    {{ item.gold_24k_equivalent|floatformat:3 }}
+                                    <span style="font-size: 1rem; opacity: 0.8;"> तोल</span>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                                <div style="font-size: 0.85rem; color: #6b7280; font-weight: 600; margin-bottom: 15px; text-transform: uppercase;">Amount Breakdown</div>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
+                                    <div style="padding: 12px; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); border-radius: 10px; color: white;">
+                                        <div style="font-size: 0.75rem; font-weight: 600; margin-bottom: 4px;">Gold Amount (Weight × Rate)</div>
+                                        <div style="font-size: 1.3rem; font-weight: 700;">
+                                            रु {{ item.gold_amount|floatformat:2|default:"0.00" }}
+                                        </div>
+                                    </div>
+                                    
+                                    {% if item.jarti_amount > 0 %}
+                                    <div style="padding: 12px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: 10px; color: white;">
+                                        <div style="font-size: 0.75rem; font-weight: 600; margin-bottom: 4px;">Jarti Amount</div>
+                                        <div style="font-size: 1.3rem; font-weight: 700;">
+                                            रु {{ item.jarti_amount|floatformat:2|default:"0.00" }}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if item.jyala_amount > 0 %}
+                                    <div style="padding: 12px; background: linear-gradient(135deg, #d97706 0%, #b45309 100%); border-radius: 10px; color: white;">
+                                        <div style="font-size: 0.75rem; font-weight: 600; margin-bottom: 4px;">Jyala Amount</div>
+                                        <div style="font-size: 1.3rem; font-weight: 700;">
+                                            रु {{ item.jyala_amount|floatformat:2|default:"0.00" }}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if item.stone_amount > 0 %}
+                                    <div style="padding: 12px; background: linear-gradient(135deg, #b45309 0%, #92400e 100%); border-radius: 10px; color: white;">
+                                        <div style="font-size: 0.75rem; font-weight: 600; margin-bottom: 4px;">Stone Amount</div>
+                                        <div style="font-size: 1.3rem; font-weight: 700;">
+                                            रु {{ item.stone_amount|floatformat:2|default:"0.00" }}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 15px; padding: 20px; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); border-radius: 10px; color: white; text-align: center;">
+                                <div style="font-size: 1rem; font-weight: 600; margin-bottom: 10px; opacity: 0.95;">Total Amount (Gold)</div>
+                                <div style="font-size: 2.2rem; font-weight: 700;">
+                                    रु {{ item.total_amount|floatformat:2|default:"0.00" }}
+                                </div>
+                            </div>
+                        </div>
+                        {% elif item.metal_type == 'Silver' and item.total_amount %}
+                        <div style="margin-top: 25px; padding-top: 25px; border-top: 2px solid #e5e7eb;">
+                            <div style="margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                                <div style="font-size: 0.85rem; color: #6b7280; font-weight: 600; margin-bottom: 15px; text-transform: uppercase;">Amount Breakdown</div>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
+                                    <div style="padding: 12px; background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%); border-radius: 10px; color: white;">
+                                        <div style="font-size: 0.75rem; font-weight: 600; margin-bottom: 4px;">Silver Amount</div>
+                                        <div style="font-size: 1.3rem; font-weight: 700;">
+                                            रु {{ item.total_amount|floatformat:2|default:"0.00" }}
+                                        </div>
+                                    </div>
+                                    
+                                    {% if item.jyala_amount > 0 %}
+                                    <div style="padding: 12px; background: linear-gradient(135deg, #64748b 0%, #475569 100%); border-radius: 10px; color: white;">
+                                        <div style="font-size: 0.75rem; font-weight: 600; margin-bottom: 4px;">Jyala Amount</div>
+                                        <div style="font-size: 1.3rem; font-weight: 700;">
+                                            रु {{ item.jyala_amount|floatformat:2|default:"0.00" }}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if item.stone_amount > 0 %}
+                                    <div style="padding: 12px; background: linear-gradient(135deg, #475569 0%, #334155 100%); border-radius: 10px; color: white;">
+                                        <div style="font-size: 0.75rem; font-weight: 600; margin-bottom: 4px;">Stone Amount</div>
+                                        <div style="font-size: 1.3rem; font-weight: 700;">
+                                            रु {{ item.stone_amount|floatformat:2|default:"0.00" }}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 15px; padding: 20px; background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%); border-radius: 10px; color: white; text-align: center;">
+                                <div style="font-size: 1rem; font-weight: 600; margin-bottom: 10px; opacity: 0.95;">Total Amount (Silver)</div>
+                                <div style="font-size: 2.2rem; font-weight: 700;">
+                                    रु {{ item.total_amount|floatformat:2|default:"0.00" }}
+                                </div>
+                            </div>
+                        </div>
+                        {% elif item.metal_type == 'Diamond' and item.diamond_24k_equivalent %}
+                        <div style="margin-top: 25px; padding-top: 25px; border-top: 2px solid #e5e7eb;">
+                            <div style="font-size: 0.8rem; color: #6b7280; font-weight: 600; margin-bottom: 12px; text-transform: uppercase;">Gold Content - Karat Breakdown</div>
+                            <div class="weight-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;">
+                                {% if item.diamond_24k > 0 %}
+                                <div class="weight-item" style="padding: 12px;">
+                                    <div class="weight-label" style="font-size: 0.75rem; margin-bottom: 5px;">24 Karat</div>
+                                    <div class="weight-value diamond" style="font-size: 1.3rem;">
+                                        {{ item.diamond_24k|floatformat:3 }}
+                                        <span class="weight-unit" style="font-size: 0.65rem;">तोल</span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% if item.diamond_22k > 0 %}
+                                <div class="weight-item" style="padding: 12px;">
+                                    <div class="weight-label" style="font-size: 0.75rem; margin-bottom: 5px;">22 Karat</div>
+                                    <div class="weight-value diamond" style="font-size: 1.3rem;">
+                                        {{ item.diamond_22k|floatformat:3 }}
+                                        <span class="weight-unit" style="font-size: 0.65rem;">तोल</span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% if item.diamond_18k > 0 %}
+                                <div class="weight-item" style="padding: 12px;">
+                                    <div class="weight-label" style="font-size: 0.75rem; margin-bottom: 5px;">18 Karat</div>
+                                    <div class="weight-value diamond" style="font-size: 1.3rem;">
+                                        {{ item.diamond_18k|floatformat:3 }}
+                                        <span class="weight-unit" style="font-size: 0.65rem;">तोल</span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% if item.diamond_14k > 0 %}
+                                <div class="weight-item" style="padding: 12px;">
+                                    <div class="weight-label" style="font-size: 0.75rem; margin-bottom: 5px;">14 Karat</div>
+                                    <div class="weight-value diamond" style="font-size: 1.3rem;">
+                                        {{ item.diamond_14k|floatformat:3 }}
+                                        <span class="weight-unit" style="font-size: 0.65rem;">तोल</span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div style="margin-top: 15px; padding: 15px; background: #f3e8ff; border-radius: 10px; border: 2px solid #a78bfa;">
+                                <div style="font-size: 0.85rem; color: #6b21a8; font-weight: 600; margin-bottom: 8px;">Total 24K Equivalent (Gold Content)</div>
+                                <div style="font-size: 1.8rem; font-weight: 700; color: #7c3aed;">
+                                    {{ item.diamond_24k_equivalent|floatformat:3 }}
+                                    <span style="font-size: 1rem; opacity: 0.8;"> तोल</span>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                                <div style="font-size: 0.85rem; color: #6b7280; font-weight: 600; margin-bottom: 15px; text-transform: uppercase;">Amount Breakdown</div>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
+                                    <div style="padding: 12px; background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%); border-radius: 10px; color: white;">
+                                        <div style="font-size: 0.75rem; font-weight: 600; margin-bottom: 4px;">Gold Amount</div>
+                                        <div style="font-size: 1.3rem; font-weight: 700;">
+                                            रु {{ item.gold_amount|floatformat:2|default:"0.00" }}
+                                        </div>
+                                    </div>
+                                    
+                                    <div style="padding: 12px; background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); border-radius: 10px; color: white;">
+                                        <div style="font-size: 0.75rem; font-weight: 600; margin-bottom: 4px;">Diamond Amount</div>
+                                        <div style="font-size: 1.3rem; font-weight: 700;">
+                                            रु {{ item.diamond_weight_amount|floatformat:2|default:"0.00" }}
+                                        </div>
+                                    </div>
+                                    
+                                    {% if item.jarti_amount > 0 %}
+                                    <div style="padding: 12px; background: linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%); border-radius: 10px; color: white;">
+                                        <div style="font-size: 0.75rem; font-weight: 600; margin-bottom: 4px;">Jarti Amount</div>
+                                        <div style="font-size: 1.3rem; font-weight: 700;">
+                                            रु {{ item.jarti_amount|floatformat:2|default:"0.00" }}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if item.jyala_amount > 0 %}
+                                    <div style="padding: 12px; background: linear-gradient(135deg, #5b21b6 0%, #4c1d95 100%); border-radius: 10px; color: white;">
+                                        <div style="font-size: 0.75rem; font-weight: 600; margin-bottom: 4px;">Jyala Amount</div>
+                                        <div style="font-size: 1.3rem; font-weight: 700;">
+                                            रु {{ item.jyala_amount|floatformat:2|default:"0.00" }}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if item.stone_amount > 0 %}
+                                    <div style="padding: 12px; background: linear-gradient(135deg, #4c1d95 0%, #3b0764 100%); border-radius: 10px; color: white;">
+                                        <div style="font-size: 0.75rem; font-weight: 600; margin-bottom: 4px;">Stone Amount</div>
+                                        <div style="font-size: 1.3rem; font-weight: 700;">
+                                            रु {{ item.stone_amount|floatformat:2|default:"0.00" }}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 15px; padding: 20px; background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%); border-radius: 10px; color: white; text-align: center;">
+                                <div style="font-size: 1rem; font-weight: 600; margin-bottom: 10px; opacity: 0.95;">Total Amount (Diamond)</div>
+                                <div style="font-size: 2.2rem; font-weight: 700;">
+                                    रु {{ item.total_amount|floatformat:2|default:"0.00" }}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="total-card">
+            <div class="total-header">
+                <i class="bi bi-collection me-2"></i>Overall Totals Across All Metal Types
+            </div>
+            <div class="total-grid">
+                <div class="total-item">
+                    <div class="total-label">Total Net Weight</div>
+                    <div class="total-value">
+                        {{ totals.total_weight|floatformat:3|default:"0.000" }}
+                        <span style="font-size: 1.2rem; opacity: 0.8;"> तोल</span>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.3);">
+                        <div style="font-size: 0.85rem; opacity: 0.85; margin-bottom: 5px;">24K Equivalent Gold</div>
+                        <div style="font-size: 1.5rem; font-weight: 700;">
+                            {{ total_24k_equivalent|floatformat:3|default:"0.000" }}
+                            <span style="font-size: 0.9rem; opacity: 0.8;"> तोल</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="total-item">
+                    <div class="total-label">Total Gross Weight</div>
+                    <div class="total-value">
+                        {{ totals.total_gross_weight|floatformat:3|default:"0.000" }}
+                        <span style="font-size: 1.2rem; opacity: 0.8;"> तोल</span>
+                    </div>
+                </div>
+                
+                <div class="total-item">
+                    <div class="total-label">Total Items</div>
+                    <div class="total-value">
+                        {{ totals.total_count|default:"0" }}
+                        <span style="font-size: 1.2rem; opacity: 0.8;"> ornaments</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 30px; padding: 25px; background: rgba(255, 255, 255, 0.2); border-radius: 15px; text-align: center; backdrop-filter: blur(10px);">
+                <div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 10px; opacity: 0.95;">Grand Total Amount (All Metals)</div>
+                <div style="font-size: 3rem; font-weight: 700;">
+                    रु {{ grand_total_amount|floatformat:2|default:"0.00" }}
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            <h3>No Ornament Data Found</h3>
+            <p>There are currently no ornaments in the system to generate a weight report.</p>
+            <a href="{% url 'ornament:create' %}" class="btn btn-primary btn-lg mt-3">
+                <i class="bi bi-plus-circle me-2"></i>Create First Ornament
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}

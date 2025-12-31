@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<style>
+    .report-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        padding: 30px;
+        color: white;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        margin-bottom: 30px;
+    }
+    
+    .report-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0;
+        text-align: center;
+    }
+    
+    .report-subtitle {
+        text-align: center;
+        margin-top: 10px;
+        opacity: 0.9;
+        font-size: 1.1rem;
+    }
+    
+    .category-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        border-left: 5px solid #667eea;
+    }
+    
+    .category-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+    }
+    
+    .category-name {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 10px;
+    }
+    
+    .category-count {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #667eea;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .count-label {
+        font-size: 1rem;
+        color: #6c757d;
+        font-weight: 400;
+    }
+    
+    .total-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        padding: 30px;
+        color: white;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        margin-top: 30px;
+        text-align: center;
+    }
+    
+    .total-count {
+        font-size: 3.5rem;
+        font-weight: 700;
+        margin: 10px 0;
+    }
+    
+    .total-label {
+        font-size: 1.3rem;
+        opacity: 0.9;
+    }
+    
+    .back-btn {
+        background: white;
+        color: #667eea;
+        border: 2px solid white;
+        border-radius: 10px;
+        padding: 10px 25px;
+        font-weight: 600;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .back-btn:hover {
+        background: #667eea;
+        color: white;
+        border-color: white;
+        transform: translateY(-2px);
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6c757d;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 20px;
+        color: #dee2e6;
+    }
+    
+    .empty-state h3 {
+        margin-bottom: 10px;
+        color: #495057;
+    }
+    
+    .category-icon {
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        margin-right: 15px;
+        float: left;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="report-header">
+        <h1 class="report-title">
+            <i class="bi bi-bar-chart-fill me-3"></i>Ornament Category Report
+        </h1>
+        <p class="report-subtitle">Detailed breakdown of ornaments by main category</p>
+        <div class="text-center mt-3">
+            <a href="{% url 'ornament:list' %}" class="back-btn">
+                <i class="bi bi-arrow-left me-2"></i>Back to Ornament List
+            </a>
+        </div>
+    </div>
+
+    {% if category_report %}
+        <div class="row">
+            {% for category in category_report %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="category-card">
+                        <div class="category-icon">
+                            <i class="bi bi-gem"></i>
+                        </div>
+                        <div>
+                            <div class="category-name">{{ category.name }}</div>
+                            <div class="category-count">
+                                {{ category.ornament_count }}
+                                <span class="count-label">ornaments</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="total-card">
+            <div class="total-label">
+                <i class="bi bi-collection me-2"></i>Total Ornaments Across All Categories
+            </div>
+            <div class="total-count">{{ total_ornaments }}</div>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            <h3>No Categories Found</h3>
+            <p>There are currently no main categories with ornaments.</p>
+            <a href="{% url 'ornament:createmaincategory' %}" class="btn btn-primary mt-3">
+                <i class="bi bi-plus-circle me-2"></i>Create Main Category
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}
