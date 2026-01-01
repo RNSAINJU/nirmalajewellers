@@ -7,6 +7,7 @@ import re
 import urllib.request
 import urllib.error
 import logging
+import os
 
 # Optional deps
 try:
@@ -39,6 +40,17 @@ class Command(BaseCommand):
                 'Connection': 'keep-alive',
                 'Upgrade-Insecure-Requests': '1',
             }
+
+            # Respect proxy and custom CA bundles for corporate networks
+            proxy_https = os.environ.get('HTTPS_PROXY') or os.environ.get('https_proxy')
+            proxy_http = os.environ.get('HTTP_PROXY') or os.environ.get('http_proxy')
+            proxies = {}
+            if proxy_https:
+                proxies['https'] = proxy_https
+            if proxy_http:
+                proxies['http'] = proxy_http
+            ca_bundle = os.environ.get('REQUESTS_CA_BUNDLE') or os.environ.get('SSL_CERT_FILE')
+
             req = urllib.request.Request(url, headers=headers)
             
             page_text = None
@@ -46,7 +58,8 @@ class Command(BaseCommand):
 
             if HAS_SOUP:
                 try:
-                    resp = requests.get(url, headers=headers, timeout=10)
+                    verify_arg = ca_bundle if ca_bundle else True
+                    resp = requests.get(url, headers=headers, timeout=10, proxies=proxies or None, verify=verify_arg)
                     resp.raise_for_status()
                     page_text = resp.text
                     soup = BeautifulSoup(page_text, 'html.parser')
@@ -56,7 +69,13 @@ class Command(BaseCommand):
             
             if page_text is None:
                 try:
-                    with urllib.request.urlopen(req, timeout=10) as response:
+                    # urllib respects *_PROXY env vars automatically. If explicit proxies provided, use an opener.
+                    opener = None
+                    if proxies:
+                        proxy_handler = urllib.request.ProxyHandler(proxies)
+                        opener = urllib.request.build_opener(proxy_handler)
+                    opener_to_use = opener or urllib.request
+                    with opener_to_use.urlopen(req, timeout=10) as response:
                         page_text = response.read().decode('utf-8', errors='ignore')
                 except urllib.error.HTTPError as e:
                     logger.error(f"HTTP Error {e.code}: {e.reason} - Network error")
