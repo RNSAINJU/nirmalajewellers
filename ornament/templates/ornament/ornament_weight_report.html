@@ -420,13 +420,63 @@
                         </div>
                         {% elif item.metal_type == 'Silver' and item.total_amount %}
                         <div style="margin-top: 25px; padding-top: 25px; border-top: 2px solid #e5e7eb;">
+                            {% if item.silver_24k %}
+                            <div style="font-size: 0.8rem; color: #6b7280; font-weight: 600; margin-bottom: 12px; text-transform: uppercase;">Karat Breakdown</div>
+                            <div class="weight-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;">
+                                {% if item.silver_24k > 0 %}
+                                <div class="weight-item" style="padding: 12px;">
+                                    <div class="weight-label" style="font-size: 0.75rem; margin-bottom: 5px;">24 Karat</div>
+                                    <div class="weight-value silver" style="font-size: 1.3rem;">
+                                        {{ item.silver_24k|floatformat:3 }}
+                                        <span class="weight-unit" style="font-size: 0.65rem;">तोल</span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% if item.silver_22k > 0 %}
+                                <div class="weight-item" style="padding: 12px;">
+                                    <div class="weight-label" style="font-size: 0.75rem; margin-bottom: 5px;">22 Karat</div>
+                                    <div class="weight-value silver" style="font-size: 1.3rem;">
+                                        {{ item.silver_22k|floatformat:3 }}
+                                        <span class="weight-unit" style="font-size: 0.65rem;">तोल</span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% if item.silver_18k > 0 %}
+                                <div class="weight-item" style="padding: 12px;">
+                                    <div class="weight-label" style="font-size: 0.75rem; margin-bottom: 5px;">18 Karat</div>
+                                    <div class="weight-value silver" style="font-size: 1.3rem;">
+                                        {{ item.silver_18k|floatformat:3 }}
+                                        <span class="weight-unit" style="font-size: 0.65rem;">तोल</span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% if item.silver_14k > 0 %}
+                                <div class="weight-item" style="padding: 12px;">
+                                    <div class="weight-label" style="font-size: 0.75rem; margin-bottom: 5px;">14 Karat</div>
+                                    <div class="weight-value silver" style="font-size: 1.3rem;">
+                                        {{ item.silver_14k|floatformat:3 }}
+                                        <span class="weight-unit" style="font-size: 0.65rem;">तोल</span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div style="margin-top: 15px; padding: 15px; background: #e0e7ff; border-radius: 10px; border: 2px solid #a5b4fc;">
+                                <div style="font-size: 0.85rem; color: #3730a3; font-weight: 600; margin-bottom: 8px;">Total 24K Equivalent</div>
+                                <div style="font-size: 1.8rem; font-weight: 700; color: #6366f1;">
+                                    {{ item.silver_24k_equivalent|floatformat:3 }}
+                                    <span style="font-size: 1rem; opacity: 0.8;"> तोल</span>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
                             <div style="margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
                                 <div style="font-size: 0.85rem; color: #6b7280; font-weight: 600; margin-bottom: 15px; text-transform: uppercase;">Amount Breakdown</div>
                                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
                                     <div style="padding: 12px; background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%); border-radius: 10px; color: white;">
                                         <div style="font-size: 0.75rem; font-weight: 600; margin-bottom: 4px;">Silver Amount</div>
                                         <div style="font-size: 1.3rem; font-weight: 700;">
-                                            रु {{ item.total_amount|floatformat:2|default:"0.00" }}
+                                            रु {{ item.silver_amount|floatformat:2|default:"0.00" }}
                                         </div>
                                     </div>
                                     

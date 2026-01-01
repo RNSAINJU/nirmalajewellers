@@ -103,61 +103,40 @@
     <!-- Ornament Stats by Metal Type -->
     <div class="row mb-4">
         <div class="col-md-4">
-            <div class="card border-0 shadow-sm stats-card" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);">
-                <div class="card-body text-center text-white">
-                    <h5 class="card-title fw-bold mb-3"><i class="bi bi-gem me-2"></i>Gold Ornaments</h5>
-                    <h2 class="fw-bold mb-0">{{ gold_count }} <small style="font-size: 0.5em; opacity: 0.9;">items</small></h2>
-                    <p class="mb-1 mt-2" style="font-size: 0.9em; opacity: 0.95;">Total Weight: {{ gold_total_weight|floatformat:3 }} तोल</p>
-                    <p class="mb-1 mt-2" style="font-size: 0.9em; opacity: 0.95;">Total 24k Weight: {{ gold_24k_finalweight|floatformat:3 }} तोल</p>
-                    
-                    <!-- Weight breakdown by karat type -->
-                    <div style="font-size: 0.85em; opacity: 0.9; margin-top: 8px; text-align: left; padding: 0 10px;">
-                        {% if gold_24k_weight > 0 %}
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>24 Karat:</span>
-                            <span>{{ gold_24k_weight|floatformat:3 }} तोल</span>
-                        </div>
-                        {% endif %}
-                        {% if gold_22k_weight > 0 %}
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>22 Karat:</span>
-                            <span>{{ gold_22k_weight|floatformat:3 }} तोल</span>
-                        </div>
-                        {% endif %}
-                        {% if gold_18k_weight > 0 %}
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>18 Karat:</span>
-                            <span>{{ gold_18k_weight|floatformat:3 }} तोल</span>
-                        </div>
-                        {% endif %}
-                        {% if gold_14k_weight > 0 %}
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>14 Karat:</span>
-                            <span>{{ gold_14k_weight|floatformat:3 }} तोल</span>
-                        </div>
-                        {% endif %}
+            <a href="{% url 'ornament:list' %}?metal_type=Gold" style="text-decoration: none;">
+                <div class="card border-0 shadow-sm stats-card" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); cursor: pointer;">
+                    <div class="card-body text-center text-white">
+                        <h5 class="card-title fw-bold mb-3"><i class="bi bi-gem me-2"></i>Gold Ornaments</h5>
+                        <h2 class="fw-bold mb-0">{{ gold_count }} <small style="font-size: 0.5em; opacity: 0.9;">items</small></h2>
+                        {% comment %} <p class="mb-1 mt-2" style="font-size: 0.9em; opacity: 0.95;">Total Weight: {{ gold_total_weight|floatformat:3 }} तोल</p> {% endcomment %}
+                        <p class="mb-1 mt-2" style="font-size: 0.9em; opacity: 0.95;">Total 24k Weight: {{ gold_24k_finalweight|floatformat:3 }} तोल</p>
+                        
+                        
+                        <p class="mb-0 mt-2" style="font-size: 0.9em; opacity: 0.95;">Total Amount: रू {{ gold_total_amount|floatformat:2 }}</p>
                     </div>
-                    
-                    <p class="mb-0 mt-2" style="font-size: 0.9em; opacity: 0.95;">Total Amount: रू {{ gold_total_amount|floatformat:2 }}</p>
                 </div>
-            </div>
+            </a>
         </div>
         <div class="col-md-4">
-            <div class="card border-0 shadow-sm stats-card" style="background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);">
-                <div class="card-body text-center text-white">
-                    <h5 class="card-title fw-bold mb-3"><i class="bi bi-gem me-2"></i>Silver Ornaments</h5>
-                    <h2 class="fw-bold mb-0">{{ silver_count }} <small style="font-size: 0.5em; opacity: 0.9;">items</small></h2>
+            <a href="{% url 'ornament:list' %}?metal_type=Silver" style="text-decoration: none;">
+                <div class="card border-0 shadow-sm stats-card" style="background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%); cursor: pointer;">
+                    <div class="card-body text-center text-white">
+                        <h5 class="card-title fw-bold mb-3"><i class="bi bi-gem me-2"></i>Silver Ornaments</h5>
+                        <h2 class="fw-bold mb-0">{{ silver_count }} <small style="font-size: 0.5em; opacity: 0.9;">items</small></h2>
+                    </div>
                 </div>
-            </div>
+            </a>
         </div>
         <div class="col-md-4">
-            <div class="card border-0 shadow-sm stats-card" style="background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);">
-                <div class="card-body text-center text-white">
-                    <h5 class="card-title fw-bold mb-3"><i class="bi bi-gem me-2"></i>Diamond Ornaments</h5>
-                    <h2 class="fw-bold mb-0">{{ diamond_count }} <small style="font-size: 0.5em; opacity: 0.9;">items</small></h2>
-                    <p class="mb-0 mt-2" style="font-size: 0.9em; opacity: 0.95;">Total Amount: रू {{ diamond_total_amount|floatformat:2 }}</p>
+            <a href="{% url 'ornament:list' %}?metal_type=Diamond" style="text-decoration: none;">
+                <div class="card border-0 shadow-sm stats-card" style="background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%); cursor: pointer;">
+                    <div class="card-body text-center text-white">
+                        <h5 class="card-title fw-bold mb-3"><i class="bi bi-gem me-2"></i>Diamond Ornaments</h5>
+                        <h2 class="fw-bold mb-0">{{ diamond_count }} <small style="font-size: 0.5em; opacity: 0.9;">items</small></h2>
+                        <p class="mb-0 mt-2" style="font-size: 0.9em; opacity: 0.95;">Total Amount: रू {{ diamond_total_amount|floatformat:2 }}</p>
+                    </div>
                 </div>
-            </div>
+            </a>
         </div>
     </div>
 
@@ -302,6 +281,9 @@
                         </a>
                         <a href="{% url 'ornament:print_view' %}" class="btn btn-print btn-action" target="_blank">
                             <i class="bi bi-printer-fill me-1"></i> Print
+                        </a>
+                        <a href="{% url 'ornament:rates_and_stock' %}" class="btn btn-action" style="background: #8b5cf6; border-color: #8b5cf6; color: white;">
+                            <i class="bi bi-graph-up me-1"></i> Rates & Stock
                         </a>
                     </div>
                 </div>

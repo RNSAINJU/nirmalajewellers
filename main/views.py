@@ -301,3 +301,50 @@ def monthly_stock_report(request):
         "opening_stock_totals": opening_stock_totals,
     }
     return render(request, "main/monthly_stock_report.html", context)
+
+
+def add_stock(request):
+    """View to add stock details manually."""
+    from django.shortcuts import redirect
+    from .forms import StockForm
+    
+    if request.method == 'POST':
+        form = StockForm(request.POST)
+        if form.is_valid():
+            form.save()
+            from django.contrib import messages
+            messages.success(request, f'Stock for year {form.cleaned_data["year"]} added successfully!')
+            return redirect('ornament:rates_and_stock')
+    else:
+        form = StockForm()
+    
+    context = {
+        'form': form,
+        'page_title': 'Add Stock Details',
+    }
+    return render(request, 'main/stock_form.html', context)
+
+
+def edit_stock(request, year):
+    """View to edit stock details for a specific year."""
+    from django.shortcuts import redirect, get_object_or_404
+    from .forms import StockForm
+    
+    stock = get_object_or_404(Stock, year=year)
+    
+    if request.method == 'POST':
+        form = StockForm(request.POST, instance=stock)
+        if form.is_valid():
+            form.save()
+            from django.contrib import messages
+            messages.success(request, f'Stock for year {form.cleaned_data["year"]} updated successfully!')
+            return redirect('ornament:rates_and_stock')
+    else:
+        form = StockForm(instance=stock)
+    
+    context = {
+        'form': form,
+        'stock': stock,
+        'page_title': f'Edit Stock Details - Year {year}',
+    }
+    return render(request, 'main/stock_form.html', context)

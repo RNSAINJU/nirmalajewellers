@@ -14,6 +14,7 @@ from .views import (
     multiple_ornament_create,
     ornament_report,
     ornament_weight_report,
+    rates_and_stock_view,
 )
 
 app_name = 'ornament'
@@ -32,5 +33,6 @@ urlpatterns = [
     path('import-excel/', import_excel, name='import_excel'),
     path('report/', ornament_report, name='report'),
     path('weight-report/', ornament_weight_report, name='weight_report'),
+    path('rates-and-stock/', rates_and_stock_view, name='rates_and_stock'),
 ]
 

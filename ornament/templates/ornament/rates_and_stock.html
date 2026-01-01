@@ -1,0 +1,411 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<style>
+    .rates-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        padding: 30px;
+        color: white;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        margin-bottom: 30px;
+    }
+
+    .stock-section {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        border-radius: 15px;
+        padding: 30px;
+        color: white;
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        margin-bottom: 30px;
+    }
+
+    .dropdown-container {
+        margin-bottom: 20px;
+    }
+
+    .dropdown-container label {
+        font-weight: 600;
+        margin-bottom: 8px;
+        display: block;
+        color: white;
+    }
+
+    .dropdown-container select {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.95);
+        color: #333;
+        font-size: 1em;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .dropdown-container select:hover {
+        border-color: rgba(255, 255, 255, 0.6);
+    }
+
+    .dropdown-container select:focus {
+        outline: none;
+        border-color: white;
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+    }
+
+    .rate-details {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 10px;
+        padding: 20px;
+        margin-top: 20px;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .rate-details h5 {
+        font-weight: 700;
+        margin-bottom: 15px;
+        font-size: 1.2em;
+        color: white;
+    }
+
+    .rate-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        font-size: 0.95em;
+    }
+
+    .rate-item:last-child {
+        border-bottom: none;
+    }
+
+    .rate-item .label {
+        font-weight: 500;
+    }
+
+    .rate-item .value {
+        font-weight: 700;
+        font-size: 1.1em;
+    }
+
+    .stock-item {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .stock-item:last-child {
+        border-bottom: none;
+    }
+
+    .stock-item-cell {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .stock-item-cell .label {
+        font-weight: 500;
+        font-size: 0.9em;
+        opacity: 0.95;
+    }
+
+    .stock-item-cell .value {
+        font-weight: 700;
+        font-size: 1.15em;
+        margin-top: 3px;
+    }
+
+    .no-data {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+        color: rgba(255, 255, 255, 0.8);
+        font-style: italic;
+    }
+
+    .btn-refresh {
+        background: white;
+        color: #667eea;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-refresh:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-action-stock {
+        background: white;
+        color: #10b981;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.9em;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-block;
+        text-decoration: none;
+        margin-right: 8px;
+    }
+
+    .btn-action-stock:hover {
+        background: #f0fdf4;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+    }
+
+    .btn-action-edit {
+        background: white;
+        color: #3b82f6;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.9em;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-block;
+        text-decoration: none;
+        margin-right: 8px;
+    }
+
+    .btn-action-edit:hover {
+        background: #eff6ff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+    }
+
+    .container-wrapper {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .title {
+        text-align: center;
+        margin-bottom: 40px;
+        color: #667eea;
+        font-weight: 700;
+        font-size: 2em;
+    }
+</style>
+
+<div class="container-wrapper">
+    <h1 class="title"><i class="bi bi-graph-up me-3"></i>Rates & Stock Information</h1>
+
+    <!-- Fetched Rates Section -->
+    <div class="rates-section">
+        <h3 style="margin-bottom: 25px; font-weight: 700;">
+            <i class="bi bi-currency-exchange me-2"></i>Fetched Rates
+        </h3>
+
+        <div class="row">
+            <div class="col-md-8">
+                <div class="dropdown-container">
+                    <label for="rate-date-select">Select Rate Date:</label>
+                    <select id="rate-date-select" name="rate_date" onchange="updateRateDate()">
+                        <option value="">-- Select a Date --</option>
+                        {% for rate in daily_rates %}
+                        <option value="{{ rate.date }}" {% if selected_rate.date == rate.date %}selected{% endif %}>
+                            {{ rate.date }} ({{ rate.bs_date }})
+                        </option>
+                        {% empty %}
+                        <option value="">No rates available</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <button class="btn-refresh mt-4" onclick="location.reload()">
+                    <i class="bi bi-arrow-clockwise me-2"></i>Refresh
+                </button>
+            </div>
+        </div>
+
+        {% if selected_rate %}
+        <div class="rate-details">
+            <h5>Rate Details for {{ selected_rate.date }}</h5>
+            <div class="rate-item">
+                <span class="label"><i class="bi bi-calendar-event me-2"></i>Date</span>
+                <span class="value">{{ selected_rate.date }}</span>
+            </div>
+            <div class="rate-item">
+                <span class="label"><i class="bi bi-calendar me-2"></i>Nepali Date</span>
+                <span class="value">{{ selected_rate.bs_date }}</span>
+            </div>
+            <div class="rate-item">
+                <span class="label"><i class="bi bi-gem me-2"></i>Gold Rate (Per Tola)</span>
+                <span class="value">रू {{ selected_rate.gold_rate|floatformat:2 }}</span>
+            </div>
+            <div class="rate-item">
+                <span class="label"><i class="bi bi-gem me-2"></i>Gold Rate (Per 10 grams)</span>
+                <span class="value">रू {{ selected_rate.gold_rate_10g|floatformat:2 }}</span>
+            </div>
+            <div class="rate-item">
+                <span class="label"><i class="bi bi-coin me-2"></i>Silver Rate (Per Tola)</span>
+                <span class="value">रू {{ selected_rate.silver_rate|floatformat:2 }}</span>
+            </div>
+            <div class="rate-item">
+                <span class="label"><i class="bi bi-coin me-2"></i>Silver Rate (Per 10 grams)</span>
+                <span class="value">रू {{ selected_rate.silver_rate_10g|floatformat:2 }}</span>
+            </div>
+            <div class="rate-item">
+                <span class="label"><i class="bi bi-clock me-2"></i>Last Updated</span>
+                <span class="value">{{ selected_rate.updated_at|date:"M d, Y H:i" }}</span>
+            </div>
+        </div>
+        {% else %}
+        <div class="no-data">
+            <i class="bi bi-exclamation-circle me-2"></i>No rate data available. Please select a date or check back later.
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Stock Year Rates Section -->
+    <div class="stock-section">
+        <h3 style="margin-bottom: 25px; font-weight: 700;">
+            <i class="bi bi-diagram-3 me-2"></i>Stock Year Rates
+        </h3>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="dropdown-container">
+                    <label for="stock-year-select">Select Fiscal Year:</label>
+                    <select id="stock-year-select" name="stock_year" onchange="updateStockYear()">
+                        <option value="">-- Select a Year --</option>
+                        {% for stock in stock_years %}
+                        <option value="{{ stock.year }}" {% if selected_stock.year == stock.year %}selected{% endif %}>
+                            Year {{ stock.year }}
+                        </option>
+                        {% empty %}
+                        <option value="">No stock data available</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div style="padding-top: 32px;">
+                    <a href="{% url 'main:add_stock' %}" class="btn-action-stock">
+                        <i class="bi bi-plus-circle me-1"></i>Add Stock
+                    </a>
+                    {% if selected_stock %}
+                    <a href="{% url 'main:edit_stock' selected_stock.year %}" class="btn-action-edit">
+                        <i class="bi bi-pencil me-1"></i>Edit Stock
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {% if selected_stock %}
+        <div class="rate-details">
+            <h5>Stock Details for Year {{ selected_stock.year }}</h5>
+
+            <div style="margin-bottom: 20px;">
+                <h6 style="font-weight: 600; color: rgba(255, 255, 255, 0.9); margin-bottom: 12px;">
+                    <i class="bi bi-box me-2"></i>Stock Quantities
+                </h6>
+                <div class="stock-item">
+                    <div class="stock-item-cell">
+                        <span class="label"><i class="bi bi-gem me-2"></i>Diamond</span>
+                        <span class="value">{{ selected_stock.diamond|floatformat:3 }} g</span>
+                    </div>
+                    <div class="stock-item-cell">
+                        <span class="label"><i class="bi bi-gem me-2"></i>Gold</span>
+                        <span class="value">{{ selected_stock.gold|floatformat:3 }} g</span>
+                    </div>
+                    <div class="stock-item-cell">
+                        <span class="label"><i class="bi bi-coin me-2"></i>Silver</span>
+                        <span class="value">{{ selected_stock.silver|floatformat:3 }} g</span>
+                    </div>
+                    <div class="stock-item-cell">
+                        <span class="label"><i class="bi bi-cash-coin me-2"></i>Jardi</span>
+                        <span class="value">रू {{ selected_stock.jardi|floatformat:2 }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <h6 style="font-weight: 600; color: rgba(255, 255, 255, 0.9); margin-bottom: 12px;">
+                    <i class="bi bi-graph-up me-2"></i>Rates for Year {{ selected_stock.year }}
+                </h6>
+                <div class="stock-item">
+                    <div class="stock-item-cell">
+                        <span class="label"><i class="bi bi-gem me-2"></i>Diamond Rate (Per gram)</span>
+                        <span class="value">रू {{ selected_stock.diamond_rate|floatformat:2 }}</span>
+                    </div>
+                    <div class="stock-item-cell">
+                        <span class="label"><i class="bi bi-gem me-2"></i>Gold Rate (Per gram)</span>
+                        <span class="value">रू {{ selected_stock.gold_rate|floatformat:2 }}</span>
+                    </div>
+                    <div class="stock-item-cell">
+                        <span class="label"><i class="bi bi-coin me-2"></i>Silver Rate (Per gram)</span>
+                        <span class="value">रू {{ selected_stock.silver_rate|floatformat:2 }}</span>
+                    </div>
+                    <div class="stock-item-cell">
+                        <span class="label"><i class="bi bi-briefcase me-2"></i>Wages</span>
+                        <span class="value">रू {{ selected_stock.wages|floatformat:2 }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h6 style="font-weight: 600; color: rgba(255, 255, 255, 0.9); margin-bottom: 12px;">
+                    <i class="bi bi-calculator me-2"></i>Calculated Stock Amounts
+                </h6>
+                <div class="stock-item">
+                    <div class="stock-item-cell">
+                        <span class="label"><i class="bi bi-gem me-2"></i>Diamond Amount</span>
+                        <span class="value">रू {{ stock_amounts.diamond_amount|floatformat:2 }}</span>
+                    </div>
+                    <div class="stock-item-cell">
+                        <span class="label"><i class="bi bi-gem me-2"></i>Gold Amount</span>
+                        <span class="value">रू {{ stock_amounts.gold_amount|floatformat:2 }}</span>
+                    </div>
+                    <div class="stock-item-cell">
+                        <span class="label"><i class="bi bi-coin me-2"></i>Silver Amount</span>
+                        <span class="value">रू {{ stock_amounts.silver_amount|floatformat:2 }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.2);">
+                <p style="font-size: 0.9em; opacity: 0.85;">
+                    <i class="bi bi-info-circle me-2"></i>Last Updated: {{ selected_stock.updated_at|date:"M d, Y H:i" }}
+                </p>
+            </div>
+        </div>
+        {% else %}
+        <div class="no-data">
+            <i class="bi bi-exclamation-circle me-2"></i>No stock data available. Please select a year or add stock data first.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    function updateRateDate() {
+        const selectedDate = document.getElementById('rate-date-select').value;
+        const params = new URLSearchParams(window.location.search);
+        params.set('rate_date', selectedDate);
+        window.location.search = params.toString();
+    }
+
+    function updateStockYear() {
+        const selectedYear = document.getElementById('stock-year-select').value;
+        const params = new URLSearchParams(window.location.search);
+        params.set('stock_year', selectedYear);
+        window.location.search = params.toString();
+    }
+</script>
+
+{% endblock %}

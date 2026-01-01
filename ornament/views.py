@@ -277,7 +277,7 @@ def export_excel(request):
         "MainCategory", "SubCategory", "Ornament Name","Gross Weight",
         "Weight", "Diamond/Stones Weight","Diamond Rate","Zircon Weight","Stone Weight",
         "Stone Price Per Carat","Stone Total Price",
-        "Jarti","Jyala","Kaligar","Image","Order","Created at","Updated at","Status"
+        "Jarti","Jyala","Kaligar","Description","Image","Order","Created at","Updated at","Status"
     ]
     ws.append(headers)
 
@@ -302,6 +302,7 @@ def export_excel(request):
             o.jarti,
             o.jyala,
             o.kaligar.name,
+            o.description,
             str(o.image) if o.image else "",   # ★ convert Cloudinary resource to URL
             o.order,
             str(o.created_at),
@@ -380,6 +381,7 @@ def import_excel(request):
                         jarti,
                         jyala,
                         kaligar_name,
+                        description,
                         image,
                         order,
                         created_at,
@@ -490,6 +492,7 @@ def import_excel(request):
                     jarti=jarti,
                     jyala=jyala,
                     kaligar=kaligar,
+                    descrption=description,
                     image=image,
                     order=Order,
                     created_at=created_at,
@@ -619,6 +622,31 @@ def ornament_weight_report(request):
             # Get silver ornaments
             silver_ornaments = Ornament.objects.filter(metal_type='Silver')
             
+            # Get karat breakdown for silver
+            silver_24k = silver_ornaments.filter(type='24KARAT').aggregate(
+                total=Sum('weight')
+            )['total'] or Decimal('0')
+            
+            silver_22k = silver_ornaments.filter(type='22KARAT').aggregate(
+                total=Sum('weight')
+            )['total'] or Decimal('0')
+            
+            silver_18k = silver_ornaments.filter(type='18KARAT').aggregate(
+                total=Sum('weight')
+            )['total'] or Decimal('0')
+            
+            silver_14k = silver_ornaments.filter(type='14KARAT').aggregate(
+                total=Sum('weight')
+            )['total'] or Decimal('0')
+            
+            # Calculate total amount in 24k equivalent
+            silver_24k_equivalent = (
+                silver_24k + 
+                (silver_22k * Decimal('0.92')) + 
+                (silver_18k * Decimal('0.75')) + 
+                (silver_14k * Decimal('0.58'))
+            )
+            
             # Get total jarti and jyala for silver
             total_jarti = metal['total_jarti'] or Decimal('0')
             total_jyala = metal['total_jyala'] or Decimal('0')
@@ -628,18 +656,23 @@ def ornament_weight_report(request):
                 total=Sum(F('stone_totalprice'), output_field=DecimalField())
             )['total'] or Decimal('0')
             
-            # Calculate total amount: (weight * rate) + jyala + stone_totalprice
-            total_weight = metal['total_weight'] or Decimal('0')
-            total_amount = (total_weight * silver_rate) + total_jyala + total_stone_price
+            # Calculate component amounts
+            silver_amount = silver_24k_equivalent * silver_rate
+            jarti_amount = total_jarti * silver_rate
             
-            metal['jarti_weight'] = total_jarti
+            # Calculate total amount: ((24k silver + jarti) * rate) + jyala + stone_totalprice
+            total_amount = silver_amount + jarti_amount + total_jyala + total_stone_price
+            
+            metal['silver_24k'] = silver_24k
+            metal['silver_22k'] = silver_22k
+            metal['silver_18k'] = silver_18k
+            metal['silver_14k'] = silver_14k
+            metal['silver_24k_equivalent'] = silver_24k_equivalent
+            metal['silver_amount'] = silver_amount
+            metal['jarti_amount'] = jarti_amount
             metal['jyala_amount'] = total_jyala
             metal['stone_amount'] = total_stone_price
             metal['total_amount'] = total_amount
-            
-            # Calculate jarti and jyala amounts for silver
-            metal['jarti_amount'] = (metal['total_jarti'] or Decimal('0')) * silver_rate
-            metal['jyala_amount'] = (metal['total_jyala'] or Decimal('0'))
             
             # Add to grand total
             grand_total_amount += total_amount
@@ -759,3 +792,61 @@ def ornament_weight_report(request):
         'total_24k_equivalent': total_24k_equivalent,
     }
     return render(request, 'ornament/ornament_weight_report.html', context)
+
+
+def rates_and_stock_view(request):
+    """View to display fetched rates and stock year rates with dropdown."""
+    from main.models import DailyRate
+    
+    # Get selected rate date and stock year from request
+    selected_rate_date = request.GET.get('rate_date')
+    selected_stock_year = request.GET.get('stock_year')
+    
+    # Get all daily rates (fetched rates)
+    daily_rates = DailyRate.objects.all().order_by('-date')
+    
+    # Get all stock years from both ornament and main app Stock models
+    stock_years = Stock.objects.all().order_by('-year')
+    
+    # Initialize selected rate and stock data
+    selected_rate = None
+    selected_stock = None
+    
+    if selected_rate_date:
+        try:
+            selected_rate = DailyRate.objects.get(date=selected_rate_date)
+        except DailyRate.DoesNotExist:
+            pass
+    else:
+        # Show the most recent rate by default
+        selected_rate = daily_rates.first()
+    
+    if selected_stock_year:
+        try:
+            selected_stock = Stock.objects.get(year=selected_stock_year)
+        except Stock.DoesNotExist:
+            pass
+    else:
+        # Show the most recent stock year by default
+        selected_stock = stock_years.first()
+    
+    # Calculate amounts for selected stock
+    stock_amounts = {}
+    if selected_stock:
+        stock_amounts = {
+            'diamond_amount': selected_stock.diamond_amount,
+            'gold_amount': selected_stock.gold_amount,
+            'silver_amount': selected_stock.silver_amount,
+        }
+    
+    context = {
+        'daily_rates': daily_rates,
+        'stock_years': stock_years,
+        'selected_rate': selected_rate,
+        'selected_stock': selected_stock,
+        'stock_amounts': stock_amounts,
+        'selected_rate_date': selected_rate_date,
+        'selected_stock_year': selected_stock_year,
+    }
+    
+    return render(request, 'ornament/rates_and_stock.html', context)
