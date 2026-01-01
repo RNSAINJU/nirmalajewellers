@@ -30,7 +30,11 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         try:
-            url = 'https://www.fenegosida.org/'
+            # Primary source: Ashesh gold page (HTML table/contents). Override via GOLD_RATE_URL if needed.
+            url = os.environ.get(
+                'GOLD_RATE_URL',
+                'https://www.ashesh.com.np/gold/'
+            )
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -70,13 +74,14 @@ class Command(BaseCommand):
             if page_text is None:
                 try:
                     # urllib respects *_PROXY env vars automatically. If explicit proxies provided, use an opener.
-                    opener = None
                     if proxies:
                         proxy_handler = urllib.request.ProxyHandler(proxies)
                         opener = urllib.request.build_opener(proxy_handler)
-                    opener_to_use = opener or urllib.request
-                    with opener_to_use.urlopen(req, timeout=10) as response:
-                        page_text = response.read().decode('utf-8', errors='ignore')
+                        with opener.open(req, timeout=10) as response:
+                            page_text = response.read().decode('utf-8', errors='ignore')
+                    else:
+                        with urllib.request.urlopen(req, timeout=10) as response:
+                            page_text = response.read().decode('utf-8', errors='ignore')
                 except urllib.error.HTTPError as e:
                     logger.error(f"HTTP Error {e.code}: {e.reason} - Network error")
                     self.stdout.write(self.style.ERROR(f"Error fetching rates: Network error - {e}"))
@@ -187,26 +192,49 @@ class Command(BaseCommand):
             # Extract per TOLA rates only
             gold_tola_str = None
             silver_tola_str = None
-            
-            # Find FINE GOLD (9999) and capture "per 1 tola रु <number>" within 200 chars
-            m_gold = re.search(
-                r"FINE\s*GOLD\s*\(9999\).{0,200}?per\s*1\s*tola[^0-9]*([0-9,]+)",
-                page_text,
-                re.IGNORECASE | re.DOTALL
-            )
-            if m_gold:
-                gold_tola_str = normalize_digits(m_gold.group(1)).replace(',', '')
-                # Search for SILVER only AFTER the gold match to avoid cross-contamination
-                silver_search_start = m_gold.end()
-                page_text_after_gold = page_text[silver_search_start:]
-                
-                m_silver = re.search(
-                    r"SILVER.{0,200}?per\s*1\s*tola[^0-9]*([0-9,]+)",
-                    page_text_after_gold,
+
+            def find_amount(patterns):
+                for pat in patterns:
+                    last_match = None
+                    for m in re.finditer(pat, page_text, re.IGNORECASE | re.DOTALL):
+                        last_match = m
+                    if last_match:
+                        return normalize_digits(last_match.group(1)).replace(',', '')
+                return None
+
+            # Ashesh widget rows often look like: "Hallmark Gold (9999) 1 Tola Rs. 138000" or with रु
+            gold_tola_str = find_amount([
+                r"Hallmark\s*Gold[^\n\r]*?(?:NRs\.?|Nrs\.?|Rs\.?|रु)\s*([0-9][0-9,\.]+)",
+                r"Fine\s*Gold[^\n\r]*?(?:NRs\.?|Nrs\.?|Rs\.?|रु)\s*([0-9][0-9,\.]+)",
+                r"Gold\s*\(9999\)[^\n\r]*?(?:NRs\.?|Nrs\.?|Rs\.?|रु)\s*([0-9][0-9,\.]+)",
+                r"Gold[^\n\r]*?Tola[^\n\r]*?(?:NRs\.?|Nrs\.?|Rs\.?|रु)\s*([0-9][0-9,\.]+)",
+            ])
+
+            # Silver row often: "Silver 1 Tola Rs. 1690" or "Silver (1 Tola) NRs. 1690"
+            silver_tola_str = find_amount([
+                r"Silver[^\n\r]*?Tola[^\n\r]*?(?:NRs\.?|Nrs\.?|Rs\.?|रु)\s*([0-9][0-9,\.]+)",
+                r"Silver[^\n\r]*?(?:NRs\.?|Nrs\.?|Rs\.?|रु)\s*([0-9][0-9,\.]+)",
+            ])
+
+            # Fallback to original FENEGOSIDA patterns if needed
+            if not gold_tola_str or not silver_tola_str:
+                m_gold = re.search(
+                    r"FINE\s*GOLD\s*\(9999\).{0,200}?per\s*1\s*tola[^0-9]*([0-9,]+)",
+                    page_text,
                     re.IGNORECASE | re.DOTALL
                 )
-                if m_silver:
-                    silver_tola_str = normalize_digits(m_silver.group(1)).replace(',', '')
+                if m_gold and not gold_tola_str:
+                    gold_tola_str = normalize_digits(m_gold.group(1)).replace(',', '')
+                if m_gold:
+                    silver_search_start = m_gold.end()
+                    page_text_after_gold = page_text[silver_search_start:]
+                    m_silver = re.search(
+                        r"SILVER.{0,200}?per\s*1\s*tola[^0-9]*([0-9,]+)",
+                        page_text_after_gold,
+                        re.IGNORECASE | re.DOTALL
+                    )
+                    if m_silver and not silver_tola_str:
+                        silver_tola_str = normalize_digits(m_silver.group(1)).replace(',', '')
             
             # Proceed only if both rates found
             if gold_tola_str and silver_tola_str:
@@ -250,9 +278,16 @@ class Command(BaseCommand):
                     )
                 )
             else:
-                self.stdout.write(self.style.WARNING(
-                    f'Could not extract rates. Gold tola: {gold_tola_str}, Silver tola: {silver_tola_str}'
-                ))
+                # In dry-run, show a snippet of the page to aid debugging patterns
+                if options.get('dry_run'):
+                    snippet = page_text[:800]
+                    self.stdout.write(self.style.WARNING(
+                        f'Could not extract rates. Gold tola: {gold_tola_str}, Silver tola: {silver_tola_str}\nSnippet:\n{snippet}'
+                    ))
+                else:
+                    self.stdout.write(self.style.WARNING(
+                        f'Could not extract rates. Gold tola: {gold_tola_str}, Silver tola: {silver_tola_str}'
+                    ))
             
         except urllib.error.URLError as e:
             self.stdout.write(
