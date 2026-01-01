@@ -6,6 +6,7 @@ from decimal import Decimal, InvalidOperation
 import re
 import urllib.request
 import urllib.error
+import logging
 
 # Optional deps
 try:
@@ -14,6 +15,8 @@ try:
     HAS_SOUP = True
 except Exception:
     HAS_SOUP = False
+
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -27,7 +30,15 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         try:
             url = 'https://www.fenegosida.org/'
-            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Accept-Encoding': 'gzip, deflate',
+                'DNT': '1',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+            }
             req = urllib.request.Request(url, headers=headers)
             
             page_text = None
@@ -39,12 +50,22 @@ class Command(BaseCommand):
                     resp.raise_for_status()
                     page_text = resp.text
                     soup = BeautifulSoup(page_text, 'html.parser')
-                except Exception:
+                except requests.exceptions.RequestException as e:
+                    logger.warning(f"Requests failed: {e}. Falling back to urllib...")
                     pass
             
             if page_text is None:
-                with urllib.request.urlopen(req, timeout=10) as response:
-                    page_text = response.read().decode('utf-8', errors='ignore')
+                try:
+                    with urllib.request.urlopen(req, timeout=10) as response:
+                        page_text = response.read().decode('utf-8', errors='ignore')
+                except urllib.error.HTTPError as e:
+                    logger.error(f"HTTP Error {e.code}: {e.reason} - Network error")
+                    self.stdout.write(self.style.ERROR(f"Error fetching rates: Network error - {e}"))
+                    return
+                except urllib.error.URLError as e:
+                    logger.error(f"URL Error: {e.reason}")
+                    self.stdout.write(self.style.ERROR(f"Error fetching rates: Network error - {e}"))
+                    return
             
             # Normalize whitespace and Devanagari digits
             page_text = page_text.replace('\xa0', ' ')

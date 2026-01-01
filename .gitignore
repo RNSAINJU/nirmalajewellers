@@ -21,9 +21,10 @@ order/__pycache__/forms.cpython-310.pyc
 order/__pycache__/urls.cpython-310.pyc
 order/__pycache__/views.cpython-310.pyc
 
-
-# Ignore all migration files in ornament app
-ornament/migrations/
+# Django migrations - ignore all migration files but keep __init__.py
+*/migrations/*.py
+!*/migrations/__init__.py
+**/migrations/__pycache__/
 
 # Python bytecode
 __pycache__/
@@ -31,13 +32,8 @@ __pycache__/
 *.py[cod]
 *.pyc
 
-# Django migrations bytecode
-goldsilverpurchase/migrations/__pycache__/
-order/migrations/__pycache__/
-
 # Specific compiled files (if present)
 goldsilverpurchase/__pycache__
-goldsilverpurchase/migrations/__pycache__
 mysite/__pycache__
 order/__pycache__
 
@@ -48,6 +44,7 @@ venv/
 env/
 .idea/
 .vscode/
+staticfiles/
 
 # Test / packaging
 .coverage
