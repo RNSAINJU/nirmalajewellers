@@ -12,7 +12,7 @@ from django.contrib import messages
 import openpyxl
 from openpyxl.utils import get_column_letter
 
-from order.models import Order, OrderOrnament
+from order.models import Order, OrderOrnament, OrderPayment
 from order.forms import OrderForm, OrnamentFormSet
 from ornament.models import Ornament
 from .models import Sale
@@ -159,6 +159,8 @@ class DirectSaleCreateView(CreateView):
         # template can hide order-specific bits and show sales fields.
         context["is_sale_create"] = True
         context.setdefault("form_title", "Create Sale")
+        context["payment_choices"] = Order.PAYMENT_CHOICES
+        context["initial_payments_json"] = json.dumps([])
 
         # Provide defaults for sale-specific fields
         try:
@@ -212,6 +214,27 @@ class DirectSaleCreateView(CreateView):
             except AttributeError:
                 ornament.ornament_type = "order"
             ornament.save()
+
+        # Persist payment breakdown for the sale
+        payment_lines_raw = form.cleaned_data.get("payment_lines_json") or "[]"
+        try:
+            payments_data = json.loads(payment_lines_raw)
+        except (TypeError, ValueError):
+            payments_data = []
+
+        self.object.payments.all().delete()
+        for payment in payments_data:
+            amount = Decimal(str(payment.get("amount", 0) or 0))
+            if amount <= 0:
+                continue
+            mode = payment.get("payment_mode") or payment.get("mode") or "cash"
+            if mode not in dict(Order.PAYMENT_CHOICES):
+                mode = "cash"
+            OrderPayment.objects.create(
+                order=self.object,
+                payment_mode=mode,
+                amount=amount,
+            )
 
         # Recompute order totals from created lines (amount/subtotal/total/remaining)
         self.object.recompute_totals_from_lines()

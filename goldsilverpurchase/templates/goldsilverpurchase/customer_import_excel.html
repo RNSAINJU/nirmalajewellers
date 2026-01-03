@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center mb-4">
+        <div class="col-lg-10 col-xl-8 text-center">
+            <h1 class="fw-bold" style="color:#4f46e5;">Import Customer Purchases</h1>
+            <p class="text-muted mb-0">Keep the format consistent with your exports so SNs and metal types align perfectly.</p>
+        </div>
+    </div>
+
+    <div class="row justify-content-center g-3">
+        <div class="col-lg-10 col-xl-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light fw-semibold">Upload Excel (.xlsx)</div>
+                <div class="card-body">
+                    {% if messages %}
+                        <div class="mb-3">
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags|default:'info' }} mb-2">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <div class="alert alert-secondary mb-4">
+                        <div class="fw-semibold mb-2">Expected column order</div>
+                        <div class="row small">
+                            <div class="col-md-6">
+                                <ol class="ps-3 mb-2">
+                                    <li>SN</li>
+                                    <li>Purchase Date (BS) — YYYY-MM-DD</li>
+                                    <li>Customer Name</li>
+                                    <li>Location</li>
+                                    <li>Phone</li>
+                                </ol>
+                            </div>
+                            <div class="col-md-6">
+                                <ol start="6" class="ps-3 mb-2">
+                                    <li>Metal (gold / silver / diamond)</li>
+                                    <li>Ornament Name</li>
+                                    <li>Weight</li>
+                                    <li>Refined Weight</li>
+                                    <li>Rate</li>
+                                    <li>Amount</li>
+                                </ol>
+                            </div>
+                        </div>
+                        <ul class="small mb-0 ps-3">
+                            <li>Purchase date can be blank; when set, use BS format.</li>
+                            <li>Unknown metal values default to gold.</li>
+                            <li>Existing SN rows are skipped automatically.</li>
+                        </ul>
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data" class="row g-3">
+                        {% csrf_token %}
+                        <div class="col-12">
+                            <label class="form-label">Excel file (.xlsx)</label>
+                            <input type="file" name="file" accept=".xlsx" class="form-control" required>
+                        </div>
+                        <div class="col-12 d-flex gap-2 justify-content-end">
+                            <a href="{% url 'gsp:customer_purchase_list' %}" class="btn btn-outline-secondary">Back to list</a>
+                            <button type="submit" class="btn btn-primary">Upload &amp; Import</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

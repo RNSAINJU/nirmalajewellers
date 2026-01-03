@@ -1,6 +1,6 @@
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
-from .models import GoldSilverPurchase, Party
+from .models import GoldSilverPurchase, Party, CustomerPurchase
 from django.db.models import Sum
 import nepali_datetime as ndt
 import openpyxl
@@ -11,6 +11,7 @@ from django.db.models import Q
 from io import BytesIO
 from django.contrib import messages
 from decimal import Decimal
+from .forms import CustomerPurchaseForm
 
 def D(value):
     """Convert None, empty, float, int safely to Decimal."""
@@ -137,6 +138,93 @@ class PurchaseDeleteView(DeleteView):
     success_url = reverse_lazy('gsp:purchaselist')
 
 
+# ---------------------- Customer Purchases ----------------------
+class CustomerPurchaseListView(ListView):
+    model = CustomerPurchase
+    template_name = 'goldsilverpurchase/customer_purchase_list.html'
+    context_object_name = 'customer_purchases'
+    ordering = ['-purchase_date', '-created_at']
+    paginate_by = 10
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        search = self.request.GET.get('search')
+        date_str = self.request.GET.get('date')
+        start_date_str = self.request.GET.get('start_date')
+        end_date_str = self.request.GET.get('end_date')
+        metal_type = self.request.GET.get('metal_type')
+
+        if search:
+            qs = qs.filter(
+                Q(sn__icontains=search) |
+                Q(customer_name__icontains=search) |
+                Q(location__icontains=search) |
+                Q(phone_no__icontains=search) |
+                Q(ornament_name__icontains=search)
+            )
+
+        if date_str:
+            try:
+                y, m, d = map(int, date_str.split('-'))
+                qs = qs.filter(purchase_date=ndt.date(y, m, d))
+            except ValueError:
+                pass
+        elif start_date_str and end_date_str:
+            try:
+                y1, m1, d1 = map(int, start_date_str.split('-'))
+                y2, m2, d2 = map(int, end_date_str.split('-'))
+                qs = qs.filter(purchase_date__range=(ndt.date(y1, m1, d1), ndt.date(y2, m2, d2)))
+            except ValueError:
+                pass
+
+        if metal_type:
+            qs = qs.filter(metal_type=metal_type)
+
+        return qs
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        qs = self.get_queryset()
+        ctx['total_weight'] = qs.aggregate(total=Sum('weight'))['total'] or Decimal('0')
+        ctx['total_refined_weight'] = qs.aggregate(total=Sum('refined_weight'))['total'] or Decimal('0')
+        ctx['date'] = self.request.GET.get('date', '')
+        ctx['start_date'] = self.request.GET.get('start_date', '')
+        ctx['end_date'] = self.request.GET.get('end_date', '')
+        ctx['search'] = self.request.GET.get('search', '')
+        ctx['metal_type'] = self.request.GET.get('metal_type', '')
+        return ctx
+
+
+class CustomerPurchaseCreateView(CreateView):
+    model = CustomerPurchase
+    form_class = CustomerPurchaseForm
+    template_name = 'goldsilverpurchase/customer_purchase_form.html'
+    success_url = reverse_lazy('gsp:customer_purchase_list')
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['form_title'] = 'Create Customer Purchase'
+        return ctx
+
+
+class CustomerPurchaseUpdateView(UpdateView):
+    model = CustomerPurchase
+    form_class = CustomerPurchaseForm
+    template_name = 'goldsilverpurchase/customer_purchase_form.html'
+    success_url = reverse_lazy('gsp:customer_purchase_list')
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['form_title'] = 'Update Customer Purchase'
+        return ctx
+
+
+class CustomerPurchaseDeleteView(DeleteView):
+    model = CustomerPurchase
+    template_name = 'goldsilverpurchase/customer_purchase_confirm_delete.html'
+    success_url = reverse_lazy('gsp:customer_purchase_list')
+
+
 
 def print_view(request):
     view = PurchaseListView()
@@ -202,6 +290,57 @@ def export_excel(request):
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
     response['Content-Disposition'] = 'attachment; filename="purchases.xlsx"'
+
+    return response
+
+
+def export_customer_excel(request):
+    view = CustomerPurchaseListView()
+    view.request = request
+    purchases = view.get_queryset()
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "CustomerPurchases"
+
+    headers = [
+        "SN", "Purchase Date (BS)", "Customer Name", "Location", "Phone",
+        "Metal", "Ornament Name", "Weight", "Refined Weight", "Rate", "Amount"
+    ]
+    ws.append(headers)
+
+    for p in purchases:
+        ws.append([
+            p.sn,
+            str(p.purchase_date),
+            p.customer_name,
+            p.location,
+            p.phone_no,
+            p.get_metal_type_display(),
+            p.ornament_name,
+            p.weight,
+            p.refined_weight,
+            p.rate,
+            p.amount,
+        ])
+
+    for col in ws.columns:
+        max_length = 0
+        col_letter = get_column_letter(col[0].column)
+        for cell in col:
+            if cell.value:
+                max_length = max(max_length, len(str(cell.value)))
+        ws.column_dimensions[col_letter].width = max_length + 2
+
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    response = HttpResponse(
+        output.getvalue(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response['Content-Disposition'] = 'attachment; filename="customer_purchases.xlsx"'
 
     return response
 
@@ -315,3 +454,82 @@ def import_excel(request):
             return redirect("gsp:gsp_import_excel")
 
     return render(request, "goldsilverpurchase/import_excel.html")
+
+
+def import_customer_excel(request):
+    if request.method == "POST":
+        file = request.FILES.get("file")
+
+        if not file:
+            messages.error(request, "Please upload an Excel file.")
+            return redirect("gsp:customer_import_excel")
+
+        try:
+            wb = openpyxl.load_workbook(file)
+            ws = wb.active
+
+            imported = 0
+            skipped = 0
+
+            for row in ws.iter_rows(min_row=2, values_only=True):
+                if not any(row):
+                    continue
+
+                try:
+                    (
+                        sn,
+                        purchase_date_bs,
+                        customer_name,
+                        location,
+                        phone_no,
+                        metal_type,
+                        ornament_name,
+                        weight,
+                        refined_weight,
+                        rate,
+                        amount,
+                    ) = row
+                except Exception:
+                    messages.error(request, "Excel format is incorrect. Columns mismatch.")
+                    return redirect("gsp:customer_import_excel")
+
+                if CustomerPurchase.objects.filter(sn=str(sn)).exists():
+                    skipped += 1
+                    continue
+
+                try:
+                    y, m, d = map(int, str(purchase_date_bs).split("-"))
+                    purchase_date = ndt.date(y, m, d)
+                except Exception:
+                    purchase_date = None
+
+                metal_value = str(metal_type or CustomerPurchase.MetalType.GOLD).strip().lower()
+                if metal_value not in [choice[0] for choice in CustomerPurchase.MetalType.choices]:
+                    metal_value = CustomerPurchase.MetalType.GOLD
+
+                CustomerPurchase.objects.create(
+                    sn=str(sn),
+                    purchase_date=purchase_date,
+                    customer_name=customer_name or "",
+                    location=location or "",
+                    phone_no=phone_no or "",
+                    metal_type=metal_value,
+                    ornament_name=ornament_name or "",
+                    weight=D(weight),
+                    refined_weight=D(refined_weight),
+                    rate=D(rate),
+                    amount=D(amount),
+                )
+                imported += 1
+
+            messages.success(
+                request,
+                f"Imported: {imported} | Skipped duplicates: {skipped}"
+            )
+            return redirect("gsp:customer_purchase_list")
+
+        except Exception as e:
+            messages.error(request, f"Error while importing: {e}")
+            return redirect("gsp:customer_import_excel")
+
+    return render(request, "goldsilverpurchase/customer_import_excel.html")

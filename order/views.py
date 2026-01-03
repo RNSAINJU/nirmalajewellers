@@ -14,10 +14,10 @@ from django.contrib import messages
 import openpyxl
 from openpyxl.utils import get_column_letter
 
-from .models import Order, OrderOrnament
+from .models import Order, OrderOrnament, OrderPayment
 from sales.models import Sale
 from .forms import OrderForm, OrnamentFormSet
-from ornament.models import Ornament
+from ornament.models import Ornament, Kaligar
 
 app_name = 'order'
 
@@ -57,6 +57,64 @@ class SearchOrnamentsAPI(View):
         return JsonResponse({'ornaments': data})
 
 
+class CreateOrnamentInlineView(View):
+    """Create an ornament quickly while creating an order (AJAX)."""
+
+    def post(self, request):
+        data = request.POST
+
+        def D(val):
+            try:
+                return Decimal(str(val))
+            except Exception:
+                return Decimal("0")
+
+        kaligar_id = data.get("kaligar")
+        try:
+            kaligar = Kaligar.objects.get(pk=kaligar_id)
+        except Kaligar.DoesNotExist:
+            return JsonResponse({"ok": False, "error": "Kaligar is required."}, status=400)
+
+        ornament = Ornament.objects.create(
+            ornament_date=ndt.date.today(),
+            code=data.get("code") or None,
+            ornament_name=data.get("ornament_name") or "",
+            metal_type=data.get("metal_type") or Ornament.MetalTypeCategory.GOLD,
+            ornament_type=Ornament.OrnamentCategory.ORDER,
+            weight=D(data.get("weight")),
+            diamond_weight=D(data.get("diamond_weight")),
+            zircon_weight=D(data.get("zircon_weight")),
+            stone_weight=D(data.get("stone_weight")),
+            jarti=D(data.get("jarti")),
+            jyala=D(data.get("jyala")),
+            kaligar=kaligar,
+        )
+
+        return JsonResponse(
+            {
+                "ok": True,
+                "ornament": {
+                    "id": ornament.id,
+                    "code": ornament.code or "N/A",
+                    "name": ornament.ornament_name,
+                    "metal_type": ornament.metal_type,
+                    "weight": float(ornament.weight or 0),
+                    "jarti": float(ornament.jarti or 0),
+                    "jyala": float(ornament.jyala or 0),
+                    "gross_weight": float(ornament.gross_weight or 0),
+                    "stone_weight": float(ornament.stone_weight or 0),
+                    "diamond_weight": float(ornament.diamond_weight or 0),
+                    "zircon_weight": float(ornament.zircon_weight or 0),
+                    "amount": float(ornament.stone_totalprice or 0),
+                    "gold_rate": 0.0,
+                    "diamond_rate": 0.0,
+                    "zircon_rate": 0.0,
+                    "stone_rate": 0.0,
+                },
+            }
+        )
+
+
 class OrnamentCreateView(View):
     template_name = 'ornament/ornament_form.html'
     success_url = reverse_lazy('ornament:list')
@@ -90,6 +148,13 @@ class OrderCreateView(CreateView):
     model = Order
     form_class = OrderForm
     template_name = 'order/order_form.html'
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['kaligars'] = Kaligar.objects.all()
+        ctx['payment_choices'] = Order.PAYMENT_CHOICES
+        ctx['initial_payments_json'] = json.dumps([])
+        return ctx
 
     def get_initial(self):
         """Provide default dates for new orders.
@@ -156,6 +221,27 @@ class OrderCreateView(CreateView):
                 ornament.ornament_type = 'order'
             ornament.save()
 
+        # Persist payment breakdown
+        payment_lines_raw = form.cleaned_data.get('payment_lines_json') or '[]'
+        try:
+            payments_data = json.loads(payment_lines_raw)
+        except (TypeError, ValueError):
+            payments_data = []
+
+        self.object.payments.all().delete()
+        for payment in payments_data:
+            amount = Decimal(str(payment.get('amount', 0) or 0))
+            if amount <= 0:
+                continue
+            mode = payment.get('payment_mode') or payment.get('mode') or 'cash'
+            if mode not in dict(Order.PAYMENT_CHOICES):
+                mode = 'cash'
+            OrderPayment.objects.create(
+                order=self.object,
+                payment_mode=mode,
+                amount=amount,
+            )
+
         # Recompute order totals from created lines (amount/subtotal/total/remaining)
         self.object.recompute_totals_from_lines()
 
@@ -166,6 +252,21 @@ class OrderUpdateView(UpdateView):
     model = Order
     form_class = OrderForm
     template_name = 'order/order_form.html'
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['kaligars'] = Kaligar.objects.all()
+        ctx['payment_choices'] = Order.PAYMENT_CHOICES
+        payments = list(self.object.payments.values('payment_mode', 'amount')) if self.object.pk else []
+        for payment in payments:
+            payment['amount'] = float(payment.get('amount') or 0)
+        if not payments:
+            payments = [{
+                "payment_mode": self.object.payment_mode or "cash",
+                "amount": float(self.object.payment_amount or 0),
+            }]
+        ctx['initial_payments_json'] = json.dumps(payments)
+        return ctx
 
     def get_success_url(self):
         return reverse_lazy('order:list')
@@ -183,6 +284,9 @@ class OrderUpdateView(UpdateView):
 
         # Clear existing lines
         self.object.order_ornaments.all().delete()
+
+        # Clear existing payments (will be rebuilt below)
+        self.object.payments.all().delete()
 
         new_ornament_ids = []
         for line in lines:
@@ -221,6 +325,26 @@ class OrderUpdateView(UpdateView):
             Ornament.objects.filter(order=self.object).exclude(id__in=new_ornament_ids).update(
                 order=None,
                 ornament_type='stock',
+            )
+
+        # Persist payment breakdown
+        payment_lines_raw = form.cleaned_data.get('payment_lines_json') or '[]'
+        try:
+            payments_data = json.loads(payment_lines_raw)
+        except (TypeError, ValueError):
+            payments_data = []
+
+        for payment in payments_data:
+            amount = Decimal(str(payment.get('amount', 0) or 0))
+            if amount <= 0:
+                continue
+            mode = payment.get('payment_mode') or payment.get('mode') or 'cash'
+            if mode not in dict(Order.PAYMENT_CHOICES):
+                mode = 'cash'
+            OrderPayment.objects.create(
+                order=self.object,
+                payment_mode=mode,
+                amount=amount,
             )
 
         # Recompute order totals from updated lines

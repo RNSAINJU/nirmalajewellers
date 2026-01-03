@@ -159,3 +159,36 @@ class GoldSilverPurchase(models.Model):
     #         raise ValidationError({
     #             'discount': f'Discount cannot exceed {max_discount}.'
     #         })
+
+
+class CustomerPurchase(models.Model):
+    class MetalType(models.TextChoices):
+        GOLD = 'gold', 'Gold'
+        SILVER = 'silver', 'Silver'
+        DIAMOND = 'diamond', 'Diamond'
+
+    sn = models.CharField(max_length=20, unique=True, verbose_name="SN")
+    purchase_date = NepaliDateField(null=True, blank=True)
+    customer_name = models.CharField(max_length=255)
+    location = models.CharField(max_length=255, blank=True, null=True)
+    phone_no = models.CharField(max_length=20, blank=True, null=True)
+    metal_type = models.CharField(max_length=10, choices=MetalType.choices, default=MetalType.GOLD)
+    ornament_name = models.CharField(max_length=255)
+    weight = models.DecimalField(max_digits=10, decimal_places=3, validators=[MinValueValidator(0)], default=Decimal('0.000'))
+    refined_weight = models.DecimalField(max_digits=10, decimal_places=3, validators=[MinValueValidator(0)], default=Decimal('0.000'))
+    rate = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)], default=Decimal('0.00'))
+    amount = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)], default=Decimal('0.00'))
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-purchase_date', '-created_at']
+        indexes = [
+            models.Index(fields=['sn']),
+            models.Index(fields=['customer_name']),
+            models.Index(fields=['purchase_date']),
+        ]
+
+    def __str__(self):
+        return f"{self.sn} - {self.customer_name}"

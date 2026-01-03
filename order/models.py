@@ -11,6 +11,7 @@ class Order(models.Model):
         ('bank', 'Bank'),
         ('gold', 'Gold'),
         ('silver', 'Silver'),
+        ('mixed', 'Mixed'),  # multiple payment modes
     ]
 
     STATUS_CHOICES = [
@@ -92,11 +93,13 @@ class Order(models.Model):
         super().save(*args, **kwargs)
 
     def recompute_totals_from_lines(self):
-        """Recalculate amount/subtotal/total/remaining based on OrderOrnament lines.
+        """Recalculate amount/subtotal/total/remaining based on lines and payments.
 
         - amount = sum of line_amount from all related order_ornaments
         - subtotal = max(0, amount - discount)
         - total = subtotal + tax
+        - payment_amount = sum of related payments
+        - payment_mode = 'mixed' if multiple modes, else the single mode (fallback cash)
         - remaining_amount = max(0, total - payment_amount)
         """
         from decimal import Decimal as _D
@@ -105,25 +108,62 @@ class Order(models.Model):
             (line.line_amount or _D("0")) for line in self.order_ornaments.all()
         )
 
+        payment_entries = list(self.payments.all()) if hasattr(self, "payments") else []
+        payment_sum = sum((p.amount or _D("0")) for p in payment_entries)
+        modes = [p.payment_mode for p in payment_entries if p.payment_mode]
+        unique_modes = set(modes)
+
         self.amount = line_sum
 
-        # Ensure discount and tax are non-null decimals
         discount = self.discount or _D("0")
         tax = self.tax or _D("0")
-        payment = self.payment_amount or _D("0")
 
         self.subtotal = max(_D("0"), line_sum - discount)
         self.total = self.subtotal + tax
-        self.remaining_amount = max(_D("0"), self.total - payment)
 
-        # Persist changes without re-triggering clean logic again unnecessarily
+        # Summaries driven by payments
+        self.payment_amount = payment_sum
+        if len(unique_modes) > 1:
+            self.payment_mode = "mixed"
+        elif unique_modes:
+            self.payment_mode = modes[0]
+        else:
+            # Default/fallback to cash when no payment captured yet
+            self.payment_mode = self.payment_mode or "cash"
+
+        self.remaining_amount = max(_D("0"), self.total - payment_sum)
+
         super().save(update_fields=[
             "amount",
             "subtotal",
             "total",
+            "payment_amount",
+            "payment_mode",
             "remaining_amount",
             "updated_at",
         ])
+
+
+class OrderPayment(models.Model):
+    """Individual payment entry for an order (supports mixed modes)."""
+
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name="payments",
+    )
+    payment_mode = models.CharField(max_length=10, choices=Order.PAYMENT_CHOICES)
+    amount = models.DecimalField(max_digits=15, decimal_places=2, default=Decimal("0"))
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Order Payment"
+        verbose_name_plural = "Order Payments"
+
+    def __str__(self):
+        return f"Payment {self.payment_mode} {self.amount} for Order {self.order_id}"
 
 
 class OrderOrnament(models.Model):

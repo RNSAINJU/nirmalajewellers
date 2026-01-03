@@ -5,6 +5,7 @@ from .views import (
     OrderUpdateView,
     OrderDeleteView,
     SearchOrnamentsAPI,
+    CreateOrnamentInlineView,
     CreateSaleFromOrderView,
     SalesListView,
     SaleUpdateView,
@@ -30,4 +31,5 @@ urlpatterns = [
     path('sales/<int:pk>/edit/', SaleUpdateView.as_view(), name='sale_update'),
     path('sales/<int:pk>/delete/', SaleDeleteView.as_view(), name='sale_delete'),
     path('api/search-ornaments/', SearchOrnamentsAPI.as_view(), name='search_ornaments'),
+    path('api/create-ornament-inline/', CreateOrnamentInlineView.as_view(), name='create_ornament_inline'),
 ]

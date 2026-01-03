@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="container mt-5">
+    <h1 class="text-center mb-4" style="color: #667eea; font-weight: 700;">Customer Purchases</h1>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);">
+                <div class="card-body text-white text-center">
+                    <h6 class="mb-1">Total Weight</h6>
+                    <h3 class="mb-0">{{ total_weight|floatformat:3 }} <small style="font-size:0.6em;opacity:0.9;">tola</small></h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0" style="background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);">
+                <div class="card-body text-white text-center">
+                    <h6 class="mb-1">Refined Weight</h6>
+                    <h3 class="mb-0">{{ total_refined_weight|floatformat:3 }} <small style="font-size:0.6em;opacity:0.9;">tola</small></h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 d-flex align-items-center justify-content-center flex-wrap gap-2">
+            <a href="{% url 'gsp:customer_purchase_create' %}" class="btn btn-primary btn-lg">Create Customer Purchase</a>
+            <a href="{% url 'gsp:customer_export_excel' %}" class="btn btn-success btn-lg">Export Excel</a>
+            <a href="{% url 'gsp:customer_import_excel' %}" class="btn btn-outline-info btn-lg">Import Excel</a>
+        </div>
+    </div>
+
+    <div class="row mb-4 g-3 align-items-center">
+        <div class="col-md-8">
+            <form method="get" class="d-flex gap-2">
+                <input type="text" name="search" class="form-control" placeholder="Search by SN, name, phone, ornament" value="{{ search }}">
+                <input type="text" name="date" class="form-control" placeholder="Date (YYYY-MM-DD)" value="{{ date }}">
+                <button class="btn btn-primary">Search</button>
+                <a href="{% url 'gsp:customer_purchase_list' %}" class="btn btn-outline-secondary">Clear</a>
+            </form>
+        </div>
+        <div class="col-md-4">
+            <form method="get" class="d-flex gap-2">
+                <input type="text" name="start_date" class="form-control" placeholder="Start (YYYY-MM-DD)" value="{{ start_date }}">
+                <input type="text" name="end_date" class="form-control" placeholder="End (YYYY-MM-DD)" value="{{ end_date }}">
+                <select name="metal_type" class="form-select">
+                    <option value="">All Metals</option>
+                    <option value="gold" {% if metal_type == 'gold' %}selected{% endif %}>Gold</option>
+                    <option value="silver" {% if metal_type == 'silver' %}selected{% endif %}>Silver</option>
+                    <option value="diamond" {% if metal_type == 'diamond' %}selected{% endif %}>Diamond</option>
+                </select>
+                <button class="btn btn-outline-primary">Filter</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>SN</th>
+                    <th>Date</th>
+                    <th>Customer</th>
+                    <th>Location</th>
+                    <th>Phone</th>
+                    <th>Metal</th>
+                    <th>Ornament</th>
+                    <th class="text-end">Weight</th>
+                    <th class="text-end">Refined Weight</th>
+                    <th class="text-end">Rate</th>
+                    <th class="text-end">Amount</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cp in customer_purchases %}
+                <tr>
+                    <td>{{ cp.sn }}</td>
+                    <td>{{ cp.purchase_date }}</td>
+                    <td>{{ cp.customer_name }}</td>
+                    <td>{{ cp.location }}</td>
+                    <td>{{ cp.phone_no }}</td>
+                    <td>{{ cp.get_metal_type_display }}</td>
+                    <td>{{ cp.ornament_name }}</td>
+                    <td class="text-end">{{ cp.weight|floatformat:3 }}</td>
+                    <td class="text-end">{{ cp.refined_weight|floatformat:3 }}</td>
+                    <td class="text-end">{{ cp.rate|floatformat:2 }}</td>
+                    <td class="text-end">{{ cp.amount|floatformat:2 }}</td>
+                    <td>
+                        <a href="{% url 'gsp:customer_purchase_update' cp.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+                        <a href="{% url 'gsp:customer_purchase_delete' cp.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="12" class="text-center py-4">No customer purchases found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if is_paginated %}
+    <nav aria-label="Page navigation" class="mt-3">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+            {% endif %}
+            <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+            {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+{% endblock %}

@@ -21,6 +21,8 @@ class OrderForm(forms.ModelForm):
 
     # JSON payload with per-line rates/jarti/jyala/amount from the JS table
     order_lines_json = forms.CharField(widget=forms.HiddenInput(), required=False)
+    # JSON payload for multiple payments (mode + amount)
+    payment_lines_json = forms.CharField(widget=forms.HiddenInput(), required=False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -41,6 +43,13 @@ class OrderForm(forms.ModelForm):
 
         self.fields["existing_ornaments"].queryset = qs
 
+        # Ensure payment defaults exist for hidden fields
+        if not self.fields.get("payment_mode").initial:
+            self.fields["payment_mode"].initial = getattr(instance, "payment_mode", "cash") or "cash"
+        if self.fields.get("payment_amount"):
+            amt_init = getattr(instance, "payment_amount", 0) or 0
+            self.fields["payment_amount"].initial = amt_init
+
     class Meta:
         model = Order
         fields = [
@@ -53,6 +62,8 @@ class OrderForm(forms.ModelForm):
             'discount': forms.HiddenInput(),
             'tax': forms.HiddenInput(),
             'total': forms.HiddenInput(),
+            'payment_mode': forms.HiddenInput(),
+            'payment_amount': forms.HiddenInput(),
         }
 
     def clean_customer_name(self):

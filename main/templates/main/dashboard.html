@@ -276,7 +276,8 @@
   <a href="/order/" class="btn-action orders-btn">📦 Orders</a>
   <a href="/purchase/" class="btn-action purchases-btn">💰 Purchases</a>
   <a href="/order/" class="btn-action sales-btn">📈 Sales</a>
-  <a href="/monthly-stock-report/" class="btn-action" style="background-color: #9b59b6;">📊 Stock Report</a>
+  <a href="{% url 'main:stock_report' %}" class="btn-action" style="background-color: #9b59b6;">📊 Stock Report</a>
+  <a href="{% url 'main:monthly_stock_report' %}" class="btn-action" style="background-color: #2980b9;">🗓️ Monthly Stock</a>
   <a href="/admin/" class="btn-action">⚙️ Admin</a>
 </div>
 

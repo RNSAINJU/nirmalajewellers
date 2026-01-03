@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 import nepali_datetime as ndt
 
 from ornament.models import Ornament, Kaligar
-from goldsilverpurchase.models import GoldSilverPurchase, Party
+from goldsilverpurchase.models import GoldSilverPurchase, Party, CustomerPurchase
 from order.models import Order, OrderOrnament
 from main.models import Stock
 
@@ -61,7 +61,7 @@ def dashboard(request):
     return render(request, 'main/dashboard.html', context)
 
 
-def monthly_stock_report(request):
+def stock_report(request):
     """Stock report filtered by optional date range (BS).
 
     Shows sales and purchase totals for all records, or filtered by
@@ -106,6 +106,19 @@ def monthly_stock_report(request):
         "diamond_stock_weight": 0,
     }
 
+    # Helper: customer purchase inflow by metal (refined_weight + amount)
+    def customer_purchase_totals(metal_type):
+        qs = CustomerPurchase.objects.filter(metal_type__icontains=metal_type)
+        if from_date:
+            qs = qs.filter(purchase_date__gte=from_date)
+        if to_date:
+            qs = qs.filter(purchase_date__lte=to_date)
+        agg = qs.aggregate(total_amount=Sum("amount"), total_weight=Sum("refined_weight"))
+        return (
+            agg.get("total_amount") or Decimal("0"),
+            agg.get("total_weight") or Decimal("0"),
+        )
+
     # Gold purchases (all parties) for the chosen BS period
     # Use case-insensitive containment to tolerate imported values like 'Gold', ' GOLD ', etc.
     gold_qs = GoldSilverPurchase.objects.filter(metal_type__icontains="gold")
@@ -118,11 +131,13 @@ def monthly_stock_report(request):
         total_wages=Sum("wages"),
         total_qty=Sum("quantity"),
     )
+    gold_cust_amount, gold_cust_weight = customer_purchase_totals("gold")
     totals["gold_purchase_amount"] = (
         (gold_purchases.get("total_amount") or Decimal("0"))
         - (gold_purchases.get("total_wages") or Decimal("0"))
+        + gold_cust_amount
     )
-    totals["gold_purchase_weight"] = gold_purchases.get("total_qty") or 0
+    totals["gold_purchase_weight"] = (gold_purchases.get("total_qty") or 0) + gold_cust_weight
 
     # Silver purchases (all parties) for the chosen BS period
     silver_qs = GoldSilverPurchase.objects.filter(metal_type__icontains="silver")
@@ -135,11 +150,13 @@ def monthly_stock_report(request):
         total_wages=Sum("wages"),
         total_qty=Sum("quantity"),
     )
+    silver_cust_amount, silver_cust_weight = customer_purchase_totals("silver")
     totals["silver_purchase_amount"] = (
         (silver_purchases.get("total_amount") or Decimal("0"))
         - (silver_purchases.get("total_wages") or Decimal("0"))
+        + silver_cust_amount
     )
-    totals["silver_purchase_weight"] = silver_purchases.get("total_qty") or 0
+    totals["silver_purchase_weight"] = (silver_purchases.get("total_qty") or 0) + silver_cust_weight
 
     # Diamond purchases (all parties) for the chosen BS period
     diamond_qs = GoldSilverPurchase.objects.filter(metal_type__icontains="diamond")
@@ -148,8 +165,9 @@ def monthly_stock_report(request):
     if to_date:
         diamond_qs = diamond_qs.filter(bill_date__lte=to_date)
     diamond_purchases = diamond_qs.aggregate(total_amount=Sum("amount"), total_qty=Sum("quantity"))
-    totals["diamond_purchase_amount"] = diamond_purchases.get("total_amount") or 0
-    totals["diamond_purchase_weight"] = diamond_purchases.get("total_qty") or 0
+    diamond_cust_amount, diamond_cust_weight = customer_purchase_totals("diamond")
+    totals["diamond_purchase_amount"] = (diamond_purchases.get("total_amount") or Decimal("0")) + diamond_cust_amount
+    totals["diamond_purchase_weight"] = (diamond_purchases.get("total_qty") or 0) + diamond_cust_weight
 
     # Wages from all purchases
     wages_qs = GoldSilverPurchase.objects.all()
@@ -300,6 +318,125 @@ def monthly_stock_report(request):
         "opening_stock_rows": opening_stock_rows,
         "opening_stock_totals": opening_stock_totals,
     }
+    return render(request, "main/stock_report.html", context)
+
+
+def monthly_stock_report(request):
+    """Monthly stock report filtered by BS month (YYYY-MM).
+
+    Final stock per metal = (purchases + customer purchases) - sales within the month.
+    """
+
+    month_str = request.GET.get("month") or ""
+    today_bs = ndt.date.today()
+
+    try:
+        y, m = map(int, month_str.split("-")) if month_str else (today_bs.year, today_bs.month)
+        start_date = ndt.date(y, m, 1)
+        # Compute last day of month
+        if m == 12:
+            end_date = ndt.date(y + 1, 1, 1) - timedelta(days=1)
+        else:
+            end_date = ndt.date(y, m + 1, 1) - timedelta(days=1)
+    except Exception:
+        start_date = ndt.date(today_bs.year, today_bs.month, 1)
+        end_date = (ndt.date(today_bs.year + 1, 1, 1) - timedelta(days=1)) if today_bs.month == 12 else (ndt.date(today_bs.year, today_bs.month + 1, 1) - timedelta(days=1))
+        month_str = f"{start_date.year:04d}-{start_date.month:02d}"
+
+    def gs_purchase_totals(metal_type: str):
+        qs = GoldSilverPurchase.objects.filter(
+            metal_type__icontains=metal_type,
+            bill_date__gte=start_date,
+            bill_date__lte=end_date,
+        )
+        agg = qs.aggregate(total_amount=Sum("amount"), total_wages=Sum("wages"), total_qty=Sum("quantity"))
+        net_amount = (agg.get("total_amount") or Decimal("0")) - (agg.get("total_wages") or Decimal("0"))
+        return net_amount, (agg.get("total_qty") or Decimal("0"))
+
+    def customer_purchase_totals(metal_type: str):
+        qs = CustomerPurchase.objects.filter(
+            metal_type__icontains=metal_type,
+            purchase_date__gte=start_date,
+            purchase_date__lte=end_date,
+        )
+        agg = qs.aggregate(total_amount=Sum("amount"), total_weight=Sum("refined_weight"))
+        return (agg.get("total_amount") or Decimal("0")), (agg.get("total_weight") or Decimal("0"))
+
+    def sales_totals(metal_type: str, weight_field: str):
+        qs = OrderOrnament.objects.select_related("order", "ornament").filter(
+            order__order_date__gte=start_date,
+            order__order_date__lte=end_date,
+            ornament__metal_type__icontains=metal_type,
+        )
+        agg = qs.aggregate(total_amount=Sum("line_amount"), total_weight=Sum(weight_field))
+        return (agg.get("total_amount") or Decimal("0")), (agg.get("total_weight") or Decimal("0"))
+
+    metals = [
+        ("gold", "Gold", "weight"),
+        ("silver", "Silver", "weight"),
+        ("diamond", "Diamond", "diamond_weight"),
+    ]
+
+    purchase_rows = []
+    sales_rows = []
+    stock_rows = []
+    metal_summary = []
+
+    for key, label, sales_weight_field in metals:
+        gs_amount, gs_qty = gs_purchase_totals(key)
+        cust_amount, cust_qty = customer_purchase_totals(key)
+        metal_purchase_amount = gs_amount + cust_amount
+        metal_purchase_qty = gs_qty + cust_qty
+
+        sales_amount, sales_qty = sales_totals(key, f"ornament__{sales_weight_field}")
+
+        purchase_rows.append({"label": label, "qty": metal_purchase_qty, "amount": metal_purchase_amount})
+        sales_rows.append({"label": label, "qty": sales_qty, "amount": sales_amount})
+
+        stock_rows.append({
+            "label": label,
+            "qty": metal_purchase_qty - sales_qty,
+            "amount": metal_purchase_amount - sales_amount,
+        })
+
+        metal_summary.append({
+            "label": label,
+            "purchase_qty": metal_purchase_qty,
+            "purchase_amount": metal_purchase_amount,
+            "sales_qty": sales_qty,
+            "sales_amount": sales_amount,
+            "stock_qty": metal_purchase_qty - sales_qty,
+            "stock_amount": metal_purchase_amount - sales_amount,
+        })
+
+    purchase_totals = {
+        "qty": sum(row["qty"] for row in purchase_rows),
+        "amount": sum(row["amount"] for row in purchase_rows),
+    }
+
+    sales_totals_dict = {
+        "qty": sum(row["qty"] for row in sales_rows),
+        "amount": sum(row["amount"] for row in sales_rows),
+    }
+
+    stock_totals = {
+        "qty": sum(row["qty"] for row in stock_rows),
+        "amount": sum(row["amount"] for row in stock_rows),
+    }
+
+    context = {
+        "month": month_str or f"{start_date.year:04d}-{start_date.month:02d}",
+        "purchase_rows": purchase_rows,
+        "sales_rows": sales_rows,
+        "stock_rows": stock_rows,
+        "metal_summary": metal_summary,
+        "purchase_totals": purchase_totals,
+        "sales_totals": sales_totals_dict,
+        "stock_totals": stock_totals,
+        "start_date": start_date,
+        "end_date": end_date,
+    }
+
     return render(request, "main/monthly_stock_report.html", context)
 
 

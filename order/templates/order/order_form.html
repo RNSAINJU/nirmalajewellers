@@ -26,6 +26,9 @@
             {{ form.tax }}
             {{ form.total }}
             {{ form.order_lines_json }}
+            {{ form.payment_mode }}
+            {{ form.payment_amount }}
+            {{ form.payment_lines_json }}
 
             <!-- Order / Customer / Status compact header fields -->
             <div class="row g-3 mb-3">
@@ -130,7 +133,13 @@
             <h5 class="mb-3">Select Existing Ornaments from Inventory</h5>
 
             <div class="mb-3">
-                <label class="form-label">Search & Select Ornaments</label>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label class="form-label mb-0">Search & Select Ornaments</label>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#inlineOrnamentModal">+ Quick Create</button>
+                        <a class="btn btn-outline-secondary" href="{% url 'ornament:create' %}" target="_blank" rel="noopener">Full Page</a>
+                    </div>
+                </div>
                 <input type="text" id="ornament-search" class="form-control" placeholder="Search by name, code, metal type...">
                 <div id="search-results" style="border: 1px solid #ddd; margin-top: 10px; border-radius: 5px; max-height: 300px; overflow-y: auto; display: none;">
                     <div id="results-list" style="padding: 10px;"></div>
@@ -208,23 +217,31 @@
                     <div class="col-md-5 col-lg-4">
                         <div class="card mb-3 small">
                             <div class="card-body p-3">
-                                <h6 class="card-title mb-2">Payment</h6>
-                                <div class="mb-2">
-                                    <label class="form-label fw-bold mb-1" for="id_payment_mode">Payment Mode</label>
-                                    <select id="id_payment_mode" name="payment_mode" class="form-select form-select-sm">
-                                        {% for key, value in form.payment_mode.field.choices %}
-                                            <option value="{{ key }}" {% if form.payment_mode.value == key %}selected{% endif %}>{{ value }}</option>
-                                        {% endfor %}
-                                    </select>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="card-title mb-0">Payments</h6>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" id="add-payment-row">Add Payment</button>
                                 </div>
-                                <div class="mb-2">
-                                    <label class="form-label fw-bold mb-1" for="id_payment_amount">Payment Amount</label>
-                                    <input type="number" id="id_payment_amount" name="payment_amount" class="form-control form-control-sm" step="0.01" value="{{ form.payment_amount.value|default:'0.00' }}">
+                                <div class="table-responsive">
+                                    <table class="table table-sm align-middle mb-2">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th style="width: 50%">Mode</th>
+                                                <th style="width: 35%">Amount</th>
+                                                <th style="width: 15%">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="payment-rows-body"></tbody>
+                                    </table>
                                 </div>
-                                <div class="mb-0">
-                                    <label class="form-label fw-bold mb-1">Remaining Amount</label>
-                                    <input type="number" id="payment-remaining" class="form-control form-control-sm" step="0.01" value="0.00" readonly style="background-color: #f0f0f0;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <div class="small text-muted">Paid Total</div>
+                                    <div class="fw-bold" id="payment-total-display">0.00</div>
                                 </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="small text-muted">Remaining Amount</div>
+                                    <div class="fw-bold" id="payment-remaining-display">0.00</div>
+                                </div>
+                                <small class="text-muted d-block mt-2">Multiple payment modes are supported (e.g., part cash, part gold). Totals sync automatically.</small>
                             </div>
                         </div>
                     </div>
@@ -268,12 +285,85 @@
     </div>
 </div>
 
+<!-- Inline Ornament Create Modal -->
+<div class="modal fade" id="inlineOrnamentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Quick Create Ornament</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <label class="form-label mb-1">Name</label>
+                        <input type="text" id="inline-ornament-name" class="form-control form-control-sm" placeholder="Ornament name">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label mb-1">Code</label>
+                        <input type="text" id="inline-ornament-code" class="form-control form-control-sm" placeholder="Optional code">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label mb-1">Metal Type</label>
+                        <select id="inline-ornament-metal" class="form-select form-select-sm">
+                            <option value="Gold">Gold</option>
+                            <option value="Silver">Silver</option>
+                            <option value="Diamond">Diamond</option>
+                            <option value="Others">Others</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label mb-1">Kaligar</label>
+                        <select id="inline-ornament-kaligar" class="form-select form-select-sm">
+                            <option value="">Select Kaligar</option>
+                            {% for kaligar in kaligars %}
+                            <option value="{{ kaligar.id }}">{{ kaligar.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label mb-1">Weight</label>
+                        <input type="number" step="0.001" id="inline-ornament-weight" class="form-control form-control-sm" placeholder="0.000">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label mb-1">Diamond Weight</label>
+                        <input type="number" step="0.001" id="inline-ornament-diamond" class="form-control form-control-sm" placeholder="0.000">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label mb-1">Zircon Weight</label>
+                        <input type="number" step="0.001" id="inline-ornament-zircon" class="form-control form-control-sm" placeholder="0.000">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label mb-1">Stone Weight</label>
+                        <input type="number" step="0.001" id="inline-ornament-stone" class="form-control form-control-sm" placeholder="0.000">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label mb-1">Jarti</label>
+                        <input type="number" step="0.001" id="inline-ornament-jarti" class="form-control form-control-sm" placeholder="0.000">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label mb-1">Jyala</label>
+                        <input type="number" step="0.01" id="inline-ornament-jyala" class="form-control form-control-sm" placeholder="0.00">
+                    </div>
+                </div>
+                <div class="alert alert-danger mt-3 d-none" id="inline-ornament-error"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="inline-ornament-save">Save & Add</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- BOOTSTRAP JS (only once) -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <!-- Your JS logic -->
 <script>
 let selectedOrnaments = {};
+const paymentModeOptionsHtml = `{% for key, value in form.payment_mode.field.choices %}{% if key != 'mixed' %}<option value="{{ key }}">{{ value }}</option>{% endif %}{% endfor %}`;
+const initialPayments = JSON.parse('{{ initial_payments_json|escapejs }}');
 
 // Search ornaments
 document.getElementById('ornament-search').addEventListener('input', function() {
@@ -322,6 +412,88 @@ document.getElementById('ornament-search').addEventListener('input', function() 
             resultsList.innerHTML = `<div class="p-2 text-danger">Error: ${error.message}</div>`;
             resultsDiv.style.display = 'block';
         });
+});
+
+// Inline ornament create
+const inlineSaveBtn = document.getElementById('inline-ornament-save');
+const inlineError = document.getElementById('inline-ornament-error');
+
+// Close modal safely even if Bootstrap instance is missing
+function closeInlineOrnamentModal() {
+    const modalEl = document.getElementById('inlineOrnamentModal');
+    if (!modalEl) return;
+    const instance = bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl);
+    instance.hide();
+    // Fallback cleanup if backdrop/body classes linger
+    modalEl.classList.remove('show');
+    document.body.classList.remove('modal-open');
+    document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+}
+
+function inlineOrnamentPayload() {
+    return {
+        ornament_name: document.getElementById('inline-ornament-name').value.trim(),
+        code: document.getElementById('inline-ornament-code').value.trim(),
+        metal_type: document.getElementById('inline-ornament-metal').value,
+        weight: document.getElementById('inline-ornament-weight').value,
+        diamond_weight: document.getElementById('inline-ornament-diamond').value,
+        zircon_weight: document.getElementById('inline-ornament-zircon').value,
+        stone_weight: document.getElementById('inline-ornament-stone').value,
+        jarti: document.getElementById('inline-ornament-jarti').value,
+        jyala: document.getElementById('inline-ornament-jyala').value,
+        kaligar: document.getElementById('inline-ornament-kaligar').value,
+    };
+}
+
+inlineSaveBtn?.addEventListener('click', function() {
+    inlineError?.classList.add('d-none');
+    const payload = inlineOrnamentPayload();
+
+    if (!payload.ornament_name) {
+        inlineError.textContent = 'Ornament name is required.';
+        inlineError.classList.remove('d-none');
+        return;
+    }
+    if (!payload.kaligar) {
+        inlineError.textContent = 'Kaligar is required.';
+        inlineError.classList.remove('d-none');
+        return;
+    }
+
+    const formData = new FormData();
+    Object.entries(payload).forEach(([k, v]) => formData.append(k, v));
+
+    fetch('{% url "order:create_ornament_inline" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+        body: formData,
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (!data.ok) {
+            inlineError.textContent = data.error || 'Unable to create ornament.';
+            inlineError.classList.remove('d-none');
+            return;
+        }
+        // Close modal (with cleanup for lingering backdrop)
+        closeInlineOrnamentModal();
+
+        // Add to selection immediately
+        if (data.ornament) {
+            selectOrnament(data.ornament);
+        }
+
+        // Clear form
+        ['inline-ornament-name','inline-ornament-code','inline-ornament-weight','inline-ornament-diamond','inline-ornament-zircon','inline-ornament-stone','inline-ornament-jarti','inline-ornament-jyala'].forEach(id => {
+            const el = document.getElementById(id); if (el) el.value = '';
+        });
+    })
+    .catch(err => {
+        inlineError.textContent = err.message;
+        inlineError.classList.remove('d-none');
+    });
 });
 
 function selectOrnament(ornament) {
@@ -574,13 +746,19 @@ function updateDerivedFields(amount) {
     }
 }
 
-function updateRemainingAmount(totalValue) {
-    // If there are multiple payment_amount inputs (e.g., duplicated field renders), use the last one
-    const paymentInputs = Array.from(document.querySelectorAll('input[name="payment_amount"]'));
-    const paymentInput = paymentInputs.length ? paymentInputs[paymentInputs.length - 1] : null;
-    const remainingField = document.getElementById('payment-remaining');
-    const paymentVal = parseFloat(paymentInput?.value) || 0;
+function updateRemainingAmount(totalValue, paymentTotalOverride) {
+    let paymentVal;
+    if (typeof paymentTotalOverride === 'number') {
+        paymentVal = paymentTotalOverride;
+    } else {
+        paymentVal = getPaymentRowsData().reduce((sum, row) => sum + (row.amount || 0), 0);
+    }
     const remaining = Math.max(0, totalValue - paymentVal);
+
+    const remainingDisplay = document.getElementById('payment-remaining-display');
+    if (remainingDisplay) remainingDisplay.textContent = remaining.toFixed(2);
+
+    const remainingField = document.getElementById('payment-remaining');
     if (remainingField) {
         remainingField.value = remaining.toFixed(2);
     }
@@ -646,6 +824,94 @@ function buildOrderLinesPayload() {
     const hiddenJsonField = document.querySelector('input[name="order_lines_json"]');
     if (hiddenJsonField) {
         hiddenJsonField.value = JSON.stringify(lines);
+    }
+}
+
+// Payments (multiple rows)
+function addPaymentRow(mode = 'cash', amount = '') {
+    const tbody = document.getElementById('payment-rows-body');
+    if (!tbody) return;
+
+    const row = document.createElement('tr');
+    row.className = 'payment-row';
+    row.innerHTML = `
+        <td>
+            <select class="form-select form-select-sm payment-mode">
+                ${paymentModeOptionsHtml}
+            </select>
+        </td>
+        <td>
+            <input type="number" step="0.01" class="form-control form-control-sm payment-amount" placeholder="0.00">
+        </td>
+        <td class="text-end">
+            <button type="button" class="btn btn-outline-danger btn-sm payment-remove">Remove</button>
+        </td>
+    `;
+    tbody.appendChild(row);
+
+    const modeSelect = row.querySelector('.payment-mode');
+    const amountInput = row.querySelector('.payment-amount');
+    const removeBtn = row.querySelector('.payment-remove');
+
+    if (modeSelect && mode) modeSelect.value = mode;
+    if (amountInput && amount !== '') amountInput.value = amount;
+
+    modeSelect?.addEventListener('change', recalcPayments);
+    amountInput?.addEventListener('input', recalcPayments);
+    removeBtn?.addEventListener('click', () => {
+        // Keep at least one row; if only one, just clear its values
+        const rows = document.querySelectorAll('.payment-row');
+        if (rows.length <= 1) {
+            if (modeSelect) modeSelect.value = 'cash';
+            if (amountInput) amountInput.value = '';
+        } else {
+            row.remove();
+        }
+        recalcPayments();
+    });
+
+    recalcPayments();
+}
+
+function getPaymentRowsData() {
+    const rows = [];
+    document.querySelectorAll('.payment-row').forEach(row => {
+        const mode = row.querySelector('.payment-mode')?.value || 'cash';
+        const amountVal = parseFloat(row.querySelector('.payment-amount')?.value) || 0;
+        rows.push({ payment_mode: mode, amount: amountVal });
+    });
+    return rows;
+}
+
+function recalcPayments() {
+    const rows = getPaymentRowsData();
+    const totalPaid = rows.reduce((sum, row) => sum + (row.amount || 0), 0);
+    const modes = rows.map(r => r.payment_mode).filter(Boolean);
+    const uniqueModes = Array.from(new Set(modes));
+
+    const hiddenAmount = document.querySelector('input[name="payment_amount"]');
+    if (hiddenAmount) hiddenAmount.value = totalPaid.toFixed(2);
+
+    const hiddenMode = document.querySelector('input[name="payment_mode"]');
+    if (hiddenMode) hiddenMode.value = uniqueModes.length > 1 ? 'mixed' : (uniqueModes[0] || 'cash');
+
+    const hiddenJson = document.querySelector('input[name="payment_lines_json"]');
+    if (hiddenJson) hiddenJson.value = JSON.stringify(rows);
+
+    const totalPaidDisplay = document.getElementById('payment-total-display');
+    if (totalPaidDisplay) totalPaidDisplay.textContent = totalPaid.toFixed(2);
+
+    const orderTotalVal = parseFloat(document.getElementById('order-total')?.value) || 0;
+    updateRemainingAmount(orderTotalVal, totalPaid);
+}
+
+function initPaymentRows() {
+    if (initialPayments && initialPayments.length) {
+        initialPayments.forEach(payment => {
+            addPaymentRow(payment.payment_mode || 'cash', payment.amount ?? '');
+        });
+    } else {
+        addPaymentRow('cash', '');
     }
 }
 
@@ -832,10 +1098,7 @@ function initFinancialFromHidden() {
         const discountedField = document.getElementById('order-discounted-amount');
         if (discountedField) discountedField.value = (amountVal - discountVal).toFixed(2);
 
-        // Update remaining based on existing payment amount
-        const paymentInputs = Array.from(document.querySelectorAll('input[name="payment_amount"]'));
-        const paymentInput = paymentInputs.length ? paymentInputs[paymentInputs.length - 1] : null;
-        const paymentVal = parseFloat(paymentInput?.value) || 0;
+        // Update remaining based on current payment rows
         const baseTotal = totalVal || (amountVal - discountVal + taxVal);
         updateRemainingAmount(baseTotal || 0);
     }
@@ -847,6 +1110,10 @@ function initFinancialFromHidden() {
 document.addEventListener('DOMContentLoaded', function() {
     // For edit view, load ornaments already attached to this order
     initExistingOrnaments();
+
+    // Initialize payment rows
+    initPaymentRows();
+    document.getElementById('add-payment-row')?.addEventListener('click', () => addPaymentRow());
 
     document.querySelectorAll('.ornament-formset-row').forEach(row => {
         const index = row.getAttribute('data-row-index');
@@ -902,17 +1169,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    const paymentInputs = Array.from(document.querySelectorAll('input[name="payment_amount"]'));
-    paymentInputs.forEach(input => {
-        input.addEventListener('input', function() {
-            const totalVal = parseFloat(document.getElementById('order-total')?.value) || 0;
-            updateRemainingAmount(totalVal);
-        });
-    });
-
     // Initial financial values: prefer existing saved data (edit)
     // For new orders, this will just keep zeros until ornaments are added.
     initFinancialFromHidden();
+    recalcPayments();
 
     // Form submit handler to sync all calculated values
     const orderForm = document.getElementById('order-form');
@@ -941,6 +1201,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Build JSON payload for per-ornament lines
             buildOrderLinesPayload();
+
+            // Sync payment breakdown
+            recalcPayments();
 
             console.log('Form submitted with total:', orderTotal, 'discount:', orderDiscount, 'tax:', orderTax);
         });

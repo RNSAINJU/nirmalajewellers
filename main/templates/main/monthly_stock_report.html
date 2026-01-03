@@ -1,263 +1,162 @@
 {% extends 'base.html' %}
-
-{% block content %}
-<style>
-  .sheet {
-    background: #fff;
-    padding: 24px;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-  }
-
-  .sheet-header {
-    text-align: center;
-    margin-bottom: 18px;
-  }
-
-  .sheet-header .title {
-    font-weight: 700;
-    font-size: 1.4rem;
-  }
-
-  .sheet-header .subtitle {
-    color: #4b5563;
-    font-size: 0.95rem;
-  }
-
-  .note {
-    margin-top: 14px;
-  }
-
-  .note-title {
-    font-weight: 700;
-    margin-bottom: 6px;
-  }
-
-  .note-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 18px;
-  }
-
-  .note-table th,
-  .note-table td {
-    border: 1px solid #1f2937;
-    padding: 8px 10px;
-    font-size: 0.95rem;
-  }
-
-  .note-table th {
-    background: #e5e7eb;
-    text-align: center;
-  }
-
-  .note-table td:nth-child(1) {
-    text-align: center;
-  }
-
-  .note-table td:nth-child(3),
-  .note-table td:nth-child(5) {
-    text-align: right;
-  }
-
-  .total-row {
-    font-weight: 700;
-    background: #f3f4f6;
-  }
-
-  .actions {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-    margin-top: 14px;
-  }
-
-  .actions a,
-  .actions button {
-    padding: 10px 16px;
-    border-radius: 6px;
-    border: 1px solid #111827;
-    background: #111827;
-    color: #fff;
-    font-weight: 600;
-    cursor: pointer;
-    text-decoration: none;
-  }
-
-  .actions .secondary {
-    background: #fff;
-    color: #111827;
-  }
-
-  @media print {
-    .actions,
-    .navbar,
-    .sidebar,
-    #sidebarOverlay,
-    .btn,
-    .alert {
-      display: none !important;
-    }
-
-    .content {
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      background: #fff;
-    }
-  }
-</style>
-
 {% load bs_filters %}
-
-<div class="sheet">
-  <div class="sheet-header">
-    <div class="title">Nirmala Jewellers Pvt.Ltd.</div>
-    <div class="subtitle">SuryaBinayak Municipality 08, Bhaktapur</div>
-    <div class="subtitle">Fiscal Year: 2078-079 (32 Asadh 2079, 16 July 2022)</div>
-    <div class="subtitle">PAN 610085158</div>
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h2 class="mb-1">Monthly Stock Report</h2>
+      <div class="text-muted">Period: {{ start_date }} to {{ end_date }}</div>
+    </div>
+    <form method="get" class="d-flex gap-2">
+      <input type="text" name="month" class="form-control" placeholder="YYYY-MM" value="{{ month }}">
+      <button class="btn btn-primary">Apply</button>
+      <a class="btn btn-outline-secondary" href="{% url 'main:monthly_stock_report' %}">Clear</a>
+    </form>
   </div>
 
-  <div class="note">
-    <div class="note-title">Note 13.1 : Detail of Previous Year Remaining Stock</div>
-    <table class="note-table">
-      <thead>
-        <tr>
-          <th>S.N.</th>
-          <th>Item Details</th>
-          <th>Qty.</th>
-          <th>Unit</th>
-          <th>Amount</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in opening_stock_rows %}
+  <div class="row g-3 mb-3">
+    <div class="col-md-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-header fw-semibold">Purchases (incl. customer)</div>
+        <div class="card-body">
+          <div class="d-flex justify-content-between"><span>Total Qty</span><span>{{ purchase_totals.qty|floatformat:2 }}</span></div>
+          <div class="d-flex justify-content-between"><span>Total Amount</span><span>{{ purchase_totals.amount|floatformat:2 }}</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-header fw-semibold">Sales</div>
+        <div class="card-body">
+          <div class="d-flex justify-content-between"><span>Total Qty</span><span>{{ sales_totals.qty|floatformat:2 }}</span></div>
+          <div class="d-flex justify-content-between"><span>Total Amount</span><span>{{ sales_totals.amount|floatformat:2 }}</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-header fw-semibold">Closing Stock (month)</div>
+        <div class="card-body">
+          <div class="d-flex justify-content-between"><span>Total Qty</span><span>{{ stock_totals.qty|floatformat:2 }}</span></div>
+          <div class="d-flex justify-content-between"><span>Total Amount</span><span>{{ stock_totals.amount|floatformat:2 }}</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-3">
+    <div class="card-header fw-semibold">Purchases by Metal (incl. customer purchases)</div>
+    <div class="card-body table-responsive">
+      <table class="table table-bordered align-middle">
+        <thead class="table-light">
+          <tr><th>Metal</th><th class="text-end">Qty</th><th class="text-end">Amount</th></tr>
+        </thead>
+        <tbody>
+          {% for row in purchase_rows %}
           <tr>
-            <td>{{ forloop.counter }}</td>
             <td>{{ row.label }}</td>
-            <td>{{ row.qty|floatformat:2 }}</td>
-            <td>Gms.</td>
-            <td>{{ row.amount|floatformat:2 }}</td>
+            <td class="text-end">{{ row.qty|floatformat:2 }}</td>
+            <td class="text-end">{{ row.amount|floatformat:2 }}</td>
           </tr>
-        {% empty %}
-          <tr>
-            <td colspan="5" style="text-align: center; color: #999;">No opening stock data available</td>
+          {% empty %}
+          <tr><td colspan="3" class="text-center text-muted">No purchases found</td></tr>
+          {% endfor %}
+          <tr class="table-secondary fw-semibold">
+            <td>Total</td>
+            <td class="text-end">{{ purchase_totals.qty|floatformat:2 }}</td>
+            <td class="text-end">{{ purchase_totals.amount|floatformat:2 }}</td>
           </tr>
-        {% endfor %}
-        {% if opening_stock_rows %}
-        <tr class="total-row">
-          <td colspan="2">Totals</td>
-          <td>{{ opening_stock_totals.qty|floatformat:2 }}</td>
-          <td></td>
-          <td>{{ opening_stock_totals.amount|floatformat:2 }}</td>
-        </tr>
-        {% endif %}
-      </tbody>
-    </table>
+        </tbody>
+      </table>
+    </div>
   </div>
 
-  <div class="note">
-    <div class="note-title">Note 14.1 : Detail of Sales</div>
-    <table class="note-table">
-      <thead>
-        <tr>
-          <th>S.N.</th>
-          <th>Item Details</th>
-          <th>Qty.</th>
-          <th>Unit</th>
-          <th>Amount</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in sales_rows %}
+  <div class="card shadow-sm mb-3">
+    <div class="card-header fw-semibold">Metal-wise Summary</div>
+    <div class="card-body table-responsive">
+      <table class="table table-bordered align-middle">
+        <thead class="table-light">
           <tr>
-            <td>{{ forloop.counter }}</td>
+            <th>Metal</th>
+            <th class="text-end">Purchase Qty</th>
+            <th class="text-end">Purchase Amount</th>
+            <th class="text-end">Sales Qty</th>
+            <th class="text-end">Sales Amount</th>
+            <th class="text-end">Stock Qty</th>
+            <th class="text-end">Stock Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in metal_summary %}
+          <tr>
             <td>{{ row.label }}</td>
-            <td>{{ row.qty|floatformat:2 }}</td>
-            <td>Gms.</td>
-            <td>{{ row.amount|floatformat:2 }}</td>
+            <td class="text-end">{{ row.purchase_qty|floatformat:2 }}</td>
+            <td class="text-end">{{ row.purchase_amount|floatformat:2 }}</td>
+            <td class="text-end">{{ row.sales_qty|floatformat:2 }}</td>
+            <td class="text-end">{{ row.sales_amount|floatformat:2 }}</td>
+            <td class="text-end">{{ row.stock_qty|floatformat:2 }}</td>
+            <td class="text-end">{{ row.stock_amount|floatformat:2 }}</td>
           </tr>
-        {% endfor %}
-        <tr class="total-row">
-          <td colspan="2">Totals</td>
-          <td>{{ sales_totals.qty|floatformat:2 }}</td>
-          <td></td>
-          <td>{{ sales_totals.amount|floatformat:2 }}</td>
-        </tr>
-      </tbody>
-    </table>
+          {% empty %}
+          <tr><td colspan="7" class="text-center text-muted">No data</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 
-  <div class="note">
-    <div class="note-title">Note 15.1 : Detail of Purchase</div>
-    <table class="note-table">
-      <thead>
-        <tr>
-          <th>S.N.</th>
-          <th>Item Details</th>
-          <th>Qty.</th>
-          <th>Unit</th>
-          <th>Amount</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in purchase_rows %}
+  <div class="card shadow-sm mb-3">
+    <div class="card-header fw-semibold">Sales by Metal</div>
+    <div class="card-body table-responsive">
+      <table class="table table-bordered align-middle">
+        <thead class="table-light">
+          <tr><th>Metal</th><th class="text-end">Qty</th><th class="text-end">Amount</th></tr>
+        </thead>
+        <tbody>
+          {% for row in sales_rows %}
           <tr>
-            <td>{{ forloop.counter }}</td>
             <td>{{ row.label }}</td>
-            <td>{{ row.qty|floatformat:2 }}</td>
-            <td>Gms.</td>
-            <td>{{ row.amount|floatformat:2 }}</td>
+            <td class="text-end">{{ row.qty|floatformat:2 }}</td>
+            <td class="text-end">{{ row.amount|floatformat:2 }}</td>
           </tr>
-        {% endfor %}
-        <tr class="total-row">
-          <td colspan="2">Totals</td>
-          <td>{{ purchase_totals.qty|floatformat:2 }}</td>
-          <td></td>
-          <td>{{ purchase_totals.amount|floatformat:2 }}</td>
-        </tr>
-      </tbody>
-    </table>
+          {% empty %}
+          <tr><td colspan="3" class="text-center text-muted">No sales found</td></tr>
+          {% endfor %}
+          <tr class="table-secondary fw-semibold">
+            <td>Total</td>
+            <td class="text-end">{{ sales_totals.qty|floatformat:2 }}</td>
+            <td class="text-end">{{ sales_totals.amount|floatformat:2 }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
-  <div class="note">
-    <div class="note-title">Note 16.1 : Detail of Stock</div>
-    <table class="note-table">
-      <thead>
-        <tr>
-          <th>S.N.</th>
-          <th>Item Details</th>
-          <th>Qty.</th>
-          <th>Unit</th>
-          <th>Amount</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in stock_rows %}
+  <div class="card shadow-sm mb-3">
+    <div class="card-header fw-semibold">Closing Stock (Month)</div>
+    <div class="card-body table-responsive">
+      <table class="table table-bordered align-middle">
+        <thead class="table-light">
+          <tr><th>Metal</th><th class="text-end">Qty</th><th class="text-end">Amount</th></tr>
+        </thead>
+        <tbody>
+          {% for row in stock_rows %}
           <tr>
-            <td>{{ forloop.counter }}</td>
             <td>{{ row.label }}</td>
-            <td>{{ row.qty|floatformat:2 }}</td>
-            <td>Gms.</td>
-            <td>{{ row.amount|floatformat:2 }}</td>
+            <td class="text-end">{{ row.qty|floatformat:2 }}</td>
+            <td class="text-end">{{ row.amount|floatformat:2 }}</td>
           </tr>
-        {% endfor %}
-        <tr class="total-row">
-          <td colspan="2">Totals</td>
-          <td>{{ stock_totals.qty|floatformat:2 }}</td>
-          <td></td>
-          <td>{{ stock_totals.amount|floatformat:2 }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <div class="actions">
-    <a class="secondary" href="/">Back to Dashboard</a>
-    <button type="button" onclick="window.print()">Print</button>
+          {% empty %}
+          <tr><td colspan="3" class="text-center text-muted">No stock data</td></tr>
+          {% endfor %}
+          <tr class="table-secondary fw-semibold">
+            <td>Total</td>
+            <td class="text-end">{{ stock_totals.qty|floatformat:2 }}</td>
+            <td class="text-end">{{ stock_totals.amount|floatformat:2 }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
-
 {% endblock %}

@@ -161,10 +161,19 @@
             <button class="btn btn-outline-light" onclick="toggleTheme()">
                 <i class="bi bi-moon-fill"></i>
             </button>
+            {% if request.user.is_authenticated %}
+            <form method="post" action="{% url 'logout' %}" class="d-inline m-0 p-0">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-light">
+                    <i class="bi bi-box-arrow-right"></i>
+                </button>
+            </form>
+            {% endif %}
         </div>
     </div>
 </nav>
 
+{% if request.user.is_authenticated %}
 <!-- SIDEBAR -->
 <nav class="sidebar" id="sidebar">
     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -198,11 +207,12 @@
 
         <!-- Gold/Silver Purchase -->
         <li class="nav-item">
-            <a class="nav-link collapsed" data-bs-toggle="collapse" data-bs-target="#purchaseMenu" role="button" aria-expanded="{% if request.resolver_match.url_name == 'createpurchase' or request.resolver_match.url_name == 'purchaselist' %}true{% else %}false{% endif %}" aria-controls="purchaseMenu">
+            {% with current_url=request.resolver_match.url_name %}
+            <a class="nav-link collapsed" data-bs-toggle="collapse" data-bs-target="#purchaseMenu" role="button" aria-expanded="{% if current_url == 'createpurchase' or current_url == 'purchaselist' or current_url == 'customer_purchase_list' or current_url == 'customer_purchase_create' or current_url == 'customer_purchase_update' or current_url == 'customer_purchase_delete' %}true{% else %}false{% endif %}" aria-controls="purchaseMenu">
                 <i class="bi bi-gem me-2"></i> Purchase
                 <i class="bi bi-chevron-down float-end"></i>
             </a>
-            <div class="collapse {% if request.resolver_match.url_name == 'createpurchase' or request.resolver_match.url_name == 'purchaselist' %}show{% endif %}" id="purchaseMenu">
+            <div class="collapse {% if current_url == 'createpurchase' or current_url == 'purchaselist' or current_url == 'customer_purchase_list' or current_url == 'customer_purchase_create' or current_url == 'customer_purchase_update' or current_url == 'customer_purchase_delete' %}show{% endif %}" id="purchaseMenu">
 
                 <a href="{% url 'gsp:createpurchase' %}" class="nav-link ms-3 {% if request.resolver_match.url_name == 'createpurchase' %}active{% endif %}">
                     Create Purchase
@@ -210,7 +220,11 @@
                 <a href="{% url 'gsp:purchaselist' %}" class="nav-link ms-3 {% if request.resolver_match.url_name == 'purchaselist' %}active{% endif %}">
                     Gold/Silver Purchase
                 </a>
+                <a href="{% url 'gsp:customer_purchase_list' %}" class="nav-link ms-3 {% if request.resolver_match.url_name == 'customer_purchase_list' %}active{% endif %}">
+                    Customer Purchase
+                </a>
             </div>
+            {% endwith %}
         </li>
 
         <!-- Ornament -->
@@ -269,22 +283,24 @@
 
         <!-- Reports -->
         <li class="nav-item">
-            <a class="nav-link collapsed" data-bs-toggle="collapse" data-bs-target="#reportMenu" role="button" aria-expanded="{% if request.resolver_match.url_name == 'monthly_stock_report' or request.resolver_match.url_name == 'weight_report' %}true{% else %}false{% endif %}" aria-controls="reportMenu">
+            <a class="nav-link collapsed" data-bs-toggle="collapse" data-bs-target="#reportMenu" role="button" aria-expanded="{% if request.resolver_match.url_name == 'stock_report' or request.resolver_match.url_name == 'monthly_stock_report' or request.resolver_match.url_name == 'weight_report' %}true{% else %}false{% endif %}" aria-controls="reportMenu">
                 <i class="bi bi-bar-chart me-2"></i> Reports
                 <i class="bi bi-chevron-down float-end"></i>
             </a>
-            <div class="collapse {% if request.resolver_match.url_name == 'monthly_stock_report' or request.resolver_match.url_name == 'weight_report' %}show{% endif %}" id="reportMenu">
-                <a href="{% url 'main:monthly_stock_report' %}" class="nav-link ms-3 {% if request.resolver_match.url_name == 'monthly_stock_report' %}active{% endif %}">Stock Report</a>
+            <div class="collapse {% if request.resolver_match.url_name == 'stock_report' or request.resolver_match.url_name == 'monthly_stock_report' or request.resolver_match.url_name == 'weight_report' %}show{% endif %}" id="reportMenu">
+                <a href="{% url 'main:stock_report' %}" class="nav-link ms-3 {% if request.resolver_match.url_name == 'stock_report' %}active{% endif %}">Stock Report</a>
+                <a href="{% url 'main:monthly_stock_report' %}" class="nav-link ms-3 {% if request.resolver_match.url_name == 'monthly_stock_report' %}active{% endif %}">Monthly Stock Report</a>
                 <a href="{% url 'ornament:weight_report' %}" class="nav-link ms-3 {% if request.resolver_match.url_name == 'weight_report' %}active{% endif %}">Ornament Weight Report</a>
                 <a href="#" class="nav-link ms-3">Order Report</a>
             </div>
         </li>
 
     </ul>
-</nav>
+    </nav>
+{% endif %}
 
 <!-- MAIN CONTENT -->
-<div class="content" id="mainContent" style="padding-top:70px;">
+<div class="content {% if not request.user.is_authenticated %}full{% endif %}" id="mainContent" style="padding-top:70px;">
 
     {% if messages %}
         {% for message in messages %}
@@ -339,8 +355,17 @@
         sidebar.classList.contains('hide') ? openSidebar() : closeSidebar();
     }
 
-    // Restore sidebar state on page load
+    // Restore sidebar state on page load (only for authenticated users)
     document.addEventListener('DOMContentLoaded', () => {
+        const isAuthed = {{ request.user.is_authenticated|yesno:'true,false' }};
+        if (!isAuthed) {
+            const sidebarEl = document.getElementById('sidebar');
+            const contentEl = document.getElementById('mainContent');
+            if (sidebarEl) sidebarEl.classList.add('hide');
+            if (contentEl) contentEl.classList.add('full');
+            return;
+        }
+
         if (getSidebarState() === 'closed') {
             closeSidebar();
         } else {
