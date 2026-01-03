@@ -52,6 +52,7 @@ class OrnamentListView(ListView):
         type = self.request.GET.get("type")
         ornament_type = self.request.GET.get("ornament_type")
         metal_type = self.request.GET.get("metal_type")
+        maincategory_id = self.request.GET.get("maincategory")
         start_date = self.request.GET.get("start_date")
         end_date = self.request.GET.get("end_date")
         kaligar_id = self.request.GET.get('kaligar')
@@ -82,6 +83,9 @@ class OrnamentListView(ListView):
 
         if kaligar_id:
             qs = qs.filter(kaligar_id=kaligar_id)
+
+        if maincategory_id:
+            qs = qs.filter(maincategory_id=maincategory_id)
 
         if start_date and end_date:
             qs = qs.filter(
@@ -159,6 +163,7 @@ class OrnamentListView(ListView):
         context['metal_type'] = self.request.GET.get('metal_type')
         context['ornament_type'] = self.request.GET.get('ornament_type')
         context['type'] = self.request.GET.get('type')
+        context['maincategory'] = self.request.GET.get('maincategory')
 
         # Kaligar list
         context['kaligar'] = Kaligar.objects.all()
@@ -515,19 +520,51 @@ def import_excel(request):
 
 
 def ornament_report(request):
-    """Show ornament count by main category."""
+    """Show ornament counts grouped by metal type, then by main category."""
     from django.db.models import Count
-    
-    # Get all main categories with their ornament counts
-    category_report = MainCategory.objects.annotate(
-        ornament_count=Count('ornament')
-    ).order_by('name')
-    
-    # Calculate total ornaments
+
     total_ornaments = Ornament.objects.count()
-    
+
+    # Totals per metal type
+    metal_totals = {
+        row['metal_type']: row['count']
+        for row in Ornament.objects.values('metal_type').annotate(count=Count('id'))
+    }
+
+    # Category breakdown per metal
+    category_rows = (
+        Ornament.objects
+        .values('metal_type', 'maincategory__id', 'maincategory__name')
+        .annotate(count=Count('id'))
+        .order_by('metal_type', 'maincategory__name')
+    )
+
+    metal_order = ['Diamond', 'Gold', 'Silver', 'Others']
+    sections = []
+
+    for metal in metal_order:
+        total = metal_totals.get(metal, 0)
+        if total == 0:
+            continue
+
+        categories = [
+            {
+                'id': row['maincategory__id'],
+                'name': row['maincategory__name'] or 'Uncategorized',
+                'count': row['count'],
+            }
+            for row in category_rows
+            if row['metal_type'] == metal
+        ]
+
+        sections.append({
+            'metal': metal,
+            'total': total,
+            'categories': categories,
+        })
+
     context = {
-        'category_report': category_report,
+        'sections': sections,
         'total_ornaments': total_ornaments,
     }
     return render(request, 'ornament/ornament_report.html', context)

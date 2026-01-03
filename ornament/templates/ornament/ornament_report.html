@@ -147,39 +147,59 @@
         </div>
     </div>
 
-    {% if category_report %}
-        <div class="row">
-            {% for category in category_report %}
-                <div class="col-md-6 col-lg-4">
-                    <div class="category-card">
-                        <div class="category-icon">
-                            <i class="bi bi-gem"></i>
-                        </div>
-                        <div>
-                            <div class="category-name">{{ category.name }}</div>
-                            <div class="category-count">
-                                {{ category.ornament_count }}
-                                <span class="count-label">ornaments</span>
-                            </div>
+    {% if sections %}
+        {% for section in sections %}
+            <div class="mb-4">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="category-icon">
+                        <i class="bi bi-gem"></i>
+                    </div>
+                    <div>
+                        <div class="category-name" style="margin-bottom:4px;">{{ section.metal }}</div>
+                        <div class="category-count" style="font-size:1.4rem; color:#444;">
+                            {{ section.total }} <span class="count-label">ornaments</span>
                         </div>
                     </div>
                 </div>
-            {% endfor %}
-        </div>
+
+                <div class="row">
+                    {% for category in section.categories %}
+                        <div class="col-md-6 col-lg-4">
+                            <a href="{% url 'ornament:list' %}?metal_type={{ section.metal }}&maincategory={{ category.id }}" style="text-decoration:none; color:inherit;">
+                                <div class="category-card">
+                                    <div class="category-name">{{ category.name }}</div>
+                                    <div class="category-count">
+                                        {{ category.count }}
+                                        <span class="count-label">ornaments</span>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    {% empty %}
+                        <div class="col-12">
+                            <div class="category-card">
+                                <div class="category-name">No categories</div>
+                                <div class="count-label">All ornaments are uncategorized for this metal.</div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
 
         <div class="total-card">
             <div class="total-label">
-                <i class="bi bi-collection me-2"></i>Total Ornaments Across All Categories
+                <i class="bi bi-collection me-2"></i>Total Ornaments Across All Metals
             </div>
             <div class="total-count">{{ total_ornaments }}</div>
         </div>
     {% else %}
         <div class="empty-state">
             <i class="bi bi-inbox"></i>
-            <h3>No Categories Found</h3>
-            <p>There are currently no main categories with ornaments.</p>
-            <a href="{% url 'ornament:createmaincategory' %}" class="btn btn-primary mt-3">
-                <i class="bi bi-plus-circle me-2"></i>Create Main Category
+            <h3>No Ornaments Found</h3>
+            <p>There are currently no ornaments to report.</p>
+            <a href="{% url 'ornament:create' %}" class="btn btn-primary mt-3">
+                <i class="bi bi-plus-circle me-2"></i>Create Ornament
             </a>
         </div>
     {% endif %}
