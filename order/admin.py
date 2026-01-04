@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Order, OrderOrnament
+from .models import Order, OrderOrnament, OrderPayment
 
 
 class OrderOrnamentInline(admin.TabularInline):
@@ -31,3 +31,10 @@ class OrderOrnamentAdmin(admin.ModelAdmin):
         'ornament__ornament_name', 'ornament__code',
     )
     list_filter = ('order__status', 'ornament__metal_type')
+
+
+@admin.register(OrderPayment)
+class OrderPaymentAdmin(admin.ModelAdmin):
+    list_display = ('order', 'payment_mode', 'amount', 'created_at')
+    list_filter = ('payment_mode', 'order__status')
+    search_fields = ('order__sn', 'order__customer_name')

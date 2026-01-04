@@ -137,11 +137,16 @@ class OrderListView(ListView):
     template_name = 'order/order_list.html'
     context_object_name = 'orders'
     ordering = ['-sn']
+    paginate_by = 25
 
     def get_queryset(self):
         """Show only orders that have not yet been converted to sales."""
         qs = super().get_queryset()
-        return qs.filter(sale__isnull=True)
+        return qs.filter(sale__isnull=True).prefetch_related(
+            'order_ornaments__ornament',
+            'payments',
+            'ornaments',  # ornament FK on Ornament model if present
+        )
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -692,6 +697,153 @@ def order_payments_export_excel(request):
     )
     response["Content-Disposition"] = 'attachment; filename="order_payments.xlsx"'
     return response
+
+
+def order_ornaments_import_excel(request):
+    """Import order ornament lines from an Excel file.
+
+    Expected columns (matching export):
+    Order No | Customer | Ornament Code | Ornament Name | Metal | Weight | Diamond Wt | Zircon Wt | Stone Wt | Gold Rate | Diamond Rate | Zircon Rate | Stone Rate | Jarti | Jyala | Line Amount
+    """
+    if request.method == "POST":
+        file = request.FILES.get("file")
+        if not file:
+            messages.error(request, "Please upload an Excel file.")
+            return redirect("order:list")
+
+        try:
+            wb = openpyxl.load_workbook(file)
+            ws = wb.active
+
+            created = 0
+            skipped = 0
+
+            for row in ws.iter_rows(min_row=2, values_only=True):
+                if not any(row):
+                    continue
+                try:
+                    (
+                        order_no,
+                        _customer,
+                        ornament_code,
+                        _ornament_name,
+                        _metal,
+                        _weight,
+                        _diamond_wt,
+                        _zircon_wt,
+                        _stone_wt,
+                        gold_rate,
+                        diamond_rate,
+                        zircon_rate,
+                        stone_rate,
+                        jarti,
+                        jyala,
+                        line_amount,
+                    ) = row
+                except Exception:
+                    skipped += 1
+                    continue
+
+                # Find order
+                order_obj = None
+                try:
+                    order_obj = Order.objects.filter(sn=int(order_no)).first()
+                except Exception:
+                    order_obj = None
+                if not order_obj:
+                    skipped += 1
+                    continue
+
+                # Find ornament by code
+                ornament_obj = None
+                if ornament_code:
+                    ornament_obj = Ornament.objects.filter(code=str(ornament_code)).first()
+                if not ornament_obj:
+                    skipped += 1
+                    continue
+
+                OrderOrnament.objects.create(
+                    order=order_obj,
+                    ornament=ornament_obj,
+                    gold_rate=Decimal(str(gold_rate or 0)),
+                    diamond_rate=Decimal(str(diamond_rate or 0)),
+                    zircon_rate=Decimal(str(zircon_rate or 0)),
+                    stone_rate=Decimal(str(stone_rate or 0)),
+                    jarti=Decimal(str(jarti or 0)),
+                    jyala=Decimal(str(jyala or 0)),
+                    line_amount=Decimal(str(line_amount or 0)),
+                )
+                created += 1
+
+            messages.success(request, f"Imported {created} order ornaments, skipped {skipped}.")
+            return redirect("order:list")
+        except Exception as exc:  # noqa: BLE001
+            messages.error(request, f"Failed to import order ornaments: {exc}")
+            return redirect("order:list")
+
+    return render(request, "order/import_excel.html")
+
+
+def order_payments_import_excel(request):
+    """Import order payments from an Excel file.
+
+    Expected columns (matching export):
+    Order No | Customer | Payment Mode | Amount | Created
+    """
+    if request.method == "POST":
+        file = request.FILES.get("file")
+        if not file:
+            messages.error(request, "Please upload an Excel file.")
+            return redirect("order:list")
+
+        try:
+            wb = openpyxl.load_workbook(file)
+            ws = wb.active
+
+            created = 0
+            skipped = 0
+
+            for row in ws.iter_rows(min_row=2, values_only=True):
+                if not any(row):
+                    continue
+                try:
+                    order_no, _customer, payment_mode, amount, _created = row
+                except Exception:
+                    skipped += 1
+                    continue
+
+                try:
+                    order_obj = Order.objects.filter(sn=int(order_no)).first()
+                except Exception:
+                    order_obj = None
+
+                if not order_obj:
+                    skipped += 1
+                    continue
+
+                mode = payment_mode or "cash"
+                if mode not in dict(Order.PAYMENT_CHOICES):
+                    mode = "cash"
+
+                amt = Decimal(str(amount or 0))
+                if amt <= 0:
+                    skipped += 1
+                    continue
+
+                OrderPayment.objects.create(
+                    order=order_obj,
+                    payment_mode=mode,
+                    amount=amt,
+                )
+                created += 1
+
+            messages.success(request, f"Imported {created} payments, skipped {skipped}.")
+            return redirect("order:list")
+        except Exception as exc:  # noqa: BLE001
+            messages.error(request, f"Failed to import order payments: {exc}")
+            return redirect("order:list")
+
+    return render(request, "order/import_excel.html")
 
 
 def order_import_excel(request):

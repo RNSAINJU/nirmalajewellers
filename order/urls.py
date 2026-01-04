@@ -15,6 +15,8 @@ from .views import (
     order_import_excel,
     order_ornaments_export_excel,
     order_payments_export_excel,
+    order_ornaments_import_excel,
+    order_payments_import_excel,
 )
 
 app_name = 'order'
@@ -29,6 +31,8 @@ urlpatterns = [
     path('import-excel/', order_import_excel, name='import_excel'),
     path('export-order-ornaments/', order_ornaments_export_excel, name='export_order_ornaments'),
     path('export-order-payments/', order_payments_export_excel, name='export_order_payments'),
+    path('import-order-ornaments/', order_ornaments_import_excel, name='import_order_ornaments'),
+    path('import-order-payments/', order_payments_import_excel, name='import_order_payments'),
     path('sales/', SalesListView.as_view(), name='sales_list'),
     path('sales/create-from-order/<int:pk>/', CreateSaleFromOrderView.as_view(), name='create_sale_from_order'),
     path('sales/<int:pk>/edit/', SaleUpdateView.as_view(), name='sale_update'),

@@ -379,52 +379,55 @@ const initialPayments = JSON.parse('{{ initial_payments_json|escapejs }}');
 const ornamentEditTemplate = "{% url 'ornament:update' 0 %}"; // replace 0 with ID in JS
 
 // Search ornaments
+// Debounced ornament search
+let ornamentSearchTimer;
 document.getElementById('ornament-search').addEventListener('input', function() {
-    const query = this.value.trim();
-    const resultsDiv = document.getElementById('search-results');
-    const resultsList = document.getElementById('results-list');
-    
-    if (query.length < 1) {
-        resultsDiv.style.display = 'none';
-        return;
-    }
-    
-    const searchUrl = `{% url 'order:search_ornaments' %}?q=${encodeURIComponent(query)}`;
-    console.log('Fetching from:', searchUrl);
-    
-    fetch(searchUrl)
-        .then(response => {
-            console.log('Response status:', response.status);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('Data received:', data);
-            resultsList.innerHTML = '';
-            if (data.ornaments.length === 0) {
-                resultsList.innerHTML = '<div class="p-2 text-muted">No ornaments found</div>';
-            } else {
-                data.ornaments.forEach(ornament => {
-                    const div = document.createElement('div');
-                    div.className = 'p-2 border-bottom cursor-pointer';
-                    div.style.cursor = 'pointer';
-                    div.innerHTML = `
-                        <strong>${ornament.code}</strong> - ${ornament.name} 
-                        <small class="text-muted">(${ornament.metal_type})</small>
-                    `;
-                    div.onclick = () => selectOrnament(ornament);
-                    resultsList.appendChild(div);
-                });
-            }
-            resultsDiv.style.display = 'block';
-        })
-        .catch(error => {
-            console.error('Fetch error:', error);
-            resultsList.innerHTML = `<div class="p-2 text-danger">Error: ${error.message}</div>`;
-            resultsDiv.style.display = 'block';
-        });
+    clearTimeout(ornamentSearchTimer);
+    const inputEl = this;
+    ornamentSearchTimer = setTimeout(() => {
+        const query = inputEl.value.trim();
+        const resultsDiv = document.getElementById('search-results');
+        const resultsList = document.getElementById('results-list');
+        
+        if (query.length < 1) {
+            resultsDiv.style.display = 'none';
+            return;
+        }
+        
+        const searchUrl = `{% url 'order:search_ornaments' %}?q=${encodeURIComponent(query)}`;
+        
+        fetch(searchUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                resultsList.innerHTML = '';
+                if (data.ornaments.length === 0) {
+                    resultsList.innerHTML = '<div class="p-2 text-muted">No ornaments found</div>';
+                } else {
+                    data.ornaments.forEach(ornament => {
+                        const div = document.createElement('div');
+                        div.className = 'p-2 border-bottom cursor-pointer';
+                        div.style.cursor = 'pointer';
+                        div.innerHTML = `
+                            <strong>${ornament.code}</strong> - ${ornament.name} 
+                            <small class="text-muted">(${ornament.metal_type})</small>
+                        `;
+                        div.onclick = () => selectOrnament(ornament);
+                        resultsList.appendChild(div);
+                    });
+                }
+                resultsDiv.style.display = 'block';
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+                resultsList.innerHTML = `<div class="p-2 text-danger">Error: ${error.message}</div>`;
+                resultsDiv.style.display = 'block';
+            });
+    }, 250);
 });
 
 // Inline ornament create
