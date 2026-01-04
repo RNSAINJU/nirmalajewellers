@@ -221,7 +221,7 @@ class Ornament(models.Model):
         default=Decimal('0.000'),
     )
     kaligar = models.ForeignKey(Kaligar, on_delete=models.CASCADE, related_name="ornaments")
-    descrption = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
     image=CloudinaryField('image',folder='ornaments/', blank=True, null=True)
     order = models.ForeignKey(
         "order.Order",
