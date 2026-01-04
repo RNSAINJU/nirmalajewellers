@@ -364,6 +364,7 @@
 let selectedOrnaments = {};
 const paymentModeOptionsHtml = `{% for key, value in form.payment_mode.field.choices %}{% if key != 'mixed' %}<option value="{{ key }}">{{ value }}</option>{% endif %}{% endfor %}`;
 const initialPayments = JSON.parse('{{ initial_payments_json|escapejs }}');
+const ornamentEditTemplate = "{% url 'ornament:update' 0 %}"; // replace 0 with ID in JS
 
 // Search ornaments
 document.getElementById('ornament-search').addEventListener('input', function() {
@@ -514,6 +515,9 @@ function addOrnamentToTable(ornament) {
     const row = document.createElement('tr');
     row.id = `ornament-row-${ornament.id}`;
 
+    const editUrl = ornamentEditTemplate.replace('0', ornament.id);
+    const codeDisplay = ornament.code || 'N/A';
+
     const goldRateVal = ornament.gold_rate ?? '';
     const diamondRateVal = ornament.diamond_rate ?? '';
     const zirconRateVal = ornament.zircon_rate ?? '';
@@ -527,7 +531,7 @@ function addOrnamentToTable(ornament) {
     })();
 
     row.innerHTML = `
-        <td>${ornament.code}</td>
+        <td><a href="${editUrl}" target="_blank" rel="noopener">${codeDisplay}</a></td>
         <td>${ornament.weight.toFixed(2)}</td>
         <td><input type="number" class="form-control form-control-sm gold-rate-input" step="0.01" data-id="${ornament.id}" placeholder="Rate" value="${goldRateVal}"></td>
         <td>${ornament.diamond_weight.toFixed(2)}</td>
