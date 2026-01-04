@@ -226,7 +226,7 @@
                     <td>{{ order.phone_number }}</td>
                     <td>
                         {% for ornament in order.ornaments.all %}
-                            <small>• {{ ornament.ornament_name }} ({{ ornament.metal_type }})</small><br/>
+                            <small>• <a href="{% url 'ornament:update' ornament.id %}" target="_blank" rel="noopener">{{ ornament.ornament_name }}</a> ({{ ornament.metal_type }})</small><br/>
                         {% empty %}
                             <small class="text-muted">No ornaments</small>
                         {% endfor %}
