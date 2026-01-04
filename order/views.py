@@ -521,6 +521,7 @@ def order_export_excel(request):
     ws_lines = wb.create_sheet("OrderOrnaments")
     line_headers = [
         "Order No",
+        "Ornament ID",
         "Ornament Code",
         "Gold Rate",
         "Diamond Rate",
@@ -537,6 +538,7 @@ def order_export_excel(request):
             ornament = line.ornament
             ws_lines.append([
                 o.sn,
+                ornament.id,
                 ornament.code or "",
                 float(line.gold_rate or 0),
                 float(line.diamond_rate or 0),
@@ -664,6 +666,7 @@ def order_import_excel(request):
                     try:
                         (
                             order_no,
+                            ornament_id,
                             ornament_code,
                             gold_rate,
                             diamond_rate,
@@ -677,15 +680,18 @@ def order_import_excel(request):
                         # Skip malformed line rows gracefully
                         continue
 
-                    if not order_no or not ornament_code:
+                    if not order_no:
                         continue
                     order_obj = orders_by_sn.get(int(order_no))
                     if not order_obj:
                         continue
 
-                    try:
-                        ornament = Ornament.objects.get(code=ornament_code)
-                    except Ornament.DoesNotExist:
+                    ornament = None
+                    if ornament_id:
+                        ornament = Ornament.objects.filter(pk=ornament_id).first()
+                    if not ornament and ornament_code:
+                        ornament = Ornament.objects.filter(code=ornament_code).first()
+                    if not ornament:
                         continue
 
                     OrderOrnament.objects.create(
