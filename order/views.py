@@ -407,17 +407,17 @@ def order_print_view(request):
 
 
 def order_export_excel(request):
-    """Export orders to Excel, similar to ornaments/purchases export."""
+    """Export orders, ornament lines, and payments to Excel (multiple sheets)."""
 
     view = OrderListView()
     view.request = request
     orders = view.get_queryset()
 
     wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Orders"
+    ws_orders = wb.active
+    ws_orders.title = "Orders"
 
-    headers = [
+    order_headers = [
         "Order No",
         "Order Date (BS)",
         "Deliver Date (BS)",
@@ -433,10 +433,10 @@ def order_export_excel(request):
         "Paid Amount",
         "Remaining Amount",
     ]
-    ws.append(headers)
+    ws_orders.append(order_headers)
 
     for o in orders:
-        ws.append([
+        ws_orders.append([
             o.sn,
             str(o.order_date) if o.order_date else "",
             str(o.deliver_date) if o.deliver_date else "",
@@ -453,14 +453,85 @@ def order_export_excel(request):
             o.remaining_amount,
         ])
 
-    # Auto column width
-    for col in ws.columns:
-        max_length = 0
-        col_letter = get_column_letter(col[0].column)
-        for cell in col:
-            if cell.value:
-                max_length = max(max_length, len(str(cell.value)))
-        ws.column_dimensions[col_letter].width = max_length + 2
+    # Sheet 2: Order Ornaments (line items)
+    ws_lines = wb.create_sheet(title="OrderOrnaments")
+    line_headers = [
+        "Order No",
+        "Customer",
+        "Ornament Code",
+        "Ornament Name",
+        "Metal",
+        "Weight",
+        "Diamond Wt",
+        "Zircon Wt",
+        "Stone Wt",
+        "Gold Rate",
+        "Diamond Rate",
+        "Zircon Rate",
+        "Stone Rate",
+        "Jarti",
+        "Jyala",
+        "Line Amount",
+    ]
+    ws_lines.append(line_headers)
+
+    for o in orders.prefetch_related("order_ornaments__ornament"):
+        for line in o.order_ornaments.all():
+            orn = line.ornament
+            ws_lines.append([
+                o.sn,
+                o.customer_name,
+                orn.code if orn else "",
+                orn.ornament_name if orn else "",
+                orn.metal_type if orn else "",
+                float(orn.weight or 0) if orn else 0,
+                float(orn.diamond_weight or 0) if orn else 0,
+                float(getattr(orn, "zircon_weight", 0) or 0) if orn else 0,
+                float(orn.stone_weight or 0) if orn else 0,
+                line.gold_rate,
+                line.diamond_rate,
+                line.zircon_rate,
+                line.stone_rate,
+                line.jarti,
+                line.jyala,
+                line.line_amount,
+            ])
+
+    # Auto column width helper
+    def autosize(sheet):
+        for col in sheet.columns:
+            max_length = 0
+            col_letter = get_column_letter(col[0].column)
+            for cell in col:
+                if cell.value:
+                    max_length = max(max_length, len(str(cell.value)))
+            sheet.column_dimensions[col_letter].width = max_length + 2
+
+    autosize(ws_orders)
+    autosize(ws_lines)
+
+    # Sheet 3: Order Payments
+    ws_pay = wb.create_sheet(title="OrderPayments")
+    pay_headers = [
+        "Order No",
+        "Customer",
+        "Payment Mode",
+        "Amount",
+        "Created",
+    ]
+    ws_pay.append(pay_headers)
+
+    for o in orders.prefetch_related("payments"):
+        for p in o.payments.all():
+            ws_pay.append([
+                o.sn,
+                o.customer_name,
+                p.get_payment_mode_display() if hasattr(p, "get_payment_mode_display") else p.payment_mode,
+                p.amount,
+                p.created_at.strftime("%Y-%m-%d %H:%M") if p.created_at else "",
+            ])
+
+    autosize(ws_pay)
 
     output = BytesIO()
     wb.save(output)
