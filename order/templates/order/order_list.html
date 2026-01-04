@@ -110,6 +110,21 @@
         font-weight: 700;
         margin: 0;
     }
+    .ornament-link {
+        color: #0ea5e9;
+        font-weight: 600;
+        text-decoration: none;
+        padding: 2px 6px;
+        border-radius: 8px;
+        background: #e0f4ff;
+        transition: all 0.2s ease;
+        display: inline-block;
+    }
+    .ornament-link:hover {
+        color: #0b75b8;
+        background: #cce8fb;
+        text-decoration: underline;
+    }
 </style>
 
 <div class="container mt-5">
@@ -226,7 +241,7 @@
                     <td>{{ order.phone_number }}</td>
                     <td>
                         {% for ornament in order.ornaments.all %}
-                            <small>• <a href="{% url 'ornament:update' ornament.id %}" target="_blank" rel="noopener">{{ ornament.ornament_name }}</a> ({{ ornament.metal_type }})</small><br/>
+                            <small>• <a class="ornament-link" href="{% url 'ornament:update' ornament.id %}" target="_blank" rel="noopener">{{ ornament.ornament_name }}</a> <span class="text-muted">({{ ornament.metal_type }})</span></small><br/>
                         {% empty %}
                             <small class="text-muted">No ornaments</small>
                         {% endfor %}
