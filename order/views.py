@@ -4,7 +4,7 @@ from django.views.generic import ListView, CreateView, UpdateView
 from django.views.generic.edit import DeleteView
 from django.http import JsonResponse, HttpResponse
 from django.views import View
-from django.db.models import Q
+from django.db.models import Q, Sum, F
 from decimal import Decimal
 from datetime import timedelta
 import json
@@ -142,6 +142,33 @@ class OrderListView(ListView):
         """Show only orders that have not yet been converted to sales."""
         qs = super().get_queryset()
         return qs.filter(sale__isnull=True)
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        qs = ctx.get('orders') or self.get_queryset()
+
+        aggregates = qs.aggregate(
+            total_remaining=Sum('remaining_amount'),
+            total_amount=Sum('amount'),
+            total_total=Sum('total'),
+        )
+
+        total_24k_weight = OrderOrnament.objects.filter(
+            order__in=qs,
+            ornament__type__iexact='24KARAT',
+        ).aggregate(w=Sum('ornament__weight'))['w'] or 0
+
+        ctx['total_24k_weight'] = float(total_24k_weight or 0)
+        ctx['order_count'] = qs.count()
+
+        # Profit proxy: total - amount (net over line base) across orders
+        total_total = aggregates.get('total_total') or 0
+        total_amount = aggregates.get('total_amount') or 0
+        ctx['total_profit'] = float(total_total - total_amount)
+
+        ctx['total_remaining'] = float(aggregates.get('total_remaining') or 0)
+
+        return ctx
 
 
 class OrderCreateView(CreateView):
@@ -543,6 +570,127 @@ def order_export_excel(request):
     )
     response["Content-Disposition"] = 'attachment; filename="orders.xlsx"'
 
+    return response
+
+
+def order_ornaments_export_excel(request):
+    """Export order line items (OrderOrnament) to Excel."""
+    view = OrderListView()
+    view.request = request
+    orders = view.get_queryset()
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "OrderOrnaments"
+
+    headers = [
+        "Order No",
+        "Customer",
+        "Ornament Code",
+        "Ornament Name",
+        "Metal",
+        "Weight",
+        "Diamond Wt",
+        "Zircon Wt",
+        "Stone Wt",
+        "Gold Rate",
+        "Diamond Rate",
+        "Zircon Rate",
+        "Stone Rate",
+        "Jarti",
+        "Jyala",
+        "Line Amount",
+    ]
+    ws.append(headers)
+
+    for o in orders.prefetch_related("order_ornaments__ornament"):
+        for line in o.order_ornaments.all():
+            orn = line.ornament
+            ws.append([
+                o.sn,
+                o.customer_name,
+                orn.code if orn else "",
+                orn.ornament_name if orn else "",
+                orn.metal_type if orn else "",
+                float(orn.weight or 0) if orn else 0,
+                float(orn.diamond_weight or 0) if orn else 0,
+                float(getattr(orn, "zircon_weight", 0) or 0) if orn else 0,
+                float(orn.stone_weight or 0) if orn else 0,
+                line.gold_rate,
+                line.diamond_rate,
+                line.zircon_rate,
+                line.stone_rate,
+                line.jarti,
+                line.jyala,
+                line.line_amount,
+            ])
+
+    for col in ws.columns:
+        max_length = 0
+        col_letter = get_column_letter(col[0].column)
+        for cell in col:
+            if cell.value:
+                max_length = max(max_length, len(str(cell.value)))
+        ws.column_dimensions[col_letter].width = max_length + 2
+
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    response = HttpResponse(
+        output.getvalue(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    response["Content-Disposition"] = 'attachment; filename="order_ornaments.xlsx"'
+    return response
+
+
+def order_payments_export_excel(request):
+    """Export order payments to Excel."""
+    view = OrderListView()
+    view.request = request
+    orders = view.get_queryset()
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "OrderPayments"
+
+    headers = [
+        "Order No",
+        "Customer",
+        "Payment Mode",
+        "Amount",
+        "Created",
+    ]
+    ws.append(headers)
+
+    for o in orders.prefetch_related("payments"):
+        for p in o.payments.all():
+            ws.append([
+                o.sn,
+                o.customer_name,
+                p.get_payment_mode_display() if hasattr(p, "get_payment_mode_display") else p.payment_mode,
+                p.amount,
+                p.created_at.strftime("%Y-%m-%d %H:%M") if p.created_at else "",
+            ])
+
+    for col in ws.columns:
+        max_length = 0
+        col_letter = get_column_letter(col[0].column)
+        for cell in col:
+            if cell.value:
+                max_length = max(max_length, len(str(cell.value)))
+        ws.column_dimensions[col_letter].width = max_length + 2
+
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    response = HttpResponse(
+        output.getvalue(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    response["Content-Disposition"] = 'attachment; filename="order_payments.xlsx"'
     return response
 
 

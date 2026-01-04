@@ -13,6 +13,8 @@ from .views import (
     order_print_view,
     order_export_excel,
     order_import_excel,
+    order_ornaments_export_excel,
+    order_payments_export_excel,
 )
 
 app_name = 'order'
@@ -25,7 +27,8 @@ urlpatterns = [
     path('print/', order_print_view, name='print_view'),
     path('export-excel/', order_export_excel, name='export_excel'),
     path('import-excel/', order_import_excel, name='import_excel'),
-    # Kept for backward compatibility; these delegate into the `sales` app
+    path('export-order-ornaments/', order_ornaments_export_excel, name='export_order_ornaments'),
+    path('export-order-payments/', order_payments_export_excel, name='export_order_payments'),
     path('sales/', SalesListView.as_view(), name='sales_list'),
     path('sales/create-from-order/<int:pk>/', CreateSaleFromOrderView.as_view(), name='create_sale_from_order'),
     path('sales/<int:pk>/edit/', SaleUpdateView.as_view(), name='sale_update'),
