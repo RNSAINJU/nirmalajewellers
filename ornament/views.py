@@ -3,6 +3,7 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.db.models import Sum, F, DecimalField
 from django.db.models.functions import Coalesce
 from .models import Kaligar, Ornament, MainCategory, SubCategory
+from order.models import Order
 from .forms import OrnamentForm
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
@@ -456,11 +457,25 @@ def import_excel(request):
                         stamp=""
                     )
 
-                # =============== 2️⃣ Find/Create Order ===============
-                Order = None
-
+                # =============== 2️⃣ Find Order by reference (from export column) ===============
+                linked_order = None
                 if order:
-                    Order = Order.objects.filter(name=str(order)).first()
+                    # Try direct numeric sn
+                    try:
+                        linked_order = Order.objects.filter(sn=int(str(order).strip())).first()
+                    except Exception:
+                        linked_order = None
+
+                    # Fallback: extract first integer from string like "Order 3 - Customer"
+                    if linked_order is None:
+                        import re
+                        match = re.search(r"(\d+)", str(order))
+                        if match:
+                            try:
+                                sn_val = int(match.group(1))
+                                linked_order = Order.objects.filter(sn=sn_val).first()
+                            except Exception:
+                                linked_order = None
 
                 # if not order:
                 #     kaligar = Kaligar.objects.create(
@@ -475,17 +490,16 @@ def import_excel(request):
                     ornament_date = ndt.date.today()
 
                 # =============== 4️⃣ Convert all decimals safely ===============
-                    gross_weight= to_decimal(gross_weight),
-                    weight = to_decimal(weight),
-                    diamond_weight = to_decimal(diamond_weight),
-                    diamond_rate = to_decimal(diamond_rate),
-                    zircon_weight = to_decimal(zircon_weight),
-                    stone_weight    = to_decimal(stone_weight),
-                    stone_percaratprice= to_decimal(stone_percaratprice),    
-                    stone_totalprice=to_decimal(stone_totalprice),
-                    jarti=to_decimal(jarti)
-                    jyala=to_decimal(jyala)
-                    
+                gross_weight = to_decimal(gross_weight)
+                weight = to_decimal(weight)
+                diamond_weight = to_decimal(diamond_weight)
+                diamond_rate = to_decimal(diamond_rate)
+                zircon_weight = to_decimal(zircon_weight)
+                stone_weight = to_decimal(stone_weight)
+                stone_percaratprice = to_decimal(stone_percaratprice)
+                stone_totalprice = to_decimal(stone_totalprice)
+                jarti = to_decimal(jarti)
+                jyala = to_decimal(jyala)
 
                 # =============== 5️⃣ Create Purchase ===============
                 Ornament.objects.create(
@@ -510,7 +524,7 @@ def import_excel(request):
                     kaligar=kaligar,
                     description=description,
                     image=image,
-                    order=Order,
+                    order=linked_order,
                     created_at=created_at,
                     updated_at=updated_at,
                 )
