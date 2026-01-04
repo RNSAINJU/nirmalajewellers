@@ -318,7 +318,7 @@ def export_excel(request):
             o.jarti,
             o.jyala,
             o.kaligar.name if o.kaligar else "",
-            o.description if o.descrption else "",
+            o.description if o.description else "",
             str(o.image) if o.image else "",
             str(o.order) if o.order else "",
             str(o.created_at),
