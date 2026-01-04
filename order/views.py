@@ -178,7 +178,7 @@ class OrderListView(ListView):
                     elif ornament_type == '18KARAT':
                         weight_24k = weight * Decimal('0.75')
                     elif ornament_type == '14KARAT':
-                        weight_24k = weight * Decimal('0.58')
+                        weight_24k = weight * Decimal('0.5833')
                     else:
                         weight_24k = weight  # default to full weight
                     
@@ -485,6 +485,8 @@ def order_export_excel(request):
         "Deliver Date (BS)",
         "Customer",
         "Phone",
+        "Ornaments",
+        "Ornament Edit Links",
         "Status",
         "Amount",
         "Discount",
@@ -504,6 +506,8 @@ def order_export_excel(request):
             str(o.deliver_date) if o.deliver_date else "",
             o.customer_name,
             o.phone_number,
+            ", ".join([f"{orn.ornament_name} ({orn.metal_type})" for orn in o.ornaments.all()]) or "",
+            ", ".join([request.build_absolute_uri(reverse('ornament:update', args=[orn.id])) for orn in o.ornaments.all()]) or "",
             o.get_status_display(),
             o.amount,
             o.discount,
@@ -565,6 +569,8 @@ def order_import_excel(request):
                         deliver_date_bs,
                         customer_name,
                         phone_number,
+                        ornaments_text,
+                        ornaments_links,
                         status,
                         amount,
                         discount,
