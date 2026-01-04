@@ -143,6 +143,68 @@ class OrderListView(ListView):
         qs = super().get_queryset()
         return qs.filter(sale__isnull=True)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        orders = context['orders']
+        
+        # Tab 1: Total final 24k weight from order ornaments
+        total_24k_weight = Decimal('0')
+        
+        # Tab 2: Profit calculation (ornament cost vs order price)
+        total_profit = Decimal('0')
+        
+        # Tab 3: Total remaining amount from all orders
+        total_remaining = Decimal('0')
+        
+        # Tab 4: Order count
+        order_count = orders.count()
+        
+        for order in orders:
+            # Get all order ornaments for this order
+            order_ornaments = OrderOrnament.objects.filter(order=order).select_related('ornament')
+            
+            for order_orn in order_ornaments:
+                ornament = order_orn.ornament
+                if ornament:
+                    # Calculate 24k equivalent weight based on ornament type
+                    weight = ornament.weight or Decimal('0')
+                    ornament_type = ornament.type
+                    
+                    # Convert to 24k equivalent
+                    if ornament_type == '24KARAT':
+                        weight_24k = weight
+                    elif ornament_type == '22KARAT':
+                        weight_24k = weight * Decimal('0.92')
+                    elif ornament_type == '18KARAT':
+                        weight_24k = weight * Decimal('0.75')
+                    elif ornament_type == '14KARAT':
+                        weight_24k = weight * Decimal('0.58')
+                    else:
+                        weight_24k = weight  # default to full weight
+                    
+                    total_24k_weight += weight_24k
+                    
+                    # Calculate profit: order line amount - ornament actual cost
+                    # Ornament cost calculation (simplified)
+                    ornament_gold_cost = weight_24k * (order_orn.gold_rate or Decimal('0'))
+                    ornament_diamond_cost = (ornament.diamond_weight or Decimal('0')) * (order_orn.diamond_rate or Decimal('0'))
+                    ornament_stone_cost = ornament.stone_totalprice or Decimal('0')
+                    ornament_total_cost = ornament_gold_cost + ornament_diamond_cost + ornament_stone_cost
+                    
+                    # Order line amount is the selling price
+                    line_profit = (order_orn.line_amount or Decimal('0')) - ornament_total_cost
+                    total_profit += line_profit
+            
+            # Remaining amount for this order
+            total_remaining += order.remaining_amount or Decimal('0')
+        
+        context['total_24k_weight'] = total_24k_weight
+        context['total_profit'] = total_profit
+        context['total_remaining'] = total_remaining
+        context['order_count'] = order_count
+        
+        return context
+
 
 class OrderCreateView(CreateView):
     model = Order
