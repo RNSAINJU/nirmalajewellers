@@ -26,6 +26,30 @@ class OrnamentForm(forms.ModelForm):
         if not self.instance.pk and not self.initial.get('ornament_date'):
             self.initial['ornament_date'] = ndt.date.today()
 
+        # Set default values for new ornament instances
+        if not self.instance.pk:
+            # Set initial values
+            default_fields = {
+                'gross_weight': Decimal('0.0'),
+                'weight': Decimal('0.0'),
+                'diamond_weight': Decimal('0.0'),
+                'diamond_rate': Decimal('0.0'),
+                'zircon_weight': Decimal('0.0'),
+                'stone_weight': Decimal('0.0'),
+                'stone_percaratprice': Decimal('0.0'),
+                'stone_totalprice': Decimal('0.0'),
+                'jarti': Decimal('0.0'),
+                'jyala': Decimal('0.0'),
+            }
+            
+            for field_name, default_value in default_fields.items():
+                if not self.initial.get(field_name):
+                    self.initial[field_name] = default_value
+                
+                # Also set the widget value to display 0.0 in the field
+                if field_name in self.fields:
+                    self.fields[field_name].widget.attrs['value'] = '0.0'
+
         # Code is auto-generated
         if 'code' in self.fields:
             self.fields['code'].required = False
@@ -85,3 +109,25 @@ class OrnamentForm(forms.ModelForm):
             raise ValidationError("Jarti cannot be negative.")
 
         return Decimal(jarti)
+
+    def clean_jyala(self):
+        jyala = self.cleaned_data.get('jyala')
+
+        if jyala in [None, ""]:
+            return Decimal("0.000")
+
+        if jyala < 0:
+            raise ValidationError("Jyala cannot be negative.")
+
+        return Decimal(jyala)
+
+    def clean_stone_weight(self):
+        stone_weight = self.cleaned_data.get('stone_weight')
+
+        if stone_weight in [None, ""]:
+            return Decimal("0.000")
+
+        if stone_weight < 0:
+            raise ValidationError("Stone weight cannot be negative.")
+
+        return Decimal(stone_weight)

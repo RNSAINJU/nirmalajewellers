@@ -39,8 +39,8 @@ class OrnamentListView(ListView):
     model = Ornament
     template_name = 'ornament/ornament_list.html'
     context_object_name = 'ornaments'
-    # Order serially by primary key (id)
-    ordering = ['id']
+    # Order by latest entry first
+    ordering = ['-id']
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -182,6 +182,17 @@ class OrnamentCreateView(CreateView):
         """Set initial values including today's Nepali date."""
         initial = super().get_initial()
         initial['ornament_date'] = ndt.date.today()
+        # Set default values for weight fields
+        initial['gross_weight'] = Decimal('0.0')
+        initial['weight'] = Decimal('0.0')
+        initial['diamond_weight'] = Decimal('0.0')
+        initial['diamond_rate'] = Decimal('0.0')
+        initial['zircon_weight'] = Decimal('0.0')
+        initial['stone_weight'] = Decimal('0.0')
+        initial['stone_percaratprice'] = Decimal('0.0')
+        initial['stone_totalprice'] = Decimal('0.0')
+        initial['jarti'] = Decimal('0.0')
+        initial['jyala'] = Decimal('0.0')
         return initial
 
     def form_valid(self, form):

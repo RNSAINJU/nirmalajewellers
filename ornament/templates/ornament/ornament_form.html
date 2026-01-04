@@ -189,7 +189,7 @@
                                             name="gross_weight"
                                             class="form-control form-control-sm"
                                             step="0.001"
-                                            value="{{ form.gross_weight.value|default:'' }}"
+                                            value="{{ form.gross_weight.value|default:'0.0' }}"
                                             placeholder="Gross weight"
                                             required
                                         />
@@ -207,7 +207,7 @@
                                             name="weight"
                                             class="form-control form-control-sm"
                                             step="0.001"
-                                            value="{{ form.weight.value|default:'' }}"
+                                            value="{{ form.weight.value|default:'0.0' }}"
                                             placeholder="Metal weight"
                                             required
                                         />
@@ -225,7 +225,7 @@
                                             name="diamond_weight"
                                             class="form-control form-control-sm"
                                             step="0.001"
-                                            value="{{ form.diamond_weight.value|default:'' }}"
+                                            value="{{ form.diamond_weight.value|default:'0.0' }}"
                                             placeholder="Diamond weight"
                                         />
                                         {% if form.diamond_weight.errors %}
@@ -242,7 +242,7 @@
                                             name="diamond_rate"
                                             class="form-control form-control-sm"
                                             step="0.01"
-                                            value="{{ form.diamond_rate.value|default:'' }}"
+                                            value="{{ form.diamond_rate.value|default:'0.0' }}"
                                             placeholder="Diamond rate"
                                         />
                                         {% if form.diamond_rate.errors %}
@@ -259,7 +259,7 @@
                                             name="zircon_weight"
                                             class="form-control form-control-sm"
                                             step="0.001"
-                                            value="{{ form.zircon_weight.value|default:'' }}"
+                                            value="{{ form.zircon_weight.value|default:'0.0' }}"
                                             placeholder="Zircon weight"
                                         />
                                         {% if form.zircon_weight.errors %}
@@ -276,7 +276,7 @@
                                             name="stone_weight"
                                             class="form-control form-control-sm"
                                             step="0.001"
-                                            value="{{ form.stone_weight.value|default:'' }}"
+                                            value="{{ form.stone_weight.value|default:'0.0' }}"
                                             placeholder="Stone weight"
                                         />
                                         {% if form.stone_weight.errors %}
@@ -293,7 +293,7 @@
                                             name="stone_percaratprice"
                                             class="form-control form-control-sm"
                                             step="0.001"
-                                            value="{{ form.stone_percaratprice.value|default:'' }}"
+                                            value="{{ form.stone_percaratprice.value|default:'0.0' }}"
                                             placeholder="Price per carat"
                                         />
                                         {% if form.stone_percaratprice.errors %}
@@ -310,7 +310,7 @@
                                             name="stone_totalprice"
                                             class="form-control form-control-sm"
                                             step="0.001"
-                                            value="{{ form.stone_totalprice.value|default:'' }}"
+                                            value="{{ form.stone_totalprice.value|default:'0.0' }}"
                                             placeholder="Total price"
                                         />
                                         {% if form.stone_totalprice.errors %}
@@ -336,7 +336,7 @@
                                         name="jarti"
                                         class="form-control form-control-sm"
                                         step="0.001"
-                                        value="{{ form.jarti.value|default:'' }}"
+                                        value="{{ form.jarti.value|default:'0.0' }}"
                                         placeholder="Enter Jarti"
                                     />
                                 </div>
@@ -363,7 +363,7 @@
                                             name="jyala"
                                             class="form-control"
                                             step="0.001"
-                                            value="{{ form.jyala.value|default:'' }}"
+                                            value="{{ form.jyala.value|default:'0.0' }}"
                                             placeholder="Jyala"
                                             readonly
                                         />
