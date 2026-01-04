@@ -469,24 +469,24 @@ def order_print_view(request):
 
 
 def order_export_excel(request):
-    """Export orders to Excel, similar to ornaments/purchases export."""
+    """Export orders plus order-ornament lines for lossless re-import."""
 
     view = OrderListView()
     view.request = request
-    orders = view.get_queryset()
+    orders = view.get_queryset().prefetch_related("order_ornaments__ornament")
 
     wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Orders"
 
-    headers = [
+    # Sheet 1: Orders (keep codes, not display strings, for re-import)
+    ws_orders = wb.active
+    ws_orders.title = "Orders"
+
+    order_headers = [
         "Order No",
         "Order Date (BS)",
         "Deliver Date (BS)",
         "Customer",
         "Phone",
-        "Ornaments",
-        "Ornament Edit Links",
         "Status",
         "Amount",
         "Discount",
@@ -497,36 +497,68 @@ def order_export_excel(request):
         "Paid Amount",
         "Remaining Amount",
     ]
-    ws.append(headers)
+    ws_orders.append(order_headers)
 
     for o in orders:
-        ws.append([
+        ws_orders.append([
             o.sn,
             str(o.order_date) if o.order_date else "",
             str(o.deliver_date) if o.deliver_date else "",
             o.customer_name,
             o.phone_number,
-            ", ".join([f"{orn.ornament_name} ({orn.metal_type})" for orn in o.ornaments.all()]) or "",
-            ", ".join([request.build_absolute_uri(reverse('ornament:update', args=[orn.id])) for orn in o.ornaments.all()]) or "",
-            o.get_status_display(),
-            o.amount,
-            o.discount,
-            o.subtotal,
-            o.tax,
-            o.total,
-            o.get_payment_mode_display(),
-            o.payment_amount,
-            o.remaining_amount,
+            o.status,  # use code for reliable import
+            float(o.amount or 0),
+            float(o.discount or 0),
+            float(o.subtotal or 0),
+            float(o.tax or 0),
+            float(o.total or 0),
+            o.payment_mode,  # use code
+            float(o.payment_amount or 0),
+            float(o.remaining_amount or 0),
         ])
 
-    # Auto column width
-    for col in ws.columns:
-        max_length = 0
-        col_letter = get_column_letter(col[0].column)
-        for cell in col:
-            if cell.value:
-                max_length = max(max_length, len(str(cell.value)))
-        ws.column_dimensions[col_letter].width = max_length + 2
+    # Sheet 2: Order-Ornament lines keyed by ornament code
+    ws_lines = wb.create_sheet("OrderOrnaments")
+    line_headers = [
+        "Order No",
+        "Ornament Code",
+        "Gold Rate",
+        "Diamond Rate",
+        "Zircon Rate",
+        "Stone Rate",
+        "Jarti",
+        "Jyala",
+        "Line Amount",
+    ]
+    ws_lines.append(line_headers)
+
+    for o in orders:
+        for line in o.order_ornaments.all():
+            ornament = line.ornament
+            ws_lines.append([
+                o.sn,
+                ornament.code or "",
+                float(line.gold_rate or 0),
+                float(line.diamond_rate or 0),
+                float(line.zircon_rate or 0),
+                float(line.stone_rate or 0),
+                float(line.jarti or 0),
+                float(line.jyala or 0),
+                float(line.line_amount or 0),
+            ])
+
+    # Auto column width helper
+    def _autosize(sheet):
+        for col in sheet.columns:
+            max_length = 0
+            col_letter = get_column_letter(col[0].column)
+            for cell in col:
+                if cell.value:
+                    max_length = max(max_length, len(str(cell.value)))
+            sheet.column_dimensions[col_letter].width = max_length + 2
+
+    _autosize(ws_orders)
+    _autosize(ws_lines)
 
     output = BytesIO()
     wb.save(output)
@@ -542,7 +574,7 @@ def order_export_excel(request):
 
 
 def order_import_excel(request):
-    """Import orders from an Excel file with columns matching export."""
+    """Import orders with their ornaments from the exported workbook."""
 
     if request.method == "POST":
         file = request.FILES.get("file")
@@ -553,12 +585,15 @@ def order_import_excel(request):
 
         try:
             wb = openpyxl.load_workbook(file)
-            ws = wb.active
+
+            # Orders sheet
+            ws_orders = wb["Orders"] if "Orders" in wb.sheetnames else wb.active
 
             imported = 0
             skipped = 0
+            orders_by_sn = {}
 
-            for row in ws.iter_rows(min_row=2, values_only=True):
+            for row in ws_orders.iter_rows(min_row=2, values_only=True):
                 if not any(row):
                     continue
 
@@ -569,8 +604,6 @@ def order_import_excel(request):
                         deliver_date_bs,
                         customer_name,
                         phone_number,
-                        ornaments_text,
-                        ornaments_links,
                         status,
                         amount,
                         discount,
@@ -619,7 +652,65 @@ def order_import_excel(request):
                     o.payment_mode = payment_mode
 
                 o.save()
+                orders_by_sn[o.sn] = o
                 imported += 1
+
+            # OrderOrnaments sheet (optional but recommended)
+            if "OrderOrnaments" in wb.sheetnames:
+                ws_lines = wb["OrderOrnaments"]
+                for row in ws_lines.iter_rows(min_row=2, values_only=True):
+                    if not any(row):
+                        continue
+                    try:
+                        (
+                            order_no,
+                            ornament_code,
+                            gold_rate,
+                            diamond_rate,
+                            zircon_rate,
+                            stone_rate,
+                            jarti,
+                            jyala,
+                            line_amount,
+                        ) = row
+                    except Exception:
+                        # Skip malformed line rows gracefully
+                        continue
+
+                    if not order_no or not ornament_code:
+                        continue
+                    order_obj = orders_by_sn.get(int(order_no))
+                    if not order_obj:
+                        continue
+
+                    try:
+                        ornament = Ornament.objects.get(code=ornament_code)
+                    except Ornament.DoesNotExist:
+                        continue
+
+                    OrderOrnament.objects.create(
+                        order=order_obj,
+                        ornament=ornament,
+                        gold_rate=Decimal(str(gold_rate or 0)),
+                        diamond_rate=Decimal(str(diamond_rate or 0)),
+                        zircon_rate=Decimal(str(zircon_rate or 0)),
+                        stone_rate=Decimal(str(stone_rate or 0)),
+                        jarti=Decimal(str(jarti or 0)),
+                        jyala=Decimal(str(jyala or 0)),
+                        line_amount=Decimal(str(line_amount or 0)),
+                    )
+
+                    # Link ornament to order and mark type
+                    ornament.order = order_obj
+                    try:
+                        ornament.ornament_type = Ornament.OrnamentCategory.ORDER
+                    except AttributeError:
+                        ornament.ornament_type = "order"
+                    ornament.save(update_fields=["order", "ornament_type", "updated_at"])
+
+            # Recompute totals for imported orders
+            for o in orders_by_sn.values():
+                o.recompute_totals_from_lines()
 
             messages.success(
                 request,
