@@ -256,7 +256,13 @@ def stock_report(request):
     purchase_jardi_amount = purchase_jardi_qs.aggregate(total_amount=Sum("amount")).get("total_amount") or Decimal("0")
 
     # Fetch previous year remaining stock
-    stock_data = Stock.objects.first()
+    # Try to get stock for year 2082 first, if not available use any previous year
+    try:
+        stock_data = Stock.objects.get(year=2082)
+    except Stock.DoesNotExist:
+        # If 2082 not found, get the most recent stock data
+        stock_data = Stock.objects.order_by('-year').first()
+    
     opening_diamond = Decimal("0")
     opening_gold = Decimal("0")
     opening_silver = Decimal("0")
