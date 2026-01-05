@@ -600,7 +600,9 @@ def ornament_weight_report(request):
     from django.db.models import F
     
     # Get total weight grouped by metal type
-    weight_by_metal = Ornament.objects.values('metal_type').annotate(
+    weight_by_metal = Ornament.objects.filter(
+        ornament_type=Ornament.OrnamentCategory.STOCK
+    ).values('metal_type').annotate(
         total_weight=Sum('weight'),
         total_gross_weight=Sum('gross_weight'),
         total_jarti=Sum('jarti'),
@@ -624,7 +626,10 @@ def ornament_weight_report(request):
     for metal in weight_by_metal:
         if metal['metal_type'] == 'Gold':
             # Get karat breakdown for gold
-            gold_ornaments = Ornament.objects.filter(metal_type='Gold')
+            gold_ornaments = Ornament.objects.filter(
+                metal_type='Gold',
+                ornament_type=Ornament.OrnamentCategory.STOCK,
+            )
             
             gold_24k = gold_ornaments.filter(type='24KARAT').aggregate(
                 total=Sum('weight')
@@ -682,7 +687,10 @@ def ornament_weight_report(request):
             
         elif metal['metal_type'] == 'Silver':
             # Get silver ornaments
-            silver_ornaments = Ornament.objects.filter(metal_type='Silver')
+            silver_ornaments = Ornament.objects.filter(
+                metal_type='Silver',
+                ornament_type=Ornament.OrnamentCategory.STOCK,
+            )
             
             # Get karat breakdown for silver
             silver_24k = silver_ornaments.filter(type='24KARAT').aggregate(
@@ -741,7 +749,10 @@ def ornament_weight_report(request):
             
         elif metal['metal_type'] == 'Diamond':
             # Calculate diamond total amount with proper karat conversion
-            diamond_ornaments = Ornament.objects.filter(metal_type='Diamond')
+            diamond_ornaments = Ornament.objects.filter(
+                metal_type='Diamond',
+                ornament_type=Ornament.OrnamentCategory.STOCK,
+            )
             
             # Get karat breakdown for diamond ornaments
             diamond_24k = diamond_ornaments.filter(type='24KARAT').aggregate(
@@ -811,7 +822,9 @@ def ornament_weight_report(request):
             metal['total_amount'] = Decimal('0')
     
     # Calculate overall totals
-    totals = Ornament.objects.aggregate(
+    totals = Ornament.objects.filter(
+        ornament_type=Ornament.OrnamentCategory.STOCK
+    ).aggregate(
         total_weight=Sum('weight'),
         total_gross_weight=Sum('gross_weight'),
         total_jarti=Sum('jarti'),
@@ -820,7 +833,10 @@ def ornament_weight_report(request):
     )
     
     # Calculate total 24k equivalent gold across all ornaments
-    gold_ornaments = Ornament.objects.filter(metal_type='Gold')
+    gold_ornaments = Ornament.objects.filter(
+        metal_type='Gold',
+        ornament_type=Ornament.OrnamentCategory.STOCK,
+    )
     
     gold_24k_total = gold_ornaments.filter(type='24KARAT').aggregate(
         total=Sum('weight')

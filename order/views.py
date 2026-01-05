@@ -30,7 +30,8 @@ class SearchOrnamentsAPI(View):
         if query:
             ornaments = ornaments.filter(
                 Q(ornament_name__icontains=query) |
-                Q(code__icontains=query) 
+                Q(code__icontains=query) |
+                Q(weight__icontains=query)
             )
         
         data = []
@@ -40,6 +41,7 @@ class SearchOrnamentsAPI(View):
                 'code': ornament.code or 'N/A',
                 'name': ornament.ornament_name,
                 'metal_type': ornament.metal_type,
+                'type': ornament.type,
                 'weight': float(ornament.weight or 0),
                 'jarti': float(ornament.jarti or 0),
                 'jyala': float(ornament.jyala or 0),
@@ -158,12 +160,27 @@ class OrderListView(ListView):
             total_total=Sum('total'),
         )
 
-        total_24k_weight = OrderOrnament.objects.filter(
-            order__in=qs,
-            ornament__type__iexact='24KARAT',
-        ).aggregate(w=Sum('ornament__weight'))['w'] or 0
+        purity_factors = {
+            '24KARAT': Decimal('1.00'),
+            '23KARAT': Decimal('0.99'),
+            '22KARAT': Decimal('0.98'),
+            '18KARAT': Decimal('0.75'),
+            '14KARAT': Decimal('0.58'),
+        }
 
-        ctx['total_24k_weight'] = float(total_24k_weight or 0)
+        gold_lines = (
+            OrderOrnament.objects.filter(order__in=qs)
+            .select_related('ornament')
+            .filter(ornament__metal_type=Ornament.MetalTypeCategory.GOLD)
+        )
+
+        total_24k_weight = Decimal('0')
+        for line in gold_lines:
+            weight = line.ornament.weight or Decimal('0')
+            factor = purity_factors.get(line.ornament.type, Decimal('1.00'))
+            total_24k_weight += weight * factor
+
+        ctx['total_24k_weight'] = float(total_24k_weight)
         ctx['order_count'] = qs.count()
 
         # Profit proxy: total - amount (net over line base) across orders

@@ -11,6 +11,7 @@ from django.http import HttpResponse
 from django.contrib import messages
 import openpyxl
 from openpyxl.utils import get_column_letter
+from django.db.models import Sum
 
 from order.models import Order, OrderOrnament, OrderPayment
 from order.forms import OrderForm, OrnamentFormSet
@@ -47,6 +48,11 @@ class CreateSaleFromOrderView(View):
         # Create the Sale record
         Sale.objects.create(order=order, sale_date=sale_date, bill_no=bill_no)
 
+        # Mark ornaments on this order as sales items
+        Ornament.objects.filter(order=order).update(
+            ornament_type=Ornament.OrnamentCategory.SALES
+        )
+
         # Mark the order as delivered once it is added to sales
         order.status = "delivered"
         order.save(update_fields=["status", "updated_at"])
@@ -68,6 +74,57 @@ class SalesListView(ListView):
             .select_related("order")
             .prefetch_related("order__ornaments")
         )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["sales_count"] = Sale.objects.count()
+
+        purity_factors = {
+            Ornament.TypeCategory.TWENTYFOURKARAT: Decimal("1.00"),
+            Ornament.TypeCategory.TWENTHREEKARAT: Decimal("0.99"),
+            Ornament.TypeCategory.TWENTYTWOKARAT: Decimal("0.98"),
+            Ornament.TypeCategory.EIGHTEENKARAT: Decimal("0.75"),
+            Ornament.TypeCategory.FOURTEENKARAT: Decimal("0.58"),
+        }
+
+        gold_lines = OrderOrnament.objects.filter(
+            order__sale__isnull=False,
+            ornament__metal_type=Ornament.MetalTypeCategory.GOLD,
+        ).select_related("ornament")
+
+        gold_24_weight = Decimal("0")
+        for line in gold_lines:
+            weight = line.ornament.weight or Decimal("0")
+            factor = purity_factors.get(line.ornament.type, Decimal("1.00"))
+            gold_24_weight += weight * factor
+
+        silver_weight = (
+            OrderOrnament.objects.filter(
+                order__sale__isnull=False,
+                ornament__metal_type=Ornament.MetalTypeCategory.SILVER,
+            )
+            .aggregate(total=Sum("ornament__weight"))
+            .get("total")
+            or Decimal("0")
+        )
+
+        total_sales_amount = (
+            Order.objects.filter(sale__isnull=False)
+            .aggregate(total=Sum("total"))
+            .get("total")
+            or Decimal("0")
+        )
+
+        context.update(
+            {
+                "gold_24_weight": gold_24_weight,
+                "silver_weight": silver_weight,
+                "total_sales_amount": total_sales_amount,
+            }
+        )
+
+        return context
 
 
 class SaleUpdateView(UpdateView):
@@ -210,9 +267,9 @@ class DirectSaleCreateView(CreateView):
             # Also mark ornament as belonging to this order and flag as ORDER type
             ornament.order = self.object
             try:
-                ornament.ornament_type = Ornament.OrnamentCategory.ORDER
+                ornament.ornament_type = Ornament.OrnamentCategory.SALES
             except AttributeError:
-                ornament.ornament_type = "order"
+                ornament.ornament_type = "sales"
             ornament.save()
 
         # Persist payment breakdown for the sale

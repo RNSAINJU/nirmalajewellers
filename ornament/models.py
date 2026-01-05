@@ -121,6 +121,7 @@ class Ornament(models.Model):
     class OrnamentCategory(models.TextChoices):
         STOCK = 'stock', 'Stock'
         ORDER = 'order', 'Order'
+        SALES = 'sales', 'Sales'
 
     class TypeCategory(models.TextChoices):
         TWENTYFOURKARAT = '24KARAT', '24 Karat'

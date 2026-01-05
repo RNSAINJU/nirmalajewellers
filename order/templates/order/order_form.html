@@ -49,63 +49,67 @@
                         <div class="card-body py-2">
                             <div class="row g-2 align-items-end small">
                                 {% if not is_sale_create %}
-                                <!-- Order Date -->
-                                <div class="col-md-3 col-sm-4">
-                                    <label class="form-label mb-1" for="id_order_date">{{ form.order_date.label }}</label>
-                                    <input
-                                        type="text"
-                                        id="id_order_date"
-                                        name="order_date"
-                                        class="form-control form-control-sm"
-                                        placeholder="Order Date (BS)"
-                                        value="{{ form.order_date.value|default:'' }}"
-                                    />
+                                <!-- Left column: customer/contact -->
+                                <div class="col-md-6 col-sm-12">
+                                    <div class="row g-2">
+                                        <div class="col-12">
+                                            <label class="form-label mb-1" for="id_customer_name">{{ form.customer_name.label }}</label>
+                                            <input
+                                                type="text"
+                                                id="id_customer_name"
+                                                name="customer_name"
+                                                class="form-control form-control-sm"
+                                                placeholder="Customer name"
+                                                value="{{ form.customer_name.value|default:'' }}"
+                                            />
+                                            {% if form.customer_name.errors %}
+                                                <div class="text-danger small">{{ form.customer_name.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label mb-1" for="id_phone_number">{{ form.phone_number.label }}</label>
+                                            <input
+                                                type="text"
+                                                id="id_phone_number"
+                                                name="phone_number"
+                                                class="form-control form-control-sm"
+                                                placeholder="Phone (7-15 digits)"
+                                                value="{{ form.phone_number.value|default:'' }}"
+                                            />
+                                            {% if form.phone_number.errors %}
+                                                <div class="text-danger small">{{ form.phone_number.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
                                 </div>
-                                <!-- Deliver Date -->
-                                <div class="col-md-3 col-sm-4">
-                                    <label class="form-label mb-1" for="id_deliver_date">{{ form.deliver_date.label }}</label>
-                                    <input
-                                        type="text"
-                                        id="id_deliver_date"
-                                        name="deliver_date"
-                                        class="form-control form-control-sm"
-                                        placeholder="Deliver Date (BS)"
-                                        value="{{ form.deliver_date.value|default:'' }}"
-                                    />
+                                <!-- Right column: dates stacked, deliver on top -->
+                                <div class="col-md-6 col-sm-12">
+                                    <div class="row g-2 justify-content-end">
+                                        <div class="col-12 col-md-8 ms-md-auto">
+                                            <label class="form-label mb-1" for="id_deliver_date">{{ form.deliver_date.label }}</label>
+                                            <input
+                                                type="text"
+                                                id="id_deliver_date"
+                                                name="deliver_date"
+                                                class="form-control form-control-sm"
+                                                placeholder="Deliver Date (BS)"
+                                                value="{{ form.deliver_date.value|default:'' }}"
+                                            />
+                                        </div>
+                                        <div class="col-12 col-md-8 ms-md-auto">
+                                            <label class="form-label mb-1" for="id_order_date">{{ form.order_date.label }}</label>
+                                            <input
+                                                type="text"
+                                                id="id_order_date"
+                                                name="order_date"
+                                                class="form-control form-control-sm"
+                                                placeholder="Order Date (BS)"
+                                                value="{{ form.order_date.value|default:'' }}"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
                                 {% endif %}
-
-                                <!-- Customer Name -->
-                                <div class="col-md-3 col-sm-6">
-                                    <label class="form-label mb-1" for="id_customer_name">{{ form.customer_name.label }}</label>
-                                    <input
-                                        type="text"
-                                        id="id_customer_name"
-                                        name="customer_name"
-                                        class="form-control form-control-sm"
-                                        placeholder="Customer name"
-                                        value="{{ form.customer_name.value|default:'' }}"
-                                    />
-                                    {% if form.customer_name.errors %}
-                                        <div class="text-danger small">{{ form.customer_name.errors }}</div>
-                                    {% endif %}
-                                </div>
-
-                                <!-- Phone Number -->
-                                <div class="col-md-3 col-sm-6">
-                                    <label class="form-label mb-1" for="id_phone_number">{{ form.phone_number.label }}</label>
-                                    <input
-                                        type="text"
-                                        id="id_phone_number"
-                                        name="phone_number"
-                                        class="form-control form-control-sm"
-                                        placeholder="Phone (7-15 digits)"
-                                        value="{{ form.phone_number.value|default:'' }}"
-                                    />
-                                    {% if form.phone_number.errors %}
-                                        <div class="text-danger small">{{ form.phone_number.errors }}</div>
-                                    {% endif %}
-                                </div>
 
                                 {% if is_sale_create %}
                                 <!-- Bill No (Sales create only) -->
@@ -166,18 +170,19 @@
                     <table class="table table-bordered table-sm" id="selected-ornaments-table">
                         <thead class="table-light">
                             <tr>
+                                <th rowspan="2">#</th>
                                 <th rowspan="2">Code</th>
-                                <th colspan="2" class="text-center">Gold</th>
+                                <th colspan="3" class="text-center">Gold</th>
+                                <th rowspan="2">Jyala</th>
                                 <th colspan="2" class="text-center">Diamond</th>
                                 <th colspan="2" class="text-center">Zircon</th>
                                 <th colspan="2" class="text-center">Stone</th>
-                                <th rowspan="2">Jarti</th>
-                                <th rowspan="2">Jyala</th>
                                 <th rowspan="2">Amount</th>
                                 <th rowspan="2">Action</th>
                             </tr>
                             <tr>
                                 <th>Weight</th>
+                                <th>Jarti</th>
                                 <th>Rate</th>
                                 <th>Weight</th>
                                 <th>Rate</th>
@@ -412,9 +417,12 @@ document.getElementById('ornament-search').addEventListener('input', function() 
                         const div = document.createElement('div');
                         div.className = 'p-2 border-bottom cursor-pointer';
                         div.style.cursor = 'pointer';
+                        const wt = (ornament.weight || 0).toFixed(3);
+                        const karat = ornament.type || '';
                         div.innerHTML = `
-                            <strong>${ornament.code}</strong> - ${ornament.name} 
-                            <small class="text-muted">(${ornament.metal_type})</small>
+                            <strong>${ornament.code}</strong>
+                            <small class="text-muted"> | ${wt} g | ${karat}</small><br>
+                            ${ornament.name} <small class="text-muted">(${ornament.metal_type})</small>
                         `;
                         div.onclick = () => selectOrnament(ornament);
                         resultsList.appendChild(div);
@@ -546,15 +554,9 @@ function addOrnamentToTable(ornament) {
     })();
 
     row.innerHTML = `
+        <td class="serial-col"></td>
         <td><a href="${editUrl}" target="_blank" rel="noopener" class="ornament-link">${codeDisplay}</a></td>
-        <td>${ornament.weight.toFixed(2)}</td>
-        <td><input type="number" class="form-control form-control-sm gold-rate-input" step="0.01" data-id="${ornament.id}" placeholder="Rate" value="${goldRateVal}"></td>
-        <td>${ornament.diamond_weight.toFixed(2)}</td>
-        <td><input type="number" class="form-control form-control-sm diamond-rate-input" step="0.01" data-id="${ornament.id}" placeholder="Rate" value="${diamondRateVal}"></td>
-        <td>${(ornament.zircon_weight || 0).toFixed(2)}</td>
-        <td><input type="number" class="form-control form-control-sm zircon-rate-input" step="0.01" data-id="${ornament.id}" placeholder="Rate" value="${zirconRateVal}"></td>
-        <td>${ornament.stone_weight.toFixed(2)}</td>
-        <td><input type="number" class="form-control form-control-sm stone-rate-input" step="0.01" data-id="${ornament.id}" placeholder="Rate" value="${stoneRateVal}"></td>
+        <td>${ornament.weight.toFixed(3)}</td>
         <td>
             <div class="d-flex gap-1 align-items-center">
                 <input type="number" class="form-control form-control-sm jarti-input" step="0.001" data-id="${ornament.id}" placeholder="Jarti" value="${jartiVal}">
@@ -566,12 +568,19 @@ function addOrnamentToTable(ornament) {
                 </div>
             </div>
         </td>
+        <td><input type="number" class="form-control form-control-sm gold-rate-input" step="0.01" data-id="${ornament.id}" placeholder="Rate" value="${goldRateVal}"></td>
         <td>
             <div class="d-flex gap-1 align-items-center">
                 <input type="number" class="form-control form-control-sm jyala-input" step="0.01" data-id="${ornament.id}" placeholder="Jyala" value="${jyalaVal}">
                 <button type="button" class="btn btn-outline-secondary btn-sm jyala-auto-btn" data-id="${ornament.id}" title="Auto: weight × 2000">Auto</button>
             </div>
         </td>
+        <td>${ornament.diamond_weight.toFixed(3)}</td>
+        <td><input type="number" class="form-control form-control-sm diamond-rate-input" step="0.01" data-id="${ornament.id}" placeholder="Rate" value="${diamondRateVal}"></td>
+        <td>${(ornament.zircon_weight || 0).toFixed(3)}</td>
+        <td><input type="number" class="form-control form-control-sm zircon-rate-input" step="0.01" data-id="${ornament.id}" placeholder="Rate" value="${zirconRateVal}"></td>
+        <td>${ornament.stone_weight.toFixed(3)}</td>
+        <td><input type="number" class="form-control form-control-sm stone-rate-input" step="0.01" data-id="${ornament.id}" placeholder="Rate" value="${stoneRateVal}"></td>
         <td><input type="number" class="form-control form-control-sm subtotal-display" readonly style="background-color: #f0f0f0; border: 1px solid #ccc;" data-id="${ornament.id}" value="${lineAmountVal}"></td>
         <td><button type="button" class="btn btn-sm btn-danger" onclick="removeOrnament(${ornament.id})">Remove</button></td>
     `;
@@ -579,6 +588,16 @@ function addOrnamentToTable(ornament) {
     
     // Attach calculation listeners
     attachOrnamentCalculationListeners(ornament.id, ornament);
+
+    refreshSerialNumbers();
+}
+
+function refreshSerialNumbers() {
+    const rows = document.querySelectorAll('#selected-ornaments-body tr');
+    rows.forEach((row, index) => {
+        const serialCell = row.querySelector('.serial-col');
+        if (serialCell) serialCell.textContent = index + 1;
+    });
 }
 
 function initExistingOrnaments() {
@@ -788,6 +807,7 @@ function removeOrnament(ornamentId) {
     const row = document.getElementById(`ornament-row-${ornamentId}`);
     if (row) row.remove();
     updateHiddenField();
+    refreshSerialNumbers();
     // Recalculate totals after removing an ornament
     updateOrderTotal();
 }
@@ -1197,6 +1217,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const orderForm = document.getElementById('order-form');
     if (orderForm) {
         orderForm.addEventListener('submit', function(e) {
+            const customerNameInput = document.getElementById('id_customer_name');
+            const phoneInput = document.getElementById('id_phone_number');
+            const customerName = customerNameInput?.value.trim();
+            const phone = phoneInput?.value.trim();
+            if (!customerName || !phone) {
+                e.preventDefault();
+                alert('Customer name and phone number are required.');
+                customerNameInput?.focus();
+                return;
+            }
+
             // Sync calculated values to form fields before submission
             const totalField = document.querySelector('input[name="total"]');
             const orderTotal = document.getElementById('order-total')?.value || '0.00';
