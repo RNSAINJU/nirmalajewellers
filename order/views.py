@@ -64,7 +64,7 @@ class SearchOrnamentsAPI(View):
                 'stone_rate': 0.0,
                 'gold_rate': 0.0,
                 'ornament_type': ornament.ornament_type,
-                'order_id': ornament.order.id if ornament.order else None,
+                'order_id': ornament.order.pk if ornament.order else None,
                 'order_sn': ornament.order.sn if ornament.order else None,
                 'order_customer': getattr(ornament.order, 'customer_name', None) if ornament.order else None,
             })
