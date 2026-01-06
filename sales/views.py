@@ -66,7 +66,7 @@ class SalesListView(ListView):
     model = Sale
     template_name = "sales/sales_list.html"
     context_object_name = "sales"
-    ordering = ["bill_no"]
+    ordering = ["-bill_no"]
 
     def get_queryset(self):
         return (
