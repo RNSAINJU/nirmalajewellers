@@ -380,7 +380,7 @@
 <script>
 let selectedOrnaments = {};
 const isSaleCreate = "{{ is_sale_create|default:'False'|yesno:'true,false' }}" === 'true';
-const includeOrdersInSearch = !isSaleCreate; // Orders see stock + order; sales see stock only
+const includeOrdersInSearch = true; // Always include order items; UI will highlight them
 const paymentModeOptionsHtml = `{% for key, value in form.payment_mode.field.choices %}{% if key != 'mixed' %}<option value="{{ key }}">{{ value }}</option>{% endif %}{% endfor %}`;
 const initialPayments = JSON.parse('{{ initial_payments_json|escapejs }}');
 const ornamentEditTemplate = "{% url 'ornament:update' 0 %}"; // replace 0 with ID in JS
@@ -418,14 +418,20 @@ document.getElementById('ornament-search').addEventListener('input', function() 
                 } else {
                     data.ornaments.forEach(ornament => {
                         const div = document.createElement('div');
+                        const isOrderItem = ornament.ornament_type === 'order';
                         div.className = 'p-2 border-bottom cursor-pointer';
                         div.style.cursor = 'pointer';
+                        if (isOrderItem) {
+                            div.style.background = '#f8d7da'; // light red
+                        }
                         const wt = (ornament.weight || 0).toFixed(3);
                         const karat = ornament.type || '';
+                        const orderInfo = isOrderItem ? `<br><small class="text-danger">Order item${ornament.order_sn ? ` #${ornament.order_sn}` : ''}${ornament.order_customer ? ` - ${ornament.order_customer}` : ''}</small>` : '';
                         div.innerHTML = `
                             <strong>${ornament.code}</strong>
                             <small class="text-muted"> | ${wt} g | ${karat}</small><br>
                             ${ornament.name} <small class="text-muted">(${ornament.metal_type})</small>
+                            ${orderInfo}
                         `;
                         div.onclick = () => selectOrnament(ornament);
                         resultsList.appendChild(div);

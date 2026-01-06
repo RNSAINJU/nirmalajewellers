@@ -34,7 +34,7 @@ class SearchOrnamentsAPI(View):
 
         ornaments = Ornament.objects.filter(
             ornament_type__in=ornament_types,
-        ).order_by('-id')
+        ).select_related('order').order_by('-id')
         
         if query:
             ornaments = ornaments.filter(
@@ -63,6 +63,10 @@ class SearchOrnamentsAPI(View):
                 'zircon_rate': 0.0,
                 'stone_rate': 0.0,
                 'gold_rate': 0.0,
+                'ornament_type': ornament.ornament_type,
+                'order_id': ornament.order.id if ornament.order else None,
+                'order_sn': ornament.order.sn if ornament.order else None,
+                'order_customer': getattr(ornament.order, 'customer_name', None) if ornament.order else None,
             })
         
         return JsonResponse({'ornaments': data})
