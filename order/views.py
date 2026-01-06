@@ -138,7 +138,7 @@ class OrderListView(ListView):
     model = Order
     template_name = 'order/order_list.html'
     context_object_name = 'orders'
-    ordering = ['-sn']
+    ordering = ['-order_date', '-sn']
     paginate_by = 25
 
     def get_queryset(self):
