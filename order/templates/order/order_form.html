@@ -379,6 +379,8 @@
 <!-- Your JS logic -->
 <script>
 let selectedOrnaments = {};
+const isSaleCreate = "{{ is_sale_create|default:'False'|yesno:'true,false' }}" === 'true';
+const includeOrdersInSearch = !isSaleCreate; // Orders see stock + order; sales see stock only
 const paymentModeOptionsHtml = `{% for key, value in form.payment_mode.field.choices %}{% if key != 'mixed' %}<option value="{{ key }}">{{ value }}</option>{% endif %}{% endfor %}`;
 const initialPayments = JSON.parse('{{ initial_payments_json|escapejs }}');
 const ornamentEditTemplate = "{% url 'ornament:update' 0 %}"; // replace 0 with ID in JS
@@ -399,7 +401,8 @@ document.getElementById('ornament-search').addEventListener('input', function() 
             return;
         }
         
-        const searchUrl = `{% url 'order:search_ornaments' %}?q=${encodeURIComponent(query)}`;
+        const params = new URLSearchParams({ q: query, include_orders: includeOrdersInSearch ? 'true' : 'false' });
+        const searchUrl = `{% url 'order:search_ornaments' %}?${params.toString()}`;
         
         fetch(searchUrl)
             .then(response => {

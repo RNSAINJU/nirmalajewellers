@@ -24,12 +24,16 @@ app_name = 'order'
 class SearchOrnamentsAPI(View):
     def get(self, request):
         query = request.GET.get('q', '').strip()
-        # Show ALL ornaments - ignore any category/subcategory filters
+        include_orders = request.GET.get('include_orders')
+        include_orders = str(include_orders).lower() in {'1', 'true', 'yes'}
+
+        # Show stock by default; optionally include order-type items when requested
+        ornament_types = [Ornament.OrnamentCategory.STOCK]
+        if include_orders:
+            ornament_types.append(Ornament.OrnamentCategory.ORDER)
+
         ornaments = Ornament.objects.filter(
-            ornament_type__in=[
-                Ornament.OrnamentCategory.STOCK,
-                Ornament.OrnamentCategory.SALES,
-            ]
+            ornament_type__in=ornament_types,
         ).order_by('-id')
         
         if query:
