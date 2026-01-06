@@ -193,7 +193,7 @@
     </div>
 
     <div class="table-responsive">
-        <table class="table table-bordered table-striped table-hover">
+        <table class="table table-bordered table-striped table-hover align-middle">
             <thead class="table-dark">
                 <tr>
                     <th>Bill No</th>
@@ -203,10 +203,7 @@
                     <th>Customer</th>
                     <th>Phone</th>
                     <th>Ornaments</th>
-                    <th>Amount</th>
-                    <th>Discount</th>
-                    <th>Subtotal</th>
-                    <th>Tax</th>
+                    <th>Weight</th>
                     <th>Total</th>
                     <th>Paid</th>
                     <th>Remaining</th>
@@ -226,26 +223,23 @@
                     <td>{{ order.phone_number }}</td>
                     <td>
                         {% for ornament in order.ornaments.all %}
-                            <small>• {{ ornament.ornament_name }} ({{ ornament.metal_type }})</small><br/>
+                            <small>• <a class="ornament-link" href="{% url 'ornament:update' ornament.id %}" target="_blank" rel="noopener">{{ ornament.ornament_name }}</a> ({{ ornament.metal_type }}, {{ ornament.type }}) — {{ ornament.weight|default:0|floatformat:3 }} </small><br/>
                         {% empty %}
                             <small class="text-muted">No ornaments</small>
                         {% endfor %}
                     </td>
-                    <td>{{ order.amount }}</td>
-                    <td>{{ order.discount }}</td>
-                    <td>{{ order.subtotal }}</td>
-                    <td>{{ order.tax }}</td>
+                    <td>{{ sale.total_weight|default:0|floatformat:3 }}</td>
                     <td>{{ order.total }}</td>
                     <td>{{ order.payment_amount }} ({{ order.get_payment_mode_display }})</td>
                     <td>{{ order.remaining_amount }}</td>
                     <td><span class="badge bg-info">{{ order.get_status_display }}</span></td>
-                    <td>
-                        <div class="d-flex flex-column gap-1">
-                            <a href="{% url 'sales:sale_update' sale.pk %}" class="btn btn-sm btn-primary">
-                                <i class="bi bi-pencil-square me-1"></i> Edit Sale
+                    <td class="text-center">
+                        <div class="btn-group" role="group">
+                            <a href="{% url 'sales:sale_update' sale.pk %}" class="btn btn-sm btn-outline-warning" title="Edit">
+                                <i class="bi bi-pencil-square"></i>
                             </a>
-                            <a href="{% url 'sales:sale_delete' sale.pk %}" class="btn btn-sm btn-danger">
-                                <i class="bi bi-trash-fill me-1"></i> Delete
+                            <a href="{% url 'sales:sale_delete' sale.pk %}" class="btn btn-sm btn-outline-danger" title="Delete">
+                                <i class="bi bi-trash-fill"></i>
                             </a>
                         </div>
                     </td>
