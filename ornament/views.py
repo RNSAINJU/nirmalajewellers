@@ -548,17 +548,32 @@ def ornament_report(request):
     """Show ornament counts grouped by metal type, then by main category."""
     from django.db.models import Count
 
-    total_ornaments = Ornament.objects.count()
+    total_ornaments = Ornament.objects.filter(
+        ornament_type__in=[
+            Ornament.OrnamentCategory.STOCK,
+            Ornament.OrnamentCategory.ORDER,
+        ]
+    ).count()
 
     # Totals per metal type
     metal_totals = {
         row['metal_type']: row['count']
-        for row in Ornament.objects.values('metal_type').annotate(count=Count('id'))
+        for row in Ornament.objects.filter(
+            ornament_type__in=[
+                Ornament.OrnamentCategory.STOCK,
+                Ornament.OrnamentCategory.ORDER,
+            ]
+        ).values('metal_type').annotate(count=Count('id'))
     }
 
     # Category breakdown per metal
     category_rows = (
-        Ornament.objects
+        Ornament.objects.filter(
+            ornament_type__in=[
+                Ornament.OrnamentCategory.STOCK,
+                Ornament.OrnamentCategory.ORDER,
+            ]
+        )
         .values('metal_type', 'maincategory__id', 'maincategory__name')
         .annotate(count=Count('id'))
         .order_by('metal_type', 'maincategory__name')

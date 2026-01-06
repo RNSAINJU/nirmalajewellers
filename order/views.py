@@ -25,7 +25,12 @@ class SearchOrnamentsAPI(View):
     def get(self, request):
         query = request.GET.get('q', '').strip()
         # Show ALL ornaments - ignore any category/subcategory filters
-        ornaments = Ornament.objects.all().order_by('-id')
+        ornaments = Ornament.objects.filter(
+            ornament_type__in=[
+                Ornament.OrnamentCategory.STOCK,
+                Ornament.OrnamentCategory.SALES,
+            ]
+        ).order_by('-id')
         
         if query:
             ornaments = ornaments.filter(
