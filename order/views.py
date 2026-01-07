@@ -159,7 +159,7 @@ class OrderListView(ListView):
         qs = super().get_queryset()
         return (
             qs.filter(sale__isnull=True)
-            .annotate(total_weight=Sum('ornaments__weight'))
+            .annotate(total_weight=Sum('order_ornaments__ornament__weight'))
             .prefetch_related(
                 'order_ornaments__ornament',
                 'payments',

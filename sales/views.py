@@ -73,8 +73,8 @@ class SalesListView(ListView):
             super()
             .get_queryset()
             .select_related("order")
-            .annotate(total_weight=Sum("order__ornaments__weight"))
-            .prefetch_related("order__ornaments")
+            .annotate(total_weight=Sum("order__order_ornaments__ornament__weight"))
+            .prefetch_related("order__order_ornaments__ornament")
         )
 
     def get_context_data(self, **kwargs):

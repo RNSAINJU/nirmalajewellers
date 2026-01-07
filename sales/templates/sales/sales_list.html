@@ -231,8 +231,8 @@
                     <td>{{ order.customer_name }}</td>
                     <td>{{ order.phone_number }}</td>
                     <td>
-                        {% for ornament in order.ornaments.all %}
-                            <small>• <a class="ornament-link" href="{% url 'ornament:update' ornament.id %}" target="_blank" rel="noopener">{{ ornament.ornament_name }}</a> ({{ ornament.metal_type }}, {{ ornament.type }}) — {{ ornament.weight|default:0|floatformat:3 }} </small><br/>
+                        {% for line in order.order_ornaments.all %}
+                            <small>• <a class="ornament-link" href="{% url 'ornament:update' line.ornament.id %}" target="_blank" rel="noopener">{{ line.ornament.ornament_name }}</a> ({{ line.ornament.metal_type }}, {{ line.ornament.type }}) — {{ line.ornament.weight|default:0|floatformat:3 }} </small><br/>
                         {% empty %}
                             <small class="text-muted">No ornaments</small>
                         {% endfor %}

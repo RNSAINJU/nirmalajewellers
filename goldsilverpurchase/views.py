@@ -1081,6 +1081,9 @@ def import_all_data(request):
                         updated_at,
                     ) = row[:19]
 
+                    # Convert ornament ID to integer for consistent mapping
+                    orn_id = int(orn_id) if orn_id else None
+
                     # Skip if ornament with same code already exists, but still map the ID
                     if code:
                         existing = Ornament.objects.filter(code=str(code)).first()
@@ -1162,6 +1165,8 @@ def import_all_data(request):
 
                     try:
                         order = Order.objects.get(sn=order_sn)
+                        # Convert ornament_id to integer for map lookup
+                        ornament_id = int(ornament_id) if ornament_id else None
                         # Use mapped ornament ID from import
                         mapped_ornament_id = ornament_id_map.get(ornament_id)
                         if mapped_ornament_id:
@@ -1223,6 +1228,7 @@ def import_all_data(request):
         summary_msg = "Import completed: " + " | ".join(
             [f"{k}: {v}" for k, v in imported_count.items() if v > 0]
         )
+        summary_msg += f" | Ornament ID mappings: {len(ornament_id_map)}"
         messages.success(request, summary_msg)
 
         if errors:

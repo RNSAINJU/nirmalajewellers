@@ -36,7 +36,8 @@ class OrderForm(forms.ModelForm):
             qs = Ornament.objects.filter(Q(order__isnull=True) | Q(order=instance))
             # Preselect ornaments already on this order (for server-side validation)
             try:
-                self.fields["existing_ornaments"].initial = instance.ornaments.all()
+                # Get ornaments from order_ornaments through table
+                self.fields["existing_ornaments"].initial = instance.order_ornaments.values_list('ornament', flat=True)
             except Exception:
                 # If related name/migrations not ready, fail silently
                 pass
