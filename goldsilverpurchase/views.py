@@ -1,7 +1,7 @@
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from .models import GoldSilverPurchase, Party, CustomerPurchase
-from ornament.models import Ornament
+from ornament.models import Ornament, MainCategory, SubCategory, Kaligar
 from order.models import Order, OrderPayment, OrderOrnament
 from sales.models import Sale
 from django.db.models import Sum
@@ -844,6 +844,7 @@ def import_all_data(request):
         wb = openpyxl.load_workbook(file)
         imported_count = {}
         errors = []
+        ornament_id_map = {}  # Map old ornament IDs to new ones
 
         def to_decimal(val):
             if val is None or val == "":
@@ -1080,23 +1081,36 @@ def import_all_data(request):
                         updated_at,
                     ) = row[:19]
 
-                    if Ornament.objects.filter(code=str(code) if code else None).exists():
-                        continue
+                    # Skip if ornament with same code already exists, but still map the ID
+                    if code:
+                        existing = Ornament.objects.filter(code=str(code)).first()
+                        if existing:
+                            # Map old ID to existing ornament
+                            ornament_id_map[orn_id] = existing.id
+                            continue
 
                     # Get or create categories
                     main_cat = None
                     if main_category:
-                        main_cat, _ = Ornament.MainCategory.objects.get_or_create(
+                        main_cat, _ = MainCategory.objects.get_or_create(
                             name=main_category
                         )
 
                     sub_cat = None
                     if sub_category:
-                        sub_cat, _ = Ornament.SubCategory.objects.get_or_create(
+                        sub_cat, _ = SubCategory.objects.get_or_create(
                             name=sub_category
                         )
 
-                    Ornament.objects.create(
+                    # Get or create default kaligar
+                    kaligar = Kaligar.objects.first()
+                    if not kaligar:
+                        kaligar = Kaligar.objects.create(
+                            name="Default",
+                            panno="000000000",
+                        )
+
+                    new_ornament = Ornament.objects.create(
                         code=str(code) if code else None,
                         ornament_name=ornament_name or "",
                         metal_type=metal_type or "Gold",
@@ -1104,6 +1118,7 @@ def import_all_data(request):
                         ornament_type=ornament_type or "stock",
                         maincategory=main_cat,
                         subcategory=sub_cat,
+                        kaligar=kaligar,
                         weight=to_decimal(weight),
                         gross_weight=to_decimal(gross_weight),
                         diamond_weight=to_decimal(diamond_weight),
@@ -1114,6 +1129,8 @@ def import_all_data(request):
                         jyala=to_decimal(jyala),
                         ornament_date=to_date(ornament_date),
                     )
+                    # Map old ID to new ID
+                    ornament_id_map[orn_id] = new_ornament.id
                     count += 1
                 except Exception as e:
                     errors.append(f"Ornaments row error: {e}")
@@ -1123,7 +1140,9 @@ def import_all_data(request):
         if "OrderOrnaments" in wb.sheetnames:
             ws = wb["OrderOrnaments"]
             count = 0
+            row_num = 1
             for row in ws.iter_rows(min_row=2, values_only=True):
+                row_num += 1
                 if not any(row):
                     continue
                 try:
@@ -1143,21 +1162,28 @@ def import_all_data(request):
 
                     try:
                         order = Order.objects.get(sn=order_sn)
-                        ornament = Ornament.objects.get(id=ornament_id)
-                        OrderOrnament.objects.create(
-                            order=order,
-                            ornament=ornament,
-                            gold_rate=to_decimal(gold_rate),
-                            diamond_rate=to_decimal(diamond_rate),
-                            zircon_rate=to_decimal(zircon_rate),
-                            stone_rate=to_decimal(stone_rate),
-                            jarti=to_decimal(jarti),
-                            jyala=to_decimal(jyala),
-                            line_amount=to_decimal(line_amount),
-                        )
-                        count += 1
-                    except (Order.DoesNotExist, Ornament.DoesNotExist):
-                        pass
+                        # Use mapped ornament ID from import
+                        mapped_ornament_id = ornament_id_map.get(ornament_id)
+                        if mapped_ornament_id:
+                            ornament = Ornament.objects.get(id=mapped_ornament_id)
+                            OrderOrnament.objects.create(
+                                order=order,
+                                ornament=ornament,
+                                gold_rate=to_decimal(gold_rate),
+                                diamond_rate=to_decimal(diamond_rate),
+                                zircon_rate=to_decimal(zircon_rate),
+                                stone_rate=to_decimal(stone_rate),
+                                jarti=to_decimal(jarti),
+                                jyala=to_decimal(jyala),
+                                line_amount=to_decimal(line_amount),
+                            )
+                            count += 1
+                        else:
+                            errors.append(f"OrderOrnaments row {row_num}: Ornament ID {ornament_id} not found in mapping")
+                    except Order.DoesNotExist:
+                        errors.append(f"OrderOrnaments row {row_num}: Order SN {order_sn} not found")
+                    except Ornament.DoesNotExist:
+                        errors.append(f"OrderOrnaments row {row_num}: Ornament ID {mapped_ornament_id} not found after mapping")
                 except Exception as e:
                     errors.append(f"OrderOrnaments row error: {e}")
             imported_count["OrderOrnaments"] = count
@@ -1200,7 +1226,14 @@ def import_all_data(request):
         messages.success(request, summary_msg)
 
         if errors:
-            messages.warning(request, f"{len(errors)} row(s) had errors. Check logs.")
+            error_summary = f"{len(errors)} row(s) had errors:\n" + "\n".join(errors[:20])
+            if len(errors) > 20:
+                error_summary += f"\n... and {len(errors) - 20} more errors"
+            messages.warning(request, error_summary)
+            import logging
+            logger = logging.getLogger(__name__)
+            for error in errors:
+                logger.error(error)
 
         return redirect("gsp:data_settings")
 
