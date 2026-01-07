@@ -1,6 +1,9 @@
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from .models import GoldSilverPurchase, Party, CustomerPurchase
+from ornament.models import Ornament
+from order.models import Order, OrderPayment, OrderOrnament
+from sales.models import Sale
 from django.db.models import Sum
 import nepali_datetime as ndt
 import openpyxl
@@ -12,6 +15,7 @@ from io import BytesIO
 from django.contrib import messages
 from decimal import Decimal
 from .forms import CustomerPurchaseForm
+from openpyxl import Workbook
 
 def D(value):
     """Convert None, empty, float, int safely to Decimal."""
@@ -533,3 +537,723 @@ def import_customer_excel(request):
             return redirect("gsp:customer_import_excel")
 
     return render(request, "goldsilverpurchase/customer_import_excel.html")
+
+
+def data_settings(request):
+    """Settings page with data export and import controls."""
+    if request.method == "POST":
+        if "import_file" in request.FILES:
+            return import_all_data(request)
+        elif "delete_all" in request.POST:
+            return delete_all_data(request)
+    return render(request, "goldsilverpurchase/data_settings.html")
+
+
+def export_all_data(request):
+    """Export all key datasets into a single Excel workbook with multiple sheets."""
+
+    def as_float(val):
+        try:
+            return float(val)
+        except Exception:
+            return val
+
+    def as_str_date(val):
+        """Convert nepali_datetime.date or datetime to string."""
+        if val is None:
+            return ""
+        return str(val)
+
+    wb = Workbook()
+    # Remove default sheet to control ordering
+    default_ws = wb.active
+    wb.remove(default_ws)
+
+    def add_sheet(title, headers, rows):
+        ws = wb.create_sheet(title=title[:31])
+        ws.append(headers)
+        for row in rows:
+            ws.append(row)
+
+    # Gold/Silver Purchases
+    gsp_rows = [
+        (
+            p.bill_no,
+            as_str_date(p.bill_date),
+            p.party.party_name if p.party else "",
+            p.particular,
+            p.metal_type,
+            as_float(p.quantity),
+            as_float(p.rate),
+            as_float(p.wages),
+            as_float(p.discount),
+            as_float(p.amount),
+            p.payment_mode,
+            p.is_paid,
+            p.remarks,
+            as_str_date(p.created_at),
+            as_str_date(p.updated_at),
+        )
+        for p in GoldSilverPurchase.objects.select_related("party").order_by("created_at")
+    ]
+    add_sheet(
+        "GoldSilverPurchase",
+        [
+            "Bill No",
+            "Bill Date",
+            "Party",
+            "Particular",
+            "Metal Type",
+            "Quantity",
+            "Rate",
+            "Wages",
+            "Discount",
+            "Amount",
+            "Payment Mode",
+            "Is Paid",
+            "Remarks",
+            "Created At",
+            "Updated At",
+        ],
+        gsp_rows,
+    )
+
+    # Customer Purchases
+    customer_rows = [
+        (
+            cp.sn,
+            as_str_date(cp.purchase_date),
+            cp.customer_name,
+            cp.location,
+            cp.phone_no,
+            cp.metal_type,
+            cp.ornament_name,
+            as_float(cp.weight),
+            as_float(cp.refined_weight),
+            as_float(cp.rate),
+            as_float(cp.amount),
+            as_str_date(cp.created_at),
+            as_str_date(cp.updated_at),
+        )
+        for cp in CustomerPurchase.objects.order_by("created_at")
+    ]
+    add_sheet(
+        "CustomerPurchase",
+        [
+            "SN",
+            "Purchase Date",
+            "Customer Name",
+            "Location",
+            "Phone",
+            "Metal Type",
+            "Ornament",
+            "Weight",
+            "Refined Weight",
+            "Rate",
+            "Amount",
+            "Created At",
+            "Updated At",
+        ],
+        customer_rows,
+    )
+
+    # Orders
+    order_rows = [
+        (
+            o.sn,
+            as_str_date(o.order_date),
+            as_str_date(o.deliver_date),
+            o.customer_name,
+            o.phone_number,
+            o.status,
+            as_float(o.discount),
+            as_float(o.amount),
+            as_float(o.subtotal),
+            as_float(o.tax),
+            as_float(o.total),
+            o.payment_mode,
+            as_float(o.payment_amount),
+            as_float(o.remaining_amount),
+            as_str_date(o.created_at),
+            as_str_date(o.updated_at),
+        )
+        for o in Order.objects.order_by("created_at")
+    ]
+    add_sheet(
+        "Orders",
+        [
+            "SN",
+            "Order Date",
+            "Deliver Date",
+            "Customer Name",
+            "Phone",
+            "Status",
+            "Discount",
+            "Amount",
+            "Subtotal",
+            "Tax",
+            "Total",
+            "Payment Mode",
+            "Payment Amount",
+            "Remaining Amount",
+            "Created At",
+            "Updated At",
+        ],
+        order_rows,
+    )
+
+    # Order Payments
+    payment_rows = [
+        (
+            op.order_id,
+            op.payment_mode,
+            as_float(op.amount),
+            as_str_date(op.created_at),
+            as_str_date(op.updated_at),
+        )
+        for op in OrderPayment.objects.select_related("order").order_by("created_at")
+    ]
+    add_sheet(
+        "OrderPayments",
+        ["Order SN", "Payment Mode", "Amount", "Created At", "Updated At"],
+        payment_rows,
+    )
+
+    # Order Ornaments
+    order_ornament_rows = [
+        (
+            oo.order_id,
+            oo.ornament_id,
+            as_float(oo.gold_rate),
+            as_float(oo.diamond_rate),
+            as_float(oo.zircon_rate),
+            as_float(oo.stone_rate),
+            as_float(oo.jarti),
+            as_float(oo.jyala),
+            as_float(oo.line_amount),
+            as_str_date(oo.created_at),
+            as_str_date(oo.updated_at),
+        )
+        for oo in OrderOrnament.objects.select_related("order", "ornament").order_by("created_at")
+    ]
+    add_sheet(
+        "OrderOrnaments",
+        [
+            "Order SN",
+            "Ornament ID",
+            "Gold Rate",
+            "Diamond Rate",
+            "Zircon Rate",
+            "Stone Rate",
+            "Jarti",
+            "Jyala",
+            "Line Amount",
+            "Created At",
+            "Updated At",
+        ],
+        order_ornament_rows,
+    )
+
+    # Ornaments
+    ornament_rows = [
+        (
+            orn.id,
+            orn.code,
+            orn.ornament_name,
+            orn.metal_type,
+            orn.type,
+            orn.ornament_type,
+            orn.maincategory.name if orn.maincategory else "",
+            orn.subcategory.name if orn.subcategory else "",
+            as_float(orn.weight),
+            as_float(orn.gross_weight),
+            as_float(orn.diamond_weight),
+            as_float(orn.zircon_weight),
+            as_float(orn.stone_weight),
+            as_float(orn.stone_totalprice),
+            as_float(orn.jarti),
+            as_float(orn.jyala),
+            as_str_date(orn.ornament_date),
+            as_str_date(orn.created_at),
+            as_str_date(orn.updated_at),
+        )
+        for orn in Ornament.objects.select_related("maincategory", "subcategory").order_by("created_at")
+    ]
+    add_sheet(
+        "Ornaments",
+        [
+            "ID",
+            "Code",
+            "Name",
+            "Metal Type",
+            "Karat",
+            "Ornament Type",
+            "Main Category",
+            "Sub Category",
+            "Weight",
+            "Gross Weight",
+            "Diamond Weight",
+            "Zircon Weight",
+            "Stone Weight",
+            "Stone Total Price",
+            "Jarti",
+            "Jyala",
+            "Ornament Date",
+            "Created At",
+            "Updated At",
+        ],
+        ornament_rows,
+    )
+
+    # Sales
+    sale_rows = [
+        (
+            s.order_id,
+            s.bill_no,
+            as_str_date(s.sale_date),
+            as_str_date(s.created_at),
+            as_str_date(s.updated_at),
+        )
+        for s in Sale.objects.select_related("order").order_by("created_at")
+    ]
+    add_sheet(
+        "Sales",
+        ["Order SN", "Bill No", "Sale Date", "Created At", "Updated At"],
+        sale_rows,
+    )
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = "attachment; filename=all_data.xlsx"
+    wb.save(response)
+    return response
+
+
+def import_all_data(request):
+    """Import all data from a multi-sheet Excel file."""
+    if request.method != "POST" or "import_file" not in request.FILES:
+        return redirect("gsp:data_settings")
+
+    file = request.FILES.get("import_file")
+    if not file:
+        messages.error(request, "Please upload a file.")
+        return redirect("gsp:data_settings")
+
+    try:
+        wb = openpyxl.load_workbook(file)
+        imported_count = {}
+        errors = []
+
+        def to_decimal(val):
+            if val is None or val == "":
+                return Decimal("0.00")
+            try:
+                return Decimal(str(val))
+            except Exception:
+                return Decimal("0.00")
+
+        def to_date(val):
+            """Convert string date in Y-M-D format to nepali date."""
+            if not val:
+                return None
+            try:
+                if isinstance(val, str):
+                    y, m, d = map(int, val.split("-"))
+                else:
+                    return None
+                return ndt.date(y, m, d)
+            except Exception:
+                return None
+
+        # ========== Import GoldSilverPurchase ==========
+        if "GoldSilverPurchase" in wb.sheetnames:
+            ws = wb["GoldSilverPurchase"]
+            count = 0
+            for row in ws.iter_rows(min_row=2, values_only=True):
+                if not any(row):
+                    continue
+                try:
+                    (
+                        bill_no,
+                        bill_date,
+                        party_name,
+                        particular,
+                        metal_type,
+                        quantity,
+                        rate,
+                        wages,
+                        discount,
+                        amount,
+                        payment_mode,
+                        is_paid,
+                        remarks,
+                        created_at,
+                        updated_at,
+                    ) = row[:15]
+
+                    if GoldSilverPurchase.objects.filter(bill_no=str(bill_no)).exists():
+                        continue
+
+                    party = None
+                    if party_name:
+                        party = Party.objects.filter(party_name=party_name).first()
+                        if not party:
+                            party = Party.objects.create(
+                                party_name=party_name,
+                                panno="000000000",  # Placeholder
+                            )
+
+                    GoldSilverPurchase.objects.create(
+                        bill_no=str(bill_no),
+                        bill_date=to_date(bill_date),
+                        party=party,
+                        particular=particular,
+                        metal_type=metal_type or "gold",
+                        quantity=to_decimal(quantity),
+                        rate=to_decimal(rate),
+                        wages=to_decimal(wages),
+                        discount=to_decimal(discount),
+                        amount=to_decimal(amount),
+                        payment_mode=payment_mode or "cash",
+                        is_paid=bool(is_paid),
+                        remarks=remarks,
+                    )
+                    count += 1
+                except Exception as e:
+                    errors.append(f"GoldSilverPurchase row error: {e}")
+            imported_count["GoldSilverPurchase"] = count
+
+        # ========== Import CustomerPurchase ==========
+        if "CustomerPurchase" in wb.sheetnames:
+            ws = wb["CustomerPurchase"]
+            count = 0
+            for row in ws.iter_rows(min_row=2, values_only=True):
+                if not any(row):
+                    continue
+                try:
+                    (
+                        sn,
+                        purchase_date,
+                        customer_name,
+                        location,
+                        phone_no,
+                        metal_type,
+                        ornament_name,
+                        weight,
+                        refined_weight,
+                        rate,
+                        amount,
+                        created_at,
+                        updated_at,
+                    ) = row[:13]
+
+                    if CustomerPurchase.objects.filter(sn=str(sn)).exists():
+                        continue
+
+                    CustomerPurchase.objects.create(
+                        sn=str(sn),
+                        purchase_date=to_date(purchase_date),
+                        customer_name=customer_name or "",
+                        location=location or "",
+                        phone_no=phone_no or "",
+                        metal_type=metal_type or "gold",
+                        ornament_name=ornament_name or "",
+                        weight=to_decimal(weight),
+                        refined_weight=to_decimal(refined_weight),
+                        rate=to_decimal(rate),
+                        amount=to_decimal(amount),
+                    )
+                    count += 1
+                except Exception as e:
+                    errors.append(f"CustomerPurchase row error: {e}")
+            imported_count["CustomerPurchase"] = count
+
+        # ========== Import Orders ==========
+        if "Orders" in wb.sheetnames:
+            ws = wb["Orders"]
+            count = 0
+            for row in ws.iter_rows(min_row=2, values_only=True):
+                if not any(row):
+                    continue
+                try:
+                    (
+                        sn,
+                        order_date,
+                        deliver_date,
+                        customer_name,
+                        phone_number,
+                        status,
+                        discount,
+                        amount,
+                        subtotal,
+                        tax,
+                        total,
+                        payment_mode,
+                        payment_amount,
+                        remaining_amount,
+                        created_at,
+                        updated_at,
+                    ) = row[:16]
+
+                    if Order.objects.filter(sn=sn).exists():
+                        continue
+
+                    Order.objects.create(
+                        sn=sn,
+                        order_date=to_date(order_date),
+                        deliver_date=to_date(deliver_date),
+                        customer_name=customer_name or "",
+                        phone_number=phone_number or "0000000000",
+                        status=status or "order",
+                        discount=to_decimal(discount),
+                        amount=to_decimal(amount),
+                        subtotal=to_decimal(subtotal),
+                        tax=to_decimal(tax),
+                        total=to_decimal(total),
+                        payment_mode=payment_mode or "cash",
+                        payment_amount=to_decimal(payment_amount),
+                        remaining_amount=to_decimal(remaining_amount),
+                    )
+                    count += 1
+                except Exception as e:
+                    errors.append(f"Orders row error: {e}")
+            imported_count["Orders"] = count
+
+        # ========== Import OrderPayments ==========
+        if "OrderPayments" in wb.sheetnames:
+            ws = wb["OrderPayments"]
+            count = 0
+            for row in ws.iter_rows(min_row=2, values_only=True):
+                if not any(row):
+                    continue
+                try:
+                    (
+                        order_sn,
+                        payment_mode,
+                        amount,
+                        created_at,
+                        updated_at,
+                    ) = row[:5]
+
+                    try:
+                        order = Order.objects.get(sn=order_sn)
+                        OrderPayment.objects.create(
+                            order=order,
+                            payment_mode=payment_mode or "cash",
+                            amount=to_decimal(amount),
+                        )
+                        count += 1
+                    except Order.DoesNotExist:
+                        pass
+                except Exception as e:
+                    errors.append(f"OrderPayments row error: {e}")
+            imported_count["OrderPayments"] = count
+
+        # ========== Import Ornaments ==========
+        if "Ornaments" in wb.sheetnames:
+            ws = wb["Ornaments"]
+            count = 0
+            for row in ws.iter_rows(min_row=2, values_only=True):
+                if not any(row):
+                    continue
+                try:
+                    (
+                        orn_id,
+                        code,
+                        ornament_name,
+                        metal_type,
+                        karat,
+                        ornament_type,
+                        main_category,
+                        sub_category,
+                        weight,
+                        gross_weight,
+                        diamond_weight,
+                        zircon_weight,
+                        stone_weight,
+                        stone_total_price,
+                        jarti,
+                        jyala,
+                        ornament_date,
+                        created_at,
+                        updated_at,
+                    ) = row[:19]
+
+                    if Ornament.objects.filter(code=str(code) if code else None).exists():
+                        continue
+
+                    # Get or create categories
+                    main_cat = None
+                    if main_category:
+                        main_cat, _ = Ornament.MainCategory.objects.get_or_create(
+                            name=main_category
+                        )
+
+                    sub_cat = None
+                    if sub_category:
+                        sub_cat, _ = Ornament.SubCategory.objects.get_or_create(
+                            name=sub_category
+                        )
+
+                    Ornament.objects.create(
+                        code=str(code) if code else None,
+                        ornament_name=ornament_name or "",
+                        metal_type=metal_type or "Gold",
+                        type=karat or "24KARAT",
+                        ornament_type=ornament_type or "stock",
+                        maincategory=main_cat,
+                        subcategory=sub_cat,
+                        weight=to_decimal(weight),
+                        gross_weight=to_decimal(gross_weight),
+                        diamond_weight=to_decimal(diamond_weight),
+                        zircon_weight=to_decimal(zircon_weight),
+                        stone_weight=to_decimal(stone_weight),
+                        stone_totalprice=to_decimal(stone_total_price),
+                        jarti=to_decimal(jarti),
+                        jyala=to_decimal(jyala),
+                        ornament_date=to_date(ornament_date),
+                    )
+                    count += 1
+                except Exception as e:
+                    errors.append(f"Ornaments row error: {e}")
+            imported_count["Ornaments"] = count
+
+        # ========== Import OrderOrnaments ==========
+        if "OrderOrnaments" in wb.sheetnames:
+            ws = wb["OrderOrnaments"]
+            count = 0
+            for row in ws.iter_rows(min_row=2, values_only=True):
+                if not any(row):
+                    continue
+                try:
+                    (
+                        order_sn,
+                        ornament_id,
+                        gold_rate,
+                        diamond_rate,
+                        zircon_rate,
+                        stone_rate,
+                        jarti,
+                        jyala,
+                        line_amount,
+                        created_at,
+                        updated_at,
+                    ) = row[:11]
+
+                    try:
+                        order = Order.objects.get(sn=order_sn)
+                        ornament = Ornament.objects.get(id=ornament_id)
+                        OrderOrnament.objects.create(
+                            order=order,
+                            ornament=ornament,
+                            gold_rate=to_decimal(gold_rate),
+                            diamond_rate=to_decimal(diamond_rate),
+                            zircon_rate=to_decimal(zircon_rate),
+                            stone_rate=to_decimal(stone_rate),
+                            jarti=to_decimal(jarti),
+                            jyala=to_decimal(jyala),
+                            line_amount=to_decimal(line_amount),
+                        )
+                        count += 1
+                    except (Order.DoesNotExist, Ornament.DoesNotExist):
+                        pass
+                except Exception as e:
+                    errors.append(f"OrderOrnaments row error: {e}")
+            imported_count["OrderOrnaments"] = count
+
+        # ========== Import Sales ==========
+        if "Sales" in wb.sheetnames:
+            ws = wb["Sales"]
+            count = 0
+            for row in ws.iter_rows(min_row=2, values_only=True):
+                if not any(row):
+                    continue
+                try:
+                    (
+                        order_sn,
+                        bill_no,
+                        sale_date,
+                        created_at,
+                        updated_at,
+                    ) = row[:5]
+
+                    try:
+                        order = Order.objects.get(sn=order_sn)
+                        if not Sale.objects.filter(order=order).exists():
+                            Sale.objects.create(
+                                order=order,
+                                bill_no=bill_no or None,
+                                sale_date=to_date(sale_date),
+                            )
+                            count += 1
+                    except Order.DoesNotExist:
+                        pass
+                except Exception as e:
+                    errors.append(f"Sales row error: {e}")
+            imported_count["Sales"] = count
+
+        # Prepare summary message
+        summary_msg = "Import completed: " + " | ".join(
+            [f"{k}: {v}" for k, v in imported_count.items() if v > 0]
+        )
+        messages.success(request, summary_msg)
+
+        if errors:
+            messages.warning(request, f"{len(errors)} row(s) had errors. Check logs.")
+
+        return redirect("gsp:data_settings")
+
+    except Exception as e:
+        messages.error(request, f"Import failed: {str(e)}")
+        return redirect("gsp:data_settings")
+
+
+def delete_all_data(request):
+    """Delete all data from primary tables (with confirmation)."""
+    if request.method != "POST":
+        return redirect("gsp:data_settings")
+
+    # Verify confirmation token to prevent accidental deletion
+    confirm_token = request.POST.get("confirm_delete")
+    if confirm_token != "DELETE_ALL_DATA_CONFIRMED":
+        messages.error(request, "Deletion not confirmed. Data was not deleted.")
+        return redirect("gsp:data_settings")
+
+    try:
+        # Delete in order of dependencies (children first)
+        order_payment_count = OrderPayment.objects.count()
+        order_ornament_count = OrderOrnament.objects.count()
+        sales_count = Sale.objects.count()
+        order_count = Order.objects.count()
+        ornament_count = Ornament.objects.count()
+        customer_purchase_count = CustomerPurchase.objects.count()
+        gsp_count = GoldSilverPurchase.objects.count()
+
+        # Delete related records first
+        OrderPayment.objects.all().delete()
+        OrderOrnament.objects.all().delete()
+        Sale.objects.all().delete()
+        Order.objects.all().delete()
+        Ornament.objects.all().delete()
+        CustomerPurchase.objects.all().delete()
+        GoldSilverPurchase.objects.all().delete()
+
+        total_deleted = (
+            order_payment_count
+            + order_ornament_count
+            + sales_count
+            + order_count
+            + ornament_count
+            + customer_purchase_count
+            + gsp_count
+        )
+
+        messages.success(
+            request,
+            f"All data deleted successfully. Total records removed: {total_deleted}",
+        )
+    except Exception as e:
+        messages.error(request, f"Error deleting data: {str(e)}")
+
+    return redirect("gsp:data_settings")

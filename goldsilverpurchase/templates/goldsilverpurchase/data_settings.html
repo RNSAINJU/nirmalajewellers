@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card shadow-sm">
+    <div class="card-header bg-dark text-white">
+        <div class="d-flex justify-content-between align-items-center">
+            <span>Data Settings</span>
+            <i class="bi bi-gear"></i>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <!-- Export Section -->
+            <div class="col-md-6">
+                <h5 class="mb-3">Export Data</h5>
+                <p class="text-muted small">Download all your data (purchases, orders, sales, ornaments, payments) in one Excel file with multiple sheets.</p>
+                <a href="{% url 'gsp:export_all_data' %}" class="btn btn-primary">
+                    <i class="bi bi-download me-1"></i> Export All Data
+                </a>
+            </div>
+
+            <!-- Import Section -->
+            <div class="col-md-6">
+                <h5 class="mb-3">Import Data</h5>
+                <p class="text-muted small">Upload an exported Excel file to restore all data at once. Existing records with matching keys will be skipped.</p>
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="input-group">
+                        <input type="file" name="import_file" accept=".xlsx" class="form-control" required>
+                        <button class="btn btn-success" type="submit">
+                            <i class="bi bi-upload me-1"></i> Import Data
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <hr class="my-4">
+
+        <!-- Delete Section -->
+        <div class="row">
+            <div class="col-12">
+                <h5 class="mb-3 text-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i> Danger Zone
+                </h5>
+                <p class="text-muted small">Permanently delete all data from Gold/Silver Purchases, Customer Purchases, Ornaments, Orders, and Sales. <strong>This action cannot be undone.</strong></p>
+                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteConfirmModal">
+                    <i class="bi bi-trash me-1"></i> Delete All Data
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content border-danger">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteConfirmLabel">
+                    <i class="bi bi-exclamation-circle me-2"></i> Confirm Data Deletion
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3"><strong>Warning:</strong> You are about to permanently delete all data from:</p>
+                <ul class="list-unstyled">
+                    <li><i class="bi bi-gem text-warning me-2"></i> Gold/Silver Purchases</li>
+                    <li><i class="bi bi-gem text-info me-2"></i> Customer Purchases</li>
+                    <li><i class="bi bi-gem text-success me-2"></i> Ornaments</li>
+                    <li><i class="bi bi-bag text-primary me-2"></i> Orders</li>
+                    <li><i class="bi bi-receipt text-secondary me-2"></i> Sales</li>
+                </ul>
+                <p class="text-danger mt-3"><strong>This action cannot be undone!</strong></p>
+                <p class="small text-muted">Type <code>DELETE_ALL_DATA_CONFIRMED</code> in the field below to confirm:</p>
+                <input type="text" id="confirmInput" class="form-control" placeholder="Enter confirmation text">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" id="deleteForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="delete_all" value="true">
+                    <input type="hidden" name="confirm_delete" id="confirmToken" value="">
+                    <button type="button" class="btn btn-danger" onclick="confirmDelete()">
+                        <i class="bi bi-trash me-1"></i> Delete All Data
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function confirmDelete() {
+        const input = document.getElementById("confirmInput").value;
+        if (input === "DELETE_ALL_DATA_CONFIRMED") {
+            document.getElementById("confirmToken").value = input;
+            document.getElementById("deleteForm").submit();
+        } else {
+            alert("Confirmation text does not match. Deletion cancelled.");
+        }
+    }
+</script>
+{% endblock %}
+
+

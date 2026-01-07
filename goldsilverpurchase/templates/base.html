@@ -295,6 +295,18 @@
             </div>
         </li>
 
+        <!-- Settings -->
+        <li class="nav-item">
+            <a class="nav-link collapsed" data-bs-toggle="collapse" data-bs-target="#settingsMenu" role="button" aria-expanded="false" aria-controls="settingsMenu">
+                <i class="bi bi-gear me-2"></i> Settings
+                <i class="bi bi-chevron-down float-end"></i>
+            </a>
+            <div class="collapse" id="settingsMenu">
+                <a href="#" class="nav-link ms-3">Account Settings</a>
+                <a href="{% url 'gsp:data_settings' %}" class="nav-link ms-3 {% if request.resolver_match.url_name == 'data_settings' %}active{% endif %}">Data Settings</a>
+            </div>
+        </li>
+
     </ul>
     </nav>
 {% endif %}

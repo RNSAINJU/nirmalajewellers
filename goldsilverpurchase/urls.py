@@ -5,7 +5,8 @@ from .views import (
     CustomerPurchaseListView, CustomerPurchaseCreateView,
     CustomerPurchaseUpdateView, CustomerPurchaseDeleteView,
     export_excel, print_view, import_excel,
-    export_customer_excel, import_customer_excel
+    export_customer_excel, import_customer_excel,
+    data_settings, export_all_data,
 )
 
 app_name = 'gsp'
@@ -25,4 +26,6 @@ urlpatterns = [
     path("print/", print_view, name="print_view"),
     path("export-excel/", export_excel, name="export_excel"),
     path('import-excel/', import_excel, name='gsp_import_excel'),
+    path('data-settings/', data_settings, name='data_settings'),
+    path('export-all-data/', export_all_data, name='export_all_data'),
 ]
