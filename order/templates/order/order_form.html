@@ -138,7 +138,32 @@
                                 </div>
                                 {% endif %}
 
-                                {# Status is always 'Order' by default; hidden from UI #}
+                                <!-- Status, Order Type, and Description fields -->
+                                <div class="col-12">
+                                    <div class="row g-2">
+                                        <div class="col-md-4 col-sm-12">
+                                            <label class="form-label mb-1" for="id_status">{{ form.status.label }}</label>
+                                            {{ form.status }}
+                                            {% if form.status.errors %}
+                                                <div class="text-danger small">{{ form.status.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-4 col-sm-12">
+                                            <label class="form-label mb-1" for="id_order_type">{{ form.order_type.label }}</label>
+                                            {{ form.order_type }}
+                                            {% if form.order_type.errors %}
+                                                <div class="text-danger small">{{ form.order_type.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-4 col-sm-12">
+                                            <label class="form-label mb-1" for="id_description">{{ form.description.label }}</label>
+                                            {{ form.description }}
+                                            {% if form.description.errors %}
+                                                <div class="text-danger small">{{ form.description.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

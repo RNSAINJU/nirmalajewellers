@@ -666,6 +666,8 @@ def export_all_data(request):
             o.customer_name,
             o.phone_number,
             o.status,
+            o.order_type,
+            o.description or "",
             as_float(o.discount),
             as_float(o.amount),
             as_float(o.subtotal),
@@ -688,6 +690,8 @@ def export_all_data(request):
             "Customer Name",
             "Phone",
             "Status",
+            "Order Type",
+            "Description",
             "Discount",
             "Amount",
             "Subtotal",
@@ -991,6 +995,8 @@ def import_all_data(request):
                         customer_name,
                         phone_number,
                         status,
+                        order_type,
+                        description,
                         discount,
                         amount,
                         subtotal,
@@ -1001,7 +1007,7 @@ def import_all_data(request):
                         remaining_amount,
                         created_at,
                         updated_at,
-                    ) = row[:16]
+                    ) = row[:18]
 
                     if Order.objects.filter(sn=sn).exists():
                         continue
@@ -1013,6 +1019,8 @@ def import_all_data(request):
                         customer_name=customer_name or "",
                         phone_number=phone_number or "0000000000",
                         status=status or "order",
+                        order_type=order_type or "custom",
+                        description=description or "",
                         discount=to_decimal(discount),
                         amount=to_decimal(amount),
                         subtotal=to_decimal(subtotal),

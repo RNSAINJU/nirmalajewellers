@@ -54,8 +54,8 @@ class OrderForm(forms.ModelForm):
     class Meta:
         model = Order
         fields = [
-            'order_date', 'deliver_date', 'customer_name', 'phone_number',
-            'amount', 'subtotal', 'discount', 'tax', 'total', 'payment_mode', 'payment_amount',
+            'order_date', 'deliver_date', 'customer_name', 'phone_number', 'status',
+            'order_type', 'description', 'amount', 'subtotal', 'discount', 'tax', 'total', 'payment_mode', 'payment_amount',
         ]
         widgets = {
             'amount': forms.HiddenInput(),
@@ -65,6 +65,9 @@ class OrderForm(forms.ModelForm):
             'total': forms.HiddenInput(),
             'payment_mode': forms.HiddenInput(),
             'payment_amount': forms.HiddenInput(),
+            'status': forms.Select(attrs={'class': 'form-control form-control-sm'}),
+            'order_type': forms.Select(attrs={'class': 'form-control form-control-sm'}),
+            'description': forms.Textarea(attrs={'class': 'form-control form-control-sm', 'rows': 3, 'placeholder': 'Additional notes or description'}),
         }
 
     def clean_customer_name(self):

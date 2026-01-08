@@ -19,6 +19,13 @@ class Order(models.Model):
         ('completed', 'Completed'),
         ('delivered', 'Delivered'),
     ]
+
+    ORDER_TYPE_CHOICES = [
+        ('custom', 'Custom'),
+        ('standard', 'Standard'),
+        ('repair', 'Repair'),
+        ('remake', 'Remake'),
+    ]
     
     sn = models.AutoField(primary_key=True)
     order_date = NepaliDateField(null=True, blank=True)
@@ -34,6 +41,17 @@ class Order(models.Model):
         help_text='Enter a valid phone number (7-15 digits).'
     )
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='order')
+    order_type = models.CharField(
+        max_length=20,
+        choices=ORDER_TYPE_CHOICES,
+        default='custom',
+        help_text='Type of order'
+    )
+    description = models.TextField(
+        blank=True,
+        null=True,
+        help_text='Additional notes or description for the order'
+    )
 
 
     discount = models.DecimalField(

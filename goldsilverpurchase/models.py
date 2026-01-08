@@ -167,6 +167,7 @@ class CustomerPurchase(models.Model):
         SILVER = 'silver', 'Silver'
         DIAMOND = 'diamond', 'Diamond'
 
+    id = models.AutoField(primary_key=True)
     sn = models.CharField(max_length=20, unique=True, verbose_name="SN")
     purchase_date = NepaliDateField(null=True, blank=True)
     customer_name = models.CharField(max_length=255)

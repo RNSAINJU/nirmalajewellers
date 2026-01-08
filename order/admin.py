@@ -15,7 +15,24 @@ class OrderOrnamentInline(admin.TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ('sn', 'customer_name', 'order_date', 'deliver_date', 'total', 'status')
+    list_display = ('sn', 'customer_name', 'order_type', 'order_date', 'deliver_date', 'total', 'status')
+    list_filter = ('status', 'order_type', 'order_date')
+    search_fields = ('sn', 'customer_name', 'phone_number')
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('customer_name', 'phone_number', 'order_date', 'deliver_date', 'status', 'order_type')
+        }),
+        ('Description', {
+            'fields': ('description',),
+            'classes': ('collapse',)
+        }),
+        ('Amounts', {
+            'fields': ('amount', 'discount', 'subtotal', 'tax', 'total')
+        }),
+        ('Payment', {
+            'fields': ('payment_mode', 'payment_amount', 'remaining_amount')
+        }),
+    )
     inlines = [OrderOrnamentInline]
 
 
