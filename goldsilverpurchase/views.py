@@ -765,6 +765,7 @@ def export_all_data(request):
             orn.ornament_type,
             orn.maincategory.name if orn.maincategory else "",
             orn.subcategory.name if orn.subcategory else "",
+            orn.kaligar.name if orn.kaligar else "",
             as_float(orn.weight),
             as_float(orn.gross_weight),
             as_float(orn.diamond_weight),
@@ -774,10 +775,12 @@ def export_all_data(request):
             as_float(orn.jarti),
             as_float(orn.jyala),
             as_str_date(orn.ornament_date),
+            orn.description or "",
+            orn.image.url if orn.image else "",
             as_str_date(orn.created_at),
             as_str_date(orn.updated_at),
         )
-        for orn in Ornament.objects.select_related("maincategory", "subcategory").order_by("created_at")
+        for orn in Ornament.objects.select_related("maincategory", "subcategory", "kaligar").order_by("created_at")
     ]
     add_sheet(
         "Ornaments",
@@ -790,6 +793,7 @@ def export_all_data(request):
             "Ornament Type",
             "Main Category",
             "Sub Category",
+            "Kaligar",
             "Weight",
             "Gross Weight",
             "Diamond Weight",
@@ -799,6 +803,8 @@ def export_all_data(request):
             "Jarti",
             "Jyala",
             "Ornament Date",
+            "Description",
+            "Image URL",
             "Created At",
             "Updated At",
         ],
@@ -1068,6 +1074,7 @@ def import_all_data(request):
                         ornament_type,
                         main_category,
                         sub_category,
+                        kaligar_name,
                         weight,
                         gross_weight,
                         diamond_weight,
@@ -1077,9 +1084,11 @@ def import_all_data(request):
                         jarti,
                         jyala,
                         ornament_date,
+                        description,
+                        image_url,
                         created_at,
                         updated_at,
-                    ) = row[:19]
+                    ) = row[:23]
 
                     # Convert ornament ID to integer for consistent mapping
                     orn_id = int(orn_id) if orn_id else None
@@ -1105,13 +1114,21 @@ def import_all_data(request):
                             name=sub_category
                         )
 
-                    # Get or create default kaligar
-                    kaligar = Kaligar.objects.first()
-                    if not kaligar:
-                        kaligar = Kaligar.objects.create(
-                            name="Default",
-                            panno="000000000",
+                    # Get or create kaligar by name
+                    kaligar = None
+                    if kaligar_name:
+                        kaligar, _ = Kaligar.objects.get_or_create(
+                            name=kaligar_name,
+                            defaults={"panno": "000000000"}
                         )
+                    else:
+                        # Fallback to first kaligar or create default
+                        kaligar = Kaligar.objects.first()
+                        if not kaligar:
+                            kaligar = Kaligar.objects.create(
+                                name="Default",
+                                panno="000000000",
+                            )
 
                     new_ornament = Ornament.objects.create(
                         code=str(code) if code else None,
@@ -1131,6 +1148,7 @@ def import_all_data(request):
                         jarti=to_decimal(jarti),
                         jyala=to_decimal(jyala),
                         ornament_date=to_date(ornament_date),
+                        description=description or "",
                     )
                     # Map old ID to new ID
                     ornament_id_map[orn_id] = new_ornament.id
