@@ -3,45 +3,66 @@
 <div class="container mt-5">
   <h1 class="text-center mb-4">{{ form_title }}</h1>
 
+  <div class="alert alert-info" role="alert">
+    <small><span class="text-danger fw-bold">*</span> indicates required fields</small>
+  </div>
+
   <form method="post" class="row g-4" novalidate>
     {% csrf_token %}
 
     <div class="col-lg-6">
       <div class="card shadow-sm h-100">
-        <div class="card-header bg-light fw-semibold">Customer & Purchase</div>
+        <div class="card-header bg-light fw-semibold">Customer & Purchase Information</div>
         <div class="card-body">
           <div class="mb-3">
-            <label class="form-label mb-1">SN</label>
-            <input type="text" name="sn" class="form-control form-control-sm" value="{{ form.sn.value|default:'' }}" required>
-            {% if form.sn.errors %}<div class="text-danger small">{{ form.sn.errors }}</div>{% endif %}
+            <label class="form-label mb-1">
+              SN <span class="text-danger fw-bold">*</span>
+            </label>
+            <input type="text" name="sn" class="form-control form-control-sm {% if form.sn.errors %}is-invalid{% endif %}" value="{{ form.sn.value|default:'' }}" placeholder="Serial number" required>
+            {% if form.sn.errors %}<div class="text-danger small mt-1">{{ form.sn.errors }}</div>{% endif %}
+            <small class="text-muted">Unique serial number for this purchase</small>
           </div>
+
           <div class="mb-3">
-            <label class="form-label mb-1">Date (BS)</label>
-            <input type="text" name="purchase_date" id="id_purchase_date" class="form-control form-control-sm" placeholder="YYYY-MM-DD" value="{{ form.purchase_date.value|default:'' }}">
-            {% if form.purchase_date.errors %}<div class="text-danger small">{{ form.purchase_date.errors }}</div>{% endif %}
+            <label class="form-label mb-1">
+              Purchase Date (BS)
+            </label>
+            <input type="text" name="purchase_date" id="id_purchase_date" class="form-control form-control-sm {% if form.purchase_date.errors %}is-invalid{% endif %}" placeholder="YYYY-MM-DD" value="{{ form.purchase_date.value|default:'' }}">
+            {% if form.purchase_date.errors %}<div class="text-danger small mt-1">{{ form.purchase_date.errors }}</div>{% endif %}
+            <small class="text-muted">Optional: Nepali date format</small>
           </div>
+
           <div class="mb-3">
-            <label class="form-label mb-1">Customer Name</label>
-            <input type="text" name="customer_name" class="form-control form-control-sm" value="{{ form.customer_name.value|default:'' }}" required>
-            {% if form.customer_name.errors %}<div class="text-danger small">{{ form.customer_name.errors }}</div>{% endif %}
+            <label class="form-label mb-1">
+              Customer Name <span class="text-danger fw-bold">*</span>
+            </label>
+            <input type="text" name="customer_name" class="form-control form-control-sm {% if form.customer_name.errors %}is-invalid{% endif %}" value="{{ form.customer_name.value|default:'' }}" placeholder="Full name" required>
+            {% if form.customer_name.errors %}<div class="text-danger small mt-1">{{ form.customer_name.errors }}</div>{% endif %}
           </div>
+
           <div class="mb-3">
-            <label class="form-label mb-1">Metal Type</label>
-            <select name="metal_type" class="form-select form-select-sm" required>
+            <label class="form-label mb-1">
+              Metal Type <span class="text-danger fw-bold">*</span>
+            </label>
+            <select name="metal_type" class="form-select form-select-sm {% if form.metal_type.errors %}is-invalid{% endif %}" required>
+              <option value="">-- Select Metal Type --</option>
               {% for key, value in form.metal_type.field.choices %}
               <option value="{{ key }}" {% if form.metal_type.value == key %}selected{% endif %}>{{ value }}</option>
               {% endfor %}
             </select>
-            {% if form.metal_type.errors %}<div class="text-danger small">{{ form.metal_type.errors }}</div>{% endif %}
+            {% if form.metal_type.errors %}<div class="text-danger small mt-1">{{ form.metal_type.errors }}</div>{% endif %}
           </div>
+
           <div class="row g-3">
             <div class="col-md-6">
               <label class="form-label mb-1">Location</label>
-              <input type="text" name="location" class="form-control form-control-sm" value="{{ form.location.value|default:'' }}">
+              <input type="text" name="location" class="form-control form-control-sm {% if form.location.errors %}is-invalid{% endif %}" value="{{ form.location.value|default:'' }}" placeholder="Location (optional)">
+              {% if form.location.errors %}<div class="text-danger small mt-1">{{ form.location.errors }}</div>{% endif %}
             </div>
             <div class="col-md-6">
               <label class="form-label mb-1">Phone No</label>
-              <input type="text" name="phone_no" class="form-control form-control-sm" value="{{ form.phone_no.value|default:'' }}">
+              <input type="text" name="phone_no" class="form-control form-control-sm {% if form.phone_no.errors %}is-invalid{% endif %}" value="{{ form.phone_no.value|default:'' }}" placeholder="Phone (optional)">
+              {% if form.phone_no.errors %}<div class="text-danger small mt-1">{{ form.phone_no.errors }}</div>{% endif %}
             </div>
           </div>
         </div>
@@ -50,44 +71,83 @@
 
     <div class="col-lg-6">
       <div class="card shadow-sm h-100">
-        <div class="card-header bg-light fw-semibold">Ornament Details</div>
+        <div class="card-header bg-light fw-semibold">Ornament & Valuation Details</div>
         <div class="card-body">
           <div class="mb-3">
-            <label class="form-label mb-1">Ornament Name</label>
-            <input type="text" name="ornament_name" class="form-control form-control-sm" value="{{ form.ornament_name.value|default:'' }}" required>
-            {% if form.ornament_name.errors %}<div class="text-danger small">{{ form.ornament_name.errors }}</div>{% endif %}
+            <label class="form-label mb-1">
+              Ornament Name <span class="text-danger fw-bold">*</span>
+            </label>
+            <input type="text" name="ornament_name" class="form-control form-control-sm {% if form.ornament_name.errors %}is-invalid{% endif %}" value="{{ form.ornament_name.value|default:'' }}" placeholder="e.g., Gold Bangle, Silver Ring" required>
+            {% if form.ornament_name.errors %}<div class="text-danger small mt-1">{{ form.ornament_name.errors }}</div>{% endif %}
           </div>
+
           <div class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label mb-1">Weight (tola)</label>
-              <input type="number" step="0.001" name="weight" class="form-control form-control-sm" value="{{ form.weight.value|default:'' }}" required>
-              {% if form.weight.errors %}<div class="text-danger small">{{ form.weight.errors }}</div>{% endif %}
+            <div class="col-md-4">
+              <label class="form-label mb-1">
+                Weight (तोल) <span class="text-danger fw-bold">*</span>
+              </label>
+              <input type="number" step="0.001" name="weight" id="id_weight" class="form-control form-control-sm {% if form.weight.errors %}is-invalid{% endif %}" value="{{ form.weight.value|default:'' }}" placeholder="0.000" required>
+              {% if form.weight.errors %}<div class="text-danger small mt-1">{{ form.weight.errors }}</div>{% endif %}
+              <small class="text-muted">Gross weight in तोल</small>
             </div>
-            <div class="col-md-6">
-              <label class="form-label mb-1">Refined Weight (tola)</label>
-              <input type="number" step="0.001" name="refined_weight" class="form-control form-control-sm" value="{{ form.refined_weight.value|default:'' }}" required>
-              {% if form.refined_weight.errors %}<div class="text-danger small">{{ form.refined_weight.errors }}</div>{% endif %}
+            <div class="col-md-4">
+              <label class="form-label mb-1">
+                Percentage
+              </label>
+              <input type="number" step="0.01" name="percentage" id="id_percentage" class="form-control form-control-sm {% if form.percentage.errors %}is-invalid{% endif %}" value="{{ form.percentage.value|default:'' }}" placeholder="0.00">
+              {% if form.percentage.errors %}<div class="text-danger small mt-1">{{ form.percentage.errors }}</div>{% endif %}
+              <small class="text-muted">Loss/gain percentage (%)</small>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label mb-1">
+                Final Weight (तोल)
+              </label>
+              <input type="number" step="0.001" name="final_weight" id="id_final_weight" class="form-control form-control-sm bg-light {% if form.final_weight.errors %}is-invalid{% endif %}" value="{{ form.final_weight.value|default:'' }}" placeholder="0.000" readonly>
+              {% if form.final_weight.errors %}<div class="text-danger small mt-1">{{ form.final_weight.errors }}</div>{% endif %}
+              <small class="text-muted">Weight - (Weight × Percentage)</small>
             </div>
           </div>
-          <div class="row g-3 mt-1">
+
+          <div class="row g-3 mt-2">
             <div class="col-md-6">
-              <label class="form-label mb-1">Rate</label>
-              <input type="number" step="0.01" name="rate" id="id_rate" class="form-control form-control-sm" value="{{ form.rate.value|default:'' }}" required>
-              {% if form.rate.errors %}<div class="text-danger small">{{ form.rate.errors }}</div>{% endif %}
+              <label class="form-label mb-1">
+                Refined Weight (तोल) <span class="text-danger fw-bold">*</span>
+              </label>
+              <input type="number" step="0.001" name="refined_weight" class="form-control form-control-sm {% if form.refined_weight.errors %}is-invalid{% endif %}" value="{{ form.refined_weight.value|default:'' }}" placeholder="0.000" required>
+              {% if form.refined_weight.errors %}<div class="text-danger small mt-1">{{ form.refined_weight.errors }}</div>{% endif %}
+              <small class="text-muted">Net weight after refining</small>
             </div>
             <div class="col-md-6">
-              <label class="form-label mb-1">Amount</label>
-              <input type="number" step="0.01" name="amount" id="id_amount" class="form-control form-control-sm bg-light" value="{{ form.amount.value|default:'' }}" placeholder="Auto-calculated" readonly>
-              {% if form.amount.errors %}<div class="text-danger small">{{ form.amount.errors }}</div>{% endif %}
+              <label class="form-label mb-1">
+                Rate <span class="text-danger fw-bold">*</span>
+              </label>
+              <input type="number" step="0.01" name="rate" id="id_rate" class="form-control form-control-sm {% if form.rate.errors %}is-invalid{% endif %}" value="{{ form.rate.value|default:'' }}" placeholder="0.00" required>
+              {% if form.rate.errors %}<div class="text-danger small mt-1">{{ form.rate.errors }}</div>{% endif %}
+              <small class="text-muted">Price per तोल</small>
+            </div>
+          </div>
+
+          <div class="row g-3 mt-2">
+            <div class="col-md-12">
+              <label class="form-label mb-1">
+                Amount
+              </label>
+              <input type="number" step="0.01" name="amount" id="id_amount" class="form-control form-control-sm bg-light {% if form.amount.errors %}is-invalid{% endif %}" value="{{ form.amount.value|default:'' }}" placeholder="Auto-calculated" readonly>
+              {% if form.amount.errors %}<div class="text-danger small mt-1">{{ form.amount.errors }}</div>{% endif %}
+              <small class="text-muted">(Final Weight ÷ 11.664) × Rate (auto-calculated)</small>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="col-12 d-flex justify-content-end">
-      <button type="submit" class="btn btn-success me-2">Save</button>
-      <a href="{% url 'gsp:customer_purchase_list' %}" class="btn btn-secondary">Cancel</a>
+    <div class="col-12 d-flex justify-content-end gap-2">
+      <button type="submit" class="btn btn-success">
+        <i class="bi bi-check-circle me-1"></i>Save Purchase
+      </button>
+      <a href="{% url 'gsp:customer_purchase_list' %}" class="btn btn-secondary">
+        <i class="bi bi-x-circle me-1"></i>Cancel
+      </a>
     </div>
   </form>
 </div>
@@ -99,15 +159,29 @@
     const options = { ndpYear: true, ndpMonth: true, ndpYearCount: 10 };
     new NepaliDatePicker({ target: '#id_purchase_date', ...options });
 
-    const $w = document.querySelector('input[name="weight"]');
+    const $w = document.getElementById('id_weight');
+    const $p = document.getElementById('id_percentage');
+    const $fw = document.getElementById('id_final_weight');
     const $r = document.getElementById('id_rate');
     const $a = document.getElementById('id_amount');
+    
     function D(x){ const n = parseFloat(x); return isNaN(n) ? 0 : n; }
+    
     function recalc(){
-      const amt = D($w.value) * D($r.value);
-      $a.value = amt.toFixed(2);
+      const weight = D($w.value);
+      const percentage = D($p.value);
+      const rate = D($r.value);
+      
+      // Calculate final weight: weight - (weight * percentage / 100)
+      const finalWeight = weight - (weight * percentage / 100);
+      $fw.value = Math.max(0, finalWeight).toFixed(3);
+      
+      // Calculate amount: (final weight / 11.664) * rate
+      const amt = (Math.max(0, finalWeight) / 11.664) * rate;
+      $a.value = Math.max(0, amt).toFixed(2);
     }
-    [$w, $r].forEach(el => el && el.addEventListener('input', recalc));
+    
+    [$w, $p, $r].forEach(el => el && el.addEventListener('input', recalc));
     recalc();
   });
 </script>

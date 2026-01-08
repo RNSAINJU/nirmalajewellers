@@ -782,8 +782,37 @@ function updateDerivedFields(amount) {
     if (manualFlag && manualTax > 0) {
         autoTax = manualTax;
     } else {
-        // Auto-calculate 2% tax on discounted amount
-        autoTax = discountedAmount * 0.02;
+        // Auto-calculate 2% tax on Gold and Diamond ornaments ONLY (excluding Silver)
+        // First, calculate amount for Gold and Diamond ornaments only
+        let goldDiamondAmount = 0;
+        document.querySelectorAll('.subtotal-display').forEach(field => {
+            const ornamentId = parseInt(field.getAttribute('data-id'));
+            const ornament = selectedOrnaments[ornamentId];
+            if (ornament && (ornament.metal_type === 'Gold' || ornament.metal_type === 'Diamond')) {
+                goldDiamondAmount += parseFloat(field.value) || 0;
+            }
+        });
+        // Also include any legacy formset subtotal fields that are for Gold/Diamond
+        document.querySelectorAll('.subtotal-field').forEach(field => {
+            const ornamentId = parseInt(field.getAttribute('data-ornament-id'));
+            if (ornamentId) {
+                const ornament = selectedOrnaments[ornamentId];
+                if (ornament && (ornament.metal_type === 'Gold' || ornament.metal_type === 'Diamond')) {
+                    goldDiamondAmount += parseFloat(field.value) || 0;
+                }
+            } else {
+                // If no ornament ID attribute, include it (legacy behavior)
+                goldDiamondAmount += parseFloat(field.value) || 0;
+            }
+        });
+        
+        // Apply discount proportionally to Gold/Diamond amount
+        const goldDiamondPercentage = amount > 0 ? goldDiamondAmount / amount : 0;
+        const discountForGoldDiamond = discount * goldDiamondPercentage;
+        const goldDiamondDiscounted = Math.max(0, goldDiamondAmount - discountForGoldDiamond);
+        
+        // Apply 2% tax only to Gold and Diamond ornaments
+        autoTax = goldDiamondDiscounted * 0.02;
         // Reset manual flag because we're auto-calculating
         if (taxField) taxField.dataset.manual = 'false';
     }
