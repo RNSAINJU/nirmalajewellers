@@ -365,9 +365,15 @@ class OrderMetalStock(models.Model):
         # Ensure Decimal values
         if isinstance(self.quantity, (int, float)):
             self.quantity = Decimal(str(self.quantity))
+        elif self.quantity is None:
+            self.quantity = Decimal('0.00')
+            
         self.rate_per_gram = self.rate_per_gram or Decimal('0.00')
 
         # Calculate line amount
-        self.line_amount = (self.quantity * self.rate_per_gram).quantize(Decimal('0.01'))
+        if self.quantity and self.rate_per_gram:
+            self.line_amount = (self.quantity * self.rate_per_gram).quantize(Decimal('0.01'))
+        else:
+            self.line_amount = Decimal('0.00')
 
         super().save(*args, **kwargs)

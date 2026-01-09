@@ -253,8 +253,11 @@
                     <td>
                         {% for line in order.order_ornaments.all %}
                             <small>• <a class="ornament-link" href="{% url 'ornament:update' line.ornament.id %}" target="_blank" rel="noopener">{{ line.ornament.ornament_name }}</a> ({{ line.ornament.metal_type }}, {{ line.ornament.type }})</small><br/>
+                        {% endfor %}
+                        {% for metal in order.order_metals.all %}
+                            <small>🥇 <strong>{{ metal.get_metal_type_display }}</strong> {{ metal.purity }} - {{ metal.quantity|floatformat:3 }}g @ Rs.{{ metal.rate_per_gram }}/g</small><br/>
                         {% empty %}
-                            <small class="text-muted">No ornaments</small>
+                            <small class="text-muted">No items</small>
                         {% endfor %}
                     </td>
                     <td>{{ order.total_weight|default:0|floatformat:3 }}</td>

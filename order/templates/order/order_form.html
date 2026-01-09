@@ -188,11 +188,12 @@
                     <table class="table table-bordered table-sm" id="metal-stocks-table">
                         <thead class="table-light">
                             <tr>
-                                <th style="width: 15%">Metal Type</th>
-                                <th style="width: 15%">Purity</th>
-                                <th style="width: 15%">Quantity (grams)</th>
-                                <th style="width: 15%">Rate/gram</th>
-                                <th style="width: 15%">Line Amount</th>
+                                <th style="width: 12%">Metal Type</th>
+                                <th style="width: 12%">Purity</th>
+                                <th style="width: 12%">Quantity (grams)</th>
+                                <th style="width: 12%">Rate/gram</th>
+                                <th style="width: 12%">Remarks</th>
+                                <th style="width: 12%">Line Amount</th>
                                 <th style="width: 10%">Action</th>
                             </tr>
                         </thead>
@@ -204,39 +205,59 @@
                                         {{ form.id }}
                                         {{ form.order }}
                                         <td>
-                                            <select name="ordermetal_stock_set-{{ forloop.counter0 }}-metal_type" class="form-select form-select-sm metal-type">
-                                                <option value="">-- Select Metal --</option>
-                                                <option value="gold" {% if form.metal_type.value == "gold" %}selected{% endif %}>Gold</option>
-                                                <option value="silver" {% if form.metal_type.value == "silver" %}selected{% endif %}>Silver</option>
-                                                <option value="platinum" {% if form.metal_type.value == "platinum" %}selected{% endif %}>Platinum</option>
-                                            </select>
-                                            {% if form.metal_type.errors %}<div class="text-danger small">{{ form.metal_type.errors }}</div>{% endif %}
+                                            {% with form.metal_type as field %}
+                                                <select name="{{ field.html_name }}" class="form-select form-select-sm metal-type" {% if form.is_bound %}value="{{ form.metal_type.value }}"{% endif %}>
+                                                    <option value="">-- Select Metal --</option>
+                                                    <option value="gold" {% if form.metal_type.value == "gold" %}selected{% endif %}>Gold</option>
+                                                    <option value="silver" {% if form.metal_type.value == "silver" %}selected{% endif %}>Silver</option>
+                                                    <option value="platinum" {% if form.metal_type.value == "platinum" %}selected{% endif %}>Platinum</option>
+                                                </select>
+                                                {% if form.metal_type.errors %}<div class="text-danger small">{{ form.metal_type.errors }}</div>{% endif %}
+                                            {% endwith %}
                                         </td>
                                         <td>
-                                            <select name="ordermetal_stock_set-{{ forloop.counter0 }}-purity" class="form-select form-select-sm purity">
-                                                <option value="">-- Select Purity --</option>
-                                                <option value="24K" {% if form.purity.value == "24K" %}selected{% endif %}>24K</option>
-                                                <option value="22K" {% if form.purity.value == "22K" %}selected{% endif %}>22K</option>
-                                                <option value="20K" {% if form.purity.value == "20K" %}selected{% endif %}>20K</option>
-                                                <option value="18K" {% if form.purity.value == "18K" %}selected{% endif %}>18K</option>
-                                                <option value="14K" {% if form.purity.value == "14K" %}selected{% endif %}>14K</option>
-                                            </select>
-                                            {% if form.purity.errors %}<div class="text-danger small">{{ form.purity.errors }}</div>{% endif %}
+                                            {% with form.purity as field %}
+                                                <select name="{{ field.html_name }}" class="form-select form-select-sm purity" {% if form.is_bound %}value="{{ form.purity.value }}"{% endif %}>
+                                                    <option value="">-- Select Purity --</option>
+                                                    <option value="24K" {% if form.purity.value == "24K" %}selected{% endif %}>24K</option>
+                                                    <option value="22K" {% if form.purity.value == "22K" %}selected{% endif %}>22K</option>
+                                                    <option value="20K" {% if form.purity.value == "20K" %}selected{% endif %}>20K</option>
+                                                    <option value="18K" {% if form.purity.value == "18K" %}selected{% endif %}>18K</option>
+                                                    <option value="14K" {% if form.purity.value == "14K" %}selected{% endif %}>14K</option>
+                                                </select>
+                                                {% if form.purity.errors %}<div class="text-danger small">{{ form.purity.errors }}</div>{% endif %}
+                                            {% endwith %}
                                         </td>
                                         <td>
-                                            <input type="number" step="0.001" name="ordermetal_stock_set-{{ forloop.counter0 }}-quantity" class="form-control form-control-sm quantity" value="{{ form.quantity.value|default:'' }}" placeholder="0.000">
-                                            {% if form.quantity.errors %}<div class="text-danger small">{{ form.quantity.errors }}</div>{% endif %}
+                                            {% with form.quantity as field %}
+                                                <input type="number" step="0.001" name="{{ field.html_name }}" class="form-control form-control-sm quantity" value="{{ form.quantity.value|default:'' }}" placeholder="0.000">
+                                                {% if form.quantity.errors %}<div class="text-danger small">{{ form.quantity.errors }}</div>{% endif %}
+                                            {% endwith %}
                                         </td>
                                         <td>
-                                            <input type="number" step="0.01" name="ordermetal_stock_set-{{ forloop.counter0 }}-rate_per_gram" class="form-control form-control-sm rate" value="{{ form.rate_per_gram.value|default:'' }}" placeholder="0.00">
-                                            {% if form.rate_per_gram.errors %}<div class="text-danger small">{{ form.rate_per_gram.errors }}</div>{% endif %}
+                                            {% with form.rate_per_gram as field %}
+                                                <input type="number" step="0.01" name="{{ field.html_name }}" class="form-control form-control-sm rate" value="{{ form.rate_per_gram.value|default:'' }}" placeholder="0.00">
+                                                {% if form.rate_per_gram.errors %}<div class="text-danger small">{{ form.rate_per_gram.errors }}</div>{% endif %}
+                                            {% endwith %}
                                         </td>
                                         <td>
-                                            <input type="number" step="0.01" class="form-control form-control-sm line-amount" value="0.00" readonly style="background-color: #f0f0f0;">
+                                            {% with form.remarks as field %}
+                                                <input type="text" name="{{ field.html_name }}" class="form-control form-control-sm remarks" value="{{ form.remarks.value|default:'' }}" placeholder="Notes...">
+                                                {% if form.remarks.errors %}<div class="text-danger small">{{ form.remarks.errors }}</div>{% endif %}
+                                            {% endwith %}
+                                        </td>
+                                        <td>
+                                            {% if form.line_amount %}
+                                                <input type="number" step="0.01" name="{{ form.line_amount.html_name }}" class="form-control form-control-sm line-amount" value="{{ form.line_amount.value|default:'0.00' }}" readonly style="background-color: #f0f0f0;">
+                                            {% else %}
+                                                <input type="number" step="0.01" class="form-control form-control-sm line-amount" value="0.00" readonly style="background-color: #f0f0f0;">
+                                            {% endif %}
                                         </td>
                                         <td class="text-center">
                                             <button type="button" class="btn btn-sm btn-outline-danger remove-metal-row" title="Remove this metal">×</button>
-                                            <input type="hidden" name="ordermetal_stock_set-{{ forloop.counter0 }}-DELETE" class="delete-checkbox" value="">
+                                            {% with form.DELETE as field %}
+                                                <input type="hidden" name="{{ field.html_name }}" class="delete-checkbox" value="">
+                                            {% endwith %}
                                         </td>
                                     </tr>
                                 {% endfor %}
@@ -1458,9 +1479,17 @@ function addMetalRow() {
     newRow.className = 'metal-stock-row';
     newRow.setAttribute('data-form-index', metalRowCount);
     
+    // Get the formset prefix from the page
+    const totalFormsInput = document.querySelector('input[name$="-TOTAL_FORMS"]');
+    let prefix = 'order_metals';
+    if (totalFormsInput) {
+        const name = totalFormsInput.getAttribute('name');
+        prefix = name.replace('-TOTAL_FORMS', '');
+    }
+    
     newRow.innerHTML = `
         <td>
-            <select name="ordermetal_stock_set-${metalRowCount}-metal_type" class="form-select form-select-sm metal-type">
+            <select name="${prefix}-${metalRowCount}-metal_type" class="form-select form-select-sm metal-type">
                 <option value="">-- Select Metal --</option>
                 <option value="gold">Gold</option>
                 <option value="silver">Silver</option>
@@ -1468,7 +1497,7 @@ function addMetalRow() {
             </select>
         </td>
         <td>
-            <select name="ordermetal_stock_set-${metalRowCount}-purity" class="form-select form-select-sm purity">
+            <select name="${prefix}-${metalRowCount}-purity" class="form-select form-select-sm purity">
                 <option value="">-- Select Purity --</option>
                 <option value="24K">24K</option>
                 <option value="22K">22K</option>
@@ -1478,22 +1507,31 @@ function addMetalRow() {
             </select>
         </td>
         <td>
-            <input type="number" step="0.001" name="ordermetal_stock_set-${metalRowCount}-quantity" class="form-control form-control-sm quantity" placeholder="0.000">
+            <input type="number" step="0.001" name="${prefix}-${metalRowCount}-quantity" class="form-control form-control-sm quantity" placeholder="0.000">
         </td>
         <td>
-            <input type="number" step="0.01" name="ordermetal_stock_set-${metalRowCount}-rate_per_gram" class="form-control form-control-sm rate" placeholder="0.00">
+            <input type="number" step="0.01" name="${prefix}-${metalRowCount}-rate_per_gram" class="form-control form-control-sm rate" placeholder="0.00">
+        </td>
+        <td>
+            <input type="text" name="${prefix}-${metalRowCount}-remarks" class="form-control form-control-sm remarks" placeholder="Notes...">
         </td>
         <td>
             <input type="number" step="0.01" class="form-control form-control-sm line-amount" value="0.00" readonly style="background-color: #f0f0f0;">
         </td>
         <td class="text-center">
             <button type="button" class="btn btn-sm btn-outline-danger remove-metal-row" title="Remove this metal">×</button>
-            <input type="hidden" name="ordermetal_stock_set-${metalRowCount}-DELETE" class="delete-checkbox" value="">
+            <input type="hidden" name="${prefix}-${metalRowCount}-DELETE" class="delete-checkbox" value="">
         </td>
     `;
     
     tbody.appendChild(newRow);
     metalRowCount++;
+    
+    // Update TOTAL_FORMS in the management form
+    const totalFormsField = document.querySelector(`input[name="${prefix}-TOTAL_FORMS"]`);
+    if (totalFormsField) {
+        totalFormsField.value = metalRowCount;
+    }
     
     // Attach listeners to new row
     newRow.querySelector('.quantity').addEventListener('input', () => updateMetalLineAmount(newRow));
@@ -1511,6 +1549,22 @@ function removeMetalRow(row) {
     }
     row.setAttribute('data-deleted', 'true');
     row.style.display = 'none';
+    
+    // Get the formset prefix
+    const totalFormsInput = document.querySelector('input[name$="-TOTAL_FORMS"]');
+    let prefix = 'order_metals';
+    if (totalFormsInput) {
+        const name = totalFormsInput.getAttribute('name');
+        prefix = name.replace('-TOTAL_FORMS', '');
+    }
+    
+    // Update TOTAL_FORMS in the management form
+    const totalFormsField = document.querySelector(`input[name="${prefix}-TOTAL_FORMS"]`);
+    if (totalFormsField && metalRowCount > 0) {
+        metalRowCount--;
+        totalFormsField.value = metalRowCount;
+    }
+    
     updateMetalWeight();  // Update total metal weight
     updateOrderTotal();  // Recalculate order total
 }

@@ -134,6 +134,12 @@ class OrderMetalStockForm(forms.ModelForm):
                 'placeholder': 'Additional notes'
             }),
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make all fields optional to allow empty forms in formset
+        for field_name in self.fields:
+            self.fields[field_name].required = False
 
     def clean(self):
         cleaned = super().clean()

@@ -224,9 +224,18 @@ class OrderCreateView(CreateView):
         
         # Add metal stock formset for adding raw metals
         if self.request.POST:
-            ctx['metal_stock_formset'] = MetalStockFormSet(self.request.POST, instance=self.object if hasattr(self, 'object') else None)
+            # For formset, we need a saved instance, but for CREATE we don't have one yet
+            # So create a temporary unsaved instance for the formset
+            if hasattr(self, 'object') and self.object and self.object.pk:
+                instance = self.object
+            else:
+                instance = None
+            ctx['metal_stock_formset'] = MetalStockFormSet(self.request.POST, instance=instance)
         else:
             ctx['metal_stock_formset'] = MetalStockFormSet(instance=None)
+        
+        # Pass formset prefix to template for use in JavaScript
+        ctx['metal_formset_prefix'] = ctx['metal_stock_formset'].prefix
         
         return ctx
 
@@ -295,23 +304,82 @@ class OrderCreateView(CreateView):
                 ornament.ornament_type = 'order'
             ornament.save()
 
-        # Save metal stock formset
+        # Save metal stock formset - NOW with the saved order instance
+        print(f"\n=== ORDER CREATE VIEW - Processing metal formset for order {self.object.sn} ===")
+        print(f"POST data keys with 'metal': {[k for k in self.request.POST.keys() if 'metal' in k][:5]}")
         metal_stock_formset = MetalStockFormSet(self.request.POST, instance=self.object)
+        print(f"Formset initialized, is_valid={metal_stock_formset.is_valid()}")
+        
         if metal_stock_formset.is_valid():
             # Only save forms that have data (non-empty)
             saved_metals = []
-            for form in metal_stock_formset:
+            formset_forms = list(metal_stock_formset)
+            print(f"DEBUG: Formset has {len(formset_forms)} forms")
+            for idx, form in enumerate(formset_forms):
+                # Check if form marked for deletion
+                is_delete = form.cleaned_data.get('DELETE', False)
+                metal_type_val = form.cleaned_data.get('metal_type')
+                print(f"  Form {idx}: metal_type={metal_type_val}, DELETE={is_delete}")
+                
+                # NOW check metal_type again inside the loop
+                metal_type_inside = form.cleaned_data.get('metal_type')
+                print(f"    >> Inside loop: metal_type={metal_type_inside}")
+                
+                if is_delete:
+                    # Handle deleted forms - restore to stock
+                    if form.instance.pk:
+                        order_metal = form.instance
+                        quantity = order_metal.quantity
+                        metal_type = order_metal.metal_type
+                        
+                        try:
+                            from goldsilverpurchase.models import MetalStockType
+                            raw_stock_type = MetalStockType.objects.get(name__icontains='Raw')
+                            
+                            metal_stock = MetalStock.objects.get(
+                                metal_type=metal_type,
+                                purity=order_metal.purity,
+                                stock_type=raw_stock_type
+                            )
+                            
+                            # Restore quantity to metal stock
+                            metal_stock.quantity += quantity
+                            metal_stock.save()
+                            
+                            # Create a reversal movement record
+                            MetalStockMovement.objects.create(
+                                metal_stock=metal_stock,
+                                movement_type='in',
+                                quantity=quantity,
+                                reference_type='Order',
+                                reference_id=f"Order-{self.object.sn}",
+                                notes=f"Metal removed from order {self.object.sn}"
+                            )
+                        except Exception as e:
+                            messages.warning(self.request, f"Error restoring metal stock: {str(e)}")
+                        
+                        order_metal.delete()
+                    continue
+                
                 # Check if form has actual data (metal_type is selected)
-                if form.cleaned_data.get('metal_type'):
+                metal_type = form.cleaned_data.get('metal_type')
+                print(f"      After deletion check, metal_type={metal_type}, checking truthiness...")
+                if metal_type:
+                    print(f"      *** ENTERED IF BLOCK FOR FORM {idx} ***")
                     # Check if this is a new record (no pk) before saving
                     is_new = not form.instance.pk
+                    print(f"        is_new={is_new}")
                     
                     # Save the order metal entry
+                    print(f"        About to save metal form...")
                     order_metal = form.save()
+                    print(f"        SAVED! order_metal.pk={order_metal.pk}")
                     saved_metals.append(order_metal)
+                    print(f"        Appended to saved_metals")
                     
                     # Deduct from existing metal stock if this is a new entry
                     if is_new:
+                        print(f"        >> Starting stock deduction for is_new={is_new}")
                         # This is a new metal addition to the order
                         quantity = order_metal.quantity
                         metal_type = order_metal.metal_type
@@ -352,47 +420,18 @@ class OrderCreateView(CreateView):
                             )
                         except Exception as e:
                             messages.warning(self.request, f"Error updating metal stock: {str(e)}")
-                elif form.cleaned_data.get('DELETE'):
-                    # Handle deleted forms - restore to stock
-                    if form.instance.pk:
-                        order_metal = form.instance
-                        quantity = order_metal.quantity
-                        metal_type = order_metal.metal_type
-                        
-                        try:
-                            from goldsilverpurchase.models import MetalStockType
-                            raw_stock_type = MetalStockType.objects.get(name__icontains='Raw')
-                            
-                            metal_stock = MetalStock.objects.get(
-                                metal_type=metal_type,
-                                purity=order_metal.purity,
-                                stock_type=raw_stock_type
-                            )
-                            
-                            # Restore quantity to metal stock
-                            metal_stock.quantity += quantity
-                            metal_stock.save()
-                            
-                            # Create a movement record
-                            MetalStockMovement.objects.create(
-                                metal_stock=metal_stock,
-                                movement_type='in',
-                                quantity=quantity,
-                                reference_type='Order',
-                                reference_id=f"Order-{self.object.sn}",
-                                notes=f"Metal removed from order {self.object.sn}"
-                            )
-                        except Exception as e:
-                            messages.warning(self.request, f"Error restoring metal stock: {str(e)}")
-                        
-                        order_metal.delete()
             
             # Delete any remaining empty instances if they exist
             for form in metal_stock_formset.deleted_forms:
                 if form.instance.pk:
                     form.instance.delete()
+            
+            if saved_metals:
+                messages.success(self.request, f"Successfully added {len(saved_metals)} metal records to order")
         else:
-            # Only show warning if there are actual validation errors
+            # Show validation errors for debugging
+            if metal_stock_formset.errors:
+                messages.warning(self.request, f"Metal form errors: {metal_stock_formset.errors}")
             non_form_errors = metal_stock_formset.non_form_errors()
             if non_form_errors:
                 messages.warning(self.request, f"Metal stock issues: {non_form_errors}")
@@ -421,6 +460,7 @@ class OrderCreateView(CreateView):
         # Recompute order totals from created lines (amount/subtotal/total/remaining)
         self.object.recompute_totals_from_lines()
 
+        print(f"[CREATE VIEW] Order {self.object.sn} form_valid completed")
         return redirect('order:list')
         
         
@@ -449,6 +489,9 @@ class OrderUpdateView(UpdateView):
         else:
             ctx['metal_stock_formset'] = MetalStockFormSet(instance=self.object)
         
+        # Pass formset prefix to template for use in JavaScript
+        ctx['metal_formset_prefix'] = ctx['metal_stock_formset'].prefix
+        
         return ctx
 
     def get_success_url(self):
@@ -457,6 +500,10 @@ class OrderUpdateView(UpdateView):
     def form_valid(self, form):
         # Save the order
         self.object = form.save()
+        
+        # DEBUG: Check if metal stock data is in POST
+        print(f"DEBUG UPDATE: TOTAL_FORMS = {self.request.POST.get('ordermetal_stock_set-TOTAL_FORMS')}")
+        print(f"DEBUG UPDATE: POST keys with ordermetal: {[k for k in self.request.POST.keys() if 'ordermetal' in k][:10]}")
 
         # Rebuild per-line OrderOrnament entries from JSON payload
         order_lines_raw = form.cleaned_data.get('order_lines_json') or '[]'
@@ -510,14 +557,54 @@ class OrderUpdateView(UpdateView):
                 ornament_type='stock',
             )
 
-        # Save metal stock formset
+        # Save metal stock formset - NOW with the saved order instance
         metal_stock_formset = MetalStockFormSet(self.request.POST, instance=self.object)
+        
         if metal_stock_formset.is_valid():
             # Only save forms that have data (non-empty)
             saved_metals = []
-            for form in metal_stock_formset:
+            for idx, form in enumerate(metal_stock_formset):
+                # Check if form marked for deletion
+                is_delete = form.cleaned_data.get('DELETE', False)
+                if is_delete:
+                    # Handle deleted forms - restore to stock
+                    if form.instance.pk:
+                        order_metal = form.instance
+                        quantity = order_metal.quantity
+                        metal_type = order_metal.metal_type
+                        
+                        try:
+                            from goldsilverpurchase.models import MetalStockType
+                            raw_stock_type = MetalStockType.objects.get(name__icontains='Raw')
+                            
+                            metal_stock = MetalStock.objects.get(
+                                metal_type=metal_type,
+                                purity=order_metal.purity,
+                                stock_type=raw_stock_type
+                            )
+                            
+                            # Restore quantity to metal stock
+                            metal_stock.quantity += quantity
+                            metal_stock.save()
+                            
+                            # Create a reversal movement record
+                            MetalStockMovement.objects.create(
+                                metal_stock=metal_stock,
+                                movement_type='in',
+                                quantity=quantity,
+                                reference_type='Order',
+                                reference_id=f"Order-{self.object.sn}",
+                                notes=f"Metal removed from order {self.object.sn}"
+                            )
+                        except Exception as e:
+                            messages.warning(self.request, f"Error restoring metal stock: {str(e)}")
+                        
+                        order_metal.delete()
+                    continue
+                
                 # Check if form has actual data (metal_type is selected)
-                if form.cleaned_data.get('metal_type'):
+                metal_type = form.cleaned_data.get('metal_type')
+                if metal_type:
                     # Check if this is a new record (no pk) before saving
                     is_new = not form.instance.pk
                     
@@ -567,47 +654,18 @@ class OrderUpdateView(UpdateView):
                             )
                         except Exception as e:
                             messages.warning(self.request, f"Error updating metal stock: {str(e)}")
-                elif form.cleaned_data.get('DELETE'):
-                    # Handle deleted forms - restore to stock
-                    if form.instance.pk:
-                        order_metal = form.instance
-                        quantity = order_metal.quantity
-                        metal_type = order_metal.metal_type
-                        
-                        try:
-                            from goldsilverpurchase.models import MetalStockType
-                            raw_stock_type = MetalStockType.objects.get(name__icontains='Raw')
-                            
-                            metal_stock = MetalStock.objects.get(
-                                metal_type=metal_type,
-                                purity=order_metal.purity,
-                                stock_type=raw_stock_type
-                            )
-                            
-                            # Restore quantity to metal stock
-                            metal_stock.quantity += quantity
-                            metal_stock.save()
-                            
-                            # Create a movement record
-                            MetalStockMovement.objects.create(
-                                metal_stock=metal_stock,
-                                movement_type='in',
-                                quantity=quantity,
-                                reference_type='Order',
-                                reference_id=f"Order-{self.object.sn}",
-                                notes=f"Metal removed from order {self.object.sn}"
-                            )
-                        except Exception as e:
-                            messages.warning(self.request, f"Error restoring metal stock: {str(e)}")
-                        
-                        order_metal.delete()
             
             # Delete any remaining empty instances if they exist
             for form in metal_stock_formset.deleted_forms:
                 if form.instance.pk:
                     form.instance.delete()
+            
+            if saved_metals:
+                messages.success(self.request, f"Successfully added {len(saved_metals)} metal records to order")
         else:
-            # Only show warning if there are actual validation errors
+            # Show validation errors for debugging
+            if metal_stock_formset.errors:
+                messages.warning(self.request, f"Metal form errors: {metal_stock_formset.errors}")
             non_form_errors = metal_stock_formset.non_form_errors()
             if non_form_errors:
                 messages.warning(self.request, f"Metal stock issues: {non_form_errors}")
