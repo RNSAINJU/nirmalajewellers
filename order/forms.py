@@ -156,5 +156,7 @@ MetalStockFormSet = inlineformset_factory(
     form=OrderMetalStockForm,
     extra=1,
     can_delete=True,
-    fields=['metal_type', 'purity', 'quantity', 'rate_per_gram', 'remarks']
+    fields=['metal_type', 'purity', 'quantity', 'rate_per_gram', 'remarks'],
+    min_num=0,
+    validate_min=False
 )

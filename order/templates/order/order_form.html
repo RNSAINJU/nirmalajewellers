@@ -171,6 +171,83 @@
             </div>
 
             <hr class="my-4" />
+            <h5 class="mb-3">Add Raw Gold & Silver</h5>
+
+            <!-- Metal Stocks Section -->
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label class="form-label mb-0">Raw Metal Details & Rates:</label>
+                </div>
+
+                <!-- Metal Formset Management Form -->
+                {% if metal_stock_formset %}
+                    {{ metal_stock_formset.management_form }}
+                {% endif %}
+                
+                <div style="overflow-x: auto;">
+                    <table class="table table-bordered table-sm" id="metal-stocks-table">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 15%">Metal Type</th>
+                                <th style="width: 15%">Purity</th>
+                                <th style="width: 15%">Quantity (grams)</th>
+                                <th style="width: 15%">Rate/gram</th>
+                                <th style="width: 15%">Line Amount</th>
+                                <th style="width: 10%">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if metal_stock_formset %}
+                                {% for form in metal_stock_formset %}
+                                    <tr class="metal-stock-row" data-form-index="{{ forloop.counter0 }}">
+                                        <!-- Hidden fields for formset (ID, Order) -->
+                                        {{ form.id }}
+                                        {{ form.order }}
+                                        <td>
+                                            <select name="ordermetal_stock_set-{{ forloop.counter0 }}-metal_type" class="form-select form-select-sm metal-type">
+                                                <option value="">-- Select Metal --</option>
+                                                <option value="gold" {% if form.metal_type.value == "gold" %}selected{% endif %}>Gold</option>
+                                                <option value="silver" {% if form.metal_type.value == "silver" %}selected{% endif %}>Silver</option>
+                                                <option value="platinum" {% if form.metal_type.value == "platinum" %}selected{% endif %}>Platinum</option>
+                                            </select>
+                                            {% if form.metal_type.errors %}<div class="text-danger small">{{ form.metal_type.errors }}</div>{% endif %}
+                                        </td>
+                                        <td>
+                                            <select name="ordermetal_stock_set-{{ forloop.counter0 }}-purity" class="form-select form-select-sm purity">
+                                                <option value="">-- Select Purity --</option>
+                                                <option value="24K" {% if form.purity.value == "24K" %}selected{% endif %}>24K</option>
+                                                <option value="22K" {% if form.purity.value == "22K" %}selected{% endif %}>22K</option>
+                                                <option value="20K" {% if form.purity.value == "20K" %}selected{% endif %}>20K</option>
+                                                <option value="18K" {% if form.purity.value == "18K" %}selected{% endif %}>18K</option>
+                                                <option value="14K" {% if form.purity.value == "14K" %}selected{% endif %}>14K</option>
+                                            </select>
+                                            {% if form.purity.errors %}<div class="text-danger small">{{ form.purity.errors }}</div>{% endif %}
+                                        </td>
+                                        <td>
+                                            <input type="number" step="0.001" name="ordermetal_stock_set-{{ forloop.counter0 }}-quantity" class="form-control form-control-sm quantity" value="{{ form.quantity.value|default:'' }}" placeholder="0.000">
+                                            {% if form.quantity.errors %}<div class="text-danger small">{{ form.quantity.errors }}</div>{% endif %}
+                                        </td>
+                                        <td>
+                                            <input type="number" step="0.01" name="ordermetal_stock_set-{{ forloop.counter0 }}-rate_per_gram" class="form-control form-control-sm rate" value="{{ form.rate_per_gram.value|default:'' }}" placeholder="0.00">
+                                            {% if form.rate_per_gram.errors %}<div class="text-danger small">{{ form.rate_per_gram.errors }}</div>{% endif %}
+                                        </td>
+                                        <td>
+                                            <input type="number" step="0.01" class="form-control form-control-sm line-amount" value="0.00" readonly style="background-color: #f0f0f0;">
+                                        </td>
+                                        <td class="text-center">
+                                            <button type="button" class="btn btn-sm btn-outline-danger remove-metal-row" title="Remove this metal">×</button>
+                                            <input type="hidden" name="ordermetal_stock_set-{{ forloop.counter0 }}-DELETE" class="delete-checkbox" value="">
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary mt-2" id="add-metal-row">+ Add Metal Row</button>
+            </div>
+
+            <hr class="my-4" />
             <h5 class="mb-3">Select Existing Ornaments from Inventory</h5>
 
             <div class="mb-3">
@@ -250,6 +327,11 @@
                                         <label class="form-label fw-bold mb-1">Total</label>
                                         <input type="number" id="order-total" class="form-control form-control-sm" step="0.01" value="0" readonly style="background-color: #e8f5e9; font-weight: bold; border: 2px solid #4caf50;">
                                     </div>
+                                    <div class="col-12">
+                                        <hr class="my-2">
+                                        <label class="form-label fw-bold mb-1">Total Metal Weight (grams)</label>
+                                        <input type="number" id="total-metal-weight" class="form-control form-control-sm" step="0.001" value="0.000" readonly style="background-color: #f0f0f0;">
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -288,75 +370,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <hr class="my-4" />
-            <h5 class="mb-3">Add Raw Gold & Silver</h5>
-
-            <!-- Metal Stocks Section -->
-            <div class="mb-3">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <label class="form-label mb-0">Raw Metal Details & Rates:</label>
-                </div>
-                
-                <div style="overflow-x: auto;">
-                    <table class="table table-bordered table-sm" id="metal-stocks-table">
-                        <thead class="table-light">
-                            <tr>
-                                <th style="width: 15%">Metal Type</th>
-                                <th style="width: 15%">Purity</th>
-                                <th style="width: 15%">Quantity (grams)</th>
-                                <th style="width: 15%">Rate/gram</th>
-                                <th style="width: 15%">Line Amount</th>
-                                <th style="width: 10%">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% if metal_stock_formset %}
-                                {% for form in metal_stock_formset %}
-                                    <tr class="metal-stock-row" data-form-index="{{ forloop.counter0 }}">
-                                        <td>
-                                            <select name="ordermetal_stock_set-{{ forloop.counter0 }}-metal_type" class="form-select form-select-sm metal-type">
-                                                <option value="">-- Select Metal --</option>
-                                                <option value="gold" {% if form.metal_type.value == "gold" %}selected{% endif %}>Gold</option>
-                                                <option value="silver" {% if form.metal_type.value == "silver" %}selected{% endif %}>Silver</option>
-                                                <option value="platinum" {% if form.metal_type.value == "platinum" %}selected{% endif %}>Platinum</option>
-                                            </select>
-                                            {% if form.metal_type.errors %}<div class="text-danger small">{{ form.metal_type.errors }}</div>{% endif %}
-                                        </td>
-                                        <td>
-                                            <select name="ordermetal_stock_set-{{ forloop.counter0 }}-purity" class="form-select form-select-sm purity">
-                                                <option value="">-- Select Purity --</option>
-                                                <option value="24K" {% if form.purity.value == "24K" %}selected{% endif %}>24K</option>
-                                                <option value="22K" {% if form.purity.value == "22K" %}selected{% endif %}>22K</option>
-                                                <option value="20K" {% if form.purity.value == "20K" %}selected{% endif %}>20K</option>
-                                                <option value="18K" {% if form.purity.value == "18K" %}selected{% endif %}>18K</option>
-                                                <option value="14K" {% if form.purity.value == "14K" %}selected{% endif %}>14K</option>
-                                            </select>
-                                            {% if form.purity.errors %}<div class="text-danger small">{{ form.purity.errors }}</div>{% endif %}
-                                        </td>
-                                        <td>
-                                            <input type="number" step="0.001" name="ordermetal_stock_set-{{ forloop.counter0 }}-quantity" class="form-control form-control-sm quantity" value="{{ form.quantity.value|default:'' }}" placeholder="0.000">
-                                            {% if form.quantity.errors %}<div class="text-danger small">{{ form.quantity.errors }}</div>{% endif %}
-                                        </td>
-                                        <td>
-                                            <input type="number" step="0.01" name="ordermetal_stock_set-{{ forloop.counter0 }}-rate_per_gram" class="form-control form-control-sm rate" value="{{ form.rate_per_gram.value|default:'' }}" placeholder="0.00">
-                                            {% if form.rate_per_gram.errors %}<div class="text-danger small">{{ form.rate_per_gram.errors }}</div>{% endif %}
-                                        </td>
-                                        <td>
-                                            <input type="number" step="0.01" class="form-control form-control-sm line-amount" value="0.00" readonly style="background-color: #f0f0f0;">
-                                        </td>
-                                        <td class="text-center">
-                                            <button type="button" class="btn btn-sm btn-outline-danger remove-metal-row" title="Remove this metal">×</button>
-                                            <input type="hidden" name="ordermetal_stock_set-{{ forloop.counter0 }}-DELETE" class="delete-checkbox" value="">
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            {% endif %}
-                        </tbody>
-                    </table>
-                </div>
-                <button type="button" class="btn btn-sm btn-outline-secondary mt-2" id="add-metal-row">+ Add Metal Row</button>
             </div>
 
             <!-- Submit buttons -->
@@ -814,7 +827,12 @@ function updateOrderTotal() {
         amount += parseFloat(field.value) || 0;
     });
 
-    // Update visible Amount field (only changes when ornaments change)
+    // Include raw metal stock line amounts
+    document.querySelectorAll('.metal-stock-row:not([data-deleted]) .line-amount').forEach(field => {
+        amount += parseFloat(field.value) || 0;
+    });
+
+    // Update visible Amount field (only changes when ornaments/metals change)
     const amountField = document.getElementById('order-subtotal');
     if (amountField) {
         amountField.value = amount.toFixed(2);
@@ -851,7 +869,7 @@ function updateDerivedFields(amount) {
     if (manualFlag && manualTax > 0) {
         autoTax = manualTax;
     } else {
-        // Auto-calculate 2% tax on Gold and Diamond ornaments ONLY (excluding Silver)
+        // Auto-calculate 2% tax on Gold and Diamond ornaments ONLY + Raw Gold/Silver
         // First, calculate amount for Gold and Diamond ornaments only
         let goldDiamondAmount = 0;
         document.querySelectorAll('.subtotal-display').forEach(field => {
@@ -875,13 +893,22 @@ function updateDerivedFields(amount) {
             }
         });
         
-        // Apply discount proportionally to Gold/Diamond amount
-        const goldDiamondPercentage = amount > 0 ? goldDiamondAmount / amount : 0;
-        const discountForGoldDiamond = discount * goldDiamondPercentage;
-        const goldDiamondDiscounted = Math.max(0, goldDiamondAmount - discountForGoldDiamond);
+        // Include raw metal stock line amounts
+        let metalAmount = 0;
+        document.querySelectorAll('.metal-stock-row:not([data-deleted]) .line-amount').forEach(field => {
+            metalAmount += parseFloat(field.value) || 0;
+        });
         
-        // Apply 2% tax only to Gold and Diamond ornaments
-        autoTax = goldDiamondDiscounted * 0.02;
+        // Total amount taxable = Gold/Diamond ornaments + Raw Metals
+        const taxableAmount = goldDiamondAmount + metalAmount;
+        
+        // Apply discount proportionally to taxable amount
+        const taxablePercentage = amount > 0 ? taxableAmount / amount : 0;
+        const discountForTaxable = discount * taxablePercentage;
+        const taxableDiscounted = Math.max(0, taxableAmount - discountForTaxable);
+        
+        // Apply 2% tax only to Gold/Diamond ornaments + Raw metals
+        autoTax = taxableDiscounted * 0.02;
         // Reset manual flag because we're auto-calculating
         if (taxField) taxField.dataset.manual = 'false';
     }
@@ -1390,6 +1417,9 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Form submitted with total:', orderTotal, 'discount:', orderDiscount, 'tax:', orderTax);
         });
     }
+
+    // Initialize metal row listeners and calculations
+    initializeMetalStocks();
 });
 
 function deleteRow(btn) {
@@ -1404,16 +1434,19 @@ function updateMetalLineAmount(row) {
     const rate = parseFloat(row.querySelector('.rate')?.value) || 0;
     const lineAmount = quantity * rate;
     row.querySelector('.line-amount').value = lineAmount.toFixed(2);
-    updateMetalTotal();
+    updateMetalWeight();  // Update total metal weight
+    updateOrderTotal();  // Recalculate entire order total
 }
 
-function updateMetalTotal() {
-    let total = 0;
-    document.querySelectorAll('.metal-stock-row:not([data-deleted])').forEach(row => {
-        const lineAmount = parseFloat(row.querySelector('.line-amount')?.value) || 0;
-        total += lineAmount;
+function updateMetalWeight() {
+    let totalWeight = 0;
+    document.querySelectorAll('.metal-stock-row:not([data-deleted]) .quantity').forEach(field => {
+        totalWeight += parseFloat(field.value) || 0;
     });
-    updateOrderTotal();
+    const weightField = document.getElementById('total-metal-weight');
+    if (weightField) {
+        weightField.value = totalWeight.toFixed(3);
+    }
 }
 
 function addMetalRow() {
@@ -1478,11 +1511,12 @@ function removeMetalRow(row) {
     }
     row.setAttribute('data-deleted', 'true');
     row.style.display = 'none';
-    updateMetalTotal();
+    updateMetalWeight();  // Update total metal weight
+    updateOrderTotal();  // Recalculate order total
 }
 
 // Initialize metal row listeners
-document.addEventListener('DOMContentLoaded', function() {
+function initializeMetalStocks() {
     // Attach listeners to existing metal rows
     document.querySelectorAll('.metal-stock-row').forEach(row => {
         row.querySelector('.quantity')?.addEventListener('input', () => updateMetalLineAmount(row));
@@ -1499,7 +1533,13 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         addMetalRow();
     });
-});
+
+    // Update metal weight display
+    updateMetalWeight();
+    
+    // Trigger overall update to recalculate totals including metals
+    updateOrderTotal();
+}
 </script>
 
 {% endblock %}

@@ -166,6 +166,24 @@ class Order(models.Model):
             "updated_at",
         ])
 
+    def get_total_metal_weight(self):
+        """Get total weight of all metals in the order (in grams)."""
+        from decimal import Decimal as _D
+        return sum(
+            (metal.quantity or _D("0")) for metal in self.order_metals.all()
+        )
+
+    def get_metal_weight_by_type(self):
+        """Get total weight by metal type (gold, silver, platinum)."""
+        from decimal import Decimal as _D
+        weight_by_type = {}
+        for metal in self.order_metals.all():
+            metal_type = metal.get_metal_type_display() or metal.metal_type
+            if metal_type not in weight_by_type:
+                weight_by_type[metal_type] = _D("0")
+            weight_by_type[metal_type] += metal.quantity or _D("0")
+        return weight_by_type
+
 
 class OrderPayment(models.Model):
     """Individual payment entry for an order (supports mixed modes)."""

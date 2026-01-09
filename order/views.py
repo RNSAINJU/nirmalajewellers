@@ -18,6 +18,7 @@ from .models import Order, OrderOrnament, OrderPayment, OrderMetalStock
 from sales.models import Sale
 from .forms import OrderForm, OrnamentFormSet, MetalStockFormSet
 from ornament.models import Ornament, Kaligar
+from goldsilverpurchase.models import MetalStock, MetalStockMovement
 
 app_name = 'order'
 
@@ -297,9 +298,104 @@ class OrderCreateView(CreateView):
         # Save metal stock formset
         metal_stock_formset = MetalStockFormSet(self.request.POST, instance=self.object)
         if metal_stock_formset.is_valid():
-            metal_stock_formset.save()
+            # Only save forms that have data (non-empty)
+            saved_metals = []
+            for form in metal_stock_formset:
+                # Check if form has actual data (metal_type is selected)
+                if form.cleaned_data.get('metal_type'):
+                    # Check if this is a new record (no pk) before saving
+                    is_new = not form.instance.pk
+                    
+                    # Save the order metal entry
+                    order_metal = form.save()
+                    saved_metals.append(order_metal)
+                    
+                    # Deduct from existing metal stock if this is a new entry
+                    if is_new:
+                        # This is a new metal addition to the order
+                        quantity = order_metal.quantity
+                        metal_type = order_metal.metal_type
+                        
+                        # Find matching metal stock (Raw type with same metal and purity)
+                        try:
+                            from goldsilverpurchase.models import MetalStockType
+                            raw_stock_type = MetalStockType.objects.get(name__icontains='Raw')
+                            
+                            metal_stock = MetalStock.objects.get(
+                                metal_type=metal_type,
+                                purity=order_metal.purity,
+                                stock_type=raw_stock_type
+                            )
+                            
+                            # Deduct quantity from metal stock
+                            metal_stock.quantity -= quantity
+                            if metal_stock.quantity < 0:
+                                messages.warning(
+                                    self.request,
+                                    f"Warning: {metal_stock.get_metal_type_display()} stock ({metal_stock.purity}) is now negative: {metal_stock.quantity}g"
+                                )
+                            metal_stock.save()
+                            
+                            # Create a movement record
+                            MetalStockMovement.objects.create(
+                                metal_stock=metal_stock,
+                                movement_type='out',
+                                quantity=quantity,
+                                reference_type='Order',
+                                reference_id=f"Order-{self.object.sn}",
+                                notes=f"Metal added to order {self.object.sn} for customer {self.object.customer_name}"
+                            )
+                        except MetalStock.DoesNotExist:
+                            messages.warning(
+                                self.request,
+                                f"No matching metal stock found for {metal_type} ({order_metal.purity}). Please add to inventory first."
+                            )
+                        except Exception as e:
+                            messages.warning(self.request, f"Error updating metal stock: {str(e)}")
+                elif form.cleaned_data.get('DELETE'):
+                    # Handle deleted forms - restore to stock
+                    if form.instance.pk:
+                        order_metal = form.instance
+                        quantity = order_metal.quantity
+                        metal_type = order_metal.metal_type
+                        
+                        try:
+                            from goldsilverpurchase.models import MetalStockType
+                            raw_stock_type = MetalStockType.objects.get(name__icontains='Raw')
+                            
+                            metal_stock = MetalStock.objects.get(
+                                metal_type=metal_type,
+                                purity=order_metal.purity,
+                                stock_type=raw_stock_type
+                            )
+                            
+                            # Restore quantity to metal stock
+                            metal_stock.quantity += quantity
+                            metal_stock.save()
+                            
+                            # Create a movement record
+                            MetalStockMovement.objects.create(
+                                metal_stock=metal_stock,
+                                movement_type='in',
+                                quantity=quantity,
+                                reference_type='Order',
+                                reference_id=f"Order-{self.object.sn}",
+                                notes=f"Metal removed from order {self.object.sn}"
+                            )
+                        except Exception as e:
+                            messages.warning(self.request, f"Error restoring metal stock: {str(e)}")
+                        
+                        order_metal.delete()
+            
+            # Delete any remaining empty instances if they exist
+            for form in metal_stock_formset.deleted_forms:
+                if form.instance.pk:
+                    form.instance.delete()
         else:
-            messages.warning(self.request, f"Metal stock formset had errors: {metal_stock_formset.errors}")
+            # Only show warning if there are actual validation errors
+            non_form_errors = metal_stock_formset.non_form_errors()
+            if non_form_errors:
+                messages.warning(self.request, f"Metal stock issues: {non_form_errors}")
 
         # Persist payment breakdown
         payment_lines_raw = form.cleaned_data.get('payment_lines_json') or '[]'
@@ -417,9 +513,104 @@ class OrderUpdateView(UpdateView):
         # Save metal stock formset
         metal_stock_formset = MetalStockFormSet(self.request.POST, instance=self.object)
         if metal_stock_formset.is_valid():
-            metal_stock_formset.save()
+            # Only save forms that have data (non-empty)
+            saved_metals = []
+            for form in metal_stock_formset:
+                # Check if form has actual data (metal_type is selected)
+                if form.cleaned_data.get('metal_type'):
+                    # Check if this is a new record (no pk) before saving
+                    is_new = not form.instance.pk
+                    
+                    # Save the order metal entry
+                    order_metal = form.save()
+                    saved_metals.append(order_metal)
+                    
+                    # Deduct from existing metal stock if this is a new entry
+                    if is_new:
+                        # This is a new metal addition to the order
+                        quantity = order_metal.quantity
+                        metal_type = order_metal.metal_type
+                        
+                        # Find matching metal stock (Raw type with same metal and purity)
+                        try:
+                            from goldsilverpurchase.models import MetalStockType
+                            raw_stock_type = MetalStockType.objects.get(name__icontains='Raw')
+                            
+                            metal_stock = MetalStock.objects.get(
+                                metal_type=metal_type,
+                                purity=order_metal.purity,
+                                stock_type=raw_stock_type
+                            )
+                            
+                            # Deduct quantity from metal stock
+                            metal_stock.quantity -= quantity
+                            if metal_stock.quantity < 0:
+                                messages.warning(
+                                    self.request,
+                                    f"Warning: {metal_stock.get_metal_type_display()} stock ({metal_stock.purity}) is now negative: {metal_stock.quantity}g"
+                                )
+                            metal_stock.save()
+                            
+                            # Create a movement record
+                            MetalStockMovement.objects.create(
+                                metal_stock=metal_stock,
+                                movement_type='out',
+                                quantity=quantity,
+                                reference_type='Order',
+                                reference_id=f"Order-{self.object.sn}",
+                                notes=f"Metal added to order {self.object.sn} for customer {self.object.customer_name}"
+                            )
+                        except MetalStock.DoesNotExist:
+                            messages.warning(
+                                self.request,
+                                f"No matching metal stock found for {metal_type} ({order_metal.purity}). Please add to inventory first."
+                            )
+                        except Exception as e:
+                            messages.warning(self.request, f"Error updating metal stock: {str(e)}")
+                elif form.cleaned_data.get('DELETE'):
+                    # Handle deleted forms - restore to stock
+                    if form.instance.pk:
+                        order_metal = form.instance
+                        quantity = order_metal.quantity
+                        metal_type = order_metal.metal_type
+                        
+                        try:
+                            from goldsilverpurchase.models import MetalStockType
+                            raw_stock_type = MetalStockType.objects.get(name__icontains='Raw')
+                            
+                            metal_stock = MetalStock.objects.get(
+                                metal_type=metal_type,
+                                purity=order_metal.purity,
+                                stock_type=raw_stock_type
+                            )
+                            
+                            # Restore quantity to metal stock
+                            metal_stock.quantity += quantity
+                            metal_stock.save()
+                            
+                            # Create a movement record
+                            MetalStockMovement.objects.create(
+                                metal_stock=metal_stock,
+                                movement_type='in',
+                                quantity=quantity,
+                                reference_type='Order',
+                                reference_id=f"Order-{self.object.sn}",
+                                notes=f"Metal removed from order {self.object.sn}"
+                            )
+                        except Exception as e:
+                            messages.warning(self.request, f"Error restoring metal stock: {str(e)}")
+                        
+                        order_metal.delete()
+            
+            # Delete any remaining empty instances if they exist
+            for form in metal_stock_formset.deleted_forms:
+                if form.instance.pk:
+                    form.instance.delete()
         else:
-            messages.warning(self.request, f"Metal stock formset had errors: {metal_stock_formset.errors}")
+            # Only show warning if there are actual validation errors
+            non_form_errors = metal_stock_formset.non_form_errors()
+            if non_form_errors:
+                messages.warning(self.request, f"Metal stock issues: {non_form_errors}")
 
         # Persist payment breakdown
         payment_lines_raw = form.cleaned_data.get('payment_lines_json') or '[]'
