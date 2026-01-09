@@ -113,7 +113,7 @@ class Order(models.Model):
     def recompute_totals_from_lines(self):
         """Recalculate amount/subtotal/total/remaining based on lines and payments.
 
-        - amount = sum of line_amount from all related order_ornaments
+        - amount = sum of line_amount from all related order_ornaments and order_metals
         - subtotal = max(0, amount - discount)
         - total = subtotal + tax
         - payment_amount = sum of related payments
@@ -122,9 +122,14 @@ class Order(models.Model):
         """
         from decimal import Decimal as _D
 
-        line_sum = sum(
+        # Sum from both ornaments and metal stock items
+        ornament_sum = sum(
             (line.line_amount or _D("0")) for line in self.order_ornaments.all()
         )
+        metal_sum = sum(
+            (line.line_amount or _D("0")) for line in self.order_metals.all()
+        )
+        line_sum = ornament_sum + metal_sum
 
         payment_entries = list(self.payments.all()) if hasattr(self, "payments") else []
         payment_sum = sum((p.amount or _D("0")) for p in payment_entries)
@@ -259,3 +264,92 @@ class OrderOrnament(models.Model):
     def __str__(self):
         return f"Order {self.order_id} - {self.ornament}"
 
+
+class OrderMetalStock(models.Model):
+    """Per-order raw metal (gold/silver) line item with rates and quantities."""
+
+    class MetalType(models.TextChoices):
+        GOLD = 'gold', 'Gold'
+        SILVER = 'silver', 'Silver'
+        PLATINUM = 'platinum', 'Platinum'
+
+    class Purity(models.TextChoices):
+        TWENTYFOURKARAT = '24K', '24 Karat'
+        TWENTYTWOKARAT = '22K', '22 Karat'
+        EIGHTEENKARAT = '18K', '18 Karat'
+        FOURTEENKARAT = '14K', '14 Karat'
+
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name="order_metals",
+        help_text="Associated order"
+    )
+
+    metal_type = models.CharField(
+        max_length=10,
+        choices=MetalType.choices,
+        default=MetalType.GOLD,
+        help_text="Type of metal"
+    )
+
+    purity = models.CharField(
+        max_length=5,
+        choices=Purity.choices,
+        default=Purity.TWENTYFOURKARAT,
+        help_text="Purity/Karat of the metal"
+    )
+
+    quantity = models.DecimalField(
+        max_digits=12,
+        decimal_places=3,
+        default=Decimal("0.000"),
+        help_text="Quantity in grams"
+    )
+
+    rate_per_gram = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        help_text="Rate per gram at the time of order"
+    )
+
+    line_amount = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        blank=True,
+        null=True,
+        help_text="Auto-calculated: Quantity × Rate per gram"
+    )
+
+    remarks = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Additional notes about this metal item"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Order Metal Stock"
+        verbose_name_plural = "Order Metal Stocks"
+        indexes = [
+            models.Index(fields=['order', 'metal_type']),
+        ]
+
+    def __str__(self):
+        return f"Order {self.order_id} - {self.get_metal_type_display()} ({self.purity}) - {self.quantity}g"
+
+    def save(self, *args, **kwargs):
+        """Auto-calculate line amount"""
+        # Ensure Decimal values
+        if isinstance(self.quantity, (int, float)):
+            self.quantity = Decimal(str(self.quantity))
+        self.rate_per_gram = self.rate_per_gram or Decimal('0.00')
+
+        # Calculate line amount
+        self.line_amount = (self.quantity * self.rate_per_gram).quantize(Decimal('0.01'))
+
+        super().save(*args, **kwargs)

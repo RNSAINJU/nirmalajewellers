@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+    .detail-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        padding: 30px;
+        margin-bottom: 30px;
+    }
+    .detail-header {
+        border-bottom: 3px solid #667eea;
+        padding-bottom: 20px;
+        margin-bottom: 25px;
+    }
+    .detail-header h2 {
+        color: #333;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+    .detail-info {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        gap: 20px;
+        margin-top: 20px;
+    }
+    .info-item {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        border-left: 4px solid #667eea;
+    }
+    .info-label {
+        color: #6c757d;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+    .info-value {
+        color: #333;
+        font-size: 18px;
+        font-weight: 700;
+    }
+    .badge-raw {
+        background-color: #ffc107;
+        color: #000;
+        padding: 8px 12px;
+        border-radius: 6px;
+    }
+    .badge-refined {
+        background-color: #28a745;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+    }
+    .movement-table {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+    .table thead {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    .table thead th {
+        border: none;
+        font-weight: 600;
+        padding: 15px;
+        vertical-align: middle;
+    }
+    .table tbody tr {
+        border-bottom: 1px solid #e9ecef;
+    }
+    .table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    .table tbody td {
+        padding: 12px 15px;
+        vertical-align: middle;
+    }
+    .movement-in {
+        background: #d4edda;
+        color: #155724;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    .movement-out {
+        background: #f8d7da;
+        color: #721c24;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    .movement-adjustment {
+        background: #cfe2ff;
+        color: #084298;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    .back-button {
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-weight: 600;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-block;
+    }
+    .back-button:hover {
+        background: #764ba2;
+        color: white;
+        text-decoration: none;
+    }
+    @media (max-width: 768px) {
+        .detail-info {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+    @media (max-width: 480px) {
+        .detail-info {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="container-fluid p-4">
+    <!-- Back Button -->
+    <a href="{% url 'gsp:metal_stock_list' %}" class="back-button mb-4">
+        <i class="fas fa-arrow-left"></i> Back to Stocks
+    </a>
+
+    <!-- Stock Details Card -->
+    <div class="detail-card">
+        <div class="detail-header">
+            <h2>
+                <i class="fas fa-cube"></i> 
+                {{ metal_stock.get_metal_type_display }} Stock Details
+            </h2>
+            <p class="text-muted mb-0">
+                <span class="badge {% if metal_stock.stock_type.name == 'raw' %}badge-raw{% else %}badge-refined{% endif %}">
+                    {{ metal_stock.stock_type.get_name_display }}
+                </span>
+                <span class="badge bg-secondary ms-2">{{ metal_stock.purity }}</span>
+            </p>
+        </div>
+
+        <div class="detail-info">
+            <div class="info-item">
+                <div class="info-label">Quantity</div>
+                <div class="info-value">{{ metal_stock.quantity }} g</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Unit Cost</div>
+                <div class="info-value">₹{{ metal_stock.unit_cost|floatformat:2 }}/g</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Total Cost</div>
+                <div class="info-value">₹{{ metal_stock.total_cost|floatformat:2 }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Location</div>
+                <div class="info-value" style="color: #667eea;">
+                    {% if metal_stock.location %}
+                        {{ metal_stock.location }}
+                    {% else %}
+                        <span class="text-danger">Not specified</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {% if metal_stock.remarks %}
+        <div class="mt-4 p-3" style="background: #f0f7ff; border-left: 4px solid #667eea; border-radius: 8px;">
+            <strong>Remarks:</strong>
+            <p class="mb-0 mt-2">{{ metal_stock.remarks }}</p>
+        </div>
+        {% endif %}
+
+        <div class="mt-4 pt-3" style="border-top: 1px solid #e9ecef;">
+            <small class="text-muted">
+                <strong>Created:</strong> {{ metal_stock.created_at|date:"Y-m-d H:i" }} |
+                <strong>Last Updated:</strong> {{ metal_stock.last_updated|date:"Y-m-d" }}
+            </small>
+        </div>
+    </div>
+
+    <!-- Movement History -->
+    <div class="detail-card">
+        <div class="detail-header">
+            <h3>
+                <i class="fas fa-history"></i> Stock Movement History
+            </h3>
+        </div>
+
+        {% if movements %}
+        <div class="table-responsive movement-table">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Movement Type</th>
+                        <th>Quantity (g)</th>
+                        <th>Reference Type</th>
+                        <th>Reference ID</th>
+                        <th>Notes</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for movement in movements %}
+                    <tr>
+                        <td>
+                            {% if movement.movement_type == 'in' %}
+                                <span class="movement-in">
+                                    <i class="fas fa-arrow-down"></i> Stock In
+                                </span>
+                            {% elif movement.movement_type == 'out' %}
+                                <span class="movement-out">
+                                    <i class="fas fa-arrow-up"></i> Stock Out
+                                </span>
+                            {% else %}
+                                <span class="movement-adjustment">
+                                    <i class="fas fa-sync-alt"></i> Adjustment
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="fw-bold">{{ movement.quantity }}</td>
+                        <td>
+                            {% if movement.reference_type %}
+                                <small class="text-muted">{{ movement.reference_type }}</small>
+                            {% else %}
+                                <small class="text-muted text-secondary">—</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if movement.reference_id %}
+                                <code class="bg-light p-1 rounded">{{ movement.reference_id }}</code>
+                            {% else %}
+                                <small class="text-muted">—</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if movement.notes %}
+                                <small class="text-muted">{{ movement.notes|truncatewords:10 }}</small>
+                            {% else %}
+                                <small class="text-muted text-secondary">No notes</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small>{{ movement.movement_date|date:"Y-m-d" }}</small>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info text-center py-5">
+            <i class="fas fa-inbox fa-2x mb-2"></i>
+            <p>No movement history available for this stock item yet.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

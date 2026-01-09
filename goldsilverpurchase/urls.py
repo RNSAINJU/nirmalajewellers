@@ -7,6 +7,8 @@ from .views import (
     export_excel, print_view, import_excel,
     export_customer_excel, import_customer_excel,
     data_settings, export_all_data,
+    MetalStockListView, metal_stock_detail,
+    MetalStockCreateView, MetalStockUpdateView,
 )
 
 app_name = 'gsp'
@@ -28,4 +30,8 @@ urlpatterns = [
     path('import-excel/', import_excel, name='gsp_import_excel'),
     path('data-settings/', data_settings, name='data_settings'),
     path('export-all-data/', export_all_data, name='export_all_data'),
+    path('metal-stock/', MetalStockListView.as_view(), name='metal_stock_list'),
+    path('metal-stock/create/', MetalStockCreateView.as_view(), name='metal_stock_create'),
+    path('metal-stock/<int:pk>/', metal_stock_detail, name='metal_stock_detail'),
+    path('metal-stock/<int:pk>/edit/', MetalStockUpdateView.as_view(), name='metal_stock_update'),
 ]

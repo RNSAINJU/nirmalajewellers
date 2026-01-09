@@ -195,3 +195,206 @@ class CustomerPurchase(models.Model):
 
     def __str__(self):
         return f"{self.sn} - {self.customer_name}"
+
+
+class MetalStockType(models.Model):
+    """Model to define different types of metal stock"""
+    class StockTypeChoices(models.TextChoices):
+        RAW = 'raw', 'Raw'
+        REFINED = 'refined', 'Refined'
+        SCRAP = 'scrap', 'Scrap'
+        OTHER = 'other', 'Other'
+
+    name = models.CharField(
+        max_length=20,
+        choices=StockTypeChoices.choices,
+        unique=True
+    )
+    description = models.CharField(max_length=255, blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Metal Stock Type"
+        verbose_name_plural = "Metal Stock Types"
+
+    def __str__(self):
+        return str(self.get_name_display())
+
+
+class MetalStock(models.Model):
+    """Model to track gold and silver stock with raw and refined variants"""
+    class MetalType(models.TextChoices):
+        GOLD = 'gold', 'Gold'
+        SILVER = 'silver', 'Silver'
+        PLATINUM = 'platinum', 'Platinum'
+
+    class Purity(models.TextChoices):
+        TWENTYFOURKARAT = '24K', '24 Karat'
+        TWENTYTWOKARAT = '22K', '22 Karat'
+        EIGHTEENKARAT = '18K', '18 Karat'
+        FOURTEENKARAT = '14K', '14 Karat'
+
+    # Core fields
+    metal_type = models.CharField(
+        max_length=10,
+        choices=MetalType.choices,
+        default=MetalType.GOLD
+    )
+    stock_type = models.ForeignKey(
+        MetalStockType,
+        on_delete=models.PROTECT,
+        related_name='metal_stocks',
+        help_text='Type of stock: Raw or Refined'
+    )
+    purity = models.CharField(
+        max_length=5,
+        choices=Purity.choices,
+        default=Purity.TWENTYTWOKARAT,
+        help_text='Purity/Karat of the metal'
+    )
+
+    # Quantity tracking
+    quantity = models.DecimalField(
+        max_digits=12,
+        decimal_places=3,
+        validators=[MinValueValidator(0)],
+        default=Decimal('0.000'),
+        help_text='Weight in grams'
+    )
+
+    # Cost tracking
+    unit_cost = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        default=Decimal('0.00'),
+        help_text='Cost per gram'
+    )
+
+    total_cost = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        default=Decimal('0.00'),
+        blank=True,
+        null=True,
+        help_text='Auto-calculated: Quantity × Unit Cost'
+    )
+
+    # Location/Storage
+    location = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text='Storage location (e.g., Safe, Almirah, etc.)'
+    )
+
+    # Remarks and notes
+    remarks = models.TextField(
+        blank=True,
+        null=True,
+        help_text='Additional notes about the stock'
+    )
+
+    # Timestamps
+    last_updated = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Metal Stock"
+        verbose_name_plural = "Metal Stocks"
+        ordering = ['-last_updated', '-created_at']
+        indexes = [
+            models.Index(fields=['metal_type', 'stock_type']),
+            models.Index(fields=['metal_type', 'purity']),
+            models.Index(fields=['stock_type']),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['metal_type', 'stock_type', 'purity', 'location'],
+                name='unique_metal_stock_combination'
+            )
+        ]
+
+    def __str__(self):
+        stock_type_display = str(self.stock_type) if self.stock_type else 'Unknown'
+        return f"{self.get_metal_type_display()} - {stock_type_display} ({self.purity})"
+
+    def save(self, *args, **kwargs):
+        """Auto-calculate total cost"""
+        # Ensure Decimal values
+        if isinstance(self.quantity, (int, float)):
+            self.quantity = Decimal(str(self.quantity))
+        self.unit_cost = self.unit_cost or Decimal('0.00')
+
+        # Calculate total cost
+        self.total_cost = (self.quantity * self.unit_cost).quantize(Decimal('0.01'))
+
+        super().save(*args, **kwargs)
+
+    @property
+    def is_low_stock(self):
+        """Check if stock is running low (can be customized)"""
+        # You can define a minimum threshold per metal type
+        minimum_thresholds = {
+            'gold': Decimal('50.000'),
+            'silver': Decimal('200.000'),
+            'platinum': Decimal('10.000'),
+        }
+        threshold = minimum_thresholds.get(self.metal_type, Decimal('0.000'))
+        return self.quantity < threshold
+
+
+class MetalStockMovement(models.Model):
+    """Model to track all movements (additions/deductions) of metal stock"""
+    class MovementType(models.TextChoices):
+        IN = 'in', 'Stock In'
+        OUT = 'out', 'Stock Out'
+        ADJUSTMENT = 'adjustment', 'Adjustment'
+
+    metal_stock = models.ForeignKey(
+        MetalStock,
+        on_delete=models.CASCADE,
+        related_name='movements'
+    )
+    movement_type = models.CharField(
+        max_length=15,
+        choices=MovementType.choices,
+        default=MovementType.IN
+    )
+    quantity = models.DecimalField(
+        max_digits=12,
+        decimal_places=3,
+        validators=[MinValueValidator(0)],
+        help_text='Weight moved (in grams)'
+    )
+
+    # Reference to the transaction
+    reference_type = models.CharField(
+        max_length=50,
+        help_text='e.g., Purchase, Sale, Refinement, Conversion',
+        blank=True,
+        null=True
+    )
+    reference_id = models.CharField(
+        max_length=100,
+        help_text='Bill number or transaction ID',
+        blank=True,
+        null=True
+    )
+
+    # Details
+    notes = models.TextField(blank=True, null=True)
+    movement_date = NepaliDateField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Metal Stock Movement"
+        verbose_name_plural = "Metal Stock Movements"
+        ordering = ['-movement_date', '-created_at']
+        indexes = [
+            models.Index(fields=['metal_stock', 'movement_date']),
+            models.Index(fields=['reference_type', 'reference_id']),
+        ]
+
+    def __str__(self):
+        return f"{self.get_movement_type_display()} - {self.metal_stock} ({self.quantity}g)"

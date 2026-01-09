@@ -1,5 +1,5 @@
 from django import forms
-from .models import GoldSilverPurchase, Party, CustomerPurchase
+from .models import GoldSilverPurchase, Party, CustomerPurchase, MetalStock, MetalStockType
 from nepali_datetime_field.forms import NepaliDateField
 from django.core.exceptions import ValidationError
 from decimal import Decimal
@@ -38,5 +38,60 @@ class CustomerPurchaseForm(forms.ModelForm):
 
         if amount in (None, ''):
             cleaned['amount'] = (weight * rate).quantize(Decimal('0.01')) if weight and rate else Decimal('0.00')
+
+        return cleaned
+
+
+class MetalStockForm(forms.ModelForm):
+    stock_type = forms.ModelChoiceField(
+        queryset=MetalStockType.objects.all(),
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        required=True
+    )
+
+    class Meta:
+        model = MetalStock
+        fields = [
+            'metal_type', 'stock_type', 'purity', 'quantity', 
+            'unit_cost', 'location', 'remarks'
+        ]
+        widgets = {
+            'metal_type': forms.Select(attrs={
+                'class': 'form-select',
+            }),
+            'purity': forms.Select(attrs={
+                'class': 'form-select',
+            }),
+            'quantity': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.001',
+                'placeholder': 'Enter quantity in grams'
+            }),
+            'unit_cost': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'placeholder': 'Cost per gram'
+            }),
+            'location': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., Safe, Almirah, etc.'
+            }),
+            'remarks': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Additional notes about this stock'
+            }),
+        }
+
+    def clean(self):
+        cleaned = super().clean()
+        quantity = cleaned.get('quantity')
+        unit_cost = cleaned.get('unit_cost')
+
+        if quantity and quantity <= 0:
+            raise ValidationError("Quantity must be greater than 0.")
+        
+        if unit_cost and unit_cost < 0:
+            raise ValidationError("Unit cost cannot be negative.")
 
         return cleaned

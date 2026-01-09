@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Order, OrderOrnament, OrderPayment
+from .models import Order, OrderOrnament, OrderPayment, OrderMetalStock
 
 
 class OrderOrnamentInline(admin.TabularInline):
@@ -9,6 +9,15 @@ class OrderOrnamentInline(admin.TabularInline):
         'ornament',
         'gold_rate', 'diamond_rate', 'zircon_rate', 'stone_rate',
         'jarti', 'jyala', 'line_amount',
+    )
+    readonly_fields = ('line_amount',)
+
+
+class OrderMetalStockInline(admin.TabularInline):
+    model = OrderMetalStock
+    extra = 0
+    fields = (
+        'metal_type', 'purity', 'quantity', 'rate_per_gram', 'line_amount', 'remarks'
     )
     readonly_fields = ('line_amount',)
 
@@ -33,7 +42,7 @@ class OrderAdmin(admin.ModelAdmin):
             'fields': ('payment_mode', 'payment_amount', 'remaining_amount')
         }),
     )
-    inlines = [OrderOrnamentInline]
+    inlines = [OrderOrnamentInline, OrderMetalStockInline]
 
 
 @admin.register(OrderOrnament)
@@ -55,3 +64,11 @@ class OrderPaymentAdmin(admin.ModelAdmin):
     list_display = ('order', 'payment_mode', 'amount', 'created_at')
     list_filter = ('payment_mode', 'order__status')
     search_fields = ('order__sn', 'order__customer_name')
+
+
+@admin.register(OrderMetalStock)
+class OrderMetalStockAdmin(admin.ModelAdmin):
+    list_display = ('order', 'metal_type', 'purity', 'quantity', 'rate_per_gram', 'line_amount')
+    list_filter = ('metal_type', 'purity', 'order__status')
+    search_fields = ('order__sn', 'order__customer_name')
+    readonly_fields = ('line_amount',)

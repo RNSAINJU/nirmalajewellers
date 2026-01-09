@@ -1,20 +1,20 @@
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
-from .models import GoldSilverPurchase, Party, CustomerPurchase
+from django.db import models
+from .models import GoldSilverPurchase, Party, CustomerPurchase, MetalStock, MetalStockType, MetalStockMovement
 from ornament.models import Ornament, MainCategory, SubCategory, Kaligar
 from order.models import Order, OrderPayment, OrderOrnament
 from sales.models import Sale
-from django.db.models import Sum
+from django.db.models import Sum, Q
 import nepali_datetime as ndt
 import openpyxl
 from openpyxl.utils import get_column_letter
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
-from django.db.models import Q
 from io import BytesIO
 from django.contrib import messages
 from decimal import Decimal
-from .forms import CustomerPurchaseForm
+from .forms import CustomerPurchaseForm, MetalStockForm
 from openpyxl import Workbook
 
 def D(value):
@@ -1322,3 +1322,132 @@ def delete_all_data(request):
         messages.error(request, f"Error deleting data: {str(e)}")
 
     return redirect("gsp:data_settings")
+
+class MetalStockListView(ListView):
+    """View to display all metal stocks (raw and refined)"""
+    model = MetalStock
+    template_name = 'goldsilverpurchase/metalstock_list.html'
+    context_object_name = 'metal_stocks'
+    paginate_by = 15
+
+    def get_queryset(self):
+        queryset = super().get_queryset().order_by('-last_updated', '-created_at')
+        
+        # Filter by metal type
+        metal_type = self.request.GET.get('metal_type')
+        if metal_type:
+            queryset = queryset.filter(metal_type=metal_type)
+        
+        # Filter by stock type (raw/refined)
+        stock_type = self.request.GET.get('stock_type')
+        if stock_type:
+            queryset = queryset.filter(stock_type__name=stock_type)
+        
+        # Filter by purity
+        purity = self.request.GET.get('purity')
+        if purity:
+            queryset = queryset.filter(purity=purity)
+        
+        # Search by location
+        search = self.request.GET.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(location__icontains=search) |
+                Q(remarks__icontains=search)
+            )
+        
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Summary statistics
+        context['total_gold_quantity'] = (
+            MetalStock.objects.filter(metal_type='gold')
+            .aggregate(total=Sum('quantity'))['total'] or Decimal('0.000')
+        )
+        context['total_silver_quantity'] = (
+            MetalStock.objects.filter(metal_type='silver')
+            .aggregate(total=Sum('quantity'))['total'] or Decimal('0.000')
+        )
+        context['total_platinum_quantity'] = (
+            MetalStock.objects.filter(metal_type='platinum')
+            .aggregate(total=Sum('quantity'))['total'] or Decimal('0.000')
+        )
+        
+        # Total value
+        gold_value = MetalStock.objects.filter(metal_type='gold').aggregate(
+            total=Sum(models.F('quantity') * models.F('unit_cost'), output_field=models.DecimalField())
+        )['total'] or Decimal('0.00')
+        
+        silver_value = MetalStock.objects.filter(metal_type='silver').aggregate(
+            total=Sum(models.F('quantity') * models.F('unit_cost'), output_field=models.DecimalField())
+        )['total'] or Decimal('0.00')
+        
+        context['total_gold_value'] = gold_value
+        context['total_silver_value'] = silver_value
+        context['total_value'] = gold_value + silver_value
+        
+        # Breakdown by stock type
+        context['raw_stocks'] = MetalStock.objects.filter(
+            stock_type__name='raw'
+        ).aggregate(total=Sum('quantity'))['total'] or Decimal('0.000')
+        
+        context['refined_stocks'] = MetalStock.objects.filter(
+            stock_type__name='refined'
+        ).aggregate(total=Sum('quantity'))['total'] or Decimal('0.000')
+        
+        # Low stock alerts
+        context['low_stock_items'] = [
+            item for item in self.get_queryset() if item.is_low_stock
+        ]
+        
+        return context
+
+
+def metal_stock_detail(request, pk):
+    """View stock details and its movement history"""
+    metal_stock = MetalStock.objects.get(pk=pk)
+    movements = MetalStockMovement.objects.filter(metal_stock=metal_stock).order_by('-movement_date')
+    
+    context = {
+        'metal_stock': metal_stock,
+        'movements': movements,
+    }
+    return render(request, 'goldsilverpurchase/metalstock_detail.html', context)
+
+
+class MetalStockCreateView(CreateView):
+    """Create a new metal stock"""
+    model = MetalStock
+    form_class = MetalStockForm
+    template_name = 'goldsilverpurchase/metalstock_form.html'
+    success_url = reverse_lazy('gsp:metal_stock_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, f"Metal stock for {form.cleaned_data['metal_type']} created successfully!")
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Create Metal Stock'
+        context['button_text'] = 'Create Stock'
+        return context
+
+
+class MetalStockUpdateView(UpdateView):
+    """Update an existing metal stock"""
+    model = MetalStock
+    form_class = MetalStockForm
+    template_name = 'goldsilverpurchase/metalstock_form.html'
+    success_url = reverse_lazy('gsp:metal_stock_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, f"Metal stock updated successfully!")
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Update Metal Stock'
+        context['button_text'] = 'Update Stock'
+        return context
