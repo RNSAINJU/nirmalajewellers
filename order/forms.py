@@ -1,8 +1,9 @@
 from django import forms
 from django.forms import inlineformset_factory, ModelMultipleChoiceField
 from django.db.models import Q
-from .models import Order
+from .models import Order, OrderMetalStock
 from ornament.models import Ornament
+from goldsilverpurchase.models import MetalStock
 from nepali_datetime_field.forms import NepaliDateField
 from django.core.exceptions import ValidationError
 from decimal import Decimal
@@ -99,4 +100,61 @@ OrnamentFormSet = inlineformset_factory(
     ],
     extra=1,
     can_delete=True
+)
+
+
+class OrderMetalStockForm(forms.ModelForm):
+    """Form to add raw metal stocks to an order"""
+    
+    class Meta:
+        model = OrderMetalStock
+        fields = ['metal_type', 'purity', 'quantity', 'rate_per_gram', 'remarks']
+        widgets = {
+            'metal_type': forms.Select(attrs={
+                'class': 'form-select form-select-sm'
+            }),
+            'purity': forms.Select(attrs={
+                'class': 'form-select form-select-sm'
+            }),
+            'quantity': forms.NumberInput(attrs={
+                'class': 'form-control form-control-sm',
+                'step': '0.001',
+                'placeholder': 'Grams',
+                'min': '0'
+            }),
+            'rate_per_gram': forms.NumberInput(attrs={
+                'class': 'form-control form-control-sm',
+                'step': '0.01',
+                'placeholder': 'Rate per gram',
+                'min': '0'
+            }),
+            'remarks': forms.Textarea(attrs={
+                'class': 'form-control form-control-sm',
+                'rows': 2,
+                'placeholder': 'Additional notes'
+            }),
+        }
+
+    def clean(self):
+        cleaned = super().clean()
+        quantity = cleaned.get('quantity')
+        rate_per_gram = cleaned.get('rate_per_gram')
+
+        if quantity and quantity <= 0:
+            raise ValidationError("Quantity must be greater than 0.")
+        
+        if rate_per_gram and rate_per_gram < 0:
+            raise ValidationError("Rate per gram cannot be negative.")
+
+        return cleaned
+
+
+# Formset for multiple metal stocks in an order
+MetalStockFormSet = inlineformset_factory(
+    Order,
+    OrderMetalStock,
+    form=OrderMetalStockForm,
+    extra=1,
+    can_delete=True,
+    fields=['metal_type', 'purity', 'quantity', 'rate_per_gram', 'remarks']
 )

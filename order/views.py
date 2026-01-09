@@ -14,9 +14,9 @@ from django.contrib import messages
 import openpyxl
 from openpyxl.utils import get_column_letter
 
-from .models import Order, OrderOrnament, OrderPayment
+from .models import Order, OrderOrnament, OrderPayment, OrderMetalStock
 from sales.models import Sale
-from .forms import OrderForm, OrnamentFormSet
+from .forms import OrderForm, OrnamentFormSet, MetalStockFormSet
 from ornament.models import Ornament, Kaligar
 
 app_name = 'order'
@@ -220,6 +220,13 @@ class OrderCreateView(CreateView):
         ctx['kaligars'] = Kaligar.objects.all()
         ctx['payment_choices'] = Order.PAYMENT_CHOICES
         ctx['initial_payments_json'] = json.dumps([])
+        
+        # Add metal stock formset for adding raw metals
+        if self.request.POST:
+            ctx['metal_stock_formset'] = MetalStockFormSet(self.request.POST, instance=self.object if hasattr(self, 'object') else None)
+        else:
+            ctx['metal_stock_formset'] = MetalStockFormSet(instance=None)
+        
         return ctx
 
     def get_initial(self):
@@ -287,6 +294,13 @@ class OrderCreateView(CreateView):
                 ornament.ornament_type = 'order'
             ornament.save()
 
+        # Save metal stock formset
+        metal_stock_formset = MetalStockFormSet(self.request.POST, instance=self.object)
+        if metal_stock_formset.is_valid():
+            metal_stock_formset.save()
+        else:
+            messages.warning(self.request, f"Metal stock formset had errors: {metal_stock_formset.errors}")
+
         # Persist payment breakdown
         payment_lines_raw = form.cleaned_data.get('payment_lines_json') or '[]'
         try:
@@ -332,6 +346,13 @@ class OrderUpdateView(UpdateView):
                 "amount": float(self.object.payment_amount or 0),
             }]
         ctx['initial_payments_json'] = json.dumps(payments)
+        
+        # Add metal stock formset for editing
+        if self.request.POST:
+            ctx['metal_stock_formset'] = MetalStockFormSet(self.request.POST, instance=self.object)
+        else:
+            ctx['metal_stock_formset'] = MetalStockFormSet(instance=self.object)
+        
         return ctx
 
     def get_success_url(self):
@@ -392,6 +413,13 @@ class OrderUpdateView(UpdateView):
                 order=None,
                 ornament_type='stock',
             )
+
+        # Save metal stock formset
+        metal_stock_formset = MetalStockFormSet(self.request.POST, instance=self.object)
+        if metal_stock_formset.is_valid():
+            metal_stock_formset.save()
+        else:
+            messages.warning(self.request, f"Metal stock formset had errors: {metal_stock_formset.errors}")
 
         # Persist payment breakdown
         payment_lines_raw = form.cleaned_data.get('payment_lines_json') or '[]'
