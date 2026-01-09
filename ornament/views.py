@@ -943,3 +943,52 @@ def rates_and_stock_view(request):
     }
     
     return render(request, 'ornament/rates_and_stock.html', context)
+
+
+def kaligar_list(request):
+    """Display list of all kaligar with their ornament weights."""
+    from django.db.models import Sum, DecimalField
+    from django.db.models.functions import Coalesce
+    
+    # Get all kaligar
+    kaligars = Kaligar.objects.all().order_by('name')
+    
+    # Get selected kaligar if filtering
+    selected_kaligar_id = request.GET.get('kaligar_id')
+    selected_kaligar = None
+    selected_kaligar_ornaments = None
+    
+    if selected_kaligar_id:
+        try:
+            selected_kaligar = Kaligar.objects.get(id=selected_kaligar_id)
+            selected_kaligar_ornaments = selected_kaligar.kaligar_ornaments.all().order_by('-date')
+        except Kaligar.DoesNotExist:
+            pass
+    
+    # Annotate each kaligar with total ornament weight
+    kaligars_with_weights = []
+    total_ornament_count = 0
+    for kaligar in kaligars:
+        total_weight = kaligar.kaligar_ornaments.aggregate(
+            total=Coalesce(Sum('ornament_weight'), Decimal('0'), output_field=DecimalField())
+        )['total']
+        ornament_count = kaligar.kaligar_ornaments.count()
+        total_ornament_count += ornament_count
+        kaligars_with_weights.append({
+            'id': kaligar.id,
+            'name': kaligar.name,
+            'phone_no': kaligar.phone_no,
+            'panno': kaligar.panno,
+            'address': kaligar.address,
+            'total_weight': total_weight,
+            'ornament_count': ornament_count
+        })
+    
+    context = {
+        'kaligars': kaligars_with_weights,
+        'selected_kaligar': selected_kaligar,
+        'selected_kaligar_ornaments': selected_kaligar_ornaments,
+        'total_ornament_count': total_ornament_count,
+    }
+    
+    return render(request, 'ornament/kaligar_list.html', context)

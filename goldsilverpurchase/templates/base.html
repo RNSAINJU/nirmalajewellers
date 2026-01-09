@@ -265,6 +265,22 @@
             </div>
         </li>
 
+        <!-- Kaligar -->
+        <li class="nav-item">
+            <a class="nav-link collapsed" data-bs-toggle="collapse" data-bs-target="#kaligarMenu" role="button" aria-expanded="{% if request.resolver_match.url_name == 'kaligar_list' or request.resolver_match.url_name == 'createkaligar' %}true{% else %}false{% endif %}" aria-controls="kaligarMenu">
+                <i class="bi bi-people me-2"></i> Kaligar (काली गर)
+                <i class="bi bi-chevron-down float-end"></i>
+            </a>
+            <div class="collapse {% if request.resolver_match.url_name == 'kaligar_list' or request.resolver_match.url_name == 'createkaligar' %}show{% endif %}" id="kaligarMenu">
+                <a href="{% url 'ornament:kaligar_list' %}" class="nav-link ms-3 {% if request.resolver_match.url_name == 'kaligar_list' %}active{% endif %}">
+                    Kaligar List
+                </a>
+                <a href="{% url 'ornament:createkaligar' %}" class="nav-link ms-3 {% if request.resolver_match.url_name == 'createkaligar' %}active{% endif %}">
+                    Add Kaligar
+                </a>
+            </div>
+        </li>
+
         <!-- Sales -->
         <li class="nav-item">
             <a class="nav-link collapsed" data-bs-toggle="collapse" data-bs-target="#salesMenu" role="button" aria-expanded="false" aria-controls="salesMenu">

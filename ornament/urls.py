@@ -15,6 +15,7 @@ from .views import (
     ornament_report,
     ornament_weight_report,
     rates_and_stock_view,
+    kaligar_list,
 )
 
 app_name = 'ornament'
@@ -28,6 +29,7 @@ urlpatterns = [
     path('createmaincategory/', MainCategoryCreateView.as_view(), name='createmaincategory'),
     path('createsubcategory/', SubCategoryCreateView.as_view(), name='createsubcategory'),
     path('createkaligar/', KaligarCreateView.as_view(), name='createkaligar'),
+    path('kaligars/', kaligar_list, name='kaligar_list'),
     path("print/", print_view, name="print_view"),
     path("export-excel/", export_excel, name="export_excel"),
     path('import-excel/', import_excel, name='import_excel'),

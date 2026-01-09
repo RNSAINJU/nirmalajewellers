@@ -1,0 +1,246 @@
+{% extends 'base.html' %}
+
+{% block title %}Kaligar (काली गर) - Craftspeople{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <div class="row">
+        <!-- Sidebar with Kaligar List -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-people-fill"></i> काली गर सूची
+                    </h5>
+                    <small class="text-light">Kaligar with Weight Summary</small>
+                </div>
+                <div class="card-body p-0">
+                    {% if kaligars %}
+                    <div class="list-group list-group-flush" style="max-height: 70vh; overflow-y: auto;">
+                        {% for kaligar in kaligars %}
+                        <a href="?kaligar_id={{ kaligar.id }}" 
+                           class="list-group-item list-group-item-action border-0 border-bottom {% if selected_kaligar.id == kaligar.id %}active bg-primary{% endif %}">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <h6 class="mb-2 flex-grow-1">{{ kaligar.name }}</h6>
+                                <span class="badge bg-info ms-2">{{ kaligar.ornament_count }}</span>
+                            </div>
+                            <div class="row text-sm">
+                                <div class="col-6">
+                                    <small class="{% if selected_kaligar.id == kaligar.id %}text-light{% else %}text-muted{% endif %}">
+                                        <strong>वजन:</strong> {{ kaligar.total_weight|floatformat:2 }}g
+                                    </small>
+                                </div>
+                                <div class="col-6">
+                                    {% if kaligar.phone_no %}
+                                    <small class="{% if selected_kaligar.id == kaligar.id %}text-light{% else %}text-muted{% endif %}">
+                                        ☎ {{ kaligar.phone_no }}
+                                    </small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="p-4 text-center text-muted">
+                        <i class="bi bi-inbox fs-3"></i>
+                        <p class="mt-2 mb-0">काली गर छैनन्</p>
+                        <small>No kaligar found</small>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer border-0">
+                    <a href="{% url 'ornament:createkaligar' %}" class="btn btn-success btn-sm w-100">
+                        <i class="bi bi-plus-circle"></i> नयाँ काली गर
+                    </a>
+                </div>
+            </div>
+
+            <!-- Summary Statistics -->
+            <div class="card border-0 shadow-sm mt-3">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0">सारांश तथ्यांक</h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row text-sm">
+                        <dt class="col-6">कुल काली गर:</dt>
+                        <dd class="col-6"><strong>{{ kaligars|length }}</strong></dd>
+
+                        <dt class="col-6">कुल आइटमहरु:</dt>
+                        <dd class="col-6">
+                            <strong>{{ total_ornament_count|default:"0" }}</strong>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9">
+            {% if selected_kaligar %}
+            <!-- Kaligar Details -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-person-badge"></i> {{ selected_kaligar.name }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <td><strong>नाम:</strong></td>
+                                    <td>{{ selected_kaligar.name }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>फोन नं.:</strong></td>
+                                    <td>{{ selected_kaligar.phone_no|default:"N/A" }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>पान नं.:</strong></td>
+                                    <td>{{ selected_kaligar.panno|default:"N/A" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <td><strong>पता:</strong></td>
+                                    <td>{{ selected_kaligar.address|default:"N/A" }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>स्ट्याम्प:</strong></td>
+                                    <td>{{ selected_kaligar.stamp|default:"N/A" }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>गहना संख्या:</strong></td>
+                                    <td>
+                                        <span class="badge bg-primary">
+                                            {{ selected_kaligar_ornaments|length }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ornaments Table -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-gem"></i> गहनाहरु - कुल: {{ selected_kaligar_ornaments.count }}
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if selected_kaligar_ornaments %}
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm mb-0">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th width="12%">मिति</th>
+                                    <th width="10%" class="text-end">वजन (g)</th>
+                                    <th width="10%" class="text-end">जर्ती</th>
+                                    <th width="10%" class="text-end">जयाला</th>
+                                    <th width="13%" class="text-end">सुन दिएको</th>
+                                    <th width="13%" class="text-end">सुन फिर्ता</th>
+                                    <th width="10%" class="text-end">नोक्सान</th>
+                                    <th width="12%">किसिम</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ornament in selected_kaligar_ornaments %}
+                                <tr>
+                                    <td>
+                                        {% if ornament.date %}
+                                            {{ ornament.date }}
+                                        {% else %}
+                                            <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <strong class="text-primary">{{ ornament.ornament_weight|floatformat:3 }}</strong>
+                                    </td>
+                                    <td class="text-end">{{ ornament.jarti|floatformat:3 }}</td>
+                                    <td class="text-end">{{ ornament.jyala|default:"-"|floatformat:3 }}</td>
+                                    <td class="text-end">{{ ornament.gold_given|floatformat:3 }}</td>
+                                    <td class="text-end">{{ ornament.gold_return|floatformat:3 }}</td>
+                                    <td class="text-end">
+                                        <span class="{% if ornament.gold_loss > 0 %}text-danger{% endif %}">
+                                            {{ ornament.gold_loss|floatformat:3 }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">
+                                            {{ ornament.get_gold_purity_display }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="table-light border-top fw-bold">
+                                <tr>
+                                    <td colspan="8" class="text-muted">
+                                        <small>{{ selected_kaligar_ornaments|length }} आइटमहरु</small>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="p-5 text-center text-muted">
+                        <i class="bi bi-inbox fs-1"></i>
+                        <p class="mt-3 mb-1">कुनै गहनाहरु छैनन्</p>
+                        <small>No ornaments recorded for this kaligar</small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% else %}
+            <div class="alert alert-info border-0 shadow-sm" role="alert">
+                <div class="text-center">
+                    <i class="bi bi-info-circle fs-3 text-info"></i>
+                    <h5 class="mt-2 mb-1">काली गर चयन गर्नुहोस्</h5>
+                    <p class="mb-0 text-muted">
+                        <small>बायाँ पक्षको सूची बाट कुनै काली गर चयन गर्नुहोस्</small>
+                        <br>
+                        <small>Select a kaligar from the list on the left to view details</small>
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .list-group-item {
+        transition: all 0.3s ease;
+        border: none;
+    }
+    .list-group-item:hover {
+        background-color: #f8f9fa !important;
+    }
+    .list-group-item.active {
+        background-color: #0d6efd !important;
+        border-color: #0d6efd !important;
+    }
+    .table-hover tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    .card {
+        border-radius: 0.5rem;
+    }
+    .sticky-top {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    .text-sm {
+        font-size: 0.875rem;
+    }
+</style>
+{% endblock %}

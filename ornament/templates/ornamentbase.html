@@ -167,6 +167,23 @@
         </li>
 
         <li class="nav-item mt-2">
+            <a class="nav-link" data-bs-toggle="collapse" href="#kaligarMenu">
+                <i class="bi bi-people me-2"></i> Kaligar (काली गर)
+                <i class="bi bi-chevron-down float-end"></i>
+            </a>
+            <div class="collapse ps-3" id="kaligarMenu">
+                <a href="{% url 'ornament:kaligar_list' %}"
+                   class="nav-link {% if request.resolver_match.url_name == 'kaligar_list' %}active{% endif %}">
+                    Kaligar List
+                </a>
+                <a href="{% url 'ornament:createkaligar' %}"
+                   class="nav-link {% if request.resolver_match.url_name == 'createkaligar' %}active{% endif %}">
+                    Add Kaligar
+                </a>
+            </div>
+        </li>
+        
+        <li class="nav-item mt-2">
             <a class="nav-link" data-bs-toggle="collapse" href="#orderMenu">
                 <i class="bi bi-bag me-2"></i> Orders
                 <i class="bi bi-chevron-down float-end"></i>
