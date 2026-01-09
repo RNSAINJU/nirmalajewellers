@@ -73,7 +73,7 @@ class MetalStockMovementAdmin(admin.ModelAdmin):
     list_display = ('metal_stock', 'movement_type', 'quantity', 'reference_type', 'reference_id', 'movement_date')
     list_filter = ('movement_type', 'metal_stock__metal_type', 'movement_date')
     search_fields = ('metal_stock__location', 'reference_id', 'notes')
-    readonly_fields = ('movement_date', 'created_at')
+    readonly_fields = ('created_at',)
     
     fieldsets = (
         ('Stock Movement', {

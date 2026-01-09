@@ -108,7 +108,7 @@ class GoldSilverPurchase(models.Model):
         ]
     
     def __str__(self):
-        return f"{self.bill_no} - {self.particular or self.product_name}"
+        return f"{self.bill_no} - {self.particular or 'Untitled'}"
 
     def save(self, *args, **kwargs):
             # Ensure Decimal values
@@ -217,7 +217,7 @@ class MetalStockType(models.Model):
         verbose_name_plural = "Metal Stock Types"
 
     def __str__(self):
-        return str(self.get_name_display())
+        return self.get_name_display()
 
 
 class MetalStock(models.Model):
@@ -316,7 +316,7 @@ class MetalStock(models.Model):
         ]
 
     def __str__(self):
-        stock_type_display = str(self.stock_type) if self.stock_type else 'Unknown'
+        stock_type_display = self.stock_type.get_name_display() if self.stock_type else 'Unknown'
         return f"{self.get_metal_type_display()} - {stock_type_display} ({self.purity})"
 
     def save(self, *args, **kwargs):
@@ -384,9 +384,9 @@ class MetalStockMovement(models.Model):
 
     # Details
     notes = models.TextField(blank=True, null=True)
-    movement_date = NepaliDateField(auto_now_add=True)
+    movement_date = NepaliDateField(blank=True, null=True, help_text='Date of the stock movement')
     created_at = models.DateTimeField(auto_now_add=True)
-
+    
     class Meta:
         verbose_name = "Metal Stock Movement"
         verbose_name_plural = "Metal Stock Movements"
@@ -397,4 +397,7 @@ class MetalStockMovement(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.get_movement_type_display()} - {self.metal_stock} ({self.quantity}g)"
+        try:
+            return f"{self.get_movement_type_display()} - {self.metal_stock} ({float(self.quantity)}g)"
+        except (TypeError, ValueError):
+            return f"Movement #{self.pk or 'New'}"
