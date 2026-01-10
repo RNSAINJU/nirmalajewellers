@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load form_filters %}
 
 {% block title %}Kaligar (काली गर) - Craftspeople{% endblock %}
 
@@ -131,64 +132,105 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-success text-white">
                     <h5 class="mb-0">
-                        <i class="bi bi-gem"></i> गहनाहरु - कुल: {{ selected_kaligar_ornaments.count }}
+                        <i class="bi bi-gem"></i> गहनाहरु - कुल: {{ total_ornament_count }}
                     </h5>
                 </div>
                 <div class="card-body p-0">
-                    {% if selected_kaligar_ornaments %}
-                    <div class="table-responsive">
-                        <table class="table table-hover table-sm mb-0">
-                            <thead class="table-light sticky-top">
-                                <tr>
-                                    <th width="12%">मिति</th>
-                                    <th width="10%" class="text-end">वजन (g)</th>
-                                    <th width="10%" class="text-end">जर्ती</th>
-                                    <th width="10%" class="text-end">जयाला</th>
-                                    <th width="13%" class="text-end">सुन दिएको</th>
-                                    <th width="13%" class="text-end">सुन फिर्ता</th>
-                                    <th width="10%" class="text-end">नोक्सान</th>
-                                    <th width="12%">किसिम</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for ornament in selected_kaligar_ornaments %}
-                                <tr>
-                                    <td>
-                                        {% if ornament.date %}
-                                            {{ ornament.date }}
-                                        {% else %}
-                                            <span class="text-muted">N/A</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="text-end">
-                                        <strong class="text-primary">{{ ornament.ornament_weight|floatformat:3 }}</strong>
-                                    </td>
-                                    <td class="text-end">{{ ornament.jarti|floatformat:3 }}</td>
-                                    <td class="text-end">{{ ornament.jyala|default:"-"|floatformat:3 }}</td>
-                                    <td class="text-end">{{ ornament.gold_given|floatformat:3 }}</td>
-                                    <td class="text-end">{{ ornament.gold_return|floatformat:3 }}</td>
-                                    <td class="text-end">
-                                        <span class="{% if ornament.gold_loss > 0 %}text-danger{% endif %}">
-                                            {{ ornament.gold_loss|floatformat:3 }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-secondary">
-                                            {{ ornament.get_gold_purity_display }}
-                                        </span>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                            <tfoot class="table-light border-top fw-bold">
-                                <tr>
-                                    <td colspan="8" class="text-muted">
-                                        <small>{{ selected_kaligar_ornaments|length }} आइटमहरु</small>
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+                    {% if ornaments_by_metal_type %}
+                        {% for metal_type, ornaments in ornaments_by_metal_type.items %}
+                        <div class="mb-0">
+                            <!-- Metal Type Header -->
+                            <div class="bg-light border-bottom p-3">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-gem"></i> 
+                                    <strong>{{ metal_type }}</strong>
+                                    <span class="badge bg-info ms-2">{{ ornaments|length }}</span>
+                                </h6>
+                            </div>
+                            
+                            <!-- Ornaments Table for this metal type -->
+                            <div class="table-responsive">
+                                <table class="table table-hover table-sm mb-0">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <th width="5%">कोड</th>
+                                            <th width="20%">गहना</th>
+                                            <th width="12%" class="text-end">वजन (g)</th>
+                                            <th width="10%" class="text-end">जर्ती</th>
+                                            <th width="10%" class="text-end">जयाला</th>
+                                            <th width="12%" class="text-end">ग्रास वजन</th>
+                                            <th width="12%" class="text-end">हीरा वजन</th>
+                                            <th width="9%">किसिम</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for ornament in ornaments %}
+                                        <tr>
+                                            <td>
+                                                <small>{{ ornament.code|default:"N/A" }}</small>
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'ornament:update' ornament.id %}?next={% url 'ornament:kaligar_list' %}?kaligar_id={{ selected_kaligar.id }}" class="text-decoration-none">
+                                                    <strong>{{ ornament.ornament_name }}</strong>
+                                                </a>
+                                                {% if ornament.maincategory %}
+                                                    <br><small class="text-muted">{{ ornament.maincategory }}</small>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-end">
+                                                <strong class="text-primary">{{ ornament.weight|floatformat:3 }}</strong>
+                                            </td>
+                                            <td class="text-end">{{ ornament.jarti|floatformat:3 }}</td>
+                                            <td class="text-end">{{ ornament.jyala|default:"-"|floatformat:3 }}</td>
+                                            <td class="text-end">{{ ornament.gross_weight|floatformat:3 }}</td>
+                                            <td class="text-end">{{ ornament.diamond_weight|floatformat:3 }}</td>
+                                            <td>
+                                                <span class="badge bg-secondary">
+                                                    {{ ornament.get_type_display }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                    <tfoot class="table-light border-top fw-bold small">
+                                        <tr>
+                                            <td colspan="2" class="text-end">{{ metal_type }} Total:</td>
+                                            <td class="text-end text-primary">{{ metal_type_totals|get_item:metal_type|get_item:'weight'|floatformat:3 }}</td>
+                                            <td class="text-end">{{ metal_type_totals|get_item:metal_type|get_item:'jarti'|floatformat:3 }}</td>
+                                            <td class="text-end">{{ metal_type_totals|get_item:metal_type|get_item:'jyala'|floatformat:3 }}</td>
+                                            <td class="text-end">{{ metal_type_totals|get_item:metal_type|get_item:'gross_weight'|floatformat:3 }}</td>
+                                            <td class="text-end">{{ metal_type_totals|get_item:metal_type|get_item:'diamond_weight'|floatformat:3 }}</td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        
+                        <!-- Overall Totals -->
+                        <div class="bg-primary text-white p-3 mt-2">
+                            <div class="row text-sm">
+                                <div class="col-md-2">
+                                    <strong>Grand Total:</strong>
+                                </div>
+                                <div class="col-md-2">
+                                    <strong>वजन:</strong> {{ overall_totals.weight|floatformat:3 }}g
+                                </div>
+                                <div class="col-md-2">
+                                    <strong>जर्ती:</strong> {{ overall_totals.jarti|floatformat:3 }}
+                                </div>
+                                <div class="col-md-2">
+                                    <strong>जयाला:</strong> {{ overall_totals.jyala|floatformat:3 }}
+                                </div>
+                                <div class="col-md-2">
+                                    <strong>ग्रास वजन:</strong> {{ overall_totals.gross_weight|floatformat:3 }}g
+                                </div>
+                                <div class="col-md-2">
+                                    <strong>हीरा वजन:</strong> {{ overall_totals.diamond_weight|floatformat:3 }}g
+                                </div>
+                            </div>
+                        </div>
                     {% else %}
                     <div class="p-5 text-center text-muted">
                         <i class="bi bi-inbox fs-1"></i>

@@ -222,6 +222,13 @@ class OrnamentUpdateView(UpdateView):
         # Cloudinary image is automatically handled by ModelForm
         return super().form_valid(form)
 
+    def get_success_url(self):
+        # Check if there's a 'next' parameter to redirect back to
+        next_url = self.request.GET.get('next')
+        if next_url:
+            return next_url
+        return self.success_url
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['JARTI_CHOICES'] = [
@@ -949,6 +956,7 @@ def kaligar_list(request):
     """Display list of all kaligar with their ornament weights."""
     from django.db.models import Sum, DecimalField
     from django.db.models.functions import Coalesce
+    from decimal import Decimal
     
     # Get all kaligar
     kaligars = Kaligar.objects.all().order_by('name')
@@ -957,11 +965,59 @@ def kaligar_list(request):
     selected_kaligar_id = request.GET.get('kaligar_id')
     selected_kaligar = None
     selected_kaligar_ornaments = None
+    ornaments_by_metal_type = {}
+    metal_type_totals = {}
+    overall_totals = {
+        'weight': Decimal('0'),
+        'jarti': Decimal('0'),
+        'jyala': Decimal('0'),
+        'gross_weight': Decimal('0'),
+        'diamond_weight': Decimal('0'),
+        'zircon_weight': Decimal('0'),
+        'stone_weight': Decimal('0'),
+        'stone_totalprice': Decimal('0'),
+    }
     
     if selected_kaligar_id:
         try:
             selected_kaligar = Kaligar.objects.get(id=selected_kaligar_id)
-            selected_kaligar_ornaments = selected_kaligar.ornaments.all().order_by('-ornament_date')
+            all_ornaments = selected_kaligar.ornaments.all().order_by('-ornament_date')
+            # Group ornaments by metal type and calculate totals
+            for ornament in all_ornaments:
+                metal_type = ornament.get_metal_type_display()
+                if metal_type not in ornaments_by_metal_type:
+                    ornaments_by_metal_type[metal_type] = []
+                    metal_type_totals[metal_type] = {
+                        'weight': Decimal('0'),
+                        'jarti': Decimal('0'),
+                        'jyala': Decimal('0'),
+                        'gross_weight': Decimal('0'),
+                        'diamond_weight': Decimal('0'),
+                        'zircon_weight': Decimal('0'),
+                        'stone_weight': Decimal('0'),
+                        'stone_totalprice': Decimal('0'),
+                    }
+                ornaments_by_metal_type[metal_type].append(ornament)
+                
+                # Add to metal type totals
+                metal_type_totals[metal_type]['weight'] += ornament.weight or Decimal('0')
+                metal_type_totals[metal_type]['jarti'] += ornament.jarti or Decimal('0')
+                metal_type_totals[metal_type]['jyala'] += ornament.jyala or Decimal('0')
+                metal_type_totals[metal_type]['gross_weight'] += ornament.gross_weight or Decimal('0')
+                metal_type_totals[metal_type]['diamond_weight'] += ornament.diamond_weight or Decimal('0')
+                metal_type_totals[metal_type]['zircon_weight'] += ornament.zircon_weight or Decimal('0')
+                metal_type_totals[metal_type]['stone_weight'] += ornament.stone_weight or Decimal('0')
+                metal_type_totals[metal_type]['stone_totalprice'] += ornament.stone_totalprice or Decimal('0')
+                
+                # Add to overall totals
+                overall_totals['weight'] += ornament.weight or Decimal('0')
+                overall_totals['jarti'] += ornament.jarti or Decimal('0')
+                overall_totals['jyala'] += ornament.jyala or Decimal('0')
+                overall_totals['gross_weight'] += ornament.gross_weight or Decimal('0')
+                overall_totals['diamond_weight'] += ornament.diamond_weight or Decimal('0')
+                overall_totals['zircon_weight'] += ornament.zircon_weight or Decimal('0')
+                overall_totals['stone_weight'] += ornament.stone_weight or Decimal('0')
+                overall_totals['stone_totalprice'] += ornament.stone_totalprice or Decimal('0')
         except Kaligar.DoesNotExist:
             pass
     
@@ -988,6 +1044,9 @@ def kaligar_list(request):
         'kaligars': kaligars_with_weights,
         'selected_kaligar': selected_kaligar,
         'selected_kaligar_ornaments': selected_kaligar_ornaments,
+        'ornaments_by_metal_type': ornaments_by_metal_type,
+        'metal_type_totals': metal_type_totals,
+        'overall_totals': overall_totals,
         'total_ornament_count': total_ornament_count,
     }
     

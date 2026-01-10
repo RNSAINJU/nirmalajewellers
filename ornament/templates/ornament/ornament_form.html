@@ -400,7 +400,7 @@
                 <!-- Form Buttons -->
                 <div class="mt-4">
                     <button type="submit" class="btn btn-success">Save</button>
-                    <a href="{% url 'ornament:list' %}" class="btn btn-secondary">Cancel</a>
+                    <a href="{% if request.GET.next %}{{ request.GET.next }}{% else %}{% url 'ornament:list' %}{% endif %}" class="btn btn-secondary">Cancel</a>
                 </div>
             </form>
         </div>

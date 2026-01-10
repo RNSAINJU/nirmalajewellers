@@ -18,6 +18,13 @@ from .views import (
     order_ornaments_import_excel,
     order_payments_import_excel,
 )
+from .reports import (
+    OrderDashboardReport,
+    OrderSalesAnalysis,
+    OrderPaymentAnalysis,
+    OrderMetalAnalysis,
+    OrderCustomerAnalysis,
+)
 
 app_name = 'order'
 
@@ -39,4 +46,10 @@ urlpatterns = [
     path('sales/<int:pk>/delete/', SaleDeleteView.as_view(), name='sale_delete'),
     path('api/search-ornaments/', SearchOrnamentsAPI.as_view(), name='search_ornaments'),
     path('api/create-ornament-inline/', CreateOrnamentInlineView.as_view(), name='create_ornament_inline'),
+    # Report URLs
+    path('reports/dashboard/', OrderDashboardReport.as_view(), name='dashboard_report'),
+    path('reports/sales/', OrderSalesAnalysis.as_view(), name='sales_report'),
+    path('reports/payments/', OrderPaymentAnalysis.as_view(), name='payment_report'),
+    path('reports/metals/', OrderMetalAnalysis.as_view(), name='metal_report'),
+    path('reports/customers/', OrderCustomerAnalysis.as_view(), name='customer_report'),
 ]

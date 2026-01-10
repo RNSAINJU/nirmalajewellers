@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}Order Metal Analysis Report{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-boxes"></i> Metal Usage & Analysis Report</h2>
+    </div>
+
+    <!-- Summary Card -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h6 class="card-title">Total Orders</h6>
+                    <h3>{{ total_orders }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Metal Summary -->
+    <div class="card">
+        <div class="card-header">
+            <h6 class="mb-0">Metal Usage Summary</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Metal Type</th>
+                            <th class="text-end">Orders Using</th>
+                            <th class="text-end">Total Quantity (g)</th>
+                            <th class="text-end">Total Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for metal in metal_summary %}
+                        <tr>
+                            <td>
+                                <span class="badge bg-info">{{ metal.metal_type|title }}</span>
+                            </td>
+                            <td class="text-end">{{ metal.count }}</td>
+                            <td class="text-end fw-bold">{{ metal.total_quantity|floatformat:3 }}g</td>
+                            <td class="text-end fw-bold">₹{{ metal.total_value|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">No metal data available</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

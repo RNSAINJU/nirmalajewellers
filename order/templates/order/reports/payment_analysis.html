@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+
+{% block title %}Order Payment Analysis Report{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-cash-coin"></i> Payment Analysis Report</h2>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-2">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h6 class="card-title">Fully Paid</h6>
+                    <h3>{{ fully_paid }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h6 class="card-title">Partially Paid</h6>
+                    <h3>{{ partial_paid }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <h6 class="card-title">Unpaid</h6>
+                    <h3>{{ unpaid }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h6 class="card-title">Total Due</h6>
+                    <h3>₹{{ total_due|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h6 class="card-title">Collection Rate</h6>
+                    <h3>{{ collection_rate }}%</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Status Chart -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Payment Status Distribution</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="statusChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Methods Chart -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Collections by Payment Method</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="methodChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Collection Summary -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Collection Summary</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <h5>Total Due</h5>
+                            <h3 class="text-danger">₹{{ total_due|floatformat:2 }}</h3>
+                        </div>
+                        <div class="col-md-3">
+                            <h5>Collected</h5>
+                            <h3 class="text-success">₹{{ total_collected|floatformat:2 }}</h3>
+                        </div>
+                        <div class="col-md-3">
+                            <h5>Pending</h5>
+                            <h3 class="text-warning">₹{{ total_pending|floatformat:2 }}</h3>
+                        </div>
+                        <div class="col-md-3">
+                            <h5>Collection Rate</h5>
+                            <h3 class="text-info">{{ collection_rate }}%</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Methods Table -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="mb-0">Collections by Payment Method</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Payment Method</th>
+                            <th class="text-end">Count</th>
+                            <th class="text-end">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for method in payment_methods %}
+                        <tr>
+                            <td>
+                                <span class="badge bg-primary">{{ method.payment_mode|upper }}</span>
+                            </td>
+                            <td class="text-end">{{ method.count }}</td>
+                            <td class="text-end fw-bold">₹{{ method.amount|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Orders by Customer -->
+    <div class="card">
+        <div class="card-header">
+            <h6 class="mb-0">Pending Payments by Customer (Top 20)</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Customer Name</th>
+                            <th class="text-end">Orders</th>
+                            <th class="text-end">Total Due</th>
+                            <th class="text-end">Already Paid</th>
+                            <th class="text-end">Pending Amount</th>
+                            <th class="text-end">% Paid</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for customer in pending_orders|slice:":20" %}
+                        <tr>
+                            <td>{{ customer.customer_name }}</td>
+                            <td class="text-end">{{ customer.order_count }}</td>
+                            <td class="text-end fw-bold">₹{{ customer.total_due|floatformat:2 }}</td>
+                            <td class="text-end text-success">₹{{ customer.paid|floatformat:2 }}</td>
+                            <td class="text-end text-danger fw-bold">₹{{ customer.total_pending|floatformat:2 }}</td>
+                            <td class="text-end">
+                                {{ customer.paid_percent }}%
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Status Chart
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Fully Paid', 'Partially Paid', 'Unpaid'],
+            datasets: [{
+                data: [{{ fully_paid }}, {{ partial_paid }}, {{ unpaid }}],
+                backgroundColor: ['#28a745', '#ffc107', '#dc3545']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+
+    // Payment Methods Chart
+    const methodCtx = document.getElementById('methodChart').getContext('2d');
+    new Chart(methodCtx, {
+        type: 'bar',
+        data: {
+            labels: [{% for method in payment_methods %}'{{ method.payment_mode|upper }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Amount Collected',
+                data: [{% for method in payment_methods %}{{ method.amount }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                backgroundColor: '#0d6efd'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

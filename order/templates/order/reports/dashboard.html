@@ -1,0 +1,271 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Order Dashboard Report{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-graph-up"></i> Order Dashboard Report</h2>
+    </div>
+
+    <!-- Date Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">From Date</label>
+                    <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">To Date</label>
+                    <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                    <a href="{% url 'order:dashboard_report' %}" class="btn btn-secondary">Reset</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h6 class="card-title">Total Orders</h6>
+                    <h3>{{ total_orders }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h6 class="card-title">Total Revenue</h6>
+                    <h3>₹{{ total_revenue|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h6 class="card-title">Collected</h6>
+                    <h3>₹{{ total_collected|floatformat:2 }}</h3>
+                    <small>{{ collection_rate }}%</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h6 class="card-title">Pending</h6>
+                    <h3>₹{{ total_pending|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="row g-4 mb-4">
+        <!-- Status Chart -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Orders by Status</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="statusChart" height="80"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Type Chart -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Orders by Type</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="typeChart" height="80"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <!-- Payment Methods -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Payment Methods</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="paymentChart" height="80"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Trend -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Monthly Revenue Trend</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="monthlyChart" height="80"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Customers -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="mb-0">Top 10 Customers by Revenue</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Customer Name</th>
+                            <th class="text-end">Orders</th>
+                            <th class="text-end">Total Amount</th>
+                            <th class="text-end">Paid</th>
+                            <th class="text-end">Pending</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for customer in top_customers %}
+                        <tr>
+                            <td>{{ customer.customer_name }}</td>
+                            <td class="text-end">{{ customer.order_count }}</td>
+                            <td class="text-end">₹{{ customer.total_amount|floatformat:2 }}</td>
+                            <td class="text-end text-success">₹{{ customer.paid_amount|floatformat:2 }}</td>
+                            <td class="text-end text-danger">₹{{ customer.pending|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Status Chart
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: [{% for item in status_summary %}'{{ item.status|title }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+            datasets: [{
+                data: [{% for item in status_summary %}{{ item.count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                backgroundColor: ['#0d6efd', '#198754', '#ffc107', '#dc3545', '#6c757d']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+
+    // Type Chart
+    const typeCtx = document.getElementById('typeChart').getContext('2d');
+    new Chart(typeCtx, {
+        type: 'doughnut',
+        data: {
+            labels: [{% for item in type_summary %}'{{ item.order_type|title }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+            datasets: [{
+                data: [{% for item in type_summary %}{{ item.count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                backgroundColor: ['#007bff', '#28a745', '#fd7e14', '#dc3545', '#6f42c1']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+
+    // Payment Chart
+    const paymentCtx = document.getElementById('paymentChart').getContext('2d');
+    new Chart(paymentCtx, {
+        type: 'bar',
+        data: {
+            labels: [{% for item in payment_summary %}'{{ item.payment_mode|title }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Amount',
+                data: [{% for item in payment_summary %}{{ item.amount }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                backgroundColor: '#28a745'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Monthly Chart
+    const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+    new Chart(monthlyCtx, {
+        type: 'line',
+        data: {
+            labels: [{% for item in monthly_data %}'{{ item.month|date:"M Y" }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+            datasets: [
+                {
+                    label: 'Revenue',
+                    data: [{% for item in monthly_data %}{{ item.revenue }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                },
+                {
+                    label: 'Collected',
+                    data: [{% for item in monthly_data %}{{ item.collected }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
