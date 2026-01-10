@@ -961,7 +961,7 @@ def kaligar_list(request):
     if selected_kaligar_id:
         try:
             selected_kaligar = Kaligar.objects.get(id=selected_kaligar_id)
-            selected_kaligar_ornaments = selected_kaligar.kaligar_ornaments.all().order_by('-date')
+            selected_kaligar_ornaments = selected_kaligar.ornaments.all().order_by('-ornament_date')
         except Kaligar.DoesNotExist:
             pass
     
@@ -969,10 +969,10 @@ def kaligar_list(request):
     kaligars_with_weights = []
     total_ornament_count = 0
     for kaligar in kaligars:
-        total_weight = kaligar.kaligar_ornaments.aggregate(
-            total=Coalesce(Sum('ornament_weight'), Decimal('0'), output_field=DecimalField())
+        total_weight = kaligar.ornaments.aggregate(
+            total=Coalesce(Sum('weight'), Decimal('0'), output_field=DecimalField())
         )['total']
-        ornament_count = kaligar.kaligar_ornaments.count()
+        ornament_count = kaligar.ornaments.count()
         total_ornament_count += ornament_count
         kaligars_with_weights.append({
             'id': kaligar.id,

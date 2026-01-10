@@ -1096,7 +1096,7 @@ def import_all_data(request):
                         image_url,
                         created_at,
                         updated_at,
-                    ) = row[:23]
+                    ) = row[:22]
 
                     # Convert ornament ID to integer for consistent mapping
                     orn_id = int(orn_id) if orn_id else None
