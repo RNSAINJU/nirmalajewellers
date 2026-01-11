@@ -168,7 +168,7 @@ class CustomerPurchase(models.Model):
         DIAMOND = 'diamond', 'Diamond'
 
     id = models.AutoField(primary_key=True)
-    sn = models.CharField(max_length=20, unique=True, verbose_name="SN")
+    sn = models.CharField(max_length=20, unique=True, verbose_name="SN", blank=True)
     purchase_date = NepaliDateField(null=True, blank=True)
     customer_name = models.CharField(max_length=255)
     location = models.CharField(max_length=255, blank=True, null=True)
@@ -186,7 +186,7 @@ class CustomerPurchase(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['-purchase_date', '-created_at']
+        ordering = ['-sn']
         indexes = [
             models.Index(fields=['sn']),
             models.Index(fields=['customer_name']),
@@ -195,6 +195,19 @@ class CustomerPurchase(models.Model):
 
     def __str__(self):
         return f"{self.sn} - {self.customer_name}"
+    
+    def save(self, *args, **kwargs):
+        """Auto-generate SN serially in descending order if not provided."""
+        if not self.sn:
+            # Get the highest numeric SN and increment
+            last_purchase = CustomerPurchase.objects.all().order_by('-sn').first()
+            if last_purchase and last_purchase.sn.isdigit():
+                last_num = int(last_purchase.sn)
+                self.sn = str(last_num + 1)
+            else:
+                # Start from 1 if no previous records
+                self.sn = "1"
+        super().save(*args, **kwargs)
 
 
 class MetalStockType(models.Model):

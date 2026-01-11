@@ -26,7 +26,7 @@ class CustomerPurchaseForm(forms.ModelForm):
     class Meta:
         model = CustomerPurchase
         fields = [
-            'sn', 'purchase_date', 'customer_name', 'location',
+            'purchase_date', 'customer_name', 'location',
             'phone_no', 'metal_type', 'ornament_name', 'weight', 'percentage', 'final_weight', 'refined_weight', 'rate', 'amount'
         ]
 

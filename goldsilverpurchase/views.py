@@ -1,11 +1,12 @@
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.db import models
+from django.db.models import Sum, Q, F, IntegerField
+from django.db.models.functions import Cast
 from .models import GoldSilverPurchase, Party, CustomerPurchase, MetalStock, MetalStockType, MetalStockMovement
 from ornament.models import Ornament, MainCategory, SubCategory, Kaligar
 from order.models import Order, OrderPayment, OrderOrnament
 from sales.models import Sale
-from django.db.models import Sum, Q
 import nepali_datetime as ndt
 import openpyxl
 from openpyxl.utils import get_column_letter
@@ -147,7 +148,6 @@ class CustomerPurchaseListView(ListView):
     model = CustomerPurchase
     template_name = 'goldsilverpurchase/customer_purchase_list.html'
     context_object_name = 'customer_purchases'
-    ordering = ['-purchase_date', '-created_at']
     paginate_by = 10
 
     def get_queryset(self):
@@ -184,6 +184,9 @@ class CustomerPurchaseListView(ListView):
         if metal_type:
             qs = qs.filter(metal_type=metal_type)
 
+        # Order by SN in descending numeric order
+        qs = qs.annotate(sn_numeric=Cast('sn', IntegerField())).order_by('-sn_numeric')
+        
         return qs
 
     def get_context_data(self, **kwargs):
@@ -191,6 +194,7 @@ class CustomerPurchaseListView(ListView):
         qs = self.get_queryset()
         ctx['total_weight'] = qs.aggregate(total=Sum('weight'))['total'] or Decimal('0')
         ctx['total_refined_weight'] = qs.aggregate(total=Sum('refined_weight'))['total'] or Decimal('0')
+        ctx['total_amount'] = qs.aggregate(total=Sum('amount'))['total'] or Decimal('0')
         ctx['date'] = self.request.GET.get('date', '')
         ctx['start_date'] = self.request.GET.get('start_date', '')
         ctx['end_date'] = self.request.GET.get('end_date', '')
@@ -309,7 +313,7 @@ def export_customer_excel(request):
 
     headers = [
         "SN", "Purchase Date (BS)", "Customer Name", "Location", "Phone",
-        "Metal", "Ornament Name", "Weight", "Refined Weight", "Rate", "Amount"
+        "Metal", "Ornament Name", "Weight (तोल)", "Percentage", "Final Weight (तोल)", "Refined Weight (तोल)", "Rate (Per तोल)", "Amount"
     ]
     ws.append(headers)
 
@@ -323,6 +327,8 @@ def export_customer_excel(request):
             p.get_metal_type_display(),
             p.ornament_name,
             p.weight,
+            p.percentage,
+            p.final_weight,
             p.refined_weight,
             p.rate,
             p.amount,
@@ -481,7 +487,6 @@ def import_customer_excel(request):
 
                 try:
                     (
-                        sn,
                         purchase_date_bs,
                         customer_name,
                         location,
@@ -489,6 +494,8 @@ def import_customer_excel(request):
                         metal_type,
                         ornament_name,
                         weight,
+                        percentage,
+                        final_weight,
                         refined_weight,
                         rate,
                         amount,
@@ -496,10 +503,6 @@ def import_customer_excel(request):
                 except Exception:
                     messages.error(request, "Excel format is incorrect. Columns mismatch.")
                     return redirect("gsp:customer_import_excel")
-
-                if CustomerPurchase.objects.filter(sn=str(sn)).exists():
-                    skipped += 1
-                    continue
 
                 try:
                     y, m, d = map(int, str(purchase_date_bs).split("-"))
@@ -512,7 +515,6 @@ def import_customer_excel(request):
                     metal_value = CustomerPurchase.MetalType.GOLD
 
                 CustomerPurchase.objects.create(
-                    sn=str(sn),
                     purchase_date=purchase_date,
                     customer_name=customer_name or "",
                     location=location or "",
@@ -520,6 +522,8 @@ def import_customer_excel(request):
                     metal_type=metal_value,
                     ornament_name=ornament_name or "",
                     weight=D(weight),
+                    percentage=D(percentage),
+                    final_weight=D(final_weight),
                     refined_weight=D(refined_weight),
                     rate=D(rate),
                     amount=D(amount),
@@ -528,7 +532,7 @@ def import_customer_excel(request):
 
             messages.success(
                 request,
-                f"Imported: {imported} | Skipped duplicates: {skipped}"
+                f"Imported: {imported} records"
             )
             return redirect("gsp:customer_purchase_list")
 
@@ -546,6 +550,8 @@ def data_settings(request):
             return import_all_data(request)
         elif "delete_all" in request.POST:
             return delete_all_data(request)
+        elif "delete_customer_purchases" in request.POST:
+            return delete_customer_purchases(request)
     return render(request, "goldsilverpurchase/data_settings.html")
 
 
@@ -647,9 +653,9 @@ def export_all_data(request):
             "Phone",
             "Metal Type",
             "Ornament",
-            "Weight",
-            "Refined Weight",
-            "Rate",
+            "Weight (Tola)",
+            "Refined Weight (Tola)",
+            "Rate (Per Tola)",
             "Amount",
             "Created At",
             "Updated At",
@@ -1271,6 +1277,41 @@ def import_all_data(request):
 
     except Exception as e:
         messages.error(request, f"Import failed: {str(e)}")
+        return redirect("gsp:data_settings")
+
+
+def delete_customer_purchases(request):
+    """Delete all customer purchases with password protection."""
+    if request.method != "POST":
+        return redirect("gsp:data_settings")
+
+    # Verify password
+    password = request.POST.get("customer_purchase_password", "")
+    confirm_text = request.POST.get("confirm_customer_delete", "")
+
+    # Password for deleting customer purchases (set to "admin123" - can be changed)
+    DELETE_PASSWORD = "admin123"
+
+    if password != DELETE_PASSWORD:
+        messages.error(request, "Incorrect password. Customer purchases were not deleted.")
+        return redirect("gsp:data_settings")
+
+    if confirm_text != "DELETE_CUSTOMER_PURCHASES":
+        messages.error(request, "Confirmation text does not match. Customer purchases were not deleted.")
+        return redirect("gsp:data_settings")
+
+    try:
+        customer_purchase_count = CustomerPurchase.objects.count()
+        CustomerPurchase.objects.all().delete()
+
+        messages.success(
+            request,
+            f"Successfully deleted {customer_purchase_count} customer purchases. This action cannot be undone."
+        )
+        return redirect("gsp:customer_purchase_list")
+
+    except Exception as e:
+        messages.error(request, f"Error while deleting customer purchases: {e}")
         return redirect("gsp:data_settings")
 
 

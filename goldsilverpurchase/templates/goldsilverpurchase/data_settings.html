@@ -38,7 +38,16 @@
 
         <!-- Delete Section -->
         <div class="row">
-            <div class="col-12">
+            <div class="col-md-6">
+                <h5 class="mb-3 text-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i> Delete Customer Purchases
+                </h5>
+                <p class="text-muted small">Permanently delete all customer purchase records. <strong>This action cannot be undone.</strong></p>
+                <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#deleteCustomerPurchasesModal">
+                    <i class="bi bi-trash me-1"></i> Delete All Customer Purchases
+                </button>
+            </div>
+            <div class="col-md-6">
                 <h5 class="mb-3 text-danger">
                     <i class="bi bi-exclamation-triangle me-2"></i> Danger Zone
                 </h5>
@@ -46,6 +55,45 @@
                 <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteConfirmModal">
                     <i class="bi bi-trash me-1"></i> Delete All Data
                 </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Customer Purchases Modal -->
+<div class="modal fade" id="deleteCustomerPurchasesModal" tabindex="-1" aria-labelledby="deleteCustomerPurchasesLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content border-warning">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="deleteCustomerPurchasesLabel">
+                    <i class="bi bi-exclamation-circle me-2"></i> Delete All Customer Purchases
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3"><strong>Warning:</strong> You are about to permanently delete all customer purchase records.</p>
+                <p class="text-danger mt-3"><strong>This action cannot be undone!</strong></p>
+                
+                <div class="form-group mb-3">
+                    <label for="customerPurchasePassword" class="form-label"><strong>Enter Password:</strong></label>
+                    <input type="password" id="customerPurchasePassword" class="form-control" placeholder="Enter password">
+                    <small class="text-muted">Default password: <code>admin123</code></small>
+                </div>
+
+                <p class="small text-muted">Type <code>DELETE_CUSTOMER_PURCHASES</code> in the field below to confirm:</p>
+                <input type="text" id="confirmCustomerInput" class="form-control" placeholder="Enter confirmation text">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" id="deleteCustomerPurchasesForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="delete_customer_purchases" value="true">
+                    <input type="hidden" name="customer_purchase_password" id="passwordInput" value="">
+                    <input type="hidden" name="confirm_customer_delete" id="confirmCustomerToken" value="">
+                    <button type="button" class="btn btn-warning" onclick="confirmDeleteCustomerPurchases()">
+                        <i class="bi bi-trash me-1"></i> Delete Customer Purchases
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -98,6 +146,25 @@
         } else {
             alert("Confirmation text does not match. Deletion cancelled.");
         }
+    }
+
+    function confirmDeleteCustomerPurchases() {
+        const password = document.getElementById("customerPurchasePassword").value;
+        const confirmText = document.getElementById("confirmCustomerInput").value;
+
+        if (password === "") {
+            alert("Please enter the password.");
+            return;
+        }
+
+        if (confirmText !== "DELETE_CUSTOMER_PURCHASES") {
+            alert("Confirmation text does not match. Deletion cancelled.");
+            return;
+        }
+
+        document.getElementById("passwordInput").value = password;
+        document.getElementById("confirmCustomerToken").value = confirmText;
+        document.getElementById("deleteCustomerPurchasesForm").submit();
     }
 </script>
 {% endblock %}

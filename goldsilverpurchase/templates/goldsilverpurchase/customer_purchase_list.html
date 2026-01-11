@@ -5,7 +5,7 @@
     <h1 class="text-center mb-4" style="color: #667eea; font-weight: 700;">Customer Purchases</h1>
 
     <div class="row g-3 mb-4">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card shadow-sm border-0" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);">
                 <div class="card-body text-white text-center">
                     <h6 class="mb-1">Total Weight</h6>
@@ -13,7 +13,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card shadow-sm border-0" style="background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);">
                 <div class="card-body text-white text-center">
                     <h6 class="mb-1">Refined Weight</h6>
@@ -21,7 +21,15 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4 d-flex align-items-center justify-content-center flex-wrap gap-2">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                <div class="card-body text-white text-center">
+                    <h6 class="mb-1">Total Amount</h6>
+                    <h3 class="mb-0">रु{{ total_amount|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 d-flex align-items-center justify-content-center flex-wrap gap-2">
             <a href="{% url 'gsp:customer_purchase_create' %}" class="btn btn-primary btn-lg">Create Customer Purchase</a>
             <a href="{% url 'gsp:customer_export_excel' %}" class="btn btn-success btn-lg">Export Excel</a>
             <a href="{% url 'gsp:customer_import_excel' %}" class="btn btn-outline-info btn-lg">Import Excel</a>
@@ -63,9 +71,9 @@
                     <th>Phone</th>
                     <th>Metal</th>
                     <th>Ornament</th>
-                    <th class="text-end">Weight</th>
-                    <th class="text-end">Refined Weight</th>
-                    <th class="text-end">Rate</th>
+                    <th class="text-end">Weight (तोल)</th>
+                    <th class="text-end">Refined Weight (तोल)</th>
+                    <th class="text-end">Rate (per तोल)</th>
                     <th class="text-end">Amount</th>
                     <th>Actions</th>
                 </tr>
