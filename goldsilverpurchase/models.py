@@ -199,14 +199,20 @@ class CustomerPurchase(models.Model):
     def save(self, *args, **kwargs):
         """Auto-generate SN serially in descending order if not provided."""
         if not self.sn:
-            # Get the highest numeric SN and increment
-            last_purchase = CustomerPurchase.objects.all().order_by('-sn').first()
-            if last_purchase and last_purchase.sn.isdigit():
-                last_num = int(last_purchase.sn)
+            # Get all SNs, convert to integers, and find the maximum
+            all_purchases = CustomerPurchase.objects.all().values_list('sn', flat=True)
+            numeric_sns = []
+            for sn in all_purchases:
+                if sn and str(sn).isdigit():
+                    numeric_sns.append(int(sn))
+            
+            if numeric_sns:
+                last_num = max(numeric_sns)
                 self.sn = str(last_num + 1)
             else:
                 # Start from 1 if no previous records
                 self.sn = "1"
+        
         super().save(*args, **kwargs)
 
 

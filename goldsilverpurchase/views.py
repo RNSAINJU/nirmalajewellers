@@ -312,14 +312,13 @@ def export_customer_excel(request):
     ws.title = "CustomerPurchases"
 
     headers = [
-        "SN", "Purchase Date (BS)", "Customer Name", "Location", "Phone",
+        "Purchase Date (BS)", "Customer Name", "Location", "Phone",
         "Metal", "Ornament Name", "Weight (तोल)", "Percentage", "Final Weight (तोल)", "Refined Weight (तोल)", "Rate (Per तोल)", "Amount"
     ]
     ws.append(headers)
 
     for p in purchases:
         ws.append([
-            p.sn,
             str(p.purchase_date),
             p.customer_name,
             p.location,
