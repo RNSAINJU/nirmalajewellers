@@ -8,8 +8,8 @@ class DailyRate(models.Model):
     bs_date = models.CharField(max_length=50, blank=True, help_text="Nepali date as shown on site, e.g., '11 Poush 2082'")
 
     # Per tola rates
-    gold_rate = models.DecimalField(max_digits=12, decimal_places=2, help_text="Gold rate per tola")
-    silver_rate = models.DecimalField(max_digits=12, decimal_places=2, help_text="Silver rate per tola")
+    gold_rate = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'), help_text="Gold rate per tola")
+    silver_rate = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'), help_text="Silver rate per tola")
 
     # Per 10 gram derived rates
     gold_rate_10g = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'), help_text="Gold rate per 10 grams")
