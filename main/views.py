@@ -1,24 +1,247 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse
-from django.db.models import Sum, Q
+from django.db.models import Sum, Q, F, DecimalField
 from decimal import Decimal
 from django.utils import timezone
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import nepali_datetime as ndt
+from django.contrib import messages
 
 from ornament.models import Ornament, Kaligar
 from goldsilverpurchase.models import GoldSilverPurchase, Party, CustomerPurchase
 from order.models import Order, OrderOrnament
-from main.models import Stock
+from main.models import Stock, DailyRate
+from main.forms import DailyRateForm
 
 # Create your views here.
 
+def calculate_daily_ornament_totals(target_date, gold_rate=None, silver_rate=None, diamond_rate=None, use_date_filter=False):
+    """
+    Calculate total ornament values for a given date.
+    
+    Args:
+        target_date: The date for getting rates
+        gold_rate: Override gold rate (optional, assumed to be per tola)
+        silver_rate: Override silver rate (optional, assumed to be per tola)
+        diamond_rate: Override diamond rate (optional, per gram)
+        use_date_filter: If True, filter ornaments by created_at__date=target_date
+                        If False, use all current stock ornaments
+    
+    Note: Gold/Silver daily rates are in per-tola basis (1 tola = 11.66 grams)
+    Returns dict with metal totals based on weight report logic.
+    """
+    from datetime import datetime as dt
+    
+    # Conversion factor: 1 tola = 11.66 grams
+    TOLA_TO_GRAMS = Decimal('11.66')
+    
+    result = {
+        'date': target_date,
+        'gold_amount': Decimal('0'),
+        'silver_amount': Decimal('0'),
+        'diamond_amount': Decimal('0'),
+        'gold_count': 0,
+        'silver_count': 0,
+        'diamond_count': 0,
+        'gold_weight': Decimal('0'),
+        'silver_weight': Decimal('0'),
+        'diamond_weight': Decimal('0'),
+        'total_amount': Decimal('0'),
+    }
+    
+    # Try to get rates for the target date
+    if gold_rate is None or silver_rate is None or diamond_rate is None:
+        try:
+            rate_obj = DailyRate.objects.filter(date=target_date).first()
+            if rate_obj:
+                if gold_rate is None:
+                    gold_rate = rate_obj.gold_rate
+                if silver_rate is None:
+                    silver_rate = rate_obj.silver_rate
+                if diamond_rate is None:
+                    diamond_rate = rate_obj.diamond_rate
+            else:
+                if gold_rate is None:
+                    gold_rate = Decimal('0')
+                if silver_rate is None:
+                    silver_rate = Decimal('0')
+                if diamond_rate is None:
+                    diamond_rate = Decimal('0')
+        except:
+            if gold_rate is None:
+                gold_rate = Decimal('0')
+            if silver_rate is None:
+                silver_rate = Decimal('0')
+            if diamond_rate is None:
+                diamond_rate = Decimal('0')
+    
+    # Convert tola rates to per-gram rates for gold and silver
+    gold_rate_per_gram = gold_rate / TOLA_TO_GRAMS if gold_rate > 0 else Decimal('0')
+    silver_rate_per_gram = silver_rate / TOLA_TO_GRAMS if silver_rate > 0 else Decimal('0')
+    
+    # Filter ornaments: all current stock or filtered by date
+    if use_date_filter:
+        ornaments_today = Ornament.objects.filter(
+            ornament_type=Ornament.OrnamentCategory.STOCK,
+            created_at__date=target_date
+        )
+    else:
+        # Use all current stock ornaments (regardless of created_at date)
+        ornaments_today = Ornament.objects.filter(
+            ornament_type=Ornament.OrnamentCategory.STOCK
+        )
+    
+    # Purity conversion factors for 24k equivalent
+    purity_factors = {
+        '24KARAT': Decimal('1.00'),
+        '23KARAT': Decimal('0.99'),
+        '22KARAT': Decimal('0.98'),
+        '18KARAT': Decimal('0.75'),
+        '14KARAT': Decimal('0.58'),
+    }
+    
+    # Process Gold ornaments
+    gold_ornaments = ornaments_today.filter(metal_type='Gold')
+    if gold_ornaments.exists():
+        result['gold_count'] = gold_ornaments.count()
+        
+        # Calculate 24k equivalent by iterating through ornaments
+        gold_24k_equivalent = Decimal('0')
+        total_gold_weight = Decimal('0')
+        for ornament in gold_ornaments:
+            weight = ornament.weight or Decimal('0')
+            total_gold_weight += weight
+            factor = purity_factors.get(ornament.type, Decimal('1.00'))
+            gold_24k_equivalent += weight * factor
+        
+        result['gold_weight'] = total_gold_weight
+        
+        # Calculate jarti and jyala amounts
+        total_jarti = gold_ornaments.aggregate(total=Sum('jarti'))['total'] or Decimal('0')
+        total_jyala = gold_ornaments.aggregate(total=Sum('jyala'))['total'] or Decimal('0')
+        
+        # Calculate amounts with per-gram rate
+        if gold_rate_per_gram and gold_rate_per_gram > 0:
+            gold_amount = gold_24k_equivalent * gold_rate_per_gram
+            jarti_amount = total_jarti * gold_rate_per_gram
+            result['gold_amount'] = gold_amount + jarti_amount + total_jyala
+    
+    # Process Silver ornaments
+    silver_ornaments = ornaments_today.filter(metal_type='Silver')
+    if silver_ornaments.exists():
+        result['silver_count'] = silver_ornaments.count()
+        
+        # Calculate 24k equivalent for silver
+        silver_24k_equivalent = Decimal('0')
+        total_silver_weight = Decimal('0')
+        for ornament in silver_ornaments:
+            weight = ornament.weight or Decimal('0')
+            total_silver_weight += weight
+            factor = purity_factors.get(ornament.type, Decimal('1.00'))
+            silver_24k_equivalent += weight * factor
+        
+        result['silver_weight'] = total_silver_weight
+        
+        # Calculate amounts with per-gram rate
+        if silver_rate_per_gram and silver_rate_per_gram > 0:
+            silver_amount = silver_24k_equivalent * silver_rate_per_gram
+            total_jyala = silver_ornaments.aggregate(total=Sum('jyala'))['total'] or Decimal('0')
+            result['silver_amount'] = silver_amount + total_jyala
+    
+    # Process Diamond ornaments
+    diamond_ornaments = ornaments_today.filter(metal_type='Diamond')
+    if diamond_ornaments.exists():
+        result['diamond_count'] = diamond_ornaments.count()
+        
+        # For diamond ornaments, calculate four components:
+        # 1. Metal weight (24K equivalent) valued at gold rate
+        # 2. Diamond weight valued at diamond rate
+        # 3. Jyala amounts
+        # 4. Stone price amounts
+        
+        # Component 1: Calculate 24K equivalent metal weight
+        diamond_24k_equivalent = Decimal('0')
+        diamond_metal_weight_for_display = Decimal('0')
+        
+        for ornament in diamond_ornaments:
+            weight = ornament.weight or Decimal('0')
+            factor = purity_factors.get(ornament.type, Decimal('1.00'))
+            diamond_24k_equivalent += weight * factor
+            diamond_metal_weight_for_display = diamond_24k_equivalent
+        
+        result['diamond_weight'] = diamond_metal_weight_for_display
+        
+        # Component 1 value: Convert to tola and multiply by gold rate
+        TOLA_CONVERSION = Decimal('11.664')
+        diamond_metal_weight_in_tola = diamond_24k_equivalent / TOLA_CONVERSION
+        component1_amount = diamond_metal_weight_in_tola * gold_rate if gold_rate > 0 else Decimal('0')
+        
+        # Component 2: Sum all diamond_weight and multiply by stock diamond_rate
+        total_actual_diamond_weight = diamond_ornaments.aggregate(total=Sum('diamond_weight'))['total'] or Decimal('0')
+        
+        # Get stock data for diamond_rate
+        # First try current year, then fall back to most recent stock record
+        stock_record = Stock.objects.filter(year=target_date.year).first()
+        if not stock_record:
+            # If no record for current year, get the most recent one
+            stock_record = Stock.objects.order_by('-year').first()
+        
+        if stock_record and stock_record.diamond_rate:
+            diamond_rate_to_use = stock_record.diamond_rate
+            # diamond_weight is in carat, diamond_rate is per carat (no conversion needed)
+            component2_amount = total_actual_diamond_weight * diamond_rate_to_use
+        else:
+            component2_amount = Decimal('0')
+        
+        # Component 3: Sum all jyala amounts
+        component3_amount = diamond_ornaments.aggregate(total=Sum('jyala'))['total'] or Decimal('0')
+        
+        # Component 4: Sum all stone_price amounts
+        component4_amount = diamond_ornaments.aggregate(total=Sum('stone_totalprice'))['total'] or Decimal('0')
+        
+        # Total diamond amount = all components
+        diamond_amount = component1_amount + component2_amount + component3_amount + component4_amount
+        result['diamond_amount'] = diamond_amount
+    
+    result['total_amount'] = result['gold_amount'] + result['silver_amount'] + result['diamond_amount']
+    
+    return result
+
+
 def index(request):
+    """Home page."""
     return HttpResponse("Hello, Django on Ubuntu!")
 
 
 def dashboard(request):
     """Dashboard with basic counts and totals across apps."""
+    daily_rate_form = None
+    
+    # Handle POST request to update today's rates
+    if request.method == 'POST':
+        daily_rate_form = DailyRateForm(request.POST)
+        if daily_rate_form.is_valid():
+            # Get or create today's rate
+            today = date.today()
+            daily_rate, created = DailyRate.objects.get_or_create(date=today)
+            
+            # Update rates
+            daily_rate.gold_rate = daily_rate_form.cleaned_data['gold_rate']
+            daily_rate.silver_rate = daily_rate_form.cleaned_data['silver_rate']
+            daily_rate.save()
+            
+            action = 'created' if created else 'updated'
+            messages.success(request, f'Today\'s rates {action} successfully!')
+            return redirect('main:dashboard')
+    else:
+        # Get today's rate if it exists
+        today = date.today()
+        today_rate = DailyRate.objects.filter(date=today).first()
+        if today_rate:
+            daily_rate_form = DailyRateForm(instance=today_rate)
+        else:
+            daily_rate_form = DailyRateForm()
+    
     total_ornaments = Ornament.objects.count()
     total_orders = Order.objects.count()
     total_purchase_amount = GoldSilverPurchase.objects.aggregate(total=Sum('amount'))['total'] or 0
@@ -48,6 +271,25 @@ def dashboard(request):
         .get("total")
         or 0
     )
+    
+    # Calculate daily P&L
+    # Today: all current stock ornaments valued at today's rates
+    # Yesterday: same stock ornaments valued at yesterday's rates (shows rate impact)
+    today = date.today()
+    yesterday = today - timedelta(days=1)
+    
+    today_totals = calculate_daily_ornament_totals(today, use_date_filter=False)
+    yesterday_totals = calculate_daily_ornament_totals(yesterday, use_date_filter=False)
+    
+    # Calculate differences
+    pl_difference = today_totals['total_amount'] - yesterday_totals['total_amount']
+    pl_percent_change = Decimal('0')
+    if yesterday_totals['total_amount'] > 0:
+        pl_percent_change = (pl_difference / yesterday_totals['total_amount']) * Decimal('100')
+    
+    # Get today's rate for display
+    today = date.today()
+    latest_rate = DailyRate.objects.filter(date=today).first()
 
     context = {
         'total_ornaments': total_ornaments,
@@ -57,8 +299,15 @@ def dashboard(request):
         'gold_stock': gold_stock,
         'silver_stock': silver_stock,
         'diamond_stock': diamond_stock,
+        'daily_rate_form': daily_rate_form,
+        'latest_rate': latest_rate,
+        'today_totals': today_totals,
+        'yesterday_totals': yesterday_totals,
+        'pl_difference': pl_difference,
+        'pl_percent_change': pl_percent_change,
     }
     return render(request, 'main/dashboard.html', context)
+
 
 
 def stock_report(request):

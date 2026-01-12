@@ -141,21 +141,21 @@
                                 <!-- Status, Order Type, and Description fields -->
                                 <div class="col-12">
                                     <div class="row g-2">
-                                        <div class="col-md-4 col-sm-12">
+                                        <div class="col-md-3 col-sm-12">
                                             <label class="form-label mb-1" for="id_status">{{ form.status.label }}</label>
                                             {{ form.status }}
                                             {% if form.status.errors %}
                                                 <div class="text-danger small">{{ form.status.errors }}</div>
                                             {% endif %}
                                         </div>
-                                        <div class="col-md-4 col-sm-12">
+                                        <div class="col-md-3 col-sm-12">
                                             <label class="form-label mb-1" for="id_order_type">{{ form.order_type.label }}</label>
                                             {{ form.order_type }}
                                             {% if form.order_type.errors %}
                                                 <div class="text-danger small">{{ form.order_type.errors }}</div>
                                             {% endif %}
                                         </div>
-                                        <div class="col-md-4 col-sm-12">
+                                        <div class="col-md-3 col-sm-12">
                                             <label class="form-label mb-1" for="id_description">{{ form.description.label }}</label>
                                             {{ form.description }}
                                             {% if form.description.errors %}
@@ -1046,58 +1046,31 @@ function buildOrderLinesPayload() {
     }
 }
 
-// Payments (multiple rows)
-function addPaymentRow(mode = 'cash', amount = '') {
-    const tbody = document.getElementById('payment-rows-body');
-    if (!tbody) return;
-
-    const row = document.createElement('tr');
-    row.className = 'payment-row';
-    row.innerHTML = `
-        <td>
-            <select class="form-select form-select-sm payment-mode">
-                ${paymentModeOptionsHtml}
-            </select>
-        </td>
-        <td>
-            <input type="number" step="0.01" class="form-control form-control-sm payment-amount" placeholder="0.00">
-        </td>
-        <td class="text-end">
-            <button type="button" class="btn btn-outline-danger btn-sm payment-remove">Remove</button>
-        </td>
-    `;
-    tbody.appendChild(row);
-
-    const modeSelect = row.querySelector('.payment-mode');
-    const amountInput = row.querySelector('.payment-amount');
-    const removeBtn = row.querySelector('.payment-remove');
-
-    if (modeSelect && mode) modeSelect.value = mode;
-    if (amountInput && amount !== '') amountInput.value = amount;
-
-    modeSelect?.addEventListener('change', recalcPayments);
-    amountInput?.addEventListener('input', recalcPayments);
-    removeBtn?.addEventListener('click', () => {
-        // Keep at least one row; if only one, just clear its values
-        const rows = document.querySelectorAll('.payment-row');
-        if (rows.length <= 1) {
-            if (modeSelect) modeSelect.value = 'cash';
-            if (amountInput) amountInput.value = '';
-        } else {
-            row.remove();
-        }
-        recalcPayments();
-    });
-
-    recalcPayments();
-}
-
 function getPaymentRowsData() {
     const rows = [];
     document.querySelectorAll('.payment-row').forEach(row => {
         const mode = row.querySelector('.payment-mode')?.value || 'cash';
         const amountVal = parseFloat(row.querySelector('.payment-amount')?.value) || 0;
-        rows.push({ payment_mode: mode, amount: amountVal });
+        
+        let debtorData = null;
+        if (mode === 'sundry_debtor') {
+            const debtorName = row.querySelector('.debtor-name')?.value || '';
+            const creditLimit = parseFloat(row.querySelector('.debtor-credit-limit')?.value) || 0;
+            const currentBalance = parseFloat(row.querySelector('.debtor-current-balance')?.value) || 0;
+            
+            // Always include debtor data for sundry_debtor payments (even if name is empty - backend will use customer name)
+            debtorData = {
+                name: debtorName.trim(),
+                credit_limit: creditLimit,
+                current_balance: currentBalance
+            };
+        }
+        
+        rows.push({ 
+            payment_mode: mode, 
+            amount: amountVal, 
+            debtor_data: debtorData 
+        });
     });
     return rows;
 }
@@ -1123,6 +1096,92 @@ function recalcPayments() {
     const orderTotalVal = parseFloat(document.getElementById('order-total')?.value) || 0;
     updateRemainingAmount(orderTotalVal, totalPaid);
 }
+
+// Payments (multiple rows)
+function addPaymentRow(mode = 'cash', amount = '', debtorName = '', creditLimit = '', currentBalance = '') {
+    const tbody = document.getElementById('payment-rows-body');
+    if (!tbody) return;
+
+    const row = document.createElement('tr');
+    row.className = 'payment-row';
+    row.innerHTML = `
+        <td>
+            <select class="form-select form-select-sm payment-mode">
+                ${paymentModeOptionsHtml}
+            </select>
+        </td>
+        <td>
+            <div class="payment-details">
+                <input type="number" step="0.01" class="form-control form-control-sm payment-amount" placeholder="0.00">
+                <div class="debtor-fields" style="display: none; margin-top: 4px; padding: 8px; background-color: #f8f9fa; border-radius: 4px;">
+                    <input type="text" class="form-control form-control-sm debtor-name" placeholder="Debtor/Customer Name" style="margin-bottom: 4px;">
+                    <input type="number" step="0.01" class="form-control form-control-sm debtor-credit-limit" placeholder="Credit Limit" style="margin-bottom: 4px;">
+                    <input type="number" step="0.01" class="form-control form-control-sm debtor-current-balance" placeholder="Current Balance" style="margin-bottom: 0;">
+                </div>
+            </div>
+        </td>
+        <td class="text-end">
+            <button type="button" class="btn btn-outline-danger btn-sm payment-remove">Remove</button>
+        </td>
+    `;
+    tbody.appendChild(row);
+
+    const modeSelect = row.querySelector('.payment-mode');
+    const amountInput = row.querySelector('.payment-amount');
+    const debtorFields = row.querySelector('.debtor-fields');
+    const debtorNameInput = row.querySelector('.debtor-name');
+    const debtorCreditLimitInput = row.querySelector('.debtor-credit-limit');
+    const debtorCurrentBalanceInput = row.querySelector('.debtor-current-balance');
+    const removeBtn = row.querySelector('.payment-remove');
+
+    if (modeSelect && mode) modeSelect.value = mode;
+    if (amountInput && amount !== '') amountInput.value = amount;
+    if (debtorNameInput && debtorName) debtorNameInput.value = debtorName;
+    if (debtorCreditLimitInput && creditLimit) debtorCreditLimitInput.value = creditLimit;
+    if (debtorCurrentBalanceInput && currentBalance) debtorCurrentBalanceInput.value = currentBalance;
+
+    // Handle payment mode changes - show/hide debtor input fields
+    modeSelect?.addEventListener('change', function() {
+        if (this.value === 'sundry_debtor') {
+            debtorFields.style.display = 'block';
+        } else {
+            debtorFields.style.display = 'none';
+            debtorNameInput.value = '';
+            debtorCreditLimitInput.value = '';
+            debtorCurrentBalanceInput.value = '';
+        }
+        recalcPayments();
+    });
+
+    amountInput?.addEventListener('input', recalcPayments);
+    debtorNameInput?.addEventListener('input', recalcPayments);
+    debtorCreditLimitInput?.addEventListener('input', recalcPayments);
+    debtorCurrentBalanceInput?.addEventListener('input', recalcPayments);
+
+    removeBtn?.addEventListener('click', () => {
+        // Keep at least one row; if only one, just clear its values
+        const rows = document.querySelectorAll('.payment-row');
+        if (rows.length <= 1) {
+            if (modeSelect) modeSelect.value = 'cash';
+            if (amountInput) amountInput.value = '';
+            debtorFields.style.display = 'none';
+            debtorNameInput.value = '';
+            debtorCreditLimitInput.value = '';
+            debtorCurrentBalanceInput.value = '';
+        } else {
+            row.remove();
+        }
+        recalcPayments();
+    });
+
+    // If mode is sundry_debtor, show the fields
+    if (mode === 'sundry_debtor') {
+        debtorFields.style.display = 'block';
+    }
+
+    recalcPayments();
+}
+
 
 function initPaymentRows() {
     if (initialPayments && initialPayments.length) {

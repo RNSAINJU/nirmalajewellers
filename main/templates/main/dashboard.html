@@ -2,6 +2,86 @@
 
 {% block content %}
 <style>
+  .rate-input-card {
+    background: linear-gradient(135deg, #ffd89b 0%, #ff6b6b 100%);
+    border-radius: 12px;
+    padding: 25px;
+    color: white;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+  }
+
+  .rate-input-card h2 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .rate-input-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 150px;
+    gap: 12px;
+    align-items: end;
+  }
+
+  .rate-input-form .form-group {
+    margin-bottom: 0;
+  }
+
+  .rate-input-form label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 5px;
+    display: block;
+    color: white;
+  }
+
+  .rate-input-form input {
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 1rem;
+  }
+
+  .rate-input-form input:focus {
+    background: white;
+    border-color: white;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+  }
+
+  .rate-input-form button {
+    background: white;
+    color: #ff6b6b;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .rate-input-form button:hover {
+    background: rgba(255, 255, 255, 0.9);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  @media (max-width: 1200px) {
+    .rate-input-form {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .rate-input-form {
+      grid-template-columns: 1fr;
+    }
+  }
+
   .dashboard-header {
     margin-bottom: 40px;
     text-align: center;
@@ -188,15 +268,157 @@
     color: #333;
   }
 
-  .stock-card-note {
-    font-size: 0.75rem;
-    color: #999;
+  .pl-card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #333;
+  }
+
+  .pl-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #e5e7eb;
+  }
+
+  .pl-tab-button {
+    padding: 12px 20px;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-weight: 600;
+    color: #6b7280;
+    transition: all 0.3s ease;
+  }
+
+  .pl-tab-button.active {
+    color: #10b981;
+    border-bottom-color: #10b981;
+  }
+
+  .pl-tab-content {
+    display: none;
+  }
+
+  .pl-tab-content.active {
+    display: block;
+  }
+
+  .pl-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+  }
+
+  .pl-item {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #10b981;
+  }
+
+  .pl-item.loss {
+    border-left-color: #ef4444;
+  }
+
+  .pl-item-label {
+    font-size: 0.85rem;
+    color: #6b7280;
+    font-weight: 500;
+    margin-bottom: 5px;
+  }
+
+  .pl-item-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  .pl-item.loss .pl-item-value {
+    color: #ef4444;
+  }
+
+  .pl-difference-card {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    padding: 25px;
+    border-radius: 12px;
+    color: white;
+    margin-top: 20px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  }
+
+  .pl-difference-card.loss {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  }
+
+  .pl-difference-label {
+    font-size: 1rem;
+    opacity: 0.9;
+    margin-bottom: 10px;
+  }
+
+  .pl-difference-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+  }
+
+  .pl-difference-percent {
+    font-size: 1.1rem;
+    opacity: 0.9;
   }
 </style>
 
 <div class="dashboard-header">
   <h1>💎 Dashboard</h1>
   <p>Welcome to Nirmal Jewellers Management System</p>
+</div>
+
+<!-- Daily Rate Input Section -->
+<div class="rate-input-card">
+  <h2>
+    <span>📊</span>
+    Today's Metal Rates
+  </h2>
+  <form method="post" class="rate-input-form">
+    {% csrf_token %}
+    <div class="form-group">
+      <label for="{{ daily_rate_form.bs_date.id_for_label }}">{{ daily_rate_form.bs_date.label }}</label>
+      {{ daily_rate_form.bs_date }}
+      {% if daily_rate_form.bs_date.errors %}
+        <small class="text-danger">{{ daily_rate_form.bs_date.errors }}</small>
+      {% endif %}
+    </div>
+    <div class="form-group">
+      <label for="{{ daily_rate_form.gold_rate.id_for_label }}">{{ daily_rate_form.gold_rate.label }}</label>
+      {{ daily_rate_form.gold_rate }}
+      {% if daily_rate_form.gold_rate.errors %}
+        <small class="text-danger">{{ daily_rate_form.gold_rate.errors }}</small>
+      {% endif %}
+    </div>
+    <div class="form-group">
+      <label for="{{ daily_rate_form.silver_rate.id_for_label }}">{{ daily_rate_form.silver_rate.label }}</label>
+      {{ daily_rate_form.silver_rate }}
+      {% if daily_rate_form.silver_rate.errors %}
+        <small class="text-danger">{{ daily_rate_form.silver_rate.errors }}</small>
+      {% endif %}
+    </div>
+    <button type="submit" class="btn btn-light">
+      <span>💾 Save</span>
+    </button>
+  </form>
+  {% if latest_rate %}
+  <div style="margin-top: 15px; padding: 12px; background: rgba(255, 255, 255, 0.2); border-radius: 8px; font-size: 0.9rem;">
+    <div style="opacity: 0.9;">📅 English Date: <strong>{{ latest_rate.date }}</strong></div>
+    {% if latest_rate.bs_date %}
+    <div style="opacity: 0.9; margin-top: 5px;">📅 Nepali Date (BS): <strong>{{ latest_rate.bs_date }}</strong></div>
+    {% endif %}
+  </div>
+  {% endif %}
 </div>
 
 <div class="stats-container">
@@ -270,6 +492,131 @@
     <div class="stock-card-note">Total metal weight in stock (Diamond)</div>
   </div>
 </div>
+
+<!-- Daily Profit & Loss Section -->
+<div style="margin-top: 40px; padding: 30px; background: white; border-radius: 15px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);">
+  <div style="display: flex; align-items: center; margin-bottom: 25px; gap: 10px;">
+    <h2 style="margin: 0; font-size: 1.8rem; font-weight: 700; color: #2c3e50;">📊 Daily Profit & Loss</h2>
+    <span style="font-size: 0.9rem; color: #6b7280; background: #f3f4f6; padding: 4px 10px; border-radius: 20px;">Ornament Analysis</span>
+  </div>
+
+  <!-- Tab Navigation -->
+  <div class="pl-tabs">
+    <button class="pl-tab-button active" onclick="switchPLTab('today')">
+      Today
+    </button>
+    <button class="pl-tab-button" onclick="switchPLTab('yesterday')">
+      Yesterday
+    </button>
+    <button class="pl-tab-button" onclick="switchPLTab('comparison')">
+      Comparison
+    </button>
+  </div>
+
+  <!-- Today Tab -->
+  <div id="pl-today" class="pl-tab-content active">
+    <div class="pl-summary">
+      <div class="pl-item">
+        <div class="pl-item-label">Gold Ornaments</div>
+        <div class="pl-item-value">रु {{ today_totals.gold_amount|floatformat:2 }}</div>
+        <div style="font-size: 0.85rem; color: #9ca3af; margin-top: 5px;">{{ today_totals.gold_count }} items • {{ today_totals.gold_weight|floatformat:3 }}g</div>
+      </div>
+      <div class="pl-item">
+        <div class="pl-item-label">Silver Ornaments</div>
+        <div class="pl-item-value">रु {{ today_totals.silver_amount|floatformat:2 }}</div>
+        <div style="font-size: 0.85rem; color: #9ca3af; margin-top: 5px;">{{ today_totals.silver_count }} items • {{ today_totals.silver_weight|floatformat:3 }}g</div>
+      </div>
+      <div class="pl-item">
+        <div class="pl-item-label">Diamond Ornaments</div>
+        <div class="pl-item-value">रु {{ today_totals.diamond_amount|floatformat:2 }}</div>
+        <div style="font-size: 0.85rem; color: #9ca3af; margin-top: 5px;">{{ today_totals.diamond_count }} items • {{ today_totals.diamond_weight|floatformat:3 }}g</div>
+      </div>
+    </div>
+    <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 20px; border-radius: 10px; color: white; text-align: center; margin-top: 15px;">
+      <div style="font-size: 0.9rem; opacity: 0.9;">Total Today</div>
+      <div style="font-size: 2rem; font-weight: 700;">रु {{ today_totals.total_amount|floatformat:2 }}</div>
+    </div>
+  </div>
+
+  <!-- Yesterday Tab -->
+  <div id="pl-yesterday" class="pl-tab-content">
+    <div class="pl-summary">
+      <div class="pl-item">
+        <div class="pl-item-label">Gold Ornaments</div>
+        <div class="pl-item-value">रु {{ yesterday_totals.gold_amount|floatformat:2 }}</div>
+        <div style="font-size: 0.85rem; color: #9ca3af; margin-top: 5px;">{{ yesterday_totals.gold_count }} items • {{ yesterday_totals.gold_weight|floatformat:3 }}g</div>
+      </div>
+      <div class="pl-item">
+        <div class="pl-item-label">Silver Ornaments</div>
+        <div class="pl-item-value">रु {{ yesterday_totals.silver_amount|floatformat:2 }}</div>
+        <div style="font-size: 0.85rem; color: #9ca3af; margin-top: 5px;">{{ yesterday_totals.silver_count }} items • {{ yesterday_totals.silver_weight|floatformat:3 }}g</div>
+      </div>
+      <div class="pl-item">
+        <div class="pl-item-label">Diamond Ornaments</div>
+        <div class="pl-item-value">रु {{ yesterday_totals.diamond_amount|floatformat:2 }}</div>
+        <div style="font-size: 0.85rem; color: #9ca3af; margin-top: 5px;">{{ yesterday_totals.diamond_count }} items • {{ yesterday_totals.diamond_weight|floatformat:3 }}g</div>
+      </div>
+    </div>
+    <div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 20px; border-radius: 10px; color: white; text-align: center; margin-top: 15px;">
+      <div style="font-size: 0.9rem; opacity: 0.9;">Total Yesterday</div>
+      <div style="font-size: 2rem; font-weight: 700;">रु {{ yesterday_totals.total_amount|floatformat:2 }}</div>
+    </div>
+  </div>
+
+  <!-- Comparison Tab -->
+  <div id="pl-comparison" class="pl-tab-content">
+    <div class="pl-difference-card {% if pl_difference < 0 %}loss{% endif %}">
+      <div class="pl-difference-label">Daily Change (Today vs Yesterday)</div>
+      <div class="pl-difference-value">{% if pl_difference >= 0 %}+{% endif %}रु {{ pl_difference|floatformat:2 }}</div>
+      <div class="pl-difference-percent">
+        {% if pl_percent_change >= 0 %}
+          ↑ {{ pl_percent_change|floatformat:2 }}% increase
+        {% else %}
+          ↓ {{ pl_percent_change|floatformat:2 }}% decrease
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="pl-summary" style="margin-top: 25px;">
+      <div class="pl-item">
+        <div class="pl-item-label">Gold Difference</div>
+        <div class="pl-item-value {% if today_totals.gold_amount < yesterday_totals.gold_amount %}loss{% endif %}">
+          {% if today_totals.gold_amount >= yesterday_totals.gold_amount %}+{% endif %}रु {{ today_totals.gold_amount|add:"-"|add:yesterday_totals.gold_amount|floatformat:2 }}
+        </div>
+      </div>
+      <div class="pl-item">
+        <div class="pl-item-label">Silver Difference</div>
+        <div class="pl-item-value {% if today_totals.silver_amount < yesterday_totals.silver_amount %}loss{% endif %}">
+          {% if today_totals.silver_amount >= yesterday_totals.silver_amount %}+{% endif %}रु {{ today_totals.silver_amount|add:"-"|add:yesterday_totals.silver_amount|floatformat:2 }}
+        </div>
+      </div>
+      <div class="pl-item">
+        <div class="pl-item-label">Diamond Difference</div>
+        <div class="pl-item-value {% if today_totals.diamond_amount < yesterday_totals.diamond_amount %}loss{% endif %}">
+          {% if today_totals.diamond_amount >= yesterday_totals.diamond_amount %}+{% endif %}रु {{ today_totals.diamond_amount|add:"-"|add:yesterday_totals.diamond_amount|floatformat:2 }}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function switchPLTab(tabName) {
+    // Hide all tabs
+    document.getElementById('pl-today').classList.remove('active');
+    document.getElementById('pl-yesterday').classList.remove('active');
+    document.getElementById('pl-comparison').classList.remove('active');
+    
+    // Remove active class from all buttons
+    document.querySelectorAll('.pl-tab-button').forEach(btn => btn.classList.remove('active'));
+    
+    // Show selected tab
+    document.getElementById('pl-' + tabName).classList.add('active');
+    
+    // Add active class to clicked button
+    event.target.classList.add('active');
+  }
+</script>
 
 <div class="action-buttons">
   <a href="/ornament/" class="btn-action ornaments-btn">👑 Ornaments</a>

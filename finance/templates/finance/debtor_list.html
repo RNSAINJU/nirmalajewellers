@@ -1,0 +1,81 @@
+{% extends 'finance/base_finance.html' %}
+
+{% block action_buttons %}
+<a href="{% url 'finance:debtor_create' %}" class="btn btn-primary">
+    <i class="bi bi-plus-lg"></i> Add Debtor
+</a>
+{% endblock %}
+
+{% block main_content %}
+<div class="row mb-3">
+    <div class="col-md-12">
+        <form method="get" class="d-inline">
+            <label class="form-check">
+                <input type="checkbox" name="active_only" class="form-check-input" value="1" {% if request.GET.active_only %}checked{% endif %} onchange="this.form.submit()">
+                <span class="form-check-label">Show Active Only</span>
+            </label>
+        </form>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Total Outstanding: रु{{ total_balance }}</h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if debtors %}
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Name</th>
+                <th>Contact Person</th>
+                <th>Phone</th>
+                <th>Opening Balance</th>
+                <th>Current Balance</th>
+                <th>Credit Limit</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for debtor in debtors %}
+            <tr>
+                <td>{{ debtor.name }}</td>
+                <td>{{ debtor.contact_person|default:"-" }}</td>
+                <td>{{ debtor.phone|default:"-" }}</td>
+                <td>रु{{ debtor.opening_balance }}</td>
+                <td><strong>रु{{ debtor.current_balance }}</strong></td>
+                <td>रु{{ debtor.credit_limit }}</td>
+                <td>
+                    {% if debtor.is_active %}
+                    <span class="badge bg-success">Active</span>
+                    {% else %}
+                    <span class="badge bg-danger">Inactive</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'finance:debtor_detail' debtor.pk %}" class="btn btn-sm btn-info" title="View">
+                        <i class="bi bi-eye"></i>
+                    </a>
+                    <a href="{% url 'finance:debtor_update' debtor.pk %}" class="btn btn-sm btn-warning" title="Edit">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                    <a href="{% url 'finance:debtor_delete' debtor.pk %}" class="btn btn-sm btn-danger" title="Delete">
+                        <i class="bi bi-trash"></i>
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info">No debtors found.</div>
+{% endif %}
+{% endblock %}

@@ -32,6 +32,7 @@
         z-index: 1050;
         padding: 1rem;
         transition: transform 0.25s ease-in-out;
+        overflow-y: auto;
     }
 
     .sidebar.hide {
@@ -295,12 +296,40 @@
                 <a href="{% url 'sales:sale_create' %}" class="nav-link ms-3">
                     Create Sale
                 </a>
+                <a href="{% url 'sales:import_wizard_step1' %}" class="nav-link ms-3">
+                    <i class="bi bi-file-earmark-arrow-up"></i> Bulk Import
+                </a>
             </div>
         </li>
 
         <hr class="text-secondary">
 
-        <!-- Reports -->
+        <!-- Finance -->
+        <li class="nav-item">
+            <a class="nav-link collapsed" data-bs-toggle="collapse" data-bs-target="#financeMenu" role="button" aria-expanded="false" aria-controls="financeMenu">
+                <i class="bi bi-wallet2 me-2"></i> Finance
+                <i class="bi bi-chevron-down float-end"></i>
+            </a>
+            <div class="collapse" id="financeMenu">
+                <a href="{% url 'finance:expense_list' %}" class="nav-link ms-3">
+                    Expenses
+                </a>
+                <a href="{% url 'finance:employee_list' %}" class="nav-link ms-3">
+                    Employees
+                </a>
+                <a href="{% url 'finance:salary_list' %}" class="nav-link ms-3">
+                    Salaries
+                </a>
+                <a href="{% url 'finance:debtor_list' %}" class="nav-link ms-3">
+                    Sundry Debtors
+                </a>
+                <a href="{% url 'finance:creditor_list' %}" class="nav-link ms-3">
+                    Sundry Creditors
+                </a>
+            </div>
+        </li>
+
+        <hr class="text-secondary">
         <li class="nav-item">
             <a class="nav-link collapsed" data-bs-toggle="collapse" data-bs-target="#reportMenu" role="button" aria-expanded="{% if request.resolver_match.url_name == 'stock_report' or request.resolver_match.url_name == 'monthly_stock_report' or request.resolver_match.url_name == 'weight_report' or request.resolver_match.url_name in 'dashboard_report,sales_report,payment_report,metal_report,customer_report' %}true{% else %}false{% endif %}" aria-controls="reportMenu">
                 <i class="bi bi-bar-chart me-2"></i> Reports

@@ -7,4 +7,4 @@ pip install openpyxl
 
 
 first import purchase, customer purchase
-then import order_payments, order_ornaments, order 
+then import  order, ornaments, order_payments, order_ornaments, 

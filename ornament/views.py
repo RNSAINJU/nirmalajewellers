@@ -804,7 +804,7 @@ def ornament_weight_report(request):
             # Gold amount (24k equivalent * gold rate)
             total_gold_amount = diamond_24k_equivalent * gold_rate
             
-            # Diamond amount calculation
+            # Diamond amount calculation (diamond_weight is in carat, diamond_rate is per carat, no conversion needed)
             total_diamond_amount = diamond_ornaments.aggregate(
                 total=Sum(F('diamond_weight') * F('diamond_rate'), output_field=DecimalField())
             )['total'] or Decimal('0')

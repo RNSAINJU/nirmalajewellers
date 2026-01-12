@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'order',
     'ornament',
     'sales',
+    'finance',  # added
     'nepali_datetime_field', # added for nepali date field
     'cloudinary',
     'cloudinary_storage',

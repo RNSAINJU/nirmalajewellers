@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Import Sales - Step 2{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-9">
+            <!-- Progress Bar -->
+            <div class="mb-4">
+                <div class="progress" style="height: 30px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: 66%;" aria-valuenow="66" aria-valuemin="0" aria-valuemax="100">
+                        <strong>Step 2 of 3: Upload & Preview</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-file-upload"></i> Step 2: Upload & Preview Your Data</h4>
+                </div>
+                
+                <div class="card-body">
+                    {% if headers and preview_data %}
+                        <!-- Preview Section -->
+                        <div class="alert alert-success" role="alert">
+                            <h5><i class="fas fa-check-circle"></i> File Loaded Successfully!</h5>
+                            <p class="mb-0">Total rows to import: <strong>{{ row_count }}</strong></p>
+                        </div>
+
+                        <h5 class="mb-3">📊 Data Preview (First 10 rows)</h5>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th style="width: 50px;">#</th>
+                                        {% for header in headers %}
+                                            <th>{{ header|title }}</th>
+                                        {% endfor %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in preview_data %}
+                                        <tr>
+                                            <td><strong>{{ row.row_num }}</strong></td>
+                                            {% for cell in row.data %}
+                                                <td>
+                                                    {% if cell %}
+                                                        <small>{{ cell }}</small>
+                                                    {% else %}
+                                                        <span class="text-muted">-</span>
+                                                    {% endif %}
+                                                </td>
+                                            {% endfor %}
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="alert alert-info mt-3" role="alert">
+                            <strong>✓ Everything looks good?</strong> Click "Confirm & Import" to proceed to step 3.
+                        </div>
+
+                        <div class="d-flex gap-2 mt-4">
+                            <a href="{% url 'sales:import_wizard_step3' %}" class="btn btn-success">
+                                <i class="fas fa-check"></i> Confirm & Import
+                            </a>
+                            <a href="{% url 'sales:import_wizard_step2' %}" class="btn btn-secondary">
+                                <i class="fas fa-sync"></i> Upload Different File
+                            </a>
+                            <a href="{% url 'sales:import_wizard_step1' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Step 1
+                            </a>
+                        </div>
+
+                    {% else %}
+                        <!-- Upload Form -->
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            
+                            <div class="alert alert-info" role="alert">
+                                <h5><i class="fas fa-info-circle"></i> Upload Your File</h5>
+                                <p class="mb-0">Select the Excel file you prepared with your sales data.</p>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label for="id_excel_file" class="form-label">
+                                    <strong>Select Excel File</strong>
+                                </label>
+                                {{ form.excel_file }}
+                                {% if form.excel_file.errors %}
+                                    <div class="text-danger small mt-2">
+                                        {{ form.excel_file.errors }}
+                                    </div>
+                                {% endif %}
+                                <small class="form-text text-muted d-block mt-2">
+                                    Supported: .xlsx, .xls (Max 10MB)
+                                </small>
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-upload"></i> Upload & Preview
+                                </button>
+                                <a href="{% url 'sales:import_wizard_step1' %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Back
+                                </a>
+                            </div>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Messages -->
+            {% if messages %}
+                <div class="mt-3">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .table-sm th, .table-sm td {
+        padding: 0.4rem;
+        font-size: 0.85rem;
+    }
+    
+    .table-sm td small {
+        word-break: break-word;
+    }
+</style>
+{% endblock %}

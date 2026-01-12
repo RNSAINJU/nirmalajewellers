@@ -226,71 +226,130 @@
         </div>
     </div>
 
-    <div class="table-responsive">
-        <table class="table table-bordered table-striped table-hover align-middle">
-            <thead class="table-dark">
-                <tr>
-                    <th>Order No</th>
-                    <th>Order Date</th>
-                    <th>Customer</th>
-                    <th>Phone</th>
-                    <th>Ornaments</th>
-                    <th>Weight</th>
-                    <th>Total</th>
-                    <th>Paid</th>
-                    <th>Remaining</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for order in orders %}
-                <tr>
-                    <td>{{ order.sn }}</td>
-                    <td>{{ order.order_date|bs_date }}</td>
-                    <td>{{ order.customer_name }}</td>
-                    <td>{{ order.phone_number }}</td>
-                    <td>
-                        {% for line in order.order_ornaments.all %}
-                            <small>• <a class="ornament-link" href="{% url 'ornament:update' line.ornament.id %}" target="_blank" rel="noopener">{{ line.ornament.ornament_name }}</a> ({{ line.ornament.metal_type }}, {{ line.ornament.type }})</small><br/>
-                        {% endfor %}
-                        {% for metal in order.order_metals.all %}
-                            <small>🥇 <strong>{{ metal.get_metal_type_display }}</strong> {{ metal.purity }} - {{ metal.quantity|floatformat:3 }}g @ Rs.{{ metal.rate_per_gram }}/g</small><br/>
-                        {% empty %}
-                            <small class="text-muted">No items</small>
-                        {% endfor %}
-                    </td>
-                    <td>{{ order.total_weight|default:0|floatformat:3 }}</td>
-                    <td>{{ order.total }}</td>
-                    <td>{{ order.payment_amount }} ({{ order.get_payment_mode_display }})</td>
-                    <td>{{ order.remaining_amount }}</td>
-                    <td><span class="badge bg-info">{{ order.get_status_display }}</span></td>
-                    <td class="text-center">
-                        <div class="btn-group" role="group">
-                            <a href="{% url 'order:update' order.sn %}" class="btn btn-sm btn-outline-warning" title="Edit">
-                                <i class="bi bi-pencil-square"></i>
-                            </a>
-                            <a href="{% url 'order:delete' order.sn %}" class="btn btn-sm btn-outline-danger" title="Delete">
-                                <i class="bi bi-trash-fill"></i>
-                            </a>
-                            {% if order.sale %}
-                                <span class="badge bg-success align-self-center" title="Already in Sales">In Sales</span>
-                            {% else %}
-                                <form method="post" action="{% url 'order:create_sale_from_order' order.sn %}" class="d-inline">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-outline-primary" title="Add to Sales">
-                                        <i class="bi bi-plus-circle"></i>
-                                    </button>
-                                </form>
-                            {% endif %}
-                        </div>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="14" class="text-center">No orders yet.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <!-- Status Tabs -->
+    <div class="mb-4">
+        <ul class="nav nav-tabs" id="statusTabs" role="tablist">
+            {% for status_key, orders_list in orders_by_status.items %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if forloop.first %}active{% endif %}" 
+                            id="tab-{{ status_key }}" 
+                            data-bs-toggle="tab" 
+                            data-bs-target="#content-{{ status_key }}" 
+                            type="button" 
+                            role="tab"
+                            aria-controls="content-{{ status_key }}"
+                            {% if forloop.first %}aria-selected="true"{% else %}aria-selected="false"{% endif %}>
+                        <span class="badge me-2" 
+                              {% if status_key == 'order' %}style="background-color: #3b82f6;"{% elif status_key == 'processing' %}style="background-color: #f59e0b;"{% elif status_key == 'completed' %}style="background-color: #8b5cf6;"{% elif status_key == 'delivered' %}style="background-color: #10b981;"{% endif %}>
+                            {{ orders_list.count }}
+                        </span>
+                        {% if status_key == 'order' %}Order
+                        {% elif status_key == 'processing' %}Processing
+                        {% elif status_key == 'completed' %}Completed
+                        {% elif status_key == 'delivered' %}Delivered
+                        {% endif %}
+                    </button>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Status Tab Content -->
+    <div class="tab-content" id="statusTabContent">
+        {% for status_key, orders_list in orders_by_status.items %}
+                <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" 
+                     id="content-{{ status_key }}" 
+                     role="tabpanel" 
+                     aria-labelledby="tab-{{ status_key }}">
+                    
+                    <!-- Status-specific info -->
+                    <div class="alert {% if status_key == 'order' %}alert-info{% elif status_key == 'processing' %}alert-warning{% elif status_key == 'completed' %}alert-primary{% elif status_key == 'delivered' %}alert-success{% endif %} mb-3">
+                        <i class="bi {% if status_key == 'order' %}bi-question-circle{% elif status_key == 'processing' %}bi-hourglass-split{% elif status_key == 'completed' %}bi-check-circle{% elif status_key == 'delivered' %}bi-check2-circle{% endif %} me-2"></i>
+                        <strong>
+                        {% if status_key == 'order' %}Order
+                        {% elif status_key == 'processing' %}Processing
+                        {% elif status_key == 'completed' %}Completed
+                        {% elif status_key == 'delivered' %}Delivered
+                        {% endif %} Orders:</strong> {{ orders_list.count }} order{{ orders_list|pluralize }}
+                    </div>
+
+                    {% if orders_list %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped table-hover align-middle">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Order No</th>
+                                    <th>Order Date</th>
+                                    <th>Customer</th>
+                                    <th>Phone</th>
+                                    <th>Ornaments</th>
+                                    <th>Weight</th>
+                                    <th>Total</th>
+                                    <th>Paid</th>
+                                    <th>Remaining</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in orders_list %}
+                                <tr>
+                                    <td>{{ order.sn }}</td>
+                                    <td>{{ order.order_date|bs_date }}</td>
+                                    <td>{{ order.customer_name }}</td>
+                                    <td>{{ order.phone_number }}</td>
+                                    <td>
+                                        {% for line in order.order_ornaments.all %}
+                                            <small>• <a class="ornament-link" href="{% url 'ornament:update' line.ornament.id %}" target="_blank" rel="noopener">{{ line.ornament.ornament_name }}</a> ({{ line.ornament.metal_type }}, {{ line.ornament.type }})</small><br/>
+                                        {% endfor %}
+                                        {% for metal in order.order_metals.all %}
+                                            <small>🥇 <strong>{{ metal.get_metal_type_display }}</strong> {{ metal.purity }} - {{ metal.quantity|floatformat:3 }}g @ Rs.{{ metal.rate_per_gram }}/g</small><br/>
+                                        {% empty %}
+                                            <small class="text-muted">No items</small>
+                                        {% endfor %}
+                                    </td>
+                                    <td>{{ order.total_weight|default:0|floatformat:3 }}</td>
+                                    <td>{{ order.total }}</td>
+                                    <td>{{ order.payment_amount }} ({{ order.get_payment_mode_display }})</td>
+                                    <td>{{ order.remaining_amount }}</td>
+                                    <td><span class="badge bg-info">{{ order.get_status_display }}</span></td>
+                                    <td class="text-center">
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'order:update' order.sn %}" class="btn btn-sm btn-outline-warning" title="Edit">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </a>
+                                            <a href="{% url 'order:delete' order.sn %}" class="btn btn-sm btn-outline-danger" title="Delete">
+                                                <i class="bi bi-trash-fill"></i>
+                                            </a>
+                                            {% if order.sale %}
+                                                <span class="badge bg-success align-self-center" title="Already in Sales">In Sales</span>
+                                            {% else %}
+                                                <form method="post" action="{% url 'order:create_sale_from_order' order.sn %}" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-sm btn-outline-primary" title="Add to Sales">
+                                                        <i class="bi bi-plus-circle"></i>
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-secondary text-center">
+                        <i class="bi bi-inbox"></i> No 
+                        {% if status_key == 'order' %}order
+                        {% elif status_key == 'processing' %}processing
+                        {% elif status_key == 'completed' %}completed
+                        {% elif status_key == 'delivered' %}delivered
+                        {% endif %} orders at this time.
+                    </div>
+                    {% endif %}
+                </div>
+        {% endfor %}
     </div>
 </div>
 

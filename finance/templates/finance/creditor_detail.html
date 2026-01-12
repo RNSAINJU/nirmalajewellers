@@ -1,0 +1,103 @@
+{% extends 'finance/base_finance.html' %}
+
+{% block action_buttons %}
+<a href="{% url 'finance:creditor_transaction_create' creditor.pk %}" class="btn btn-success">
+    <i class="bi bi-plus-lg"></i> Add Transaction
+</a>
+<a href="{% url 'finance:creditor_list' %}" class="btn btn-secondary">Back to Creditors</a>
+{% endblock %}
+
+{% block main_content %}
+<div class="row mb-3">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h2 class="mb-0">{{ creditor.name }}</h2>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <p><strong>Contact Person:</strong><br>{{ creditor.contact_person|default:"N/A" }}</p>
+                    </div>
+                    <div class="col-md-3">
+                        <p><strong>Phone:</strong><br>{{ creditor.phone|default:"N/A" }}</p>
+                    </div>
+                    <div class="col-md-3">
+                        <p><strong>Email:</strong><br>{{ creditor.email|default:"N/A" }}</p>
+                    </div>
+                    <div class="col-md-3">
+                        <p><strong>Status:</strong><br>
+                            {% if creditor.is_active %}
+                            <span class="badge bg-success">Active</span>
+                            {% else %}
+                            <span class="badge bg-danger">Inactive</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-md-3">
+                        <p><strong>Opening Balance:</strong><br><span class="h5">रु{{ creditor.opening_balance }}</span></p>
+                    </div>
+                    <div class="col-md-3">
+                        <p><strong>Current Balance:</strong><br><span class="h5 {% if creditor.current_balance > 0 %}text-danger{% else %}text-success{% endif %}">रु{{ creditor.current_balance }}</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">Transactions</h5>
+            </div>
+            <div class="card-body">
+                {% if transactions %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Reference</th>
+                                <th>Amount</th>
+                                <th>Due Date</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in transactions %}
+                            <tr>
+                                <td>{{ transaction.transaction_date }}</td>
+                                <td><span class="badge bg-info">{{ transaction.get_transaction_type_display }}</span></td>
+                                <td>{{ transaction.reference_no|default:"-" }}</td>
+                                <td><strong>रु{{ transaction.amount }}</strong></td>
+                                <td>{{ transaction.due_date|default:"-" }}</td>
+                                <td>{{ transaction.description|default:"-"|truncatewords:10 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">No transactions found.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-md-12">
+        <div class="d-flex gap-2">
+            <a href="{% url 'finance:creditor_update' creditor.pk %}" class="btn btn-warning">Edit</a>
+            <a href="{% url 'finance:creditor_delete' creditor.pk %}" class="btn btn-danger">Delete</a>
+            <a href="{% url 'finance:creditor_list' %}" class="btn btn-secondary">Back</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

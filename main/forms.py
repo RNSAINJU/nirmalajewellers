@@ -1,5 +1,5 @@
 from django import forms
-from .models import Stock
+from .models import Stock, DailyRate
 
 
 class StockForm(forms.ModelForm):
@@ -76,4 +76,35 @@ class StockForm(forms.ModelForm):
             'diamond_rate': 'Diamond Rate (per gram) (रू)',
             'gold_rate': 'Gold Rate (per gram) (रू)',
             'silver_rate': 'Silver Rate (per gram) (रू)',
+        }
+
+class DailyRateForm(forms.ModelForm):
+    """Form for entering today's gold and silver rates."""
+    
+    class Meta:
+        model = DailyRate
+        fields = ['bs_date', 'gold_rate', 'silver_rate']
+        widgets = {
+            'bs_date': forms.TextInput(attrs={
+                'class': 'form-control form-control-sm',
+                'placeholder': 'Nepali date (e.g., 29 Poush 2082)',
+                'required': False,
+            }),
+            'gold_rate': forms.NumberInput(attrs={
+                'class': 'form-control form-control-sm',
+                'placeholder': 'Gold rate per tola (रू)',
+                'step': '0.01',
+                'required': True,
+            }),
+            'silver_rate': forms.NumberInput(attrs={
+                'class': 'form-control form-control-sm',
+                'placeholder': 'Silver rate per tola (रू)',
+                'step': '0.01',
+                'required': True,
+            }),
+        }
+        labels = {
+            'bs_date': 'Nepali Date',
+            'gold_rate': 'Gold Rate (per Tola)',
+            'silver_rate': 'Silver Rate (per Tola)',
         }

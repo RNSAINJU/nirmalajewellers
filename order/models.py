@@ -11,6 +11,7 @@ class Order(models.Model):
         ('bank', 'Bank'),
         ('gold', 'Gold'),
         ('silver', 'Silver'),
+        ('sundry_debtor', 'Sundry Debtor'),
         ('mixed', 'Mixed'),  # multiple payment modes
     ]
 
@@ -86,7 +87,7 @@ class Order(models.Model):
     )
     
     total = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    payment_mode = models.CharField(max_length=10, choices=PAYMENT_CHOICES)
+    payment_mode = models.CharField(max_length=20, choices=PAYMENT_CHOICES)
     payment_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     remaining_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -194,7 +195,7 @@ class OrderPayment(models.Model):
         on_delete=models.CASCADE,
         related_name="payments",
     )
-    payment_mode = models.CharField(max_length=10, choices=Order.PAYMENT_CHOICES)
+    payment_mode = models.CharField(max_length=20, choices=Order.PAYMENT_CHOICES)
     amount = models.DecimalField(max_digits=15, decimal_places=2, default=Decimal("0"))
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -206,6 +207,46 @@ class OrderPayment(models.Model):
 
     def __str__(self):
         return f"Payment {self.payment_mode} {self.amount} for Order {self.order_id}"
+
+
+class DebtorPayment(models.Model):
+    """Payment from sundry debtor - links order payment to debtor and tracks balance updates."""
+
+    order_payment = models.OneToOneField(
+        OrderPayment,
+        on_delete=models.CASCADE,
+        related_name="debtor_payment",
+        help_text="The order payment this debtor payment is associated with"
+    )
+    
+    debtor = models.ForeignKey(
+        "finance.SundryDebtor",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="order_payments",
+        help_text="The sundry debtor making this payment"
+    )
+    
+    transaction_type = models.CharField(
+        max_length=10,
+        choices=[('invoice', 'Invoice'), ('payment', 'Payment')],
+        default='invoice',
+        help_text="Type of transaction: invoice creates balance, payment reduces it"
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Debtor Payment"
+        verbose_name_plural = "Debtor Payments"
+
+    def __str__(self):
+        if self.debtor:
+            return f"Debtor {self.debtor.name} - Order {self.order_payment.order_id} ({self.transaction_type})"
+        return f"Debtor Payment - Order {self.order_payment.order_id}"
 
 
 class OrderOrnament(models.Model):

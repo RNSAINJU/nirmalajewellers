@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.views import View
-from django.views.generic import ListView, UpdateView, CreateView, DeleteView
+from django.views.generic import ListView, UpdateView, CreateView, DeleteView, FormView, TemplateView
 from decimal import Decimal
 from datetime import timedelta
 from io import BytesIO
@@ -11,12 +11,17 @@ from django.http import HttpResponse
 from django.contrib import messages
 import openpyxl
 from openpyxl.utils import get_column_letter
+from openpyxl.styles import Font, PatternFill, Alignment
 from django.db.models import Sum
+from django.core.files.storage import default_storage
+from django.conf import settings
 
-from order.models import Order, OrderOrnament, OrderPayment
+from order.models import Order, OrderOrnament, OrderPayment, DebtorPayment
 from order.forms import OrderForm, OrnamentFormSet
-from ornament.models import Ornament
+from ornament.models import Ornament, Kaligar
 from .models import Sale
+from .forms import ExcelImportForm
+from finance.models import SundryDebtor
 
 
 class CreateSaleFromOrderView(View):
@@ -465,3 +470,607 @@ def sales_import_excel(request):
             return redirect("sales:import_excel")
 
     return render(request, "sales/import_excel.html")
+
+
+def download_import_template(request):
+    """Download Excel template for bulk import."""
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Sales Import"
+    
+    # Define columns
+    columns = [
+        'Bill no',
+        'Order Date',
+        'Deliver Date',
+        'Customer Name',
+        'Phone No',
+        'Ornament name',
+        'Metal Type',
+        'Purity Type',
+        'Weight',
+        'Jarti',
+        'Jyala',
+        'Stones',
+        'Rate per Tola',
+        'Discount',
+        'Tax',
+        'Total',
+        'Payment Mode',
+        'Order Status',
+        'Kaligar'
+    ]
+    
+    # Add headers
+    ws.append(columns)
+    
+    # Format header row
+    header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF")
+    
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+    
+    # Add sample data rows
+    sample_data = [
+        ['001', '2080-01-01', '2080-01-08', 'John Doe', '9841234567', 'Ring', 'Gold', '24K', '5', '500', '1000', '2000', '60000', '5000', '2000', '50000', 'cash', 'delivered', 'Ramesh'],
+        ['001', '2080-01-01', '2080-01-08', 'John Doe', '9841234567', 'Necklace', 'Gold', '24K', '15', '1500', '3000', '5000', '60000', '', '', '105000', 'cash', 'delivered', 'Ramesh'],
+        ['002', '2080-01-02', '2080-01-09', 'Jane Smith', '9845678901', 'Bracelet', 'Silver', '92.5', '20', '0', '0', '0', '900', '0', '1000', '16000', 'sundry_debtor', 'delivered', 'Ashok'],
+    ]
+    
+    for row_data in sample_data:
+        ws.append(row_data)
+    
+    # Auto-adjust column widths
+    for column in ws.columns:
+        max_length = 0
+        col_letter = get_column_letter(column[0].column)
+        for cell in column:
+            if cell.value:
+                max_length = max(max_length, len(str(cell.value)))
+        ws.column_dimensions[col_letter].width = max_length + 2
+    
+    # Create response
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    response = HttpResponse(
+        output.getvalue(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    response['Content-Disposition'] = 'attachment; filename="Sales_Import_Template.xlsx"'
+    
+    return response
+
+
+class ImportWizardStepOneView(TemplateView):
+    """Step 1: Welcome and download template."""
+    
+    template_name = 'sales/import_wizard_step1.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['step'] = 1
+        return context
+
+
+class ImportWizardStepTwoView(FormView):
+    """Step 2: Upload and preview Excel file."""
+    
+    form_class = ExcelImportForm
+    template_name = 'sales/import_wizard_step2.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['step'] = 2
+        return context
+    
+    def form_valid(self, form):
+        excel_file = form.cleaned_data['excel_file']
+        
+        try:
+            # Read and parse the file
+            wb = openpyxl.load_workbook(excel_file, data_only=True)
+            ws = wb.active
+            
+            # Get headers
+            headers = []
+            for cell in ws[1]:
+                if cell.value:
+                    headers.append(str(cell.value).strip().lower())
+            
+            # Parse data rows (limit to first 10 for preview)
+            preview_data = []
+            for row_num, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+                if not any(row) or row_num > 11:  # First 10 data rows
+                    continue
+                preview_data.append({
+                    'row_num': row_num,
+                    'data': row[:len(headers)]
+                })
+            
+            # Store file temporarily in session
+            import tempfile
+            import os
+            
+            # Save file to temp directory
+            temp_dir = tempfile.gettempdir()
+            temp_file = os.path.join(temp_dir, f'import_{self.request.user.id or "anonymous"}_{excel_file.name}')
+            
+            with open(temp_file, 'wb') as f:
+                for chunk in excel_file.chunks():
+                    f.write(chunk)
+            
+            # Store path in session
+            self.request.session['import_file_path'] = temp_file
+            self.request.session['import_headers'] = headers
+            
+            # Store in context
+            context = self.get_context_data()
+            context['headers'] = headers
+            context['preview_data'] = preview_data
+            context['row_count'] = ws.max_row - 1  # Exclude header
+            context['step'] = 2
+            
+            return render(self.request, self.template_name, context)
+        
+        except Exception as e:
+            messages.error(self.request, f'Failed to read Excel file: {str(e)}')
+            return redirect('sales:import_wizard_step2')
+
+
+class ImportWizardStepThreeView(View):
+    """Step 3: Confirm and import."""
+    
+    def get(self, request):
+        """Show confirmation page."""
+        file_path = request.session.get('import_file_path')
+        headers = request.session.get('import_headers')
+        
+        if not file_path or not headers:
+            messages.error(request, 'Session expired. Please start import again.')
+            return redirect('sales:import_wizard_step1')
+        
+        context = {
+            'step': 3,
+            'headers': headers,
+            'file_path': file_path,
+        }
+        
+        return render(request, 'sales/import_wizard_step3.html', context)
+    
+    def post(self, request):
+        """Execute the import."""
+        file_path = request.session.get('import_file_path')
+        
+        if not file_path:
+            messages.error(request, 'Session expired. Please start import again.')
+            return redirect('sales:import_wizard_step1')
+        
+        try:
+            # Process the file
+            wb = openpyxl.load_workbook(file_path, data_only=True)
+            ws = wb.active
+            
+            # Parse headers
+            headers = []
+            for cell in ws[1]:
+                if cell.value:
+                    headers.append(str(cell.value).strip().lower())
+            
+            # Map columns
+            col_map = self._map_columns(headers)
+            
+            # Group orders by Bill No
+            orders_data = {}
+            
+            for row_num, row in enumerate(ws.iter_rows(min_row=2, values_only=False), start=2):
+                try:
+                    row_data = {}
+                    for header, col_idx in col_map.items():
+                        if col_idx is not None and col_idx < len(row):
+                            cell_value = row[col_idx].value
+                            row_data[header] = cell_value
+                    
+                    if not any(row_data.values()):
+                        continue
+                    
+                    # Get bill_no, use auto-generated if empty
+                    bill_no = row_data.get('bill_no') or f'AUTO_{row_num}'
+                    if bill_no not in orders_data:
+                        orders_data[bill_no] = {'order_info': {}, 'ornaments': []}
+                    
+                    if not orders_data[bill_no]['order_info']:
+                        orders_data[bill_no]['order_info'] = {
+                            'customer_name': row_data.get('customer_name', ''),
+                            'phone_number': row_data.get('phone_number', ''),
+                            'order_date': row_data.get('order_date'),
+                            'deliver_date': row_data.get('deliver_date'),
+                            'discount': self._parse_decimal(row_data.get('discount', 0)),
+                            'tax': self._parse_decimal(row_data.get('tax', 0)),
+                            'payment_mode': row_data.get('payment_mode', 'cash'),
+                            'status': row_data.get('status', 'delivered'),
+                        }
+                    
+                    ornament_data = {
+                        'ornament_name': row_data.get('ornament_name', ''),
+                        'ornament_type': row_data.get('ornament_type', ''),
+                        'metal_type': row_data.get('metal_type', ''),
+                        'purity_type': row_data.get('purity_type', 'twentyfourkarat'),
+                        'weight': self._parse_decimal(row_data.get('weight', 0)),
+                        'gold_rate': self._parse_decimal(row_data.get('rate', 0)),
+                        'jarti': self._parse_decimal(row_data.get('jarti', 0)),
+                        'jyala': self._parse_decimal(row_data.get('jyala', 0)),
+                        'stone_rate': self._parse_decimal(row_data.get('stones', 0)),
+                        'line_amount': self._parse_decimal(row_data.get('total', 0)),
+                        'kaligar': row_data.get('kaligar', ''),
+                    }
+                    orders_data[bill_no]['ornaments'].append(ornament_data)
+                
+                except Exception as e:
+                    messages.warning(request, f'Row {row_num}: Skipped - {str(e)}')
+            
+            # Create orders
+            imported_count = 0
+            errors = []
+            
+            importer = ExcelImportProcessor(request)
+            for bill_no, order_data in orders_data.items():
+                try:
+                    result = importer.create_complete_order(
+                        bill_no,
+                        order_data['order_info'],
+                        order_data['ornaments']
+                    )
+                    if result['success']:
+                        imported_count += 1
+                    else:
+                        if result.get('error'):
+                            errors.append(f"Bill {bill_no}: {result['error']}")
+                except Exception as e:
+                    errors.append(f"Bill {bill_no}: {str(e)}")
+            
+            # Clean up
+            import os
+            if os.path.exists(file_path):
+                os.remove(file_path)
+            
+            del request.session['import_file_path']
+            del request.session['import_headers']
+            
+            # Show results
+            if imported_count > 0:
+                messages.success(
+                    request,
+                    f'✅ Successfully imported {imported_count} complete orders with all ornaments!'
+                )
+            
+            if errors:
+                for error in errors[:10]:
+                    messages.warning(request, error)
+            
+            return redirect('sales:sales_list')
+        
+        except Exception as e:
+            messages.error(request, f'Failed to import: {str(e)}')
+            return redirect('sales:import_wizard_step1')
+    
+    def _map_columns(self, headers):
+        """Map columns from headers."""
+        processor = ExcelImportProcessor(self.request)
+        return processor.map_columns(headers)
+    
+    def _parse_decimal(self, value):
+        """Parse decimal value."""
+        processor = ExcelImportProcessor(self.request)
+        return processor.parse_decimal(value)
+
+
+class ExcelImportProcessor:
+    """Helper class for Excel import processing."""
+    
+    def __init__(self, request):
+        self.request = request
+    
+    def map_columns(self, headers):
+        """Map Excel headers to model fields."""
+        col_map = {
+            'bill_no': None,
+            'order_date': None,
+            'deliver_date': None,
+            'customer_name': None,
+            'phone_number': None,
+            'ornament_name': None,
+            'ornament_type': None,
+            'metal_type': None,
+            'purity_type': None,
+            'weight': None,
+            'total': None,
+            'discount': None,
+            'tax': None,
+            'payment_mode': None,
+            'status': None,
+            'rate': None,
+            'jarti': None,
+            'jyala': None,
+            'stones': None,
+            'kaligar': None,
+        }
+        
+        for idx, header in enumerate(headers):
+            header_lower = header.lower().strip()
+            
+            if 'bill' in header_lower:
+                col_map['bill_no'] = idx
+            elif 'order' in header_lower and 'date' in header_lower and 'deliver' not in header_lower:
+                col_map['order_date'] = idx
+            elif 'deliver' in header_lower and 'date' in header_lower:
+                col_map['deliver_date'] = idx
+            elif 'customer' in header_lower or (header_lower == 'name' and col_map['customer_name'] is None):
+                col_map['customer_name'] = idx
+            elif 'phone' in header_lower or 'contact' in header_lower or 'tel' in header_lower:
+                col_map['phone_number'] = idx
+            elif 'ornament' in header_lower and 'name' in header_lower:
+                col_map['ornament_name'] = idx
+            elif 'ornament' in header_lower and 'type' in header_lower:
+                col_map['ornament_type'] = idx
+            elif 'metal' in header_lower and 'type' in header_lower:
+                col_map['metal_type'] = idx
+            elif 'purity' in header_lower or 'karat' in header_lower or 'carat' in header_lower:
+                col_map['purity_type'] = idx
+            elif any(w in header_lower for w in ('weight', 'total weight', 'wt', 'gm')):
+                col_map['weight'] = idx
+            elif any(w in header_lower for w in ('total', 'all total', 'final total', 'sum', 'grand total')):
+                col_map['total'] = idx
+            elif 'discount' in header_lower or 'deduction' in header_lower:
+                col_map['discount'] = idx
+            elif 'tax' in header_lower or 'vat' in header_lower:
+                col_map['tax'] = idx
+            elif 'payment' in header_lower and 'mode' in header_lower:
+                col_map['payment_mode'] = idx
+            elif 'status' in header_lower or 'state' in header_lower:
+                col_map['status'] = idx
+            elif 'rate' in header_lower and col_map['rate'] is None:
+                col_map['rate'] = idx
+            elif 'jarti' in header_lower or 'jatti' in header_lower:
+                col_map['jarti'] = idx
+            elif 'jyala' in header_lower or 'jala' in header_lower:
+                col_map['jyala'] = idx
+            elif 'stone' in header_lower or 'zircon' in header_lower or 'diamond' in header_lower:
+                col_map['stones'] = idx
+            elif 'kaligar' in header_lower or 'kalegar' in header_lower:
+                col_map['kaligar'] = idx
+        
+        return col_map
+    
+    def parse_decimal(self, value):
+        """Parse decimal from various formats."""
+        if value is None or value == '':
+            return Decimal('0')
+        
+        try:
+            if isinstance(value, (int, float)):
+                return Decimal(str(value))
+            
+            if isinstance(value, str):
+                cleaned = value.strip().replace('Rs', '').replace('$', '').replace(',', '').strip()
+                return Decimal(cleaned) if cleaned else Decimal('0')
+            
+            return Decimal(value)
+        except:
+            return Decimal('0')
+    
+    def create_complete_order(self, bill_no, order_info, ornaments_list):
+        """Create complete order with all ornaments."""
+        try:
+            customer_name = order_info.get('customer_name', '').strip()
+            phone_number = order_info.get('phone_number', '').strip()
+            
+            if not customer_name:
+                return {'success': False, 'error': 'Customer name is required'}
+            
+            # Parse dates
+            order_date = self._parse_nepali_date(order_info.get('order_date'))
+            deliver_date = self._parse_nepali_date(order_info.get('deliver_date'))
+            
+            if not order_date:
+                try:
+                    order_date = ndt.date.today()
+                except:
+                    pass
+            
+            if not deliver_date and order_date:
+                try:
+                    deliver_date = order_date + timedelta(days=7)
+                except:
+                    deliver_date = order_date
+            
+            # Create order
+            order = Order.objects.create(
+                customer_name=customer_name,
+                phone_number=phone_number if phone_number and len(phone_number) >= 7 else '1234567',
+                order_date=order_date,
+                deliver_date=deliver_date,
+                status=order_info.get('status', 'delivered'),
+                payment_mode=order_info.get('payment_mode', 'cash'),
+                discount=order_info.get('discount', Decimal('0')),
+                tax=order_info.get('tax', Decimal('0')),
+            )
+            
+            # Create ornaments
+            total_line_amount = Decimal('0')
+            
+            for ornament_data in ornaments_list:
+                if not (ornament_data.get('weight') or ornament_data.get('line_amount')):
+                    continue
+                
+                ornament_name = ornament_data.get('ornament_name') or (
+                    f"{ornament_data.get('ornament_type', 'Item')} - "
+                    f"{ornament_data.get('metal_type', 'Gold')}"
+                )
+                
+                purity_type = self._get_purity_type(ornament_data.get('purity_type', 'twentyfourkarat'))
+                metal_type = self._get_metal_type(ornament_data.get('metal_type'))
+                
+                # Get or create kaligar
+                kaligar_name = ornament_data.get('kaligar', 'Default')
+                kaligar, _ = Kaligar.objects.get_or_create(
+                    name=kaligar_name,
+                    defaults={'panno': '000000000'}  # Default PAN as placeholder
+                )
+                
+                ornament, _ = Ornament.objects.get_or_create(
+                    ornament_name=ornament_name,
+                    metal_type=metal_type,
+                    type=purity_type,
+                    defaults={
+                        'weight': ornament_data.get('weight', Decimal('0')),
+                        'ornament_type': 'sales',
+                        'kaligar': kaligar,
+                    }
+                )
+                
+                line_amount = ornament_data.get('line_amount', Decimal('0'))
+                total_line_amount += line_amount
+                
+                OrderOrnament.objects.create(
+                    order=order,
+                    ornament=ornament,
+                    gold_rate=ornament_data.get('gold_rate', Decimal('0')),
+                    jarti=ornament_data.get('jarti', Decimal('0')),
+                    jyala=ornament_data.get('jyala', Decimal('0')),
+                    stone_rate=ornament_data.get('stone_rate', Decimal('0')),
+                    line_amount=line_amount,
+                )
+                
+                ornament.order = order
+                ornament.ornament_type = 'sales'
+                ornament.save(update_fields=['order', 'ornament_type', 'updated_at'])
+            
+            # Calculate order totals first
+            payment_mode = order_info.get('payment_mode', 'cash')
+            discount = order_info.get('discount', Decimal('0'))
+            tax = order_info.get('tax', Decimal('0'))
+            
+            if total_line_amount > 0:
+                total_amount = total_line_amount
+            else:
+                total_amount = Decimal('0')
+            
+            order.amount = total_line_amount or total_amount
+            order.subtotal = max(Decimal('0'), order.amount - discount)
+            order.total = order.subtotal + tax
+            # Payment amount should not exceed order total
+            order.payment_amount = min(total_amount, order.total)
+            order.remaining_amount = max(Decimal('0'), order.total - order.payment_amount)
+            order.payment_mode = payment_mode
+            order.save(update_fields=[
+                'amount', 'subtotal', 'total', 'payment_amount', 'remaining_amount', 'payment_mode'
+            ])
+            
+            # Create payment
+            if total_amount > 0:
+                OrderPayment.objects.create(
+                    order=order,
+                    payment_mode=payment_mode,
+                    amount=total_amount,
+                )
+                
+                if payment_mode == 'sundry_debtor':
+                    debtor, created = SundryDebtor.objects.get_or_create(
+                        name=customer_name,
+                        defaults={
+                            'credit_limit': order.payment_amount,
+                            'current_balance': order.payment_amount,
+                        }
+                    )
+                    
+                    if not created:
+                        debtor.current_balance = debtor.current_balance + order.payment_amount
+                        debtor.save(update_fields=['current_balance', 'updated_at'])
+                    
+                    payment = order.payments.first()
+                    if payment:
+                        DebtorPayment.objects.create(
+                            order_payment=payment,
+                            debtor=debtor,
+                        )
+            
+            # Create Sale
+            sale_date = deliver_date or order_date
+            
+            Sale.objects.create(
+                order=order,
+                sale_date=sale_date,
+                bill_no=bill_no,
+            )
+            
+            return {'success': True, 'order_id': order.sn}
+        
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+    
+    def _parse_nepali_date(self, date_value):
+        """Parse Nepali date."""
+        if not date_value:
+            return None
+        
+        try:
+            if isinstance(date_value, str):
+                date_str = date_value.strip()
+                
+                if len(date_str) == 10 and date_str[4] == '-' and date_str[7] == '-':
+                    parts = date_str.split('-')
+                    if all(p.isdigit() for p in parts):
+                        year, month, day = int(parts[0]), int(parts[1]), int(parts[2])
+                        try:
+                            return ndt.date(year, month, day)
+                        except:
+                            pass
+            
+            if hasattr(date_value, 'year'):
+                return date_value
+        
+        except Exception:
+            pass
+        
+        return None
+    
+    def _get_metal_type(self, metal_type_str):
+        """Convert metal type string."""
+        if not metal_type_str:
+            return 'gold'
+        
+        metal_lower = metal_type_str.lower().strip()
+        if 'silver' in metal_lower:
+            return 'silver'
+        elif 'platinum' in metal_lower:
+            return 'platinum'
+        else:
+            return 'gold'
+    
+    def _get_purity_type(self, purity_str):
+        """Convert purity string."""
+        if not purity_str:
+            return 'twentyfourkarat'
+        
+        purity_lower = purity_str.lower().strip().replace(' ', '').replace('k', '')
+        
+        if '24' in purity_lower or purity_lower == 'twentyfourkarat':
+            return 'twentyfourkarat'
+        elif '23' in purity_lower or purity_lower == 'twenthreekarat':
+            return 'twenthreekarat'
+        elif '22' in purity_lower or purity_lower == 'twentytwokarat':
+            return 'twentytwokarat'
+        elif '18' in purity_lower or purity_lower == 'eighteenkarat':
+            return 'eighteenkarat'
+        elif '14' in purity_lower or purity_lower == 'fourteenkarat':
+            return 'fourteenkarat'
+        else:
+            return 'twentyfourkarat'
+
+

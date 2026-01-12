@@ -1,0 +1,111 @@
+{% extends 'finance/base_finance.html' %}
+
+{% block action_buttons %}
+<a href="{% url 'finance:salary_create' %}" class="btn btn-primary">
+    <i class="bi bi-plus-lg"></i> Add Salary
+</a>
+{% endblock %}
+
+{% block main_content %}
+<div class="row mb-3">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Employee</label>
+                        <select name="employee" class="form-select">
+                            <option value="">All Employees</option>
+                            {% for emp in employees %}
+                            <option value="{{ emp.pk }}" {% if request.GET.employee|add:"0" == emp.pk %}selected{% endif %}>{{ emp.first_name }} {{ emp.last_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Status</label>
+                        <select name="status" class="form-select">
+                            <option value="">All Status</option>
+                            {% for value, label in statuses %}
+                            <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="submit" class="btn btn-secondary">Filter</button>
+                        <a href="{% url 'finance:salary_list' %}" class="btn btn-outline-secondary ms-2">Clear</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Total Salary: रु{{ total_salary }}</h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Total Paid: रु{{ total_paid }}</h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if salaries %}
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Employee</th>
+                <th>Month</th>
+                <th>Base Salary</th>
+                <th>Bonus</th>
+                <th>Deductions</th>
+                <th>Total</th>
+                <th>Paid</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for salary in salaries %}
+            <tr>
+                <td>{{ salary.employee.first_name }} {{ salary.employee.last_name }}</td>
+                <td>{{ salary.month|date:"M Y" }}</td>
+                <td>रु{{ salary.base_salary }}</td>
+                <td>रु{{ salary.bonus }}</td>
+                <td>रु{{ salary.deductions }}</td>
+                <td><strong>रु{{ salary.total_salary }}</strong></td>
+                <td>रु{{ salary.amount_paid }}</td>
+                <td>
+                    {% if salary.status == 'paid' %}
+                    <span class="badge bg-success">Paid</span>
+                    {% elif salary.status == 'partial' %}
+                    <span class="badge bg-warning">Partial</span>
+                    {% else %}
+                    <span class="badge bg-danger">Pending</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'finance:salary_update' salary.pk %}" class="btn btn-sm btn-warning">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                    <a href="{% url 'finance:salary_delete' salary.pk %}" class="btn btn-sm btn-danger">
+                        <i class="bi bi-trash"></i>
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info">No salary records found.</div>
+{% endif %}
+{% endblock %}

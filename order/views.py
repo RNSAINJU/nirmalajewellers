@@ -14,11 +14,12 @@ from django.contrib import messages
 import openpyxl
 from openpyxl.utils import get_column_letter
 
-from .models import Order, OrderOrnament, OrderPayment, OrderMetalStock
+from .models import Order, OrderOrnament, OrderPayment, OrderMetalStock, DebtorPayment
 from sales.models import Sale
 from .forms import OrderForm, OrnamentFormSet, MetalStockFormSet
 from ornament.models import Ornament, Kaligar
 from goldsilverpurchase.models import MetalStock, MetalStockMovement
+from finance.models import SundryDebtor
 
 app_name = 'order'
 
@@ -170,7 +171,18 @@ class OrderListView(ListView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        qs = ctx.get('orders') or self.get_queryset()
+        # Get unpaginated queryset for aggregations and calculations
+        qs = self.get_queryset()  # Fresh queryset without pagination
+
+        # Group orders by status
+        orders_by_status = {}
+        status_choices = {choice[0]: choice[1] for choice in Order.STATUS_CHOICES}
+        
+        for status_key in status_choices:
+            orders_by_status[status_key] = qs.filter(status=status_key).order_by('-order_date', '-sn')
+        
+        ctx['orders_by_status'] = orders_by_status
+        ctx['status_choices'] = status_choices
 
         aggregates = qs.aggregate(
             total_remaining=Sum('remaining_amount'),
@@ -361,65 +373,74 @@ class OrderCreateView(CreateView):
                         order_metal.delete()
                     continue
                 
-                # Check if form has actual data (metal_type is selected)
+                # Check if form has actual data (metal_type is selected AND quantity is provided)
                 metal_type = form.cleaned_data.get('metal_type')
-                print(f"      After deletion check, metal_type={metal_type}, checking truthiness...")
-                if metal_type:
-                    print(f"      *** ENTERED IF BLOCK FOR FORM {idx} ***")
-                    # Check if this is a new record (no pk) before saving
-                    is_new = not form.instance.pk
-                    print(f"        is_new={is_new}")
+                quantity = form.cleaned_data.get('quantity')
+                print(f"      After deletion check, metal_type={metal_type}, quantity={quantity}...")
+                
+                # Skip empty rows - must have both metal_type and non-zero quantity
+                if not metal_type or not quantity or quantity == 0:
+                    print(f"      Skipping empty/incomplete row: metal_type={metal_type}, quantity={quantity}")
+                    # If this is an existing record being cleared, delete it
+                    if form.instance.pk and not metal_type:
+                        form.instance.delete()
+                    continue
+                
+                print(f"      *** ENTERED IF BLOCK FOR FORM - metal_type={metal_type}, qty={quantity} ***")
+                # Check if this is a new record (no pk) before saving
+                is_new = not form.instance.pk
+                print(f"        is_new={is_new}")
+                
+                # Save the order metal entry
+                print(f"        About to save metal form...")
+                order_metal = form.save()
+                print(f"        SAVED! order_metal.pk={order_metal.pk}")
+                saved_metals.append(order_metal)
+                print(f"        Appended to saved_metals")
+                
+                # Deduct from existing metal stock if this is a new entry
+                if is_new:
+                    print(f"        >> Starting stock deduction for is_new={is_new}")
+                    # This is a new metal addition to the order
+                    quantity = order_metal.quantity
+                    metal_type = order_metal.metal_type
                     
-                    # Save the order metal entry
-                    print(f"        About to save metal form...")
-                    order_metal = form.save()
-                    print(f"        SAVED! order_metal.pk={order_metal.pk}")
-                    saved_metals.append(order_metal)
-                    print(f"        Appended to saved_metals")
-                    
-                    # Deduct from existing metal stock if this is a new entry
-                    if is_new:
-                        print(f"        >> Starting stock deduction for is_new={is_new}")
-                        # This is a new metal addition to the order
-                        quantity = order_metal.quantity
-                        metal_type = order_metal.metal_type
+                    # Find matching metal stock (Raw type with same metal and purity)
+                    try:
+                        from goldsilverpurchase.models import MetalStockType
+                        raw_stock_type = MetalStockType.objects.get(name='raw')
                         
-                        # Find matching metal stock (Raw type with same metal and purity)
-                        try:
-                            from goldsilverpurchase.models import MetalStockType
-                            raw_stock_type = MetalStockType.objects.get(name__icontains='Raw')
-                            
-                            metal_stock = MetalStock.objects.get(
-                                metal_type=metal_type,
-                                purity=order_metal.purity,
-                                stock_type=raw_stock_type
-                            )
-                            
-                            # Deduct quantity from metal stock
-                            metal_stock.quantity -= quantity
-                            if metal_stock.quantity < 0:
-                                messages.warning(
-                                    self.request,
-                                    f"Warning: {metal_stock.get_metal_type_display()} stock ({metal_stock.purity}) is now negative: {metal_stock.quantity}g"
-                                )
-                            metal_stock.save()
-                            
-                            # Create a movement record
-                            MetalStockMovement.objects.create(
-                                metal_stock=metal_stock,
-                                movement_type='out',
-                                quantity=quantity,
-                                reference_type='Order',
-                                reference_id=f"Order-{self.object.sn}",
-                                notes=f"Metal added to order {self.object.sn} for customer {self.object.customer_name}"
-                            )
-                        except MetalStock.DoesNotExist:
+                        metal_stock = MetalStock.objects.get(
+                            metal_type=metal_type,
+                            purity=order_metal.purity,
+                            stock_type=raw_stock_type
+                        )
+                        
+                        # Deduct quantity from metal stock
+                        metal_stock.quantity -= quantity
+                        if metal_stock.quantity < 0:
                             messages.warning(
                                 self.request,
-                                f"No matching metal stock found for {metal_type} ({order_metal.purity}). Please add to inventory first."
+                                f"Warning: {metal_stock.get_metal_type_display()} stock ({metal_stock.purity}) is now negative: {metal_stock.quantity}g"
                             )
-                        except Exception as e:
-                            messages.warning(self.request, f"Error updating metal stock: {str(e)}")
+                        metal_stock.save()
+                        
+                        # Create a movement record
+                        MetalStockMovement.objects.create(
+                            metal_stock=metal_stock,
+                            movement_type='out',
+                            quantity=quantity,
+                            reference_type='Order',
+                            reference_id=f"Order-{self.object.sn}",
+                            notes=f"Metal added to order {self.object.sn} for customer {self.object.customer_name}"
+                        )
+                    except MetalStock.DoesNotExist:
+                        messages.warning(
+                            self.request,
+                            f"No matching metal stock found for {metal_type} ({order_metal.purity}). Please add to inventory first."
+                        )
+                    except Exception as e:
+                        messages.warning(self.request, f"Error updating metal stock: {str(e)}")
             
             # Delete any remaining empty instances if they exist
             for form in metal_stock_formset.deleted_forms:
@@ -451,11 +472,59 @@ class OrderCreateView(CreateView):
             mode = payment.get('payment_mode') or payment.get('mode') or 'cash'
             if mode not in dict(Order.PAYMENT_CHOICES):
                 mode = 'cash'
-            OrderPayment.objects.create(
+            
+            order_payment = OrderPayment.objects.create(
                 order=self.object,
                 payment_mode=mode,
                 amount=amount,
             )
+            
+            # If payment mode is sundry_debtor, create or get debtor and create DebtorPayment record
+            if mode == 'sundry_debtor':
+                print(f"[SUNDRY DEBTOR] Processing sundry_debtor payment: amount={amount}")
+                debtor_data = payment.get('debtor_data')
+                print(f"[SUNDRY DEBTOR] debtor_data={debtor_data}")
+                try:
+                    # Use debtor name if provided, otherwise use customer name
+                    debtor_name = (debtor_data.get('name', '') if debtor_data else '').strip() or self.object.customer_name
+                    print(f"[SUNDRY DEBTOR] debtor_name='{debtor_name}', customer_name='{self.object.customer_name}'")
+                    
+                    # Only create debtor if we have a name
+                    if debtor_name:
+                        print(f"[SUNDRY DEBTOR] Creating/getting debtor: {debtor_name}")
+                        # Use payment amount as credit limit and current balance
+                        credit_limit = amount
+                        current_balance = amount
+                        
+                        # Create or get debtor by name
+                        debtor, created = SundryDebtor.objects.get_or_create(
+                            name=debtor_name,
+                            defaults={
+                                'credit_limit': credit_limit,
+                                'current_balance': current_balance,
+                                'is_active': True
+                            }
+                        )
+                        print(f"[SUNDRY DEBTOR] Debtor created={created}, id={debtor.id}")
+                        
+                        # If debtor already exists, update balance with payment amount
+                        if not created:
+                            debtor.current_balance += amount
+                            debtor.save()
+                            print(f"[SUNDRY DEBTOR] Updated existing debtor balance to {debtor.current_balance}")
+                        
+                        DebtorPayment.objects.create(
+                            order_payment=order_payment,
+                            debtor=debtor,
+                            transaction_type='invoice'
+                        )
+                        print(f"[SUNDRY DEBTOR] DebtorPayment created successfully")
+                        messages.success(self.request, f"Debtor '{debtor_name}' created/updated with balance Rs.{amount}")
+                    else:
+                        print(f"[SUNDRY DEBTOR] No debtor_name, skipping debtor creation")
+                except Exception as e:
+                    print(f"[SUNDRY DEBTOR] ERROR: {str(e)}")
+                    messages.warning(self.request, f"Warning: Could not create/link debtor: {str(e)}")
 
         # Recompute order totals from created lines (amount/subtotal/total/remaining)
         self.object.recompute_totals_from_lines()
@@ -602,58 +671,66 @@ class OrderUpdateView(UpdateView):
                         order_metal.delete()
                     continue
                 
-                # Check if form has actual data (metal_type is selected)
+                # Check if form has actual data (metal_type is selected AND quantity is provided)
                 metal_type = form.cleaned_data.get('metal_type')
-                if metal_type:
-                    # Check if this is a new record (no pk) before saving
-                    is_new = not form.instance.pk
+                quantity = form.cleaned_data.get('quantity')
+                
+                # Skip empty rows - must have both metal_type and non-zero quantity
+                if not metal_type or not quantity or quantity == 0:
+                    # If this is an existing record being cleared, delete it
+                    if form.instance.pk and not metal_type:
+                        form.instance.delete()
+                    continue
+                
+                # Check if this is a new record (no pk) before saving
+                is_new = not form.instance.pk
+                
+                # Save the order metal entry
+                order_metal = form.save()
+                saved_metals.append(order_metal)
+                
+                # Deduct from existing metal stock if this is a new entry
+                if is_new:
+                    # This is a new metal addition to the order
+                    quantity = order_metal.quantity
+                    metal_type = order_metal.metal_type
                     
-                    # Save the order metal entry
-                    order_metal = form.save()
-                    saved_metals.append(order_metal)
-                    
-                    # Deduct from existing metal stock if this is a new entry
-                    if is_new:
-                        # This is a new metal addition to the order
-                        quantity = order_metal.quantity
-                        metal_type = order_metal.metal_type
+                    # Find matching metal stock (Raw type with same metal and purity)
+                    try:
+                        from goldsilverpurchase.models import MetalStockType
+                        raw_stock_type = MetalStockType.objects.get(name='raw')
                         
-                        # Find matching metal stock (Raw type with same metal and purity)
-                        try:
-                            from goldsilverpurchase.models import MetalStockType
-                            raw_stock_type = MetalStockType.objects.get(name__icontains='Raw')
-                            
-                            metal_stock = MetalStock.objects.get(
-                                metal_type=metal_type,
-                                purity=order_metal.purity,
-                                stock_type=raw_stock_type
-                            )
-                            
-                            # Deduct quantity from metal stock
-                            metal_stock.quantity -= quantity
-                            if metal_stock.quantity < 0:
-                                messages.warning(
-                                    self.request,
-                                    f"Warning: {metal_stock.get_metal_type_display()} stock ({metal_stock.purity}) is now negative: {metal_stock.quantity}g"
-                                )
-                            metal_stock.save()
-                            
-                            # Create a movement record
-                            MetalStockMovement.objects.create(
-                                metal_stock=metal_stock,
-                                movement_type='out',
-                                quantity=quantity,
-                                reference_type='Order',
-                                reference_id=f"Order-{self.object.sn}",
-                                notes=f"Metal added to order {self.object.sn} for customer {self.object.customer_name}"
-                            )
-                        except MetalStock.DoesNotExist:
+                        metal_stock = MetalStock.objects.get(
+                            metal_type=metal_type,
+                            purity=order_metal.purity,
+                            stock_type=raw_stock_type
+                        )
+                        
+                        # Deduct quantity from metal stock
+                        metal_stock.quantity -= quantity
+                        if metal_stock.quantity < 0:
                             messages.warning(
                                 self.request,
-                                f"No matching metal stock found for {metal_type} ({order_metal.purity}). Please add to inventory first."
+                                f"Warning: {metal_stock.get_metal_type_display()} stock ({metal_stock.purity}) is now negative: {metal_stock.quantity}g"
                             )
-                        except Exception as e:
-                            messages.warning(self.request, f"Error updating metal stock: {str(e)}")
+                        metal_stock.save()
+                        
+                        # Create a movement record
+                        MetalStockMovement.objects.create(
+                            metal_stock=metal_stock,
+                            movement_type='out',
+                            quantity=quantity,
+                            reference_type='Order',
+                            reference_id=f"Order-{self.object.sn}",
+                            notes=f"Metal added to order {self.object.sn} for customer {self.object.customer_name}"
+                        )
+                    except MetalStock.DoesNotExist:
+                        messages.warning(
+                            self.request,
+                            f"No matching metal stock found for {metal_type} ({order_metal.purity}). Please add to inventory first."
+                        )
+                    except Exception as e:
+                        messages.warning(self.request, f"Error updating metal stock: {str(e)}")
             
             # Delete any remaining empty instances if they exist
             for form in metal_stock_formset.deleted_forms:
@@ -684,11 +761,59 @@ class OrderUpdateView(UpdateView):
             mode = payment.get('payment_mode') or payment.get('mode') or 'cash'
             if mode not in dict(Order.PAYMENT_CHOICES):
                 mode = 'cash'
-            OrderPayment.objects.create(
+            
+            order_payment = OrderPayment.objects.create(
                 order=self.object,
                 payment_mode=mode,
                 amount=amount,
             )
+            
+            # If payment mode is sundry_debtor, create or get debtor and create DebtorPayment record
+            if mode == 'sundry_debtor':
+                print(f"[UPDATE VIEW] Processing sundry_debtor payment: amount={amount}")
+                debtor_data = payment.get('debtor_data')
+                print(f"[UPDATE VIEW] debtor_data={debtor_data}")
+                try:
+                    # Use debtor name if provided, otherwise use customer name
+                    debtor_name = (debtor_data.get('name', '') if debtor_data else '').strip() or self.object.customer_name
+                    print(f"[UPDATE VIEW] debtor_name='{debtor_name}', customer_name='{self.object.customer_name}'")
+                    
+                    # Only create debtor if we have a name
+                    if debtor_name:
+                        print(f"[UPDATE VIEW] Creating/getting debtor: {debtor_name}")
+                        # Use payment amount as credit limit and current balance
+                        credit_limit = amount
+                        current_balance = amount
+                        
+                        # Create or get debtor by name
+                        debtor, created = SundryDebtor.objects.get_or_create(
+                            name=debtor_name,
+                            defaults={
+                                'credit_limit': credit_limit,
+                                'current_balance': current_balance,
+                                'is_active': True
+                            }
+                        )
+                        print(f"[UPDATE VIEW] Debtor created={created}, id={debtor.id}")
+                        
+                        # If debtor already exists, update balance with payment amount
+                        if not created:
+                            debtor.current_balance += amount
+                            debtor.save()
+                            print(f"[UPDATE VIEW] Updated existing debtor balance to {debtor.current_balance}")
+                        
+                        DebtorPayment.objects.create(
+                            order_payment=order_payment,
+                            debtor=debtor,
+                            transaction_type='invoice'
+                        )
+                        print(f"[UPDATE VIEW] DebtorPayment created successfully")
+                        messages.success(self.request, f"Debtor '{debtor_name}' created/updated with balance Rs.{amount}")
+                    else:
+                        print(f"[UPDATE VIEW] No debtor_name, skipping debtor creation")
+                except Exception as e:
+                    print(f"[UPDATE VIEW] ERROR: {str(e)}")
+                    messages.warning(self.request, f"Warning: Could not create/link debtor: {str(e)}")
 
         # Recompute order totals from updated lines
         self.object.recompute_totals_from_lines()
