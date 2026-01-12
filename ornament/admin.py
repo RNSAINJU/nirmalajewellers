@@ -12,11 +12,19 @@ class SubCategory(admin.ModelAdmin):
 
 @admin.register(Ornament)
 class OrnamentAdmin(admin.ModelAdmin):
-    list_display = ('code','maincategory','subcategory', 'ornament_name', 'kaligar', 'weight', 'jarti', 'ornament_type')
-    list_filter = ('type', 'ornament_type')
+    list_display = ('code','maincategory','subcategory', 'ornament_name', 'kaligar', 'weight', 'jarti', 'ornament_type', 'status')
+    list_filter = ('type', 'ornament_type', 'status')
     search_fields = ('code', 'ornament_name')
     ordering = ('-ornament_date', '-created_at')
     readonly_fields = ('created_at', 'updated_at')
+    
+    actions = ['mark_as_destroyed']
+
+    def mark_as_destroyed(self, request, queryset):
+        """Action to mark ornaments as destroyed."""
+        updated = queryset.update(status='destroyed')
+        self.message_user(request, f'{updated} ornament(s) marked as destroyed.')
+    mark_as_destroyed.short_description = "Mark selected ornaments as destroyed"
 
 
 class KaligarOrnamentsInline(admin.TabularInline):

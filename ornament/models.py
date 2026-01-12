@@ -136,6 +136,11 @@ class Ornament(models.Model):
         DIAMOND = 'Diamond', 'Diamond'
         OTHERS = 'Others', 'Others'
 
+    class StatusCategory(models.TextChoices):
+        ACTIVE = 'active', 'Active'
+        DELETED = 'deleted', 'Deleted'
+        DESTROYED = 'destroyed', 'Destroyed'
+
     ornament_date = NepaliDateField(null=True, blank=True)
     code = models.CharField(max_length=50, verbose_name="Code / नं.", null=True, blank=True, unique=True)
     metal_type=models.CharField(
@@ -154,6 +159,13 @@ class Ornament(models.Model):
         choices=OrnamentCategory.choices,
         default=OrnamentCategory.STOCK,
         verbose_name="गहनाको किसिम",
+    )
+    status = models.CharField(
+        max_length=10,
+        choices=StatusCategory.choices,
+        default=StatusCategory.ACTIVE,
+        verbose_name="Status",
+        help_text="Active, Deleted, or Destroyed"
     )
     maincategory = models.ForeignKey(MainCategory, on_delete=models.CASCADE, null=True, blank=True)
     subcategory = models.ForeignKey(SubCategory, on_delete=models.CASCADE, null=True, blank=True)

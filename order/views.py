@@ -220,6 +220,23 @@ class OrderListView(ListView):
 
         ctx['total_remaining'] = float(aggregates.get('total_remaining') or 0)
 
+        # Calculate 24K weight for each status
+        status_24k_weights = {}
+        for status_key, orders_list in orders_by_status.items():
+            status_24k = Decimal('0')
+            status_gold_lines = (
+                OrderOrnament.objects.filter(order__in=orders_list)
+                .select_related('ornament')
+                .filter(ornament__metal_type=Ornament.MetalTypeCategory.GOLD)
+            )
+            for line in status_gold_lines:
+                weight = line.ornament.weight or Decimal('0')
+                factor = purity_factors.get(line.ornament.type, Decimal('1.00'))
+                status_24k += weight * factor
+            status_24k_weights[status_key] = float(status_24k)
+        
+        ctx['status_24k_weights'] = status_24k_weights
+
         return ctx
 
 

@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load bs_filters %}
+{% load order_filters %}
 
 {% block content %}
 
@@ -270,7 +271,7 @@
                         {% elif status_key == 'processing' %}Processing
                         {% elif status_key == 'completed' %}Completed
                         {% elif status_key == 'delivered' %}Delivered
-                        {% endif %} Orders:</strong> {{ orders_list.count }} order{{ orders_list|pluralize }}
+                        {% endif %} Orders:</strong> {{ orders_list.count }} order{{ orders_list|pluralize }} | <strong>Total 24K Weight:</strong> {{ status_24k_weights|get_item:status_key|floatformat:3 }} gram
                     </div>
 
                     {% if orders_list %}

@@ -316,6 +316,7 @@
                     <th>Jyala</th>
                     <th>Kaligar</th>
                     <th>Ornament Type</th>
+                    <th>Status</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -348,9 +349,13 @@
                     <td>{{ o.zircon_weight }}</td>
                     <td>{{ o.stone_weight }}</td>
                     <td>{{ o.jarti }}</td>
-                    <td>{{ o.jyala }}</td>
                     <td>{{ o.kaligar }}</td>
                     <td>{{ o.get_ornament_type_display }}</td>
+                    <td>
+                        <span class="badge {% if o.status == 'active' %}bg-success{% elif o.status == 'deleted' %}bg-warning{% elif o.status == 'destroyed' %}bg-danger{% endif %}">
+                            {{ o.get_status_display }}
+                        </span>
+                    </td>
 
                     <td class="text-center">
                         <div class="btn-group">
@@ -365,11 +370,19 @@
                                title="Delete">
                                 <i class="bi bi-trash-fill"></i>
                             </a>
+
+                            {% if o.status != 'destroyed' %}
+                            <a href="{% url 'ornament:destroy' o.pk %}" 
+                               class="btn btn-sm btn-outline-dark"
+                               title="Destroy">
+                                <i class="bi bi-fire"></i>
+                            </a>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="19" class="text-center">No records found.</td></tr>
+                <tr><td colspan="21" class="text-center">No records found.</td></tr>
                 {% endfor %}
             </tbody>
 
@@ -377,7 +390,7 @@
                 <tr class="table-info">
                     <th colspan="10">TOTAL WEIGHT</th>
                     <th>{{ total_weight|floatformat:3 }}</th>
-                    <th colspan="9"></th>
+                    <th colspan="10"></th>
                 </tr>
             </tfoot>
 

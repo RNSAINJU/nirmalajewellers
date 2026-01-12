@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="bi bi-fire"></i> Destroy Ornament</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">Are you sure you want to mark this ornament as <strong>DESTROYED</strong>?</p>
+                    
+                    <div class="alert alert-info" role="alert">
+                        <strong>Ornament Details:</strong><br>
+                        Code: {{ object.code }}<br>
+                        Name: {{ object.ornament_name }}<br>
+                        Weight: {{ object.weight }} g
+                    </div>
+
+                    <p class="text-danger"><strong>Note:</strong> This action will change the ornament status to "Destroyed" and it will no longer appear in active ornament lists.</p>
+
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-fire"></i> Yes, mark as destroyed
+                        </button>
+                        <a href="{% url 'ornament:list' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
