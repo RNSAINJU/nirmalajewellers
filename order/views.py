@@ -475,67 +475,49 @@ class OrderCreateView(CreateView):
 
         # Persist payment breakdown
         payment_lines_raw = form.cleaned_data.get('payment_lines_json') or '[]'
-        print(f"\n[DEBUG ORDER CREATE] ========== PAYMENT PROCESSING START ==========")
-        print(f"[DEBUG ORDER CREATE] payment_lines_json raw value: {repr(payment_lines_raw)}")
-        print(f"[DEBUG ORDER CREATE] payment_lines_json length: {len(payment_lines_raw)}")
         try:
             payments_data = json.loads(payment_lines_raw)
-            print(f"[DEBUG ORDER CREATE] payments_data after JSON parse: {payments_data}")
-            print(f"[DEBUG ORDER CREATE] payments_data type: {type(payments_data)}, length: {len(payments_data)}")
         except (TypeError, ValueError) as e:
-            print(f"[DEBUG ORDER CREATE] JSON parse error: {e}")
             payments_data = []
 
-        print(f"[DEBUG ORDER CREATE] About to delete existing payments for order {self.object.sn}")
+        # Fallback: if cleaned_data is empty but POST has data, re-parse directly from POST
+        if not payments_data:
+            raw_post_val = self.request.POST.get('payment_lines_json')
+            if raw_post_val:
+                try:
+                    payments_data = json.loads(raw_post_val)
+                except Exception:
+                    pass
+
         self.object.payments.all().delete()
-        
-        payment_count = 0
         
         # If no payments or all payments have 0 amount, auto-fill with order total
         if not payments_data:
-            print(f"[DEBUG ORDER CREATE] No payments provided, auto-filling cash with order total: {self.object.total}")
             if self.object.total > 0:
                 payments_data = [{'payment_mode': 'cash', 'amount': float(self.object.total)}]
         elif all(Decimal(str(p.get('amount', 0) or 0)) <= 0 for p in payments_data):
-            # Respect the user's chosen mode if provided; otherwise default to cash
             raw_mode = payments_data[0].get('payment_mode') or payments_data[0].get('mode') or 'cash'
             mode = raw_mode if raw_mode in dict(Order.PAYMENT_CHOICES) else 'cash'
-            print(f"[DEBUG ORDER CREATE] Payments provided but zero amounts; auto-filling mode={mode} with total {self.object.total}")
             if self.object.total > 0:
                 payments_data = [{'payment_mode': mode, 'amount': float(self.object.total)}]
-        
-        for idx, payment in enumerate(payments_data):
+        # If payments provided with positive amounts, keep them as-is (no redistribution)
+
+        for payment in payments_data:
             amount = Decimal(str(payment.get('amount', 0) or 0))
             mode = payment.get('payment_mode') or payment.get('mode') or 'cash'
-            print(f"[DEBUG ORDER CREATE] Processing payment #{idx}: mode={mode}, amount={amount}")
-            
             if amount <= 0:
-                print(f"[DEBUG ORDER CREATE] SKIPPING payment #{idx} because amount <= 0")
                 continue
-            
             if mode not in dict(Order.PAYMENT_CHOICES):
-                print(f"[DEBUG ORDER CREATE] Invalid mode '{mode}', defaulting to 'cash'")
                 mode = 'cash'
-            
-            print(f"[DEBUG ORDER CREATE] Creating OrderPayment: mode={mode}, amount={amount}")
-            order_payment = OrderPayment.objects.create(
+            OrderPayment.objects.create(
                 order=self.object,
                 payment_mode=mode,
                 amount=amount,
             )
-            payment_count += 1
-            print(f"[DEBUG ORDER CREATE] OrderPayment created successfully, id={order_payment.id}")
 
-        print(f"[DEBUG ORDER CREATE] ========== PAYMENT PROCESSING END ==========")
-        print(f"[DEBUG ORDER CREATE] Total payments created: {payment_count}")
-        print(f"[DEBUG ORDER CREATE] Total OrderPayment objects for this order: {self.object.payments.count()}")
-        
         # Recompute order totals from created lines (amount/subtotal/total/remaining)
-        print(f"[DEBUG ORDER CREATE] Calling recompute_totals_from_lines()...")
         self.object.recompute_totals_from_lines()
-        print(f"[DEBUG ORDER CREATE] After recompute: order total={self.object.total}, remaining={self.object.remaining_amount}")
 
-        print(f"[CREATE VIEW] Order {self.object.sn} form_valid completed - returning redirect")
         return redirect('order:list')
         
         
@@ -758,26 +740,34 @@ class OrderUpdateView(UpdateView):
         except (TypeError, ValueError):
             payments_data = []
 
+        # Fallback: if cleaned_data is empty but POST has data, re-parse directly from POST
+        if not payments_data:
+            raw_post_val = self.request.POST.get('payment_lines_json')
+            if raw_post_val:
+                try:
+                    payments_data = json.loads(raw_post_val)
+                except Exception:
+                    pass
+
         # Clear existing payments first
         self.object.payments.all().delete()
         
         # If no payments or all payments have 0 amount, auto-fill with order total
         if not payments_data:
-            print(f"[UPDATE VIEW] No payments provided, auto-filling cash with order total: {self.object.total}")
             if self.object.total > 0:
                 payments_data = [{'payment_mode': 'cash', 'amount': float(self.object.total)}]
         elif all(Decimal(str(p.get('amount', 0) or 0)) <= 0 for p in payments_data):
             raw_mode = payments_data[0].get('payment_mode') or payments_data[0].get('mode') or 'cash'
             mode = raw_mode if raw_mode in dict(Order.PAYMENT_CHOICES) else 'cash'
-            print(f"[UPDATE VIEW] Payments provided but zero amounts; auto-filling mode={mode} with total {self.object.total}")
             if self.object.total > 0:
                 payments_data = [{'payment_mode': mode, 'amount': float(self.object.total)}]
+        # If payments include positive amounts, keep them as-is (no redistribution)
         
         for payment in payments_data:
             amount = Decimal(str(payment.get('amount', 0) or 0))
+            mode = payment.get('payment_mode') or payment.get('mode') or 'cash'
             if amount <= 0:
                 continue
-            mode = payment.get('payment_mode') or payment.get('mode') or 'cash'
             if mode not in dict(Order.PAYMENT_CHOICES):
                 mode = 'cash'
             
@@ -802,11 +792,10 @@ class OrderDeleteView(DeleteView):
 class CreateSaleFromOrderView(View):
     """(Deprecated here) moved to sales.views.CreateSaleFromOrderView."""
 
-    def post(self, request, pk):
-        # Thin wrapper to keep existing URLs working if still referenced.
+    def dispatch(self, request, *args, **kwargs):
         from sales.views import CreateSaleFromOrderView as _Create
 
-        return _Create.as_view()(request, pk=pk)
+        return _Create.as_view()(request, *args, **kwargs)
 
 
 class SalesListView(ListView):

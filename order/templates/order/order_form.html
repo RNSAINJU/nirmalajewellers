@@ -954,26 +954,6 @@ function updateDerivedFields(amount) {
         orderTotalField.value = Math.max(0, total).toFixed(2);
     }
 
-    // AUTO-FILL: Update first payment row amount when order total changes
-    autoFillFirstPaymentAmount(total);
-}
-
-function autoFillFirstPaymentAmount(orderTotal) {
-    // Get the first payment amount input if it exists and is empty
-    const firstPaymentRow = document.querySelector('.payment-row');
-    if (!firstPaymentRow) return;
-
-    const amountInput = firstPaymentRow.querySelector('.payment-amount');
-    if (!amountInput) return;
-
-    // Only auto-fill if current amount is 0 or empty
-    const currentAmount = parseFloat(amountInput.value) || 0;
-    if (currentAmount === 0 && orderTotal > 0) {
-        amountInput.value = Math.max(0, orderTotal).toFixed(2);
-        console.log('[DEBUG] Auto-filled first payment amount to order total:', orderTotal);
-        // Trigger recalcPayments to update the hidden JSON
-        recalcPayments();
-    }
 }
 
 function updateRemainingAmount(totalValue, paymentTotalOverride) {
@@ -1061,54 +1041,41 @@ function buildOrderLinesPayload() {
 function getPaymentRowsData() {
     const rows = [];
     const paymentRows = document.querySelectorAll('.payment-row');
-    console.log('[DEBUG] getPaymentRowsData - found', paymentRows.length, 'payment rows');
-    
     paymentRows.forEach((row, index) => {
         const modeSelect = row.querySelector('.payment-mode');
         const amountInput = row.querySelector('.payment-amount');
         
-        // Get raw element values
         const rawModeValue = modeSelect?.value;
         const rawAmountValue = amountInput?.value;
-        console.log(`[DEBUG] Row ${index} RAW: modeSelect?.value="${rawModeValue}", amountInput?.value="${rawAmountValue}"`);
-        
-        // Parse values with defaults
         const mode = rawModeValue || 'cash';
         const amountVal = parseFloat(rawAmountValue) || 0;
-        
-        console.log(`[DEBUG] Row ${index} PARSED: mode='${mode}', amountVal=${amountVal}`);
         
         rows.push({ 
             payment_mode: mode, 
             amount: amountVal
         });
     });
-    console.log('[DEBUG] getPaymentRowsData - FINAL rows array:', JSON.stringify(rows));
     return rows;
 }
 
 function recalcPayments() {
     const rows = getPaymentRowsData();
-    console.log('[DEBUG] recalcPayments - payment rows data:', rows);
+    // Keep rows that have a selected mode even if amount is 0, so backend can auto-fill mode
+    const modeRows = rows.filter(r => !!r.payment_mode);
+    // Only rows with a positive amount contribute to paid totals
+    const paidRows = modeRows.filter(r => (r.amount || 0) > 0);
     
-    // Filter out rows with 0 or empty amounts - only keep valid payments
-    const validRows = rows.filter(r => (r.amount || 0) > 0);
-    console.log('[DEBUG] recalcPayments - valid rows after filtering:', validRows);
-    
-    const totalPaid = validRows.reduce((sum, row) => sum + (row.amount || 0), 0);
-    const modes = validRows.map(r => r.payment_mode).filter(Boolean);
-    const uniqueModes = Array.from(new Set(modes));
+    const totalPaid = paidRows.reduce((sum, row) => sum + (row.amount || 0), 0);
 
     const hiddenAmount = document.querySelector('input[name="payment_amount"]');
     if (hiddenAmount) {
         hiddenAmount.value = totalPaid.toFixed(2);
-        console.log('[DEBUG] Set payment_amount to:', hiddenAmount.value);
     }
 
     const hiddenJson = document.querySelector('input[name="payment_lines_json"]');
     if (hiddenJson) {
-        hiddenJson.value = JSON.stringify(validRows);
-        console.log('[DEBUG] Set payment_lines_json to:', hiddenJson.value);
+        // Send all rows with selected modes (even zero amounts) so backend can auto-fill
+        hiddenJson.value = JSON.stringify(modeRows);
     }
 
     const totalPaidDisplay = document.getElementById('payment-total-display');
@@ -1155,31 +1122,13 @@ function addPaymentRow(mode = 'cash', amount = '') {
             console.log('[DEBUG] addPaymentRow - set amount to:', amount, 'actual value:', amountInput.value);
         }
         
-        // AUTO-FILL: If amount is empty and order total exists, fill it automatically
-        if (!amountInput.value || amountInput.value === '' || parseFloat(amountInput.value) === 0) {
-            const orderTotalField = document.getElementById('order-total');
-            const orderTotal = parseFloat(orderTotalField?.value) || 0;
-            if (orderTotal > 0) {
-                amountInput.value = orderTotal.toFixed(2);
-                console.log('[DEBUG] Auto-filled payment amount to order total on add row:', orderTotal);
-            }
-        }
-        
         // Call recalcPayments after values are set
         recalcPayments();
     }, 0);
 
     // Handle payment mode changes
     modeSelect?.addEventListener('change', function() {
-        // When switching modes, auto-fill with order total if empty
-        if (!amountInput.value || parseFloat(amountInput.value) === 0) {
-            const orderTotalField = document.getElementById('order-total');
-            const orderTotal = parseFloat(orderTotalField?.value) || 0;
-            if (orderTotal > 0) {
-                amountInput.value = orderTotal.toFixed(2);
-                console.log('[DEBUG] Auto-filled payment amount to order total on mode change:', orderTotal);
-            }
-        }
+        // Just recalc; no auto-fill on mode change
         recalcPayments();
     });
 
@@ -1515,29 +1464,41 @@ document.addEventListener('DOMContentLoaded', function() {
             const paymentRows = document.querySelectorAll('.payment-row');
             console.log('[FORM SUBMIT] Found', paymentRows.length, 'payment rows');
             
-            // AUTO-FILL: Before submission, fill any empty payment rows with order total
+            // AUTO-FILL: Only if total paid is zero, set the FIRST row to order total
             const orderTotalVal = parseFloat(document.getElementById('order-total')?.value) || 0;
-            let autoFilledAny = false;
-            paymentRows.forEach((row, idx) => {
+            let totalPaidBeforeSubmit = 0;
+            paymentRows.forEach(row => {
                 const amountInput = row.querySelector('.payment-amount');
-                const currentAmount = parseFloat(amountInput?.value) || 0;
-                console.log(`[FORM SUBMIT] Row ${idx} BEFORE auto-fill: amount="${amountInput?.value}" (parsed as ${currentAmount})`);
-                if (currentAmount === 0 && orderTotalVal > 0) {
-                    amountInput.value = orderTotalVal.toFixed(2);
-                    autoFilledAny = true;
-                    console.log(`[FORM SUBMIT] Auto-filled Row ${idx} with order total: ${orderTotalVal}`);
+                totalPaidBeforeSubmit += parseFloat(amountInput?.value) || 0;
+            });
+
+            if (totalPaidBeforeSubmit === 0 && orderTotalVal > 0.01 && paymentRows.length) {
+                const firstRowAmount = paymentRows[0].querySelector('.payment-amount');
+                if (firstRowAmount) {
+                    firstRowAmount.value = orderTotalVal.toFixed(2);
+                    console.log(`[FORM SUBMIT] Auto-filled first payment row with order total: ${orderTotalVal}`);
                 }
-            });
+            }
             
-            // Debug: Log AFTER auto-fill before recalcPayments
-            paymentRows.forEach((row, idx) => {
-                const amountInput = row.querySelector('.payment-amount');
-                console.log(`[FORM SUBMIT] Row ${idx} AFTER auto-fill: amount="${amountInput?.value}"`);
-            });
-            
-            // Recalculate payments AFTER auto-fill is done
+            // Recalculate payments AFTER any auto-fill is done
             console.log('[FORM SUBMIT] Calling recalcPayments after auto-fill...');
             recalcPayments();
+
+            // FINAL SYNC: rebuild payment JSON directly from DOM to avoid any stale state
+            const finalRows = getPaymentRowsData();
+            const finalJsonField = document.querySelector('input[name="payment_lines_json"]');
+            if (finalJsonField) {
+                // Always send all rows (including zero amounts) so backend can auto-fill remaining into chosen modes
+                finalJsonField.value = JSON.stringify(finalRows);
+                console.log('[FORM SUBMIT] FINAL payment_lines_json value:', finalJsonField.value);
+            }
+
+            const finalPaidTotal = finalRows.reduce((sum, r) => sum + (r.amount || 0), 0);
+            const finalPaidField = document.querySelector('input[name="payment_amount"]');
+            if (finalPaidField) {
+                finalPaidField.value = finalPaidTotal.toFixed(2);
+                console.log('[FORM SUBMIT] FINAL payment_amount:', finalPaidField.value);
+            }
             
             // Debug: Log the final payment_lines_json value being submitted
             const finalPaymentJson = document.querySelector('input[name="payment_lines_json"]');
