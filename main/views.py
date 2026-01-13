@@ -228,6 +228,10 @@ def dashboard(request):
             # Update rates
             daily_rate.gold_rate = daily_rate_form.cleaned_data['gold_rate']
             daily_rate.silver_rate = daily_rate_form.cleaned_data['silver_rate']
+            # Auto-calculate per-10g rates from per-tola inputs: (tola_rate / 11.664) * 10
+            tola_to_10g = Decimal('10') / Decimal('11.664')
+            daily_rate.gold_rate_10g = (daily_rate.gold_rate or Decimal('0')) * tola_to_10g
+            daily_rate.silver_rate_10g = (daily_rate.silver_rate or Decimal('0')) * tola_to_10g
             daily_rate.save()
             
             action = 'created' if created else 'updated'
@@ -336,6 +340,41 @@ def dashboard(request):
         'closing_today_diamond_diff': closing_today_diamond_diff,
     }
     return render(request, 'main/dashboard.html', context)
+
+
+def daily_rates(request):
+    """List and allow editing of fetched daily rates."""
+    rates = DailyRate.objects.all().order_by('-date')
+
+    if request.method == 'POST':
+        rate_id = request.POST.get('rate_id')
+        gold_rate_raw = request.POST.get('gold_rate')
+        silver_rate_raw = request.POST.get('silver_rate')
+
+        if rate_id and gold_rate_raw and silver_rate_raw:
+            try:
+                rate = DailyRate.objects.get(id=rate_id)
+                rate.gold_rate = Decimal(gold_rate_raw)
+                rate.silver_rate = Decimal(silver_rate_raw)
+
+                # Auto-calculate per-10g rates from per-tola inputs: (tola_rate / 11.664) * 10
+                tola_to_10g = Decimal('10') / Decimal('11.664')
+                rate.gold_rate_10g = (rate.gold_rate or Decimal('0')) * tola_to_10g
+                rate.silver_rate_10g = (rate.silver_rate or Decimal('0')) * tola_to_10g
+
+                rate.save()
+                messages.success(request, 'Rates updated successfully.')
+            except DailyRate.DoesNotExist:
+                messages.error(request, 'Selected rate not found.')
+            except Exception:
+                messages.error(request, 'Could not update rates. Please check the values and try again.')
+
+        return redirect('main:daily_rates')
+
+    context = {
+        'rates': rates,
+    }
+    return render(request, 'main/daily_rates.html', context)
 
 
 

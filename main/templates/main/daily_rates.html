@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<style>
+  .rates-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    padding: 24px;
+    color: white;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+  }
+  .rates-title {
+    font-weight: 700;
+    font-size: 1.6rem;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .rates-table thead th {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    color: #fff;
+    border-color: transparent !important;
+  }
+  .rates-table td {
+    vertical-align: middle;
+  }
+  .rate-pill {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .rate-gold {
+    background: rgba(245, 158, 11, 0.15); /* amber-500 */
+    color: #b45309; /* amber-700 */
+    border: 1px solid rgba(245, 158, 11, 0.35);
+  }
+  .rate-silver {
+    background: rgba(59, 130, 246, 0.12); /* blue-500 */
+    color: #1d4ed8; /* blue-700 */
+    border: 1px solid rgba(59, 130, 246, 0.25);
+  }
+  .table-hover tbody tr:hover {
+    background: rgba(79, 70, 229, 0.06);
+  }
+</style>
+
+<div class="rates-card">
+  <div class="rates-title">
+    <i class="bi bi-currency-exchange"></i> Daily Rates
+  </div>
+  <p class="mb-0" style="opacity:0.95">Gold & Silver rates as fetched per day.</p>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    {% if rates %}
+    <div class="table-responsive">
+      <table class="table table-hover rates-table">
+        <thead>
+          <tr>
+            <th style="min-width: 130px;">Date (AD)</th>
+            <th style="min-width: 160px;">Date (BS)</th>
+            <th>Gold / tola (रू)</th>
+            <th>Gold / 10g (रू)</th>
+            <th>Silver / tola (रू)</th>
+            <th>Silver / 10g (रू)</th>
+            <th>Updated</th>
+            <th style="min-width: 120px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rates %}
+          <form id="rate-form-{{ r.id }}" method="post" action="{% url 'main:daily_rates' %}">
+            {% csrf_token %}
+            <input type="hidden" name="rate_id" value="{{ r.id }}">
+          </form>
+          <tr>
+            <td>{{ r.date }}</td>
+            <td>{{ r.bs_date }}</td>
+            <td>
+              <input form="rate-form-{{ r.id }}" type="number" step="0.01" name="gold_rate" class="form-control form-control-sm" value="{{ r.gold_rate|floatformat:2 }}" aria-label="Gold rate per tola">
+            </td>
+            <td><span class="rate-pill rate-gold">{{ r.gold_rate_10g|floatformat:2 }}</span></td>
+            <td>
+              <input form="rate-form-{{ r.id }}" type="number" step="0.01" name="silver_rate" class="form-control form-control-sm" value="{{ r.silver_rate|floatformat:2 }}" aria-label="Silver rate per tola">
+            </td>
+            <td><span class="rate-pill rate-silver">{{ r.silver_rate_10g|floatformat:2 }}</span></td>
+            <td>{{ r.updated_at|date:"Y-m-d H:i" }}</td>
+            <td>
+              <button type="submit" form="rate-form-{{ r.id }}" class="btn btn-sm btn-primary">Save</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <div class="alert alert-info d-flex align-items-center" role="alert">
+        <i class="bi bi-info-circle me-2"></i>
+        No daily rates found. Try running the fetch command.
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
