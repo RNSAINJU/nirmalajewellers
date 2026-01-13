@@ -47,12 +47,11 @@ class EmployeeSalaryForm(forms.ModelForm):
 class SundryDebtorForm(forms.ModelForm):
     class Meta:
         model = SundryDebtor
-        fields = ['name', 'contact_person', 'phone', 'email', 'address', 'opening_balance', 'current_balance', 'credit_limit', 'is_active', 'notes']
+        fields = ['name', 'contact_person', 'phone', 'address', 'opening_balance', 'current_balance', 'credit_limit', 'is_active', 'notes']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Debtor Name'}),
             'contact_person': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Contact Person'}),
             'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Phone'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email'}),
             'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Address'}),
             'opening_balance': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Opening Balance', 'step': '0.01'}),
             'current_balance': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Current Balance', 'step': '0.01'}),
@@ -78,12 +77,11 @@ class DebtorTransactionForm(forms.ModelForm):
 class SundryCreditorForm(forms.ModelForm):
     class Meta:
         model = SundryCreditor
-        fields = ['name', 'contact_person', 'phone', 'email', 'address', 'opening_balance', 'current_balance', 'is_active', 'notes']
+        fields = ['name', 'contact_person', 'phone', 'address', 'opening_balance', 'current_balance', 'is_active', 'notes']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Creditor Name'}),
             'contact_person': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Contact Person'}),
             'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Phone'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email'}),
             'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Address'}),
             'opening_balance': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Opening Balance', 'step': '0.01'}),
             'current_balance': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Current Balance', 'step': '0.01'}),

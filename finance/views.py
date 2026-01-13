@@ -527,37 +527,93 @@ def salary_import(request):
             wb = openpyxl.load_workbook(file)
             ws = wb.active
             created = 0
+            skipped = 0
+            errors = []
             
-            for row in ws.iter_rows(min_row=2, values_only=True):
+            for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
                 if not any(row):
                     continue
-                employee_email, employee_name, month, base_salary, bonus, deductions, total_salary, amount_paid, status, paid_date, notes = row[:11]
                 
                 try:
-                    employee = Employee.objects.get(email=employee_email)
-                except Employee.DoesNotExist:
-                    continue
+                    employee_email, employee_name, month, base_salary, bonus, deductions, total_salary, amount_paid, status, paid_date, notes = row[:11]
+                    
+                    # Try to find employee by email first
+                    employee = None
+                    email_str = str(employee_email).strip() if employee_email else ''
+                    name_str = str(employee_name).strip() if employee_name else ''
+                    
+                    if email_str:
+                        try:
+                            employee = Employee.objects.get(email__iexact=email_str)
+                        except Employee.DoesNotExist:
+                            pass
+                    
+                    # If not found by email, try by name
+                    if not employee and name_str:
+                        name_parts = name_str.split()
+                        if len(name_parts) >= 2:
+                            first_name = name_parts[0]
+                            last_name = ' '.join(name_parts[1:])
+                            try:
+                                employee = Employee.objects.get(first_name__iexact=first_name, last_name__iexact=last_name)
+                            except Employee.DoesNotExist:
+                                pass
+                    
+                    # If still not found, skip this row with error message
+                    if not employee:
+                        error_msg = f"Row {row_idx}: Employee not found (email: {email_str}, name: {name_str})"
+                        errors.append(error_msg)
+                        skipped += 1
+                        continue
 
-                month = _extract_date(month)
-                if not month:
-                    continue
+                    month_str = _extract_date(month)
+                    if not month_str:
+                        error_msg = f"Row {row_idx}: Invalid month date format"
+                        errors.append(error_msg)
+                        skipped += 1
+                        continue
 
-                _, created_flag = EmployeeSalary.objects.update_or_create(
-                    employee=employee,
-                    month=month,
-                    defaults={
-                        'base_salary': _safe_decimal(base_salary),
-                        'bonus': _safe_decimal(bonus),
-                        'deductions': _safe_decimal(deductions),
-                        'amount_paid': _safe_decimal(amount_paid),
-                        'status': status or 'pending',
-                        'paid_date': _extract_date(paid_date),
-                        'notes': notes or '',
-                    }
-                )
-                if created_flag:
-                    created += 1
-            messages.success(request, f"Imported {created} salary rows (matched by employee email + month)")
+                    # Calculate total_salary if not provided
+                    base_sal = _safe_decimal(base_salary)
+                    bonus_sal = _safe_decimal(bonus)
+                    deductions_sal = _safe_decimal(deductions)
+                    calc_total = base_sal + bonus_sal - deductions_sal
+
+                    _, created_flag = EmployeeSalary.objects.update_or_create(
+                        employee=employee,
+                        month=month_str,
+                        defaults={
+                            'base_salary': base_sal,
+                            'bonus': bonus_sal,
+                            'deductions': deductions_sal,
+                            'total_salary': calc_total,
+                            'amount_paid': _safe_decimal(amount_paid),
+                            'status': status or 'pending',
+                            'paid_date': _extract_date(paid_date),
+                            'notes': notes or '',
+                        }
+                    )
+                    if created_flag:
+                        created += 1
+                except Exception as e:
+                    error_msg = f"Row {row_idx} error: {str(e)}"
+                    errors.append(error_msg)
+                    skipped += 1
+                    continue
+            
+            # Build success message
+            message = f"Imported {created} salary rows"
+            if skipped > 0:
+                message += f" ({skipped} rows skipped)"
+            
+            # Add up to 5 error details
+            for error in errors[:5]:
+                messages.warning(request, error)
+            
+            if skipped > 5:
+                messages.warning(request, f"... and {skipped - 5} more rows skipped")
+            
+            messages.success(request, message)
         except Exception as e:
             messages.error(request, f"Import failed: {str(e)}")
     return redirect('finance:salary_list')
@@ -570,13 +626,12 @@ def debtor_export(request):
     ws = wb.active
     ws.title = "Debtors"
     
-    ws.append(["name", "contact_person", "phone", "email", "address", "opening_balance", "current_balance", "credit_limit", "is_active", "notes"])
+    ws.append(["name", "contact_person", "phone", "address", "opening_balance", "current_balance", "credit_limit", "is_active", "notes"])
     for d in SundryDebtor.objects.all().order_by('name'):
         ws.append([
             d.name,
             d.contact_person or '',
             d.phone or '',
-            d.email or '',
             d.address or '',
             float(d.opening_balance),
             float(d.current_balance),
@@ -609,7 +664,7 @@ def debtor_import(request):
             for row in ws.iter_rows(min_row=2, values_only=True):
                 if not any(row):
                     continue
-                name, contact_person, phone, email, address, opening_balance, current_balance, credit_limit, is_active, notes = row[:10]
+                name, contact_person, phone, address, opening_balance, current_balance, credit_limit, is_active, notes = row[:9]
                 
                 is_active_bool = str(is_active).lower() in ['1', 'true', 'yes', 'y']
                 debtor, created_flag = SundryDebtor.objects.update_or_create(
@@ -617,7 +672,6 @@ def debtor_import(request):
                     defaults={
                         'contact_person': contact_person or '',
                         'phone': phone or '',
-                        'email': email or '',
                         'address': address or '',
                         'opening_balance': _safe_decimal(opening_balance),
                         'current_balance': _safe_decimal(current_balance),
@@ -641,13 +695,12 @@ def creditor_export(request):
     ws = wb.active
     ws.title = "Creditors"
     
-    ws.append(["name", "contact_person", "phone", "email", "address", "opening_balance", "current_balance", "is_active", "notes"])
+    ws.append(["name", "contact_person", "phone", "address", "opening_balance", "current_balance", "is_active", "notes"])
     for c in SundryCreditor.objects.all().order_by('name'):
         ws.append([
             c.name,
             c.contact_person or '',
             c.phone or '',
-            c.email or '',
             c.address or '',
             float(c.opening_balance),
             float(c.current_balance),
@@ -679,7 +732,7 @@ def creditor_import(request):
             for row in ws.iter_rows(min_row=2, values_only=True):
                 if not any(row):
                     continue
-                name, contact_person, phone, email, address, opening_balance, current_balance, is_active, notes = row[:9]
+                name, contact_person, phone, address, opening_balance, current_balance, is_active, notes = row[:8]
                 
                 is_active_bool = str(is_active).lower() in ['1', 'true', 'yes', 'y']
                 _, created_flag = SundryCreditor.objects.update_or_create(
@@ -687,7 +740,6 @@ def creditor_import(request):
                     defaults={
                         'contact_person': contact_person or '',
                         'phone': phone or '',
-                        'email': email or '',
                         'address': address or '',
                         'opening_balance': _safe_decimal(opening_balance),
                         'current_balance': _safe_decimal(current_balance),
