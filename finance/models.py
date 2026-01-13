@@ -42,7 +42,7 @@ class Employee(models.Model):
     phone = models.CharField(max_length=20, blank=True, null=True)
     position = models.CharField(max_length=100)
     base_salary = models.DecimalField(max_digits=12, decimal_places=2)
-    hire_date = NepaliDateField()
+    hire_date = models.DateField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
