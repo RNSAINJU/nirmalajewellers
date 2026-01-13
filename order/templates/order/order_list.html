@@ -311,7 +311,24 @@
                                     </td>
                                     <td>{{ order.total_weight|default:0|floatformat:3 }}</td>
                                     <td>{{ order.total }}</td>
-                                    <td>{{ order.payment_amount }} ({{ order.get_payment_mode_display }})</td>
+                                    <td>
+                                        {% if order.payment_amount > 0 %}
+                                            {{ order.payment_amount|floatformat:2 }}
+                                            {% if order.payments.count > 1 %}
+                                                <small class="text-muted">(Mixed)</small><br>
+                                                {% for payment in order.payments.all %}
+                                                    <small>• {{ payment.get_payment_mode_display }}: {{ payment.amount|floatformat:2 }}</small><br>
+                                                {% endfor %}
+                                            {% elif order.payments.count == 1 %}
+                                                <small class="text-muted">({{ order.payments.first.get_payment_mode_display }})</small>
+                                            {% else %}
+                                                <small class="text-muted">({{ order.get_payment_mode_display }})</small>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-danger">0.00</span>
+                                            <small class="text-muted">(Unpaid)</small>
+                                        {% endif %}
+                                    </td>
                                     <td>{{ order.remaining_amount }}</td>
                                     <td><span class="badge bg-info">{{ order.get_status_display }}</span></td>
                                     <td class="text-center">

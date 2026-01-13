@@ -1048,9 +1048,23 @@ function buildOrderLinesPayload() {
 
 function getPaymentRowsData() {
     const rows = [];
-    document.querySelectorAll('.payment-row').forEach(row => {
-        const mode = row.querySelector('.payment-mode')?.value || 'cash';
-        const amountVal = parseFloat(row.querySelector('.payment-amount')?.value) || 0;
+    const paymentRows = document.querySelectorAll('.payment-row');
+    console.log('[DEBUG] getPaymentRowsData - found', paymentRows.length, 'payment rows');
+    
+    paymentRows.forEach((row, index) => {
+        const modeSelect = row.querySelector('.payment-mode');
+        const amountInput = row.querySelector('.payment-amount');
+        
+        // Get raw element values
+        const rawModeValue = modeSelect?.value;
+        const rawAmountValue = amountInput?.value;
+        console.log(`[DEBUG] Row ${index} RAW: modeSelect?.value="${rawModeValue}", amountInput?.value="${rawAmountValue}"`);
+        
+        // Parse values with defaults
+        const mode = rawModeValue || 'cash';
+        const amountVal = parseFloat(rawAmountValue) || 0;
+        
+        console.log(`[DEBUG] Row ${index} PARSED: mode='${mode}', amountVal=${amountVal}`);
         
         let debtorData = null;
         if (mode === 'sundry_debtor') {
@@ -1058,12 +1072,12 @@ function getPaymentRowsData() {
             const creditLimit = parseFloat(row.querySelector('.debtor-credit-limit')?.value) || 0;
             const currentBalance = parseFloat(row.querySelector('.debtor-current-balance')?.value) || 0;
             
-            // Always include debtor data for sundry_debtor payments (even if name is empty - backend will use customer name)
             debtorData = {
                 name: debtorName.trim(),
                 credit_limit: creditLimit,
                 current_balance: currentBalance
             };
+            console.log(`[DEBUG] Row ${index} DEBTOR: ${JSON.stringify(debtorData)}`);
         }
         
         rows.push({ 
@@ -1072,23 +1086,43 @@ function getPaymentRowsData() {
             debtor_data: debtorData 
         });
     });
+    console.log('[DEBUG] getPaymentRowsData - FINAL rows array:', JSON.stringify(rows));
     return rows;
 }
 
 function recalcPayments() {
     const rows = getPaymentRowsData();
+    console.log('[DEBUG] recalcPayments - payment rows data:', rows);
+    
+    // If no rows or all rows have 0 amount, ensure we still have at least a cash row
+    if (!rows || rows.length === 0 || rows.every(r => (r.amount || 0) <= 0)) {
+        console.log('[DEBUG] recalcPayments - no valid payment rows, setting default cash row');
+        rows.length = 0;  // Clear array
+        rows.push({payment_mode: 'cash', amount: 0, debtor_data: null});
+    }
+    
     const totalPaid = rows.reduce((sum, row) => sum + (row.amount || 0), 0);
     const modes = rows.map(r => r.payment_mode).filter(Boolean);
     const uniqueModes = Array.from(new Set(modes));
 
     const hiddenAmount = document.querySelector('input[name="payment_amount"]');
-    if (hiddenAmount) hiddenAmount.value = totalPaid.toFixed(2);
+    if (hiddenAmount) {
+        hiddenAmount.value = totalPaid.toFixed(2);
+        console.log('[DEBUG] Set payment_amount to:', hiddenAmount.value);
+    }
 
     const hiddenMode = document.querySelector('input[name="payment_mode"]');
-    if (hiddenMode) hiddenMode.value = uniqueModes.length > 1 ? 'mixed' : (uniqueModes[0] || 'cash');
+    if (hiddenMode) {
+        const modeValue = uniqueModes.length > 1 ? 'mixed' : (uniqueModes[0] || 'cash');
+        hiddenMode.value = modeValue;
+        console.log('[DEBUG] Set payment_mode to:', hiddenMode.value);
+    }
 
     const hiddenJson = document.querySelector('input[name="payment_lines_json"]');
-    if (hiddenJson) hiddenJson.value = JSON.stringify(rows);
+    if (hiddenJson) {
+        hiddenJson.value = JSON.stringify(rows);
+        console.log('[DEBUG] Set payment_lines_json to:', hiddenJson.value);
+    }
 
     const totalPaidDisplay = document.getElementById('payment-total-display');
     if (totalPaidDisplay) totalPaidDisplay.textContent = totalPaid.toFixed(2);
@@ -1134,11 +1168,28 @@ function addPaymentRow(mode = 'cash', amount = '', debtorName = '', creditLimit 
     const debtorCurrentBalanceInput = row.querySelector('.debtor-current-balance');
     const removeBtn = row.querySelector('.payment-remove');
 
-    if (modeSelect && mode) modeSelect.value = mode;
-    if (amountInput && amount !== '') amountInput.value = amount;
-    if (debtorNameInput && debtorName) debtorNameInput.value = debtorName;
-    if (debtorCreditLimitInput && creditLimit) debtorCreditLimitInput.value = creditLimit;
-    if (debtorCurrentBalanceInput && currentBalance) debtorCurrentBalanceInput.value = currentBalance;
+    // Set values after DOM is ready - use setTimeout to ensure options are parsed
+    setTimeout(() => {
+        if (modeSelect && mode) {
+            modeSelect.value = mode;
+            console.log('[DEBUG] addPaymentRow - set mode to:', mode, 'actual value:', modeSelect.value);
+        }
+        if (amountInput && amount !== '') {
+            amountInput.value = amount;
+            console.log('[DEBUG] addPaymentRow - set amount to:', amount, 'actual value:', amountInput.value);
+        }
+        if (debtorNameInput && debtorName) debtorNameInput.value = debtorName;
+        if (debtorCreditLimitInput && creditLimit) debtorCreditLimitInput.value = creditLimit;
+        if (debtorCurrentBalanceInput && currentBalance) debtorCurrentBalanceInput.value = currentBalance;
+        
+        // Trigger change event to show/hide debtor fields if needed
+        if (mode === 'sundry_debtor') {
+            debtorFields.style.display = 'block';
+        }
+        
+        // Call recalcPayments after values are set
+        recalcPayments();
+    }, 0);
 
     // Handle payment mode changes - show/hide debtor input fields
     modeSelect?.addEventListener('change', function() {
@@ -1174,12 +1225,7 @@ function addPaymentRow(mode = 'cash', amount = '', debtorName = '', creditLimit 
         recalcPayments();
     });
 
-    // If mode is sundry_debtor, show the fields
-    if (mode === 'sundry_debtor') {
-        debtorFields.style.display = 'block';
-    }
-
-    recalcPayments();
+    // Don't call recalcPayments here - it's called in setTimeout after values are set
 }
 
 
@@ -1456,6 +1502,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const orderForm = document.getElementById('order-form');
     if (orderForm) {
         orderForm.addEventListener('submit', function(e) {
+            console.log('[FORM SUBMIT] ========== FORM SUBMISSION HANDLER CALLED ==========');
+            
             const customerNameInput = document.getElementById('id_customer_name');
             const phoneInput = document.getElementById('id_phone_number');
             const customerName = customerNameInput?.value.trim();
@@ -1491,10 +1539,36 @@ document.addEventListener('DOMContentLoaded', function() {
             // Build JSON payload for per-ornament lines
             buildOrderLinesPayload();
 
-            // Sync payment breakdown
-            recalcPayments();
+            console.log('[FORM SUBMIT] About to examine payment rows...');
+            const paymentRows = document.querySelectorAll('.payment-row');
+            console.log('[FORM SUBMIT] Found', paymentRows.length, 'payment rows');
+            
+            // Detailed examination of each row BEFORE recalcPayments
+            paymentRows.forEach((row, idx) => {
+                const modeSelect = row.querySelector('.payment-mode');
+                const amountInput = row.querySelector('.payment-amount');
+                console.log(`[FORM SUBMIT] Row ${idx} BEFORE recalcPayments: mode="${modeSelect?.value}", amount="${amountInput?.value}"`);
+            });
 
-            console.log('Form submitted with total:', orderTotal, 'discount:', orderDiscount, 'tax:', orderTax);
+            console.log('[FORM SUBMIT] About to call recalcPayments()...');
+            // Sync payment breakdown - CRITICAL: Call this before submission
+            recalcPayments();
+            
+            console.log('[FORM SUBMIT] recalcPayments() completed');
+            
+            // Debug: Log the final payment_lines_json value being submitted
+            const finalPaymentJson = document.querySelector('input[name="payment_lines_json"]');
+            console.log('[FORM SUBMIT] payment_lines_json field exists:', !!finalPaymentJson);
+            console.log('[FORM SUBMIT] payment_lines_json value:', finalPaymentJson?.value);
+            
+            // Also log payment_mode and payment_amount
+            const finalPaymentMode = document.querySelector('input[name="payment_mode"]');
+            const finalPaymentAmount = document.querySelector('input[name="payment_amount"]');
+            console.log('[FORM SUBMIT] payment_mode:', finalPaymentMode?.value);
+            console.log('[FORM SUBMIT] payment_amount:', finalPaymentAmount?.value);
+
+            console.log('[FORM SUBMIT] Form submitted with total:', orderTotal, 'discount:', orderDiscount, 'tax:', orderTax);
+            console.log('[FORM SUBMIT] ========== SUBMITTING FORM ==========');
         });
     }
 

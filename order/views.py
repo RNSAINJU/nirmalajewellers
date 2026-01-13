@@ -295,7 +295,11 @@ class OrderCreateView(CreateView):
 
     def form_valid(self, form):
         # Save the order first
+        print(f"[DEBUG] form_valid called")
+        print(f"[DEBUG] form.cleaned_data keys: {form.cleaned_data.keys()}")
         self.object = form.save()
+        print(f"[DEBUG] Order saved with sn={self.object.sn}")
+
 
         # Create per-line OrderOrnament entries from JSON payload
         order_lines_raw = form.cleaned_data.get('order_lines_json') or '[]'
@@ -476,25 +480,43 @@ class OrderCreateView(CreateView):
 
         # Persist payment breakdown
         payment_lines_raw = form.cleaned_data.get('payment_lines_json') or '[]'
+        print(f"\n[DEBUG ORDER CREATE] ========== PAYMENT PROCESSING START ==========")
+        print(f"[DEBUG ORDER CREATE] payment_lines_json raw value: {repr(payment_lines_raw)}")
+        print(f"[DEBUG ORDER CREATE] payment_lines_json length: {len(payment_lines_raw)}")
         try:
             payments_data = json.loads(payment_lines_raw)
-        except (TypeError, ValueError):
+            print(f"[DEBUG ORDER CREATE] payments_data after JSON parse: {payments_data}")
+            print(f"[DEBUG ORDER CREATE] payments_data type: {type(payments_data)}, length: {len(payments_data)}")
+        except (TypeError, ValueError) as e:
+            print(f"[DEBUG ORDER CREATE] JSON parse error: {e}")
             payments_data = []
 
+        print(f"[DEBUG ORDER CREATE] About to delete existing payments for order {self.object.sn}")
         self.object.payments.all().delete()
-        for payment in payments_data:
+        
+        payment_count = 0
+        for idx, payment in enumerate(payments_data):
             amount = Decimal(str(payment.get('amount', 0) or 0))
-            if amount <= 0:
-                continue
             mode = payment.get('payment_mode') or payment.get('mode') or 'cash'
+            print(f"[DEBUG ORDER CREATE] Processing payment #{idx}: mode={mode}, amount={amount}")
+            
+            if amount <= 0:
+                print(f"[DEBUG ORDER CREATE] SKIPPING payment #{idx} because amount <= 0")
+                continue
+            
             if mode not in dict(Order.PAYMENT_CHOICES):
+                print(f"[DEBUG ORDER CREATE] Invalid mode '{mode}', defaulting to 'cash'")
                 mode = 'cash'
             
+            print(f"[DEBUG ORDER CREATE] Creating OrderPayment: mode={mode}, amount={amount}")
             order_payment = OrderPayment.objects.create(
                 order=self.object,
                 payment_mode=mode,
                 amount=amount,
             )
+            payment_count += 1
+            print(f"[DEBUG ORDER CREATE] OrderPayment created successfully, id={order_payment.id}")
+
             
             # If payment mode is sundry_debtor, create or get debtor and create DebtorPayment record
             if mode == 'sundry_debtor':
@@ -543,10 +565,16 @@ class OrderCreateView(CreateView):
                     print(f"[SUNDRY DEBTOR] ERROR: {str(e)}")
                     messages.warning(self.request, f"Warning: Could not create/link debtor: {str(e)}")
 
+        print(f"[DEBUG ORDER CREATE] ========== PAYMENT PROCESSING END ==========")
+        print(f"[DEBUG ORDER CREATE] Total payments created: {payment_count}")
+        print(f"[DEBUG ORDER CREATE] Total OrderPayment objects for this order: {self.object.payments.count()}")
+        
         # Recompute order totals from created lines (amount/subtotal/total/remaining)
+        print(f"[DEBUG ORDER CREATE] Calling recompute_totals_from_lines()...")
         self.object.recompute_totals_from_lines()
+        print(f"[DEBUG ORDER CREATE] After recompute: payment_amount={self.object.payment_amount}, payment_mode={self.object.payment_mode}")
 
-        print(f"[CREATE VIEW] Order {self.object.sn} form_valid completed")
+        print(f"[CREATE VIEW] Order {self.object.sn} form_valid completed - returning redirect")
         return redirect('order:list')
         
         

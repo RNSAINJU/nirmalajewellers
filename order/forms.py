@@ -90,6 +90,20 @@ class OrderForm(forms.ModelForm):
             raise ValidationError("Total amount cannot be negative.")
         return total
 
+    def clean(self):
+        cleaned = super().clean()
+        payment_lines_json = cleaned.get('payment_lines_json')
+        print(f"[FORM CLEAN] payment_lines_json received: {repr(payment_lines_json)}")
+        print(f"[FORM CLEAN] type: {type(payment_lines_json)}, length: {len(payment_lines_json) if payment_lines_json else 0}")
+        if payment_lines_json:
+            try:
+                import json
+                data = json.loads(payment_lines_json)
+                print(f"[FORM CLEAN] Parsed JSON: {data}")
+            except Exception as e:
+                print(f"[FORM CLEAN] Failed to parse JSON: {e}")
+        return cleaned
+
 
 OrnamentFormSet = inlineformset_factory(
     Order,
