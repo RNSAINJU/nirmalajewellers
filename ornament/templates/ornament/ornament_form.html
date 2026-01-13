@@ -26,6 +26,8 @@
         <div class="card-body">
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
+                <!-- Hidden status field - default to active -->
+                <input type="hidden" name="status" value="active">
                 <!-- Compact ornament header fields -->
                 <div class="row g-3 mb-3">
                     <div class="col-12">
@@ -95,12 +97,7 @@
                                     <!-- Main Category -->
                                     <div class="col-md-3 col-sm-6">
                                         <label class="form-label mb-1">Main Category</label>
-                                        <select id="id_maincategory" name="maincategory" class="form-select form-select-sm" required>
-                                            <option value="" disabled {% if not form.maincategory.value %}selected{% endif %}>Select Main</option>
-                                            {% for maincategory in form.fields.maincategory.queryset %}
-                                                <option value="{{ maincategory.pk }}" {% if form.maincategory.value == maincategory.pk %}selected{% endif %}>{{ maincategory.name }}</option>
-                                            {% endfor %}
-                                        </select>
+                                        {{ form.maincategory }}
                                         {% if form.maincategory.errors %}
                                             <div class="text-danger small">{{ form.maincategory.errors }}</div>
                                         {% endif %}
@@ -109,12 +106,7 @@
                                     <!-- Sub-Category -->
                                     <div class="col-md-3 col-sm-6">
                                         <label class="form-label mb-1">Sub-Category</label>
-                                        <select id="id_subcategory" name="subcategory" class="form-select form-select-sm" required>
-                                            <option value="" disabled {% if not form.subcategory.value %}selected{% endif %}>Select Sub</option>
-                                            {% for subcategory in form.fields.subcategory.queryset %}
-                                                <option value="{{ subcategory.pk }}" {% if form.subcategory.value == subcategory.pk %}selected{% endif %}>{{ subcategory.name }}</option>
-                                            {% endfor %}
-                                        </select>
+                                        {{ form.subcategory }}
                                         {% if form.subcategory.errors %}
                                             <div class="text-danger small">{{ form.subcategory.errors }}</div>
                                         {% endif %}
@@ -154,12 +146,7 @@
                                     <!-- Kaligar -->
                                     <div class="col-md-3 col-sm-6">
                                         <label class="form-label mb-1">Kaligar</label>
-                                        <select id="id_kaligar" name="kaligar" class="form-select form-select-sm" required>
-                                            <option value="" disabled {% if not form.kaligar.value %}selected{% endif %}>Select Kaligar</option>
-                                            {% for kaligar in form.fields.kaligar.queryset %}
-                                                <option value="{{ kaligar.pk }}" {% if form.kaligar.value == kaligar.pk %}selected{% endif %}>{{ kaligar.name }}</option>
-                                            {% endfor %}
-                                        </select>
+                                        {{ form.kaligar }}
                                         {% if form.kaligar.errors %}
                                             <div class="text-danger small">{{ form.kaligar.errors }}</div>
                                         {% endif %}
@@ -407,6 +394,15 @@
     </div>
 </div>
 
+<!-- Style form selects -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    document.getElementById("id_maincategory").classList.add("form-select", "form-select-sm");
+    document.getElementById("id_subcategory").classList.add("form-select", "form-select-sm");
+    document.getElementById("id_kaligar").classList.add("form-select", "form-select-sm");
+});
+</script>
+
 <!-- Jarti Button Script -->
 
 <script>
@@ -469,10 +465,18 @@ const kaligarSelect = document.getElementById("id_kaligar");
 const ornamentTypeSelect = document.getElementById("ornament_type");
 const codePreview = document.getElementById("id_code_preview");
 const objectPk = "{{ form.instance.pk|default_if_none:'' }}";
+const form = document.querySelector('form');
+
+let isSubmitting = false;
 
 function generateCode() {
     // If a stored code exists, don't regenerate
     if (codePreview.dataset.fixed === "true") {
+        return;
+    }
+
+    // Don't regenerate during form submission
+    if (isSubmitting) {
         return;
     }
 
@@ -503,9 +507,15 @@ function generateCode() {
 }
 
 [nameInput,maincategorySelect,subcategorySelect,kaligarSelect, ornamentTypeSelect].forEach(el => {
-    el.addEventListener("input", generateCode);
     el.addEventListener("change", generateCode);
 });
+
+// Prevent code regeneration during form submission
+if (form) {
+    form.addEventListener("submit", function(e) {
+        isSubmitting = true;
+    });
+}
 
 // On edit, if there is an ID but no stored code yet, generate immediately
 if (objectPk && !codePreview.value) {

@@ -26,6 +26,10 @@ class OrnamentForm(forms.ModelForm):
         if not self.instance.pk and not self.initial.get('ornament_date'):
             self.initial['ornament_date'] = ndt.date.today()
 
+        # Set default status for new instances
+        if not self.instance.pk and not self.initial.get('status'):
+            self.initial['status'] = 'active'
+
         # Set default values for new ornament instances
         if not self.instance.pk:
             # Set initial values

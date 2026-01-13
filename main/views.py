@@ -281,11 +281,35 @@ def dashboard(request):
     today_totals = calculate_daily_ornament_totals(today, use_date_filter=False)
     yesterday_totals = calculate_daily_ornament_totals(yesterday, use_date_filter=False)
     
+    # Calculate stock closing rate totals (using stock year rates instead of daily rates)
+    current_year = today.year
+    stock_data = Stock.objects.filter(year=current_year).first()
+    if not stock_data:
+        # Fall back to most recent stock record if current year not available
+        stock_data = Stock.objects.order_by('-year').first()
+    
+    if stock_data:
+        stock_closing_totals = calculate_daily_ornament_totals(
+            today,
+            gold_rate=stock_data.gold_rate,
+            silver_rate=stock_data.silver_rate,
+            diamond_rate=stock_data.diamond_rate,
+            use_date_filter=False
+        )
+    else:
+        stock_closing_totals = calculate_daily_ornament_totals(today, use_date_filter=False)
+    
     # Calculate differences
     pl_difference = today_totals['total_amount'] - yesterday_totals['total_amount']
     pl_percent_change = Decimal('0')
     if yesterday_totals['total_amount'] > 0:
         pl_percent_change = (pl_difference / yesterday_totals['total_amount']) * Decimal('100')
+    
+    # Calculate closing vs today differences (today's rate - closing rate)
+    closing_today_difference = today_totals['total_amount'] - stock_closing_totals['total_amount']
+    closing_today_gold_diff = today_totals['gold_amount'] - stock_closing_totals['gold_amount']
+    closing_today_silver_diff = today_totals['silver_amount'] - stock_closing_totals['silver_amount']
+    closing_today_diamond_diff = today_totals['diamond_amount'] - stock_closing_totals['diamond_amount']
     
     # Get today's rate for display
     today = date.today()
@@ -303,8 +327,13 @@ def dashboard(request):
         'latest_rate': latest_rate,
         'today_totals': today_totals,
         'yesterday_totals': yesterday_totals,
+        'stock_closing_totals': stock_closing_totals,
         'pl_difference': pl_difference,
         'pl_percent_change': pl_percent_change,
+        'closing_today_difference': closing_today_difference,
+        'closing_today_gold_diff': closing_today_gold_diff,
+        'closing_today_silver_diff': closing_today_silver_diff,
+        'closing_today_diamond_diff': closing_today_diamond_diff,
     }
     return render(request, 'main/dashboard.html', context)
 

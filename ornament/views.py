@@ -174,6 +174,16 @@ class OrnamentListView(ListView):
         context['kaligar'] = Kaligar.objects.all()
         context['selected_kaligar'] = self.request.GET.get('kaligar', '')
 
+        # Group ornaments by status
+        ornaments_by_status = {}
+        status_choices = {choice[0]: choice[1] for choice in Ornament.StatusCategory.choices}
+        
+        for status_key in status_choices:
+            ornaments_by_status[status_key] = self.get_queryset().filter(status=status_key).order_by('-ornament_date', '-id')
+        
+        context['ornaments_by_status'] = ornaments_by_status
+        context['status_choices'] = status_choices
+
         return context
 
 

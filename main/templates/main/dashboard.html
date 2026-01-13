@@ -100,10 +100,23 @@
   }
 
   .stats-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    display: flex;
     gap: 25px;
     margin-bottom: 40px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+
+  @media (max-width: 1400px) {
+    .stats-container {
+      flex-wrap: wrap;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .stats-container {
+      flex-direction: column;
+    }
   }
 
   .stat-card {
@@ -119,6 +132,8 @@
     flex-direction: column;
     justify-content: space-between;
     min-height: 180px;
+    flex: 1;
+    min-width: 200px;
   }
 
   .stat-card:hover {
@@ -280,6 +295,14 @@
     gap: 10px;
     margin-bottom: 20px;
     border-bottom: 2px solid #e5e7eb;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+
+  @media (max-width: 1024px) {
+    .pl-tabs {
+      flex-wrap: wrap;
+    }
   }
 
   .pl-tab-button {
@@ -291,6 +314,8 @@
     font-weight: 600;
     color: #6b7280;
     transition: all 0.3s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .pl-tab-button.active {
@@ -379,6 +404,7 @@
 </div>
 
 <!-- Daily Rate Input Section -->
+{% if not latest_rate %}
 <div class="rate-input-card">
   <h2>
     <span>📊</span>
@@ -411,15 +437,8 @@
       <span>💾 Save</span>
     </button>
   </form>
-  {% if latest_rate %}
-  <div style="margin-top: 15px; padding: 12px; background: rgba(255, 255, 255, 0.2); border-radius: 8px; font-size: 0.9rem;">
-    <div style="opacity: 0.9;">📅 English Date: <strong>{{ latest_rate.date }}</strong></div>
-    {% if latest_rate.bs_date %}
-    <div style="opacity: 0.9; margin-top: 5px;">📅 Nepali Date (BS): <strong>{{ latest_rate.bs_date }}</strong></div>
-    {% endif %}
-  </div>
-  {% endif %}
 </div>
+{% endif %}
 
 <div class="stats-container">
   <!-- Ornaments Card -->
@@ -511,6 +530,12 @@
     <button class="pl-tab-button" onclick="switchPLTab('comparison')">
       Comparison
     </button>
+    <button class="pl-tab-button" onclick="switchPLTab('stock-closing')">
+      Stock Closing Rate
+    </button>
+    <button class="pl-tab-button" onclick="switchPLTab('closing-today')">
+      Closing vs Today
+    </button>
   </div>
 
   <!-- Today Tab -->
@@ -598,6 +623,69 @@
       </div>
     </div>
   </div>
+
+  <!-- Stock Closing Rate Tab -->
+  <div id="pl-stock-closing" class="pl-tab-content">
+    <div class="pl-summary">
+      <div class="pl-item">
+        <div class="pl-item-label">Gold Ornaments</div>
+        <div class="pl-item-value">रु {{ stock_closing_totals.gold_amount|floatformat:2 }}</div>
+        <div style="font-size: 0.85rem; color: #9ca3af; margin-top: 5px;">{{ stock_closing_totals.gold_count }} items • {{ stock_closing_totals.gold_weight|floatformat:3 }}g</div>
+      </div>
+      <div class="pl-item">
+        <div class="pl-item-label">Silver Ornaments</div>
+        <div class="pl-item-value">रु {{ stock_closing_totals.silver_amount|floatformat:2 }}</div>
+        <div style="font-size: 0.85rem; color: #9ca3af; margin-top: 5px;">{{ stock_closing_totals.silver_count }} items • {{ stock_closing_totals.silver_weight|floatformat:3 }}g</div>
+      </div>
+      <div class="pl-item">
+        <div class="pl-item-label">Diamond Ornaments</div>
+        <div class="pl-item-value">रु {{ stock_closing_totals.diamond_amount|floatformat:2 }}</div>
+        <div style="font-size: 0.85rem; color: #9ca3af; margin-top: 5px;">{{ stock_closing_totals.diamond_count }} items • {{ stock_closing_totals.diamond_weight|floatformat:3 }}g</div>
+      </div>
+    </div>
+    <div style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); padding: 20px; border-radius: 10px; color: white; text-align: center; margin-top: 15px;">
+      <div style="font-size: 0.9rem; opacity: 0.9;">Total (Stock Closing Rate)</div>
+      <div style="font-size: 2rem; font-weight: 700;">रु {{ stock_closing_totals.total_amount|floatformat:2 }}</div>
+    </div>
+  </div>
+
+  <!-- Closing vs Today Comparison Tab -->
+  <div id="pl-closing-today" class="pl-tab-content">
+    <div class="pl-difference-card {% if closing_today_difference < 0 %}loss{% endif %}">
+      <div class="pl-difference-label">Closing Rate vs Today's Rate</div>
+      <div class="pl-difference-value">{% if closing_today_difference >= 0 %}+{% endif %}रु {{ closing_today_difference|floatformat:2 }}</div>
+      <div class="pl-difference-percent">
+        {% if closing_today_difference > 0 %}
+          ↑ Higher valuation at stock closing rate
+        {% elif closing_today_difference < 0 %}
+          ↓ Lower valuation at stock closing rate
+        {% else %}
+          = Same valuation
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="pl-summary" style="margin-top: 25px;">
+      <div class="pl-item">
+        <div class="pl-item-label">Gold Difference</div>
+        <div class="pl-item-value {% if closing_today_gold_diff < 0 %}loss{% endif %}">
+          {% if closing_today_gold_diff >= 0 %}+{% endif %}रु {{ closing_today_gold_diff|floatformat:2 }}
+        </div>
+      </div>
+      <div class="pl-item">
+        <div class="pl-item-label">Silver Difference</div>
+        <div class="pl-item-value {% if closing_today_silver_diff < 0 %}loss{% endif %}">
+          {% if closing_today_silver_diff >= 0 %}+{% endif %}रु {{ closing_today_silver_diff|floatformat:2 }}
+        </div>
+      </div>
+      <div class="pl-item">
+        <div class="pl-item-label">Diamond Difference</div>
+        <div class="pl-item-value {% if closing_today_diamond_diff < 0 %}loss{% endif %}">
+          {% if closing_today_diamond_diff >= 0 %}+{% endif %}रु {{ closing_today_diamond_diff|floatformat:2 }}
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -606,6 +694,8 @@
     document.getElementById('pl-today').classList.remove('active');
     document.getElementById('pl-yesterday').classList.remove('active');
     document.getElementById('pl-comparison').classList.remove('active');
+    document.getElementById('pl-stock-closing').classList.remove('active');
+    document.getElementById('pl-closing-today').classList.remove('active');
     
     // Remove active class from all buttons
     document.querySelectorAll('.pl-tab-button').forEach(btn => btn.classList.remove('active'));

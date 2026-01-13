@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load form_filters %}
 {% block content %}
 
 <style>
@@ -292,109 +293,140 @@
         </div>
     </div>
 
-    <!-- ORNAMENT TABLE -->
-    <div class="table-responsive">
-        <table class="table table-bordered table-striped table-hover">
-            <thead class="table-dark">
-                <tr>
-                    <th>SN</th>
-                    <th>Image</th>
-                    <th>Date</th>
-                    <th>Code</th>
-                    <th>Ornament Name</th>
-                    <th>Metal Type</th>
-                    <th>Karat</th>
-                    <th>Main Category</th>
-                    <th>Sub Category</th>
-                    <th>Gross Weight</th>
-                    <th>Weight</th>
-                    <th>Diamond Weight</th>
-                    <th>Diamond Rate</th>
-                    <th>Ziron Weight</th>
-                    <th>Stone Weight</th>
-                    <th>Jarti</th>
-                    <th>Jyala</th>
-                    <th>Kaligar</th>
-                    <th>Ornament Type</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
+    <!-- STATUS TABS -->
+    <ul class="nav nav-tabs mb-3" role="tablist">
+        {% for status_key, status_label in status_choices.items %}
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if forloop.first %}active{% endif %}" 
+                    id="status-{{ status_key }}-tab" 
+                    data-bs-toggle="tab" 
+                    data-bs-target="#status-{{ status_key }}" 
+                    type="button" 
+                    role="tab">
+                {{ status_label }}
+                <span class="badge bg-secondary ms-2">{{ ornaments_by_status|get_item:status_key|length }}</span>
+            </button>
+        </li>
+        {% endfor %}
+    </ul>
 
-            <tbody>
-                {% for o in ornaments %}
-                <tr>
-                    <td>{{ forloop.counter }}</td>
+    <!-- ORNAMENT TABLES BY STATUS -->
+    <div class="tab-content">
+        {% for status_key, status_label in status_choices.items %}
+        <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" 
+             id="status-{{ status_key }}" 
+             role="tabpanel">
+            
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>SN</th>
+                            <th>Image</th>
+                            <th>Date</th>
+                            <th>Code</th>
+                            <th>Ornament Name</th>
+                            <th>Metal Type</th>
+                            <th>Karat</th>
+                            <th>Main Category</th>
+                            <th>Sub Category</th>
+                            <th>Gross Weight</th>
+                            <th>Weight</th>
+                            <th>Diamond Weight</th>
+                            <th>Diamond Rate</th>
+                            <th>Ziron Weight</th>
+                            <th>Stone Weight</th>
+                            <th>Jarti</th>
+                            <th>Jyala</th>
+                            <th>Kaligar</th>
+                            <th>Ornament Type</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
 
-                    <!-- IMAGE THUMBNAIL -->
-                    <td>
-                        {% if o.image %}
-                            <img src="{{ o.image.url }}" width="50" height="50" class="rounded border">
-                        {% else %}
-                            <span class="text-muted">No Image</span>
-                        {% endif %}
-                    </td>
+                    <tbody>
+                        {% for o in ornaments_by_status|get_item:status_key %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
 
-                    <td>{{ o.ornament_date }}</td>
-                    <td>{{ o.code }}</td>
-                    <td>{{ o.ornament_name }}</td>
-                    <td>{{ o.get_metal_type_display }}</td>
-                    <td>{{ o.get_type_display }}</td>
-                    <td>{{ o.maincategory.name }}</td>
-                    <td>{{ o.subcategory.name }}</td>
-                    <td>{{ o.gross_weight }}</td>
-                    <td>{{ o.weight }}</td>
-                    <td>{{ o.diamond_weight }}</td>
-                    <td>{{ o.diamond_rate }}</td>
-                    <td>{{ o.zircon_weight }}</td>
-                    <td>{{ o.stone_weight }}</td>
-                    <td>{{ o.jarti }}</td>
-                    <td>{{ o.kaligar }}</td>
-                    <td>{{ o.get_ornament_type_display }}</td>
-                    <td>
-                        <span class="badge {% if o.status == 'active' %}bg-success{% elif o.status == 'deleted' %}bg-warning{% elif o.status == 'destroyed' %}bg-danger{% endif %}">
-                            {{ o.get_status_display }}
-                        </span>
-                    </td>
+                            <!-- IMAGE THUMBNAIL -->
+                            <td>
+                                {% if o.image %}
+                                    <img src="{{ o.image.url }}" width="50" height="50" class="rounded border">
+                                {% else %}
+                                    <span class="text-muted">No Image</span>
+                                {% endif %}
+                            </td>
 
-                    <td class="text-center">
-                        <div class="btn-group">
-                            <a href="{% url 'ornament:update' o.pk %}" 
-                               class="btn btn-sm btn-outline-warning"
-                               title="Edit">
-                                <i class="bi bi-pencil-square"></i>
-                            </a>
-                    
-                            <a href="{% url 'ornament:delete' o.pk %}" 
-                               class="btn btn-sm btn-outline-danger"
-                               title="Delete">
-                                <i class="bi bi-trash-fill"></i>
-                            </a>
+                            <td>{{ o.ornament_date }}</td>
+                            <td>{{ o.code }}</td>
+                            <td>{{ o.ornament_name }}</td>
+                            <td>{{ o.get_metal_type_display }}</td>
+                            <td>{{ o.get_type_display }}</td>
+                            <td>{{ o.maincategory.name }}</td>
+                            <td>{{ o.subcategory.name }}</td>
+                            <td>{{ o.gross_weight }}</td>
+                            <td>{{ o.weight }}</td>
+                            <td>{{ o.diamond_weight }}</td>
+                            <td>{{ o.diamond_rate }}</td>
+                            <td>{{ o.zircon_weight }}</td>
+                            <td>{{ o.stone_weight }}</td>
+                            <td>{{ o.jarti }}</td>
+                            <td>{{ o.jyala }}</td>
+                            <td>{{ o.kaligar }}</td>
+                            <td>{{ o.get_ornament_type_display }}</td>
+                            <td>
+                                <span class="badge {% if o.status == 'active' %}bg-success{% elif o.status == 'deleted' %}bg-warning{% elif o.status == 'destroyed' %}bg-danger{% endif %}">
+                                    {{ o.get_status_display }}
+                                </span>
+                            </td>
 
-                            {% if o.status != 'destroyed' %}
-                            <a href="{% url 'ornament:destroy' o.pk %}" 
-                               class="btn btn-sm btn-outline-dark"
-                               title="Destroy">
-                                <i class="bi bi-fire"></i>
-                            </a>
-                            {% endif %}
-                        </div>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="21" class="text-center">No records found.</td></tr>
-                {% endfor %}
-            </tbody>
+                            <td class="text-center">
+                                <div class="btn-group">
+                                    <a href="{% url 'ornament:update' o.pk %}" 
+                                       class="btn btn-sm btn-outline-warning"
+                                       title="Edit">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+                            
+                                    <a href="{% url 'ornament:delete' o.pk %}" 
+                                       class="btn btn-sm btn-outline-danger"
+                                       title="Delete">
+                                        <i class="bi bi-trash-fill"></i>
+                                    </a>
 
-            <tfoot>
-                <tr class="table-info">
-                    <th colspan="10">TOTAL WEIGHT</th>
-                    <th>{{ total_weight|floatformat:3 }}</th>
-                    <th colspan="10"></th>
-                </tr>
-            </tfoot>
+                                    {% if o.status != 'destroyed' %}
+                                    <a href="{% url 'ornament:destroy' o.pk %}" 
+                                       class="btn btn-sm btn-outline-dark"
+                                       title="Destroy">
+                                        <i class="bi bi-fire"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="21" class="text-center text-muted">No ornaments in {{ status_label }} status.</td></tr>
+                        {% endfor %}
+                    </tbody>
 
-        </table>
+                    <tfoot>
+                        <tr class="table-info">
+                            <th colspan="10">TOTAL WEIGHT</th>
+                            <th>
+                                {% with ornaments_list=ornaments_by_status|get_item:status_key %}
+                                    {% for o in ornaments_list %}{{ o.weight|default:0 }}{% if not forloop.last %}+{% endif %}{% endfor %}
+                                {% endwith %}
+                            </th>
+                            <th colspan="10"></th>
+                        </tr>
+                    </tfoot>
+
+                </table>
+            </div>
+        </div>
+        {% endfor %}
     </div>
 
     <!-- PAGINATION -->
