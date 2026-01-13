@@ -4,6 +4,16 @@
 <a href="{% url 'finance:salary_create' %}" class="btn btn-primary">
     <i class="bi bi-plus-lg"></i> Add Salary
 </a>
+<a href="{% url 'finance:salary_export' %}" class="btn btn-outline-success">
+    <i class="bi bi-download"></i> Export Excel
+</a>
+<form method="post" action="{% url 'finance:salary_import' %}" enctype="multipart/form-data" class="d-inline">
+    {% csrf_token %}
+    <label class="btn btn-outline-secondary mb-0">
+        <i class="bi bi-upload"></i> Import Excel
+        <input type="file" name="file" accept=".xlsx" class="d-none" onchange="this.form.submit()">
+    </label>
+</form>
 {% endblock %}
 
 {% block main_content %}
@@ -63,7 +73,7 @@
         <thead class="table-dark">
             <tr>
                 <th>Employee</th>
-                <th>Month</th>
+                <th>Month (BS)</th>
                 <th>Base Salary</th>
                 <th>Bonus</th>
                 <th>Deductions</th>
@@ -77,7 +87,7 @@
             {% for salary in salaries %}
             <tr>
                 <td>{{ salary.employee.first_name }} {{ salary.employee.last_name }}</td>
-                <td>{{ salary.month|date:"M Y" }}</td>
+                <td>{{ salary.month }}</td>
                 <td>रु{{ salary.base_salary }}</td>
                 <td>रु{{ salary.bonus }}</td>
                 <td>रु{{ salary.deductions }}</td>

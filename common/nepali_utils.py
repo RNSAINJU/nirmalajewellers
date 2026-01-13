@@ -20,6 +20,21 @@ except Exception:  # pragma: no cover - library presence depends on runtime env
     ndt = None  # type: ignore[assignment]
 
 
+# Map Nepali numerals to ASCII digits so user input works regardless of script
+_NEPALI_TO_ASCII = str.maketrans("०१२३४५६७८९", "0123456789")
+
+
+def normalize_nepali_numerals(value: str) -> str:
+    """Return the string with Nepali digits converted to ASCII.
+
+    The function is lenient: it accepts any value, casts it to a string,
+    strips surrounding whitespace, and leaves non-digit characters intact.
+    """
+    if value is None:
+        return ""
+    return str(value).translate(_NEPALI_TO_ASCII).strip()
+
+
 def _as_ad_date(value) -> Optional[date]:
     """Normalize various date-like inputs to a Python `date` where possible.
 
@@ -79,6 +94,36 @@ def ad_to_bs_date_str(value) -> str:
     if hasattr(value, "strftime"):
         return value.strftime("%Y-%m-%d")
     return str(value)
+
+
+def bs_to_ad_date(value) -> Optional[date]:
+    """Convert a BS date string (YYYY-MM-DD) to a Python ``date``.
+
+    - Accepts Nepali or ASCII numerals and ignores leading/trailing spaces.
+    - Returns ``None`` when conversion is not possible or input is empty.
+    - Falls back to parsing the string as an AD date if the Nepali library
+      is unavailable, so existing AD inputs keep working.
+    """
+    if not value:
+        return None
+
+    cleaned = normalize_nepali_numerals(value)
+
+    if ndt is not None:
+        try:
+            year, month, day = (int(part) for part in cleaned.split("-"))
+            bs_date = ndt.date(year, month, day)
+            return bs_date.to_datetime_date()
+        except Exception:
+            return None
+
+    # Fallback: try to parse as an AD date string
+    try:
+        if hasattr(datetime, "fromisoformat"):
+            return datetime.fromisoformat(cleaned).date()
+        return datetime.strptime(cleaned, "%Y-%m-%d").date()
+    except Exception:
+        return None
 
 
 def ad_to_bs_datetime_str(value) -> str:

@@ -10,7 +10,6 @@ class ExpenseForm(forms.ModelForm):
             'category': forms.Select(attrs={'class': 'form-select'}),
             'description': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter expense description'}),
             'amount': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter amount', 'step': '0.01'}),
-            'expense_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Additional notes'}),
         }
 
@@ -26,7 +25,6 @@ class EmployeeForm(forms.ModelForm):
             'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Phone'}),
             'position': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Position'}),
             'base_salary': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Base Salary', 'step': '0.01'}),
-            'hire_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
@@ -37,13 +35,11 @@ class EmployeeSalaryForm(forms.ModelForm):
         fields = ['employee', 'month', 'base_salary', 'bonus', 'deductions', 'amount_paid', 'status', 'paid_date', 'notes']
         widgets = {
             'employee': forms.Select(attrs={'class': 'form-select'}),
-            'month': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'base_salary': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Base Salary', 'step': '0.01'}),
             'bonus': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Bonus', 'step': '0.01'}),
             'deductions': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Deductions', 'step': '0.01'}),
             'amount_paid': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Amount Paid', 'step': '0.01'}),
             'status': forms.Select(attrs={'class': 'form-select'}),
-            'paid_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Notes'}),
         }
 
@@ -75,8 +71,6 @@ class DebtorTransactionForm(forms.ModelForm):
             'transaction_type': forms.Select(attrs={'class': 'form-select'}),
             'reference_no': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Reference No'}),
             'amount': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Amount', 'step': '0.01'}),
-            'transaction_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'due_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Description'}),
         }
 
@@ -107,7 +101,5 @@ class CreditorTransactionForm(forms.ModelForm):
             'transaction_type': forms.Select(attrs={'class': 'form-select'}),
             'reference_no': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Reference No'}),
             'amount': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Amount', 'step': '0.01'}),
-            'transaction_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'due_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Description'}),
         }
