@@ -814,13 +814,12 @@ def finance_export_all(request):
     
     # Debtors Sheet
     ws_debtors = wb.create_sheet("Debtors")
-    ws_debtors.append(["name", "contact_person", "phone", "email", "address", "opening_balance", "current_balance", "credit_limit", "is_active", "notes"])
+    ws_debtors.append(["name", "contact_person", "phone", "address", "opening_balance", "current_balance", "credit_limit", "is_active", "notes"])
     for d in SundryDebtor.objects.all().order_by('name'):
         ws_debtors.append([
             d.name,
             d.contact_person or '',
             d.phone or '',
-            d.email or '',
             d.address or '',
             float(d.opening_balance),
             float(d.current_balance),
@@ -831,13 +830,12 @@ def finance_export_all(request):
     
     # Creditors Sheet
     ws_creditors = wb.create_sheet("Creditors")
-    ws_creditors.append(["name", "contact_person", "phone", "email", "address", "opening_balance", "current_balance", "is_active", "notes"])
+    ws_creditors.append(["name", "contact_person", "phone", "address", "opening_balance", "current_balance", "is_active", "notes"])
     for c in SundryCreditor.objects.all().order_by('name'):
         ws_creditors.append([
             c.name,
             c.contact_person or '',
             c.phone or '',
-            c.email or '',
             c.address or '',
             float(c.opening_balance),
             float(c.current_balance),

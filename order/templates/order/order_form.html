@@ -38,8 +38,6 @@
             {{ form.tax }}
             {{ form.total }}
             {{ form.order_lines_json }}
-            {{ form.payment_mode }}
-            {{ form.payment_amount }}
             {{ form.payment_lines_json }}
 
             <!-- Order / Customer / Status compact header fields -->
@@ -508,8 +506,7 @@
 <script>
 let selectedOrnaments = {};
 const isSaleCreate = "{{ is_sale_create|default:'False'|yesno:'true,false' }}" === 'true';
-const includeOrdersInSearch = true; // Always include order items; UI will highlight them
-const paymentModeOptionsHtml = `{% for key, value in form.payment_mode.field.choices %}{% if key != 'mixed' %}<option value="{{ key }}">{{ value }}</option>{% endif %}{% endfor %}`;
+const paymentModeOptionsHtml = `{% for key, value in payment_choices %}{% if key != 'mixed' %}<option value="{{ key }}">{{ value }}</option>{% endif %}{% endfor %}`;
 const initialPayments = JSON.parse('{{ initial_payments_json|escapejs }}');
 const ornamentEditTemplate = "{% url 'ornament:update' 0 %}"; // replace 0 with ID in JS
 
@@ -529,7 +526,7 @@ document.getElementById('ornament-search').addEventListener('input', function() 
             return;
         }
         
-        const params = new URLSearchParams({ q: query, include_orders: includeOrdersInSearch ? 'true' : 'false' });
+        const params = new URLSearchParams({ q: query });
         const searchUrl = `{% url 'order:search_ornaments' %}?${params.toString()}`;
         
         fetch(searchUrl)
@@ -546,20 +543,14 @@ document.getElementById('ornament-search').addEventListener('input', function() 
                 } else {
                     data.ornaments.forEach(ornament => {
                         const div = document.createElement('div');
-                        const isOrderItem = ornament.ornament_type === 'order';
                         div.className = 'p-2 border-bottom cursor-pointer';
                         div.style.cursor = 'pointer';
-                        if (isOrderItem) {
-                            div.style.background = '#f8d7da'; // light red
-                        }
                         const wt = (ornament.weight || 0).toFixed(3);
                         const karat = ornament.type || '';
-                        const orderInfo = isOrderItem ? `<br><small class="text-danger">Order item${ornament.order_sn ? ` #${ornament.order_sn}` : ''}${ornament.order_customer ? ` - ${ornament.order_customer}` : ''}</small>` : '';
                         div.innerHTML = `
                             <strong>${ornament.code}</strong>
                             <small class="text-muted"> | ${wt} g | ${karat}</small><br>
                             ${ornament.name} <small class="text-muted">(${ornament.metal_type})</small>
-                            ${orderInfo}
                         `;
                         div.onclick = () => selectOrnament(ornament);
                         resultsList.appendChild(div);
@@ -962,6 +953,27 @@ function updateDerivedFields(amount) {
     if (orderTotalField) {
         orderTotalField.value = Math.max(0, total).toFixed(2);
     }
+
+    // AUTO-FILL: Update first payment row amount when order total changes
+    autoFillFirstPaymentAmount(total);
+}
+
+function autoFillFirstPaymentAmount(orderTotal) {
+    // Get the first payment amount input if it exists and is empty
+    const firstPaymentRow = document.querySelector('.payment-row');
+    if (!firstPaymentRow) return;
+
+    const amountInput = firstPaymentRow.querySelector('.payment-amount');
+    if (!amountInput) return;
+
+    // Only auto-fill if current amount is 0 or empty
+    const currentAmount = parseFloat(amountInput.value) || 0;
+    if (currentAmount === 0 && orderTotal > 0) {
+        amountInput.value = Math.max(0, orderTotal).toFixed(2);
+        console.log('[DEBUG] Auto-filled first payment amount to order total:', orderTotal);
+        // Trigger recalcPayments to update the hidden JSON
+        recalcPayments();
+    }
 }
 
 function updateRemainingAmount(totalValue, paymentTotalOverride) {
@@ -1066,24 +1078,9 @@ function getPaymentRowsData() {
         
         console.log(`[DEBUG] Row ${index} PARSED: mode='${mode}', amountVal=${amountVal}`);
         
-        let debtorData = null;
-        if (mode === 'sundry_debtor') {
-            const debtorName = row.querySelector('.debtor-name')?.value || '';
-            const creditLimit = parseFloat(row.querySelector('.debtor-credit-limit')?.value) || 0;
-            const currentBalance = parseFloat(row.querySelector('.debtor-current-balance')?.value) || 0;
-            
-            debtorData = {
-                name: debtorName.trim(),
-                credit_limit: creditLimit,
-                current_balance: currentBalance
-            };
-            console.log(`[DEBUG] Row ${index} DEBTOR: ${JSON.stringify(debtorData)}`);
-        }
-        
         rows.push({ 
             payment_mode: mode, 
-            amount: amountVal, 
-            debtor_data: debtorData 
+            amount: amountVal
         });
     });
     console.log('[DEBUG] getPaymentRowsData - FINAL rows array:', JSON.stringify(rows));
@@ -1094,15 +1091,12 @@ function recalcPayments() {
     const rows = getPaymentRowsData();
     console.log('[DEBUG] recalcPayments - payment rows data:', rows);
     
-    // If no rows or all rows have 0 amount, ensure we still have at least a cash row
-    if (!rows || rows.length === 0 || rows.every(r => (r.amount || 0) <= 0)) {
-        console.log('[DEBUG] recalcPayments - no valid payment rows, setting default cash row');
-        rows.length = 0;  // Clear array
-        rows.push({payment_mode: 'cash', amount: 0, debtor_data: null});
-    }
+    // Filter out rows with 0 or empty amounts - only keep valid payments
+    const validRows = rows.filter(r => (r.amount || 0) > 0);
+    console.log('[DEBUG] recalcPayments - valid rows after filtering:', validRows);
     
-    const totalPaid = rows.reduce((sum, row) => sum + (row.amount || 0), 0);
-    const modes = rows.map(r => r.payment_mode).filter(Boolean);
+    const totalPaid = validRows.reduce((sum, row) => sum + (row.amount || 0), 0);
+    const modes = validRows.map(r => r.payment_mode).filter(Boolean);
     const uniqueModes = Array.from(new Set(modes));
 
     const hiddenAmount = document.querySelector('input[name="payment_amount"]');
@@ -1111,16 +1105,9 @@ function recalcPayments() {
         console.log('[DEBUG] Set payment_amount to:', hiddenAmount.value);
     }
 
-    const hiddenMode = document.querySelector('input[name="payment_mode"]');
-    if (hiddenMode) {
-        const modeValue = uniqueModes.length > 1 ? 'mixed' : (uniqueModes[0] || 'cash');
-        hiddenMode.value = modeValue;
-        console.log('[DEBUG] Set payment_mode to:', hiddenMode.value);
-    }
-
     const hiddenJson = document.querySelector('input[name="payment_lines_json"]');
     if (hiddenJson) {
-        hiddenJson.value = JSON.stringify(rows);
+        hiddenJson.value = JSON.stringify(validRows);
         console.log('[DEBUG] Set payment_lines_json to:', hiddenJson.value);
     }
 
@@ -1132,7 +1119,7 @@ function recalcPayments() {
 }
 
 // Payments (multiple rows)
-function addPaymentRow(mode = 'cash', amount = '', debtorName = '', creditLimit = '', currentBalance = '') {
+function addPaymentRow(mode = 'cash', amount = '') {
     const tbody = document.getElementById('payment-rows-body');
     if (!tbody) return;
 
@@ -1145,14 +1132,7 @@ function addPaymentRow(mode = 'cash', amount = '', debtorName = '', creditLimit 
             </select>
         </td>
         <td>
-            <div class="payment-details">
-                <input type="number" step="0.01" class="form-control form-control-sm payment-amount" placeholder="0.00">
-                <div class="debtor-fields" style="display: none; margin-top: 4px; padding: 8px; background-color: #f8f9fa; border-radius: 4px;">
-                    <input type="text" class="form-control form-control-sm debtor-name" placeholder="Debtor/Customer Name" style="margin-bottom: 4px;">
-                    <input type="number" step="0.01" class="form-control form-control-sm debtor-credit-limit" placeholder="Credit Limit" style="margin-bottom: 4px;">
-                    <input type="number" step="0.01" class="form-control form-control-sm debtor-current-balance" placeholder="Current Balance" style="margin-bottom: 0;">
-                </div>
-            </div>
+            <input type="number" step="0.01" class="form-control form-control-sm payment-amount" placeholder="0.00">
         </td>
         <td class="text-end">
             <button type="button" class="btn btn-outline-danger btn-sm payment-remove">Remove</button>
@@ -1162,10 +1142,6 @@ function addPaymentRow(mode = 'cash', amount = '', debtorName = '', creditLimit 
 
     const modeSelect = row.querySelector('.payment-mode');
     const amountInput = row.querySelector('.payment-amount');
-    const debtorFields = row.querySelector('.debtor-fields');
-    const debtorNameInput = row.querySelector('.debtor-name');
-    const debtorCreditLimitInput = row.querySelector('.debtor-credit-limit');
-    const debtorCurrentBalanceInput = row.querySelector('.debtor-current-balance');
     const removeBtn = row.querySelector('.payment-remove');
 
     // Set values after DOM is ready - use setTimeout to ensure options are parsed
@@ -1178,36 +1154,36 @@ function addPaymentRow(mode = 'cash', amount = '', debtorName = '', creditLimit 
             amountInput.value = amount;
             console.log('[DEBUG] addPaymentRow - set amount to:', amount, 'actual value:', amountInput.value);
         }
-        if (debtorNameInput && debtorName) debtorNameInput.value = debtorName;
-        if (debtorCreditLimitInput && creditLimit) debtorCreditLimitInput.value = creditLimit;
-        if (debtorCurrentBalanceInput && currentBalance) debtorCurrentBalanceInput.value = currentBalance;
         
-        // Trigger change event to show/hide debtor fields if needed
-        if (mode === 'sundry_debtor') {
-            debtorFields.style.display = 'block';
+        // AUTO-FILL: If amount is empty and order total exists, fill it automatically
+        if (!amountInput.value || amountInput.value === '' || parseFloat(amountInput.value) === 0) {
+            const orderTotalField = document.getElementById('order-total');
+            const orderTotal = parseFloat(orderTotalField?.value) || 0;
+            if (orderTotal > 0) {
+                amountInput.value = orderTotal.toFixed(2);
+                console.log('[DEBUG] Auto-filled payment amount to order total on add row:', orderTotal);
+            }
         }
         
         // Call recalcPayments after values are set
         recalcPayments();
     }, 0);
 
-    // Handle payment mode changes - show/hide debtor input fields
+    // Handle payment mode changes
     modeSelect?.addEventListener('change', function() {
-        if (this.value === 'sundry_debtor') {
-            debtorFields.style.display = 'block';
-        } else {
-            debtorFields.style.display = 'none';
-            debtorNameInput.value = '';
-            debtorCreditLimitInput.value = '';
-            debtorCurrentBalanceInput.value = '';
+        // When switching modes, auto-fill with order total if empty
+        if (!amountInput.value || parseFloat(amountInput.value) === 0) {
+            const orderTotalField = document.getElementById('order-total');
+            const orderTotal = parseFloat(orderTotalField?.value) || 0;
+            if (orderTotal > 0) {
+                amountInput.value = orderTotal.toFixed(2);
+                console.log('[DEBUG] Auto-filled payment amount to order total on mode change:', orderTotal);
+            }
         }
         recalcPayments();
     });
 
     amountInput?.addEventListener('input', recalcPayments);
-    debtorNameInput?.addEventListener('input', recalcPayments);
-    debtorCreditLimitInput?.addEventListener('input', recalcPayments);
-    debtorCurrentBalanceInput?.addEventListener('input', recalcPayments);
 
     removeBtn?.addEventListener('click', () => {
         // Keep at least one row; if only one, just clear its values
@@ -1215,10 +1191,6 @@ function addPaymentRow(mode = 'cash', amount = '', debtorName = '', creditLimit 
         if (rows.length <= 1) {
             if (modeSelect) modeSelect.value = 'cash';
             if (amountInput) amountInput.value = '';
-            debtorFields.style.display = 'none';
-            debtorNameInput.value = '';
-            debtorCreditLimitInput.value = '';
-            debtorCurrentBalanceInput.value = '';
         } else {
             row.remove();
         }
@@ -1543,28 +1515,36 @@ document.addEventListener('DOMContentLoaded', function() {
             const paymentRows = document.querySelectorAll('.payment-row');
             console.log('[FORM SUBMIT] Found', paymentRows.length, 'payment rows');
             
-            // Detailed examination of each row BEFORE recalcPayments
+            // AUTO-FILL: Before submission, fill any empty payment rows with order total
+            const orderTotalVal = parseFloat(document.getElementById('order-total')?.value) || 0;
+            let autoFilledAny = false;
             paymentRows.forEach((row, idx) => {
-                const modeSelect = row.querySelector('.payment-mode');
                 const amountInput = row.querySelector('.payment-amount');
-                console.log(`[FORM SUBMIT] Row ${idx} BEFORE recalcPayments: mode="${modeSelect?.value}", amount="${amountInput?.value}"`);
+                const currentAmount = parseFloat(amountInput?.value) || 0;
+                console.log(`[FORM SUBMIT] Row ${idx} BEFORE auto-fill: amount="${amountInput?.value}" (parsed as ${currentAmount})`);
+                if (currentAmount === 0 && orderTotalVal > 0) {
+                    amountInput.value = orderTotalVal.toFixed(2);
+                    autoFilledAny = true;
+                    console.log(`[FORM SUBMIT] Auto-filled Row ${idx} with order total: ${orderTotalVal}`);
+                }
             });
-
-            console.log('[FORM SUBMIT] About to call recalcPayments()...');
-            // Sync payment breakdown - CRITICAL: Call this before submission
-            recalcPayments();
             
-            console.log('[FORM SUBMIT] recalcPayments() completed');
+            // Debug: Log AFTER auto-fill before recalcPayments
+            paymentRows.forEach((row, idx) => {
+                const amountInput = row.querySelector('.payment-amount');
+                console.log(`[FORM SUBMIT] Row ${idx} AFTER auto-fill: amount="${amountInput?.value}"`);
+            });
+            
+            // Recalculate payments AFTER auto-fill is done
+            console.log('[FORM SUBMIT] Calling recalcPayments after auto-fill...');
+            recalcPayments();
             
             // Debug: Log the final payment_lines_json value being submitted
             const finalPaymentJson = document.querySelector('input[name="payment_lines_json"]');
             console.log('[FORM SUBMIT] payment_lines_json field exists:', !!finalPaymentJson);
             console.log('[FORM SUBMIT] payment_lines_json value:', finalPaymentJson?.value);
             
-            // Also log payment_mode and payment_amount
-            const finalPaymentMode = document.querySelector('input[name="payment_mode"]');
             const finalPaymentAmount = document.querySelector('input[name="payment_amount"]');
-            console.log('[FORM SUBMIT] payment_mode:', finalPaymentMode?.value);
             console.log('[FORM SUBMIT] payment_amount:', finalPaymentAmount?.value);
 
             console.log('[FORM SUBMIT] Form submitted with total:', orderTotal, 'discount:', orderDiscount, 'tax:', orderTax);

@@ -96,6 +96,193 @@
         transform: translateY(-5px);
         box-shadow: 0 8px 20px rgba(0,0,0,0.15) !important;
     }
+    .action-btn-group {
+        display: flex;
+        gap: 4px;
+        justify-content: center;
+    }
+    .action-btn-group .btn {
+        padding: 6px 10px;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+    .btn-action-edit {
+        background: #f59e0b;
+        border-color: #f59e0b;
+        color: white;
+    }
+    .btn-action-edit:hover {
+        background: #d97706;
+        border-color: #d97706;
+        color: white;
+    }
+    .btn-action-delete {
+        background: #ef4444;
+        border-color: #ef4444;
+        color: white;
+    }
+    .btn-action-delete:hover {
+        background: #dc2626;
+        border-color: #dc2626;
+        color: white;
+    }
+    .btn-action-destroy {
+        background: #6366f1;
+        border-color: #6366f1;
+        color: white;
+    }
+    .btn-action-destroy:hover {
+        background: #4f46e5;
+        border-color: #4f46e5;
+        color: white;
+    }
+    .table-responsive {
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    .table-responsive table {
+        position: relative;
+    }
+    .table-responsive table td:last-child,
+    .table-responsive table th:last-child {
+        position: sticky;
+        right: 0;
+        background-color: white;
+        box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+        z-index: 10;
+    }
+    .table-responsive table thead th:last-child {
+        background-color: #212529;
+        box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+    }
+    .table-responsive table tbody td:last-child {
+        background-color: white;
+    }
+    .table-responsive table tfoot th:last-child {
+        background-color: #e7f3ff;
+        box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+    }
+    /* Compact table styling for showing all details */
+    .table-responsive table {
+        font-size: 13px;
+    }
+    .table-responsive table thead {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+    }
+    .table-responsive table th {
+        padding: 10px 6px;
+        font-weight: 600;
+        text-align: center;
+        white-space: nowrap;
+        background-color: #212529;
+        color: white;
+    }
+    .table-responsive table td {
+        padding: 8px 6px;
+        text-align: left;
+        vertical-align: middle;
+    }
+    .table-responsive table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    .table-responsive table tbody tr:nth-child(odd) {
+        background-color: #ffffff;
+    }
+    .table-responsive table tbody tr:nth-child(even) {
+        background-color: #f9fafb;
+    }
+    /* Make numeric columns center-aligned */
+    .table-responsive table td:nth-child(9),
+    .table-responsive table td:nth-child(10),
+    .table-responsive table td:nth-child(11),
+    .table-responsive table td:nth-child(12),
+    .table-responsive table td:nth-child(13),
+    .table-responsive table td:nth-child(14),
+    .table-responsive table td:nth-child(15),
+    .table-responsive table td:nth-child(16) {
+        text-align: center;
+    }
+    /* View Toggle Buttons */
+    .view-toggle-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+        border: 2px solid #ddd;
+        background: white;
+        color: #333;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .view-toggle-btn.active {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+    }
+    .view-toggle-btn:hover {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+    }
+    /* Card View Styling */
+    .ornament-card {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+        background: white;
+        transition: all 0.3s;
+    }
+    .ornament-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    .card-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        border-bottom: 2px solid #f0f0f0;
+        padding-bottom: 10px;
+    }
+    .card-title {
+        font-weight: 600;
+        font-size: 15px;
+        color: #333;
+    }
+    .card-code {
+        font-size: 12px;
+        color: #999;
+    }
+    .card-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+        margin-bottom: 10px;
+    }
+    .detail-item {
+        display: flex;
+        flex-direction: column;
+    }
+    .detail-label {
+        font-size: 11px;
+        color: #999;
+        text-transform: uppercase;
+        font-weight: 600;
+    }
+    .detail-value {
+        font-size: 13px;
+        color: #333;
+        font-weight: 500;
+        margin-top: 2px;
+    }
+    .card-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        padding-top: 10px;
+        border-top: 1px solid #f0f0f0;
+    }
 </style>
 
 <div class="container mt-5">
@@ -109,10 +296,6 @@
                     <div class="card-body text-center text-white">
                         <h5 class="card-title fw-bold mb-3"><i class="bi bi-gem me-2"></i>Gold Ornaments</h5>
                         <h2 class="fw-bold mb-0">{{ gold_count }} <small style="font-size: 0.5em; opacity: 0.9;">items</small></h2>
-                        {% comment %} <p class="mb-1 mt-2" style="font-size: 0.9em; opacity: 0.95;">Total Weight: {{ gold_total_weight|floatformat:3 }} तोल</p> {% endcomment %}
-                        <p class="mb-1 mt-2" style="font-size: 0.9em; opacity: 0.95;">Total 24k Weight: {{ gold_24k_finalweight|floatformat:3 }} तोल</p>
-                        
-                        
                         <p class="mb-0 mt-2" style="font-size: 0.9em; opacity: 0.95;">Total Amount: रू {{ gold_total_amount|floatformat:2 }}</p>
                     </div>
                 </div>
@@ -155,9 +338,6 @@
         </a>
         <a href="{% url 'ornament:create' %}" class="btn btn-create">
             <i class="bi bi-plus-circle-fill me-2"></i> Create Ornament
-        </a>
-        <a href="{% url 'ornament:report' %}" class="btn btn-create">
-            <i class="bi bi-bar-chart-fill me-2"></i> Category Report
         </a>
     </div>
 
@@ -293,6 +473,17 @@
         </div>
     </div>
 
+    <!-- VIEW TOGGLE -->
+    <div class="mb-3 d-flex justify-content-end gap-2">
+        <label class="me-2 align-self-center fw-bold">View:</label>
+        <button class="view-toggle-btn active" onclick="switchView('table')" title="Table View">
+            <i class="bi bi-table me-1"></i>Table
+        </button>
+        <button class="view-toggle-btn" onclick="switchView('card')" title="Card View">
+            <i class="bi bi-columns-gap me-1"></i>Card
+        </button>
+    </div>
+
     <!-- STATUS TABS -->
     <ul class="nav nav-tabs mb-3" role="tablist">
         {% for status_key, status_label in status_choices.items %}
@@ -317,7 +508,9 @@
              id="status-{{ status_key }}" 
              role="tabpanel">
             
-            <div class="table-responsive">
+            <!-- TABLE VIEW -->
+            <div class="view-table">
+                <div class="table-responsive">
                 <table class="table table-bordered table-striped table-hover">
                     <thead class="table-dark">
                         <tr>
@@ -383,31 +576,31 @@
                             </td>
 
                             <td class="text-center">
-                                <div class="btn-group">
+                                <div class="action-btn-group">
                                     <a href="{% url 'ornament:update' o.pk %}" 
-                                       class="btn btn-sm btn-outline-warning"
-                                       title="Edit">
-                                        <i class="bi bi-pencil-square"></i>
+                                       class="btn btn-sm btn-action-edit"
+                                       title="Edit Ornament">
+                                        <i class="bi bi-pencil-square me-1"></i>Edit
                                     </a>
                             
                                     <a href="{% url 'ornament:delete' o.pk %}" 
-                                       class="btn btn-sm btn-outline-danger"
-                                       title="Delete">
-                                        <i class="bi bi-trash-fill"></i>
+                                       class="btn btn-sm btn-action-delete"
+                                       title="Delete Ornament">
+                                        <i class="bi bi-trash-fill me-1"></i>Delete
                                     </a>
 
                                     {% if o.status != 'destroyed' %}
                                     <a href="{% url 'ornament:destroy' o.pk %}" 
-                                       class="btn btn-sm btn-outline-dark"
-                                       title="Destroy">
-                                        <i class="bi bi-fire"></i>
+                                       class="btn btn-sm btn-action-destroy"
+                                       title="Destroy Ornament">
+                                        <i class="bi bi-fire me-1"></i>Destroy
                                     </a>
                                     {% endif %}
                                 </div>
                             </td>
                         </tr>
                         {% empty %}
-                        <tr><td colspan="21" class="text-center text-muted">No ornaments in {{ status_label }} status.</td></tr>
+                        <tr><td colspan="21" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>No ornaments in {{ status_label }} status.</td></tr>
                         {% endfor %}
                     </tbody>
 
@@ -424,6 +617,100 @@
                     </tfoot>
 
                 </table>
+            </div>
+            </div>
+
+            <!-- CARD VIEW -->
+            <div class="view-card" style="display: none;">
+                {% with ornaments_list=ornaments_by_status|get_item:status_key %}
+                    {% for o in ornaments_list %}
+                    <div class="ornament-card">
+                        <div class="card-header-row">
+                            <div>
+                                <div class="card-title">{{ o.ornament_name }}</div>
+                                <div class="card-code">Code: {{ o.code }} | {{ o.get_metal_type_display }} | {{ o.get_type_display }}</div>
+                            </div>
+                            <span class="badge {% if o.status == 'active' %}bg-success{% elif o.status == 'deleted' %}bg-warning{% elif o.status == 'destroyed' %}bg-danger{% endif %}">
+                                {{ o.get_status_display }}
+                            </span>
+                        </div>
+
+                        <div class="card-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Date</span>
+                                <span class="detail-value">{{ o.ornament_date }}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Main Category</span>
+                                <span class="detail-value">{{ o.maincategory.name }}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Sub Category</span>
+                                <span class="detail-value">{{ o.subcategory.name }}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Kaligar</span>
+                                <span class="detail-value">{{ o.kaligar }}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Gross Weight</span>
+                                <span class="detail-value">{{ o.gross_weight }} तोल</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Weight</span>
+                                <span class="detail-value">{{ o.weight }} तोल</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Diamond Weight</span>
+                                <span class="detail-value">{{ o.diamond_weight }} क्यारेट</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Diamond Rate</span>
+                                <span class="detail-value">रू {{ o.diamond_rate|floatformat:2 }}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Zircon Weight</span>
+                                <span class="detail-value">{{ o.zircon_weight }} क्यारेट</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Stone Weight</span>
+                                <span class="detail-value">{{ o.stone_weight }} क्यारेट</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Jarti</span>
+                                <span class="detail-value">{{ o.jarti }}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Jyala</span>
+                                <span class="detail-value">{{ o.jyala }}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Ornament Type</span>
+                                <span class="detail-value">{{ o.get_ornament_type_display }}</span>
+                            </div>
+                        </div>
+
+                        <div class="card-actions">
+                            <a href="{% url 'ornament:update' o.pk %}" class="btn btn-sm btn-action-edit" title="Edit">
+                                <i class="bi bi-pencil-square me-1"></i>Edit
+                            </a>
+                            <a href="{% url 'ornament:delete' o.pk %}" class="btn btn-sm btn-action-delete" title="Delete">
+                                <i class="bi bi-trash-fill me-1"></i>Delete
+                            </a>
+                            {% if o.status != 'destroyed' %}
+                            <a href="{% url 'ornament:destroy' o.pk %}" class="btn btn-sm btn-action-destroy" title="Destroy">
+                                <i class="bi bi-fire me-1"></i>Destroy
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-inbox" style="font-size: 2rem; opacity: 0.5;"></i>
+                        <p class="mt-3">No ornaments in {{ status_label }} status.</p>
+                    </div>
+                    {% endfor %}
+                {% endwith %}
             </div>
         </div>
         {% endfor %}
@@ -470,5 +757,23 @@
     </nav>
     {% endif %}
 </div>
+
+<script>
+function switchView(viewType) {
+    // Update button states
+    document.querySelectorAll('.view-toggle-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.closest('.view-toggle-btn').classList.add('active');
+    
+    // Show/hide views
+    document.querySelectorAll('.view-table').forEach(el => {
+        el.style.display = viewType === 'table' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.view-card').forEach(el => {
+        el.style.display = viewType === 'card' ? 'block' : 'none';
+    });
+}
+</script>
 
 {% endblock %}

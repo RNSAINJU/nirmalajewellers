@@ -11,6 +11,8 @@ class LoginRequiredMiddleware:
             settings.LOGIN_URL.rstrip('/'),
             '/accounts',
             '/admin',
+            '/order/api/search-ornaments',
+            '/order/api/create-ornament-inline',
         }
         self.static_prefix = getattr(settings, 'STATIC_URL', '/static/') or '/static/'
         self.media_prefix = getattr(settings, 'MEDIA_URL', '/media/') or '/media/'

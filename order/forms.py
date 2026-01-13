@@ -45,18 +45,11 @@ class OrderForm(forms.ModelForm):
 
         self.fields["existing_ornaments"].queryset = qs
 
-        # Ensure payment defaults exist for hidden fields
-        if not self.fields.get("payment_mode").initial:
-            self.fields["payment_mode"].initial = getattr(instance, "payment_mode", "cash") or "cash"
-        if self.fields.get("payment_amount"):
-            amt_init = getattr(instance, "payment_amount", 0) or 0
-            self.fields["payment_amount"].initial = amt_init
-
     class Meta:
         model = Order
         fields = [
             'order_date', 'deliver_date', 'customer_name', 'phone_number', 'status',
-            'order_type', 'description', 'amount', 'subtotal', 'discount', 'tax', 'total', 'payment_mode', 'payment_amount',
+            'order_type', 'description', 'amount', 'subtotal', 'discount', 'tax', 'total',
         ]
         widgets = {
             'amount': forms.HiddenInput(),
@@ -64,8 +57,6 @@ class OrderForm(forms.ModelForm):
             'discount': forms.HiddenInput(),
             'tax': forms.HiddenInput(),
             'total': forms.HiddenInput(),
-            'payment_mode': forms.HiddenInput(),
-            'payment_amount': forms.HiddenInput(),
             'status': forms.Select(attrs={'class': 'form-control form-control-sm'}),
             'order_type': forms.Select(attrs={'class': 'form-control form-control-sm'}),
             'description': forms.Textarea(attrs={'class': 'form-control form-control-sm', 'rows': 3, 'placeholder': 'Additional notes or description'}),
@@ -76,13 +67,6 @@ class OrderForm(forms.ModelForm):
         if name and len(name) < 2:
             raise ValidationError("Customer name must be at least 2 characters long.")
         return name
-
-    def clean_payment_amount(self):
-        amount = self.cleaned_data.get('payment_amount')
-        total = self.cleaned_data.get('total')
-        if amount and total and amount > total:
-            raise ValidationError("Payment amount cannot exceed total order amount.")
-        return amount
 
     def clean_total(self):
         total = self.cleaned_data.get('total')

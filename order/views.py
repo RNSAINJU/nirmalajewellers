@@ -14,25 +14,20 @@ from django.contrib import messages
 import openpyxl
 from openpyxl.utils import get_column_letter
 
-from .models import Order, OrderOrnament, OrderPayment, OrderMetalStock, DebtorPayment
+from .models import Order, OrderOrnament, OrderPayment, OrderMetalStock
 from sales.models import Sale
 from .forms import OrderForm, OrnamentFormSet, MetalStockFormSet
 from ornament.models import Ornament, Kaligar
 from goldsilverpurchase.models import MetalStock, MetalStockMovement
-from finance.models import SundryDebtor
 
 app_name = 'order'
 
 class SearchOrnamentsAPI(View):
     def get(self, request):
         query = request.GET.get('q', '').strip()
-        include_orders = request.GET.get('include_orders')
-        include_orders = str(include_orders).lower() in {'1', 'true', 'yes'}
 
-        # Show stock by default; optionally include order-type items when requested
+        # Show only stock ornaments, never show order-type ornaments
         ornament_types = [Ornament.OrnamentCategory.STOCK]
-        if include_orders:
-            ornament_types.append(Ornament.OrnamentCategory.ORDER)
 
         ornaments = Ornament.objects.filter(
             ornament_type__in=ornament_types,
@@ -495,6 +490,20 @@ class OrderCreateView(CreateView):
         self.object.payments.all().delete()
         
         payment_count = 0
+        
+        # If no payments or all payments have 0 amount, auto-fill with order total
+        if not payments_data:
+            print(f"[DEBUG ORDER CREATE] No payments provided, auto-filling cash with order total: {self.object.total}")
+            if self.object.total > 0:
+                payments_data = [{'payment_mode': 'cash', 'amount': float(self.object.total)}]
+        elif all(Decimal(str(p.get('amount', 0) or 0)) <= 0 for p in payments_data):
+            # Respect the user's chosen mode if provided; otherwise default to cash
+            raw_mode = payments_data[0].get('payment_mode') or payments_data[0].get('mode') or 'cash'
+            mode = raw_mode if raw_mode in dict(Order.PAYMENT_CHOICES) else 'cash'
+            print(f"[DEBUG ORDER CREATE] Payments provided but zero amounts; auto-filling mode={mode} with total {self.object.total}")
+            if self.object.total > 0:
+                payments_data = [{'payment_mode': mode, 'amount': float(self.object.total)}]
+        
         for idx, payment in enumerate(payments_data):
             amount = Decimal(str(payment.get('amount', 0) or 0))
             mode = payment.get('payment_mode') or payment.get('mode') or 'cash'
@@ -517,54 +526,6 @@ class OrderCreateView(CreateView):
             payment_count += 1
             print(f"[DEBUG ORDER CREATE] OrderPayment created successfully, id={order_payment.id}")
 
-            
-            # If payment mode is sundry_debtor, create or get debtor and create DebtorPayment record
-            if mode == 'sundry_debtor':
-                print(f"[SUNDRY DEBTOR] Processing sundry_debtor payment: amount={amount}")
-                debtor_data = payment.get('debtor_data')
-                print(f"[SUNDRY DEBTOR] debtor_data={debtor_data}")
-                try:
-                    # Use debtor name if provided, otherwise use customer name
-                    debtor_name = (debtor_data.get('name', '') if debtor_data else '').strip() or self.object.customer_name
-                    print(f"[SUNDRY DEBTOR] debtor_name='{debtor_name}', customer_name='{self.object.customer_name}'")
-                    
-                    # Only create debtor if we have a name
-                    if debtor_name:
-                        print(f"[SUNDRY DEBTOR] Creating/getting debtor: {debtor_name}")
-                        # Use payment amount as credit limit and current balance
-                        credit_limit = amount
-                        current_balance = amount
-                        
-                        # Create or get debtor by name
-                        debtor, created = SundryDebtor.objects.get_or_create(
-                            name=debtor_name,
-                            defaults={
-                                'credit_limit': credit_limit,
-                                'current_balance': current_balance,
-                                'is_active': True
-                            }
-                        )
-                        print(f"[SUNDRY DEBTOR] Debtor created={created}, id={debtor.id}")
-                        
-                        # If debtor already exists, update balance with payment amount
-                        if not created:
-                            debtor.current_balance += amount
-                            debtor.save()
-                            print(f"[SUNDRY DEBTOR] Updated existing debtor balance to {debtor.current_balance}")
-                        
-                        DebtorPayment.objects.create(
-                            order_payment=order_payment,
-                            debtor=debtor,
-                            transaction_type='invoice'
-                        )
-                        print(f"[SUNDRY DEBTOR] DebtorPayment created successfully")
-                        messages.success(self.request, f"Debtor '{debtor_name}' created/updated with balance Rs.{amount}")
-                    else:
-                        print(f"[SUNDRY DEBTOR] No debtor_name, skipping debtor creation")
-                except Exception as e:
-                    print(f"[SUNDRY DEBTOR] ERROR: {str(e)}")
-                    messages.warning(self.request, f"Warning: Could not create/link debtor: {str(e)}")
-
         print(f"[DEBUG ORDER CREATE] ========== PAYMENT PROCESSING END ==========")
         print(f"[DEBUG ORDER CREATE] Total payments created: {payment_count}")
         print(f"[DEBUG ORDER CREATE] Total OrderPayment objects for this order: {self.object.payments.count()}")
@@ -572,7 +533,7 @@ class OrderCreateView(CreateView):
         # Recompute order totals from created lines (amount/subtotal/total/remaining)
         print(f"[DEBUG ORDER CREATE] Calling recompute_totals_from_lines()...")
         self.object.recompute_totals_from_lines()
-        print(f"[DEBUG ORDER CREATE] After recompute: payment_amount={self.object.payment_amount}, payment_mode={self.object.payment_mode}")
+        print(f"[DEBUG ORDER CREATE] After recompute: order total={self.object.total}, remaining={self.object.remaining_amount}")
 
         print(f"[CREATE VIEW] Order {self.object.sn} form_valid completed - returning redirect")
         return redirect('order:list')
@@ -591,10 +552,8 @@ class OrderUpdateView(UpdateView):
         for payment in payments:
             payment['amount'] = float(payment.get('amount') or 0)
         if not payments:
-            payments = [{
-                "payment_mode": self.object.payment_mode or "cash",
-                "amount": float(self.object.payment_amount or 0),
-            }]
+            # If no payments exist, provide an empty default
+            payments = []
         ctx['initial_payments_json'] = json.dumps(payments)
         
         # Add metal stock formset for editing
@@ -799,6 +758,21 @@ class OrderUpdateView(UpdateView):
         except (TypeError, ValueError):
             payments_data = []
 
+        # Clear existing payments first
+        self.object.payments.all().delete()
+        
+        # If no payments or all payments have 0 amount, auto-fill with order total
+        if not payments_data:
+            print(f"[UPDATE VIEW] No payments provided, auto-filling cash with order total: {self.object.total}")
+            if self.object.total > 0:
+                payments_data = [{'payment_mode': 'cash', 'amount': float(self.object.total)}]
+        elif all(Decimal(str(p.get('amount', 0) or 0)) <= 0 for p in payments_data):
+            raw_mode = payments_data[0].get('payment_mode') or payments_data[0].get('mode') or 'cash'
+            mode = raw_mode if raw_mode in dict(Order.PAYMENT_CHOICES) else 'cash'
+            print(f"[UPDATE VIEW] Payments provided but zero amounts; auto-filling mode={mode} with total {self.object.total}")
+            if self.object.total > 0:
+                payments_data = [{'payment_mode': mode, 'amount': float(self.object.total)}]
+        
         for payment in payments_data:
             amount = Decimal(str(payment.get('amount', 0) or 0))
             if amount <= 0:
@@ -812,53 +786,6 @@ class OrderUpdateView(UpdateView):
                 payment_mode=mode,
                 amount=amount,
             )
-            
-            # If payment mode is sundry_debtor, create or get debtor and create DebtorPayment record
-            if mode == 'sundry_debtor':
-                print(f"[UPDATE VIEW] Processing sundry_debtor payment: amount={amount}")
-                debtor_data = payment.get('debtor_data')
-                print(f"[UPDATE VIEW] debtor_data={debtor_data}")
-                try:
-                    # Use debtor name if provided, otherwise use customer name
-                    debtor_name = (debtor_data.get('name', '') if debtor_data else '').strip() or self.object.customer_name
-                    print(f"[UPDATE VIEW] debtor_name='{debtor_name}', customer_name='{self.object.customer_name}'")
-                    
-                    # Only create debtor if we have a name
-                    if debtor_name:
-                        print(f"[UPDATE VIEW] Creating/getting debtor: {debtor_name}")
-                        # Use payment amount as credit limit and current balance
-                        credit_limit = amount
-                        current_balance = amount
-                        
-                        # Create or get debtor by name
-                        debtor, created = SundryDebtor.objects.get_or_create(
-                            name=debtor_name,
-                            defaults={
-                                'credit_limit': credit_limit,
-                                'current_balance': current_balance,
-                                'is_active': True
-                            }
-                        )
-                        print(f"[UPDATE VIEW] Debtor created={created}, id={debtor.id}")
-                        
-                        # If debtor already exists, update balance with payment amount
-                        if not created:
-                            debtor.current_balance += amount
-                            debtor.save()
-                            print(f"[UPDATE VIEW] Updated existing debtor balance to {debtor.current_balance}")
-                        
-                        DebtorPayment.objects.create(
-                            order_payment=order_payment,
-                            debtor=debtor,
-                            transaction_type='invoice'
-                        )
-                        print(f"[UPDATE VIEW] DebtorPayment created successfully")
-                        messages.success(self.request, f"Debtor '{debtor_name}' created/updated with balance Rs.{amount}")
-                    else:
-                        print(f"[UPDATE VIEW] No debtor_name, skipping debtor creation")
-                except Exception as e:
-                    print(f"[UPDATE VIEW] ERROR: {str(e)}")
-                    messages.warning(self.request, f"Warning: Could not create/link debtor: {str(e)}")
 
         # Recompute order totals from updated lines
         self.object.recompute_totals_from_lines()

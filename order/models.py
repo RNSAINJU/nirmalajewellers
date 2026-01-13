@@ -87,8 +87,6 @@ class Order(models.Model):
     )
     
     total = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    payment_mode = models.CharField(max_length=20, choices=PAYMENT_CHOICES)
-    payment_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     remaining_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -101,12 +99,21 @@ class Order(models.Model):
     def __str__(self):
         return f"Order {self.sn} - {self.customer_name}"
     
+    @property
+    def total_paid(self):
+        """Calculate total amount paid from all OrderPayment records."""
+        from decimal import Decimal as _D
+        payment_sum = sum(
+            (p.amount or _D("0")) for p in self.payments.all()
+        )
+        return payment_sum
+    
     def clean(self):
         """Validate order data."""
         from django.core.exceptions import ValidationError
         
-        if self.payment_amount and self.total and self.payment_amount > self.total:
-            raise ValidationError("Payment amount cannot exceed total order amount.")
+        if self.total and self.total < 0:
+            raise ValidationError("Total amount cannot be negative.")
     
     def save(self, *args, **kwargs):
         self.clean()
@@ -118,9 +125,7 @@ class Order(models.Model):
         - amount = sum of line_amount from all related order_ornaments and order_metals
         - subtotal = max(0, amount - discount)
         - total = subtotal + tax
-        - payment_amount = sum of related payments
-        - payment_mode = 'mixed' if multiple modes, else the single mode (fallback cash)
-        - remaining_amount = max(0, total - payment_amount)
+        - remaining_amount = max(0, total - payment_amount from OrderPayment)
         """
         from decimal import Decimal as _D
 
@@ -135,8 +140,6 @@ class Order(models.Model):
 
         payment_entries = list(self.payments.all()) if hasattr(self, "payments") else []
         payment_sum = sum((p.amount or _D("0")) for p in payment_entries)
-        modes = [p.payment_mode for p in payment_entries if p.payment_mode]
-        unique_modes = set(modes)
 
         self.amount = line_sum
 
@@ -146,24 +149,13 @@ class Order(models.Model):
         self.subtotal = max(_D("0"), line_sum - discount)
         self.total = self.subtotal + tax
 
-        # Summaries driven by payments
-        self.payment_amount = payment_sum
-        if len(unique_modes) > 1:
-            self.payment_mode = "mixed"
-        elif unique_modes:
-            self.payment_mode = modes[0]
-        else:
-            # Default/fallback to cash when no payment captured yet
-            self.payment_mode = self.payment_mode or "cash"
-
+        # Calculate remaining amount based on payments
         self.remaining_amount = max(_D("0"), self.total - payment_sum)
 
         super().save(update_fields=[
             "amount",
             "subtotal",
             "total",
-            "payment_amount",
-            "payment_mode",
             "remaining_amount",
             "updated_at",
         ])

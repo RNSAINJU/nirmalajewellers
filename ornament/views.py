@@ -3,7 +3,7 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.db.models import Sum, F, DecimalField
 from django.db.models.functions import Coalesce
 from .models import Kaligar, Ornament, MainCategory, SubCategory
-from order.models import Order
+from order.models import Order, OrderOrnament
 from .forms import OrnamentForm
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
@@ -16,6 +16,7 @@ import openpyxl
 from openpyxl.utils import get_column_letter
 import nepali_datetime as ndt
 from main.models import Stock
+from django.db import IntegrityError
 
 class MainCategoryCreateView(CreateView):
     model = MainCategory
@@ -259,6 +260,27 @@ class OrnamentDeleteView(DeleteView):
     model = Ornament
     template_name = 'ornament/ornament_confirm_delete.html'
     success_url = reverse_lazy('ornament:list')
+
+    def post(self, request, *args, **kwargs):
+        """Handle delete with protection check for orders."""
+        self.object = self.get_object()
+        
+        # Check if this ornament is used in any orders
+        related_orders = OrderOrnament.objects.filter(ornament=self.object).select_related('order')
+        
+        if related_orders.exists():
+            # Ornament is used in orders - don't allow delete
+            order_list = [f"Order {o.order.sn} - {o.order.customer_name}" for o in related_orders]
+            messages.error(
+                request,
+                f"Cannot delete this ornament as it is referenced by {len(order_list)} order(s): {', '.join(order_list[:3])}{'...' if len(order_list) > 3 else ''}. "
+                f"Please use the 'Destroy' status instead to mark it as no longer available."
+            )
+            return redirect('ornament:list')
+        
+        # No related orders, proceed with deletion
+        messages.success(request, f"Ornament '{self.object.ornament_name}' has been deleted.")
+        return super().post(request, *args, **kwargs)
 
 
 class OrnamentDestroyView(UpdateView):

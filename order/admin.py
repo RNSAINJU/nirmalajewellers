@@ -22,6 +22,13 @@ class OrderMetalStockInline(admin.TabularInline):
     readonly_fields = ('line_amount',)
 
 
+class OrderPaymentInline(admin.TabularInline):
+    model = OrderPayment
+    extra = 1
+    fields = ('payment_mode', 'amount')
+    can_delete = True
+
+
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     list_display = ('sn', 'customer_name', 'order_type', 'order_date', 'deliver_date', 'total', 'status')
@@ -36,13 +43,11 @@ class OrderAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
         ('Amounts', {
-            'fields': ('amount', 'discount', 'subtotal', 'tax', 'total')
-        }),
-        ('Payment', {
-            'fields': ('payment_mode', 'payment_amount', 'remaining_amount')
+            'fields': ('amount', 'discount', 'subtotal', 'tax', 'total', 'remaining_amount')
         }),
     )
-    inlines = [OrderOrnamentInline, OrderMetalStockInline]
+    inlines = [OrderOrnamentInline, OrderMetalStockInline, OrderPaymentInline]
+    readonly_fields = ('amount', 'subtotal', 'total', 'remaining_amount')
 
 
 @admin.register(OrderOrnament)
