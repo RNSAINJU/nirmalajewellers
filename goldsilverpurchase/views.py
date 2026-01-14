@@ -1455,18 +1455,53 @@ class MetalStockListView(ListView):
             item for item in self.get_queryset() if item.is_low_stock
         ]
         
-        # Average purchase rates
-        gold_avg_rate = (
-            GoldSilverPurchase.objects.filter(metal_type__icontains='gold')
-            .aggregate(avg=Avg('rate'))['avg'] or Decimal('0.00')
-        )
-        silver_avg_rate = (
-            GoldSilverPurchase.objects.filter(metal_type__icontains='silver')
-            .aggregate(avg=Avg('rate'))['avg'] or Decimal('0.00')
-        )
+        # Average purchase rates with unit conversion to tola
+        # 1 tola = 11.665 grams
+        TOLA_TO_GRAM = Decimal('11.665')
+        
+        # Get all gold and silver purchases for averaging
+        gold_purchases = GoldSilverPurchase.objects.filter(metal_type__icontains='gold')
+        silver_purchases = GoldSilverPurchase.objects.filter(metal_type__icontains='silver')
+        
+        # Calculate average rates in their original units
+        gold_avg_rate = gold_purchases.aggregate(avg=Avg('rate'))['avg'] or Decimal('0.00')
+        silver_avg_rate = silver_purchases.aggregate(avg=Avg('rate'))['avg'] or Decimal('0.00')
+        
+        # Function to convert rate to per-gram then to per-tola
+        def convert_rate_to_tola(purchase_qs):
+            """Convert average rate from various units to per-tola rate"""
+            total_per_gram = Decimal('0.00')
+            count = 0
+            
+            for purchase in purchase_qs:
+                # Convert rate to per-gram based on rate_unit
+                if purchase.rate_unit == 'gram':
+                    per_gram = purchase.rate
+                elif purchase.rate_unit == '10gram':
+                    per_gram = purchase.rate / Decimal('10')
+                elif purchase.rate_unit == 'tola':
+                    per_gram = purchase.rate / TOLA_TO_GRAM
+                else:
+                    continue
+                
+                total_per_gram += per_gram
+                count += 1
+            
+            if count == 0:
+                return Decimal('0.00')
+            
+            avg_per_gram = total_per_gram / Decimal(str(count))
+            # Convert per-gram to per-tola
+            avg_per_tola = avg_per_gram * TOLA_TO_GRAM
+            return avg_per_tola
+        
+        gold_avg_rate_tola = convert_rate_to_tola(gold_purchases)
+        silver_avg_rate_tola = convert_rate_to_tola(silver_purchases)
         
         context['avg_gold_purchase_rate'] = gold_avg_rate
         context['avg_silver_purchase_rate'] = silver_avg_rate
+        context['avg_gold_purchase_rate_tola'] = gold_avg_rate_tola
+        context['avg_silver_purchase_rate_tola'] = silver_avg_rate_tola
         
         return context
 
