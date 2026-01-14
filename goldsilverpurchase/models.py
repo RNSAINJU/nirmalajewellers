@@ -327,12 +327,6 @@ class MetalStock(models.Model):
             models.Index(fields=['metal_type', 'purity']),
             models.Index(fields=['stock_type']),
         ]
-        constraints = [
-            models.UniqueConstraint(
-                fields=['metal_type', 'stock_type', 'purity', 'location'],
-                name='unique_metal_stock_combination'
-            )
-        ]
 
     def __str__(self):
         stock_type_display = self.stock_type.get_name_display() if self.stock_type else 'Unknown'
