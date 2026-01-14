@@ -282,8 +282,26 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="{{ form.gold_silver_rate_unit.id_for_label }}">
+                        <i class="bi bi-sliders me-2"></i>{{ form.gold_silver_rate_unit.label }}
+                    </label>
+                    {{ form.gold_silver_rate_unit }}
+                    {% if form.gold_silver_rate_unit.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.gold_silver_rate_unit.errors %}
+                        <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                    <p class="help-text">Select the unit for gold and silver rates</p>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
                     <label for="{{ form.gold_rate.id_for_label }}">
                         <i class="bi bi-gem me-2"></i>{{ form.gold_rate.label }}
+                        <span id="gold-rate-unit" style="font-size: 0.9em;">(Per <span id="gold-unit-display">Gram</span>)</span>
                     </label>
                     {{ form.gold_rate }}
                     {% if form.gold_rate.errors %}
@@ -298,6 +316,7 @@
                 <div class="form-group">
                     <label for="{{ form.silver_rate.id_for_label }}">
                         <i class="bi bi-coin me-2"></i>{{ form.silver_rate.label }}
+                        <span id="silver-rate-unit" style="font-size: 0.9em;">(Per <span id="silver-unit-display">Gram</span>)</span>
                     </label>
                     {{ form.silver_rate }}
                     {% if form.silver_rate.errors %}
@@ -309,6 +328,30 @@
                     {% endif %}
                 </div>
             </div>
+
+            <script>
+                // Update unit display when rate unit changes
+                const rateUnitSelect = document.getElementById('{{ form.gold_silver_rate_unit.id_for_label }}').querySelector('select') || document.getElementById('id_gold_silver_rate_unit');
+                
+                function updateRateUnitDisplay() {
+                    const selectedUnit = rateUnitSelect.value;
+                    let unitText = 'Gram';
+                    
+                    if (selectedUnit === '10gram') {
+                        unitText = '10 Gram';
+                    } else if (selectedUnit === 'tola') {
+                        unitText = 'Tola';
+                    }
+                    
+                    document.getElementById('gold-unit-display').textContent = unitText;
+                    document.getElementById('silver-unit-display').textContent = unitText;
+                }
+                
+                rateUnitSelect.addEventListener('change', updateRateUnitDisplay);
+                
+                // Initialize on page load
+                updateRateUnitDisplay();
+            </script>
 
             <!-- Action Buttons -->
             <div class="btn-container">

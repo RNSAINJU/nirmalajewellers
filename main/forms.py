@@ -15,6 +15,7 @@ class StockForm(forms.ModelForm):
             'jardi',
             'wages',
             'diamond_rate',
+            'gold_silver_rate_unit',
             'gold_rate',
             'silver_rate',
         ]
@@ -55,14 +56,17 @@ class StockForm(forms.ModelForm):
                 'placeholder': 'per gram (e.g., 5000.00)',
                 'step': '0.01',
             }),
+            'gold_silver_rate_unit': forms.Select(attrs={
+                'class': 'form-control',
+            }),
             'gold_rate': forms.NumberInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'per gram (e.g., 8000.00)',
+                'placeholder': 'e.g., 8000.00',
                 'step': '0.01',
             }),
             'silver_rate': forms.NumberInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'per gram (e.g., 1000.00)',
+                'placeholder': 'e.g., 1000.00',
                 'step': '0.01',
             }),
         }
@@ -74,8 +78,9 @@ class StockForm(forms.ModelForm):
             'jardi': 'Jardi (रू)',
             'wages': 'Wages (रू)',
             'diamond_rate': 'Diamond Rate (per gram) (रू)',
-            'gold_rate': 'Gold Rate (per gram) (रू)',
-            'silver_rate': 'Silver Rate (per gram) (रू)',
+            'gold_silver_rate_unit': 'Gold & Silver Rate Unit',
+            'gold_rate': 'Gold Rate (रू)',
+            'silver_rate': 'Silver Rate (रू)',
         }
 
 class DailyRateForm(forms.ModelForm):

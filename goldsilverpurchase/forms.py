@@ -6,12 +6,28 @@ from decimal import Decimal
 import nepali_datetime as ndt
 
 class PurchaseForm(forms.ModelForm):
-    bill_date = NepaliDateField(required=False)         # BS date input widget
-    # If you need datetime input, use Django's DateTimeField or create a custom widget/field.
+    bill_date = NepaliDateField(required=False)
+    purity = forms.ChoiceField(
+        choices=GoldSilverPurchase.Purity.choices,
+        widget=forms.Select(attrs={'class': 'form-select form-select-sm'}),
+        required=True
+    )
+    rate_unit = forms.ChoiceField(
+        choices=GoldSilverPurchase.RATE_UNIT_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-select form-select-sm'}),
+        required=True,
+        initial='tola'
+    )
 
     class Meta:
         model = GoldSilverPurchase
         fields = '__all__'
+        widgets = {
+            'metal_type': forms.Select(attrs={'class': 'form-control'}),
+            'purity': forms.Select(attrs={'class': 'form-control'}),
+            'rate_unit': forms.Select(attrs={'class': 'form-control'}),
+            'payment_mode': forms.Select(attrs={'class': 'form-control'}),
+        }
 
 
 class PartyForm(forms.ModelForm):
@@ -52,7 +68,7 @@ class MetalStockForm(forms.ModelForm):
     class Meta:
         model = MetalStock
         fields = [
-            'metal_type', 'stock_type', 'purity', 'quantity', 
+            'metal_type', 'stock_type', 'purity', 'rate_unit', 'quantity', 
             'unit_cost', 'location', 'remarks'
         ]
         widgets = {
@@ -60,6 +76,9 @@ class MetalStockForm(forms.ModelForm):
                 'class': 'form-select',
             }),
             'purity': forms.Select(attrs={
+                'class': 'form-select',
+            }),
+            'rate_unit': forms.Select(attrs={
                 'class': 'form-select',
             }),
             'quantity': forms.NumberInput(attrs={

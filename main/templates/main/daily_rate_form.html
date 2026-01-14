@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h2 class="mb-4">{{ title }}</h2>
+            
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="form-group mb-3">
+                    <label for="id_bs_date" class="form-label">Nepali Date (BS)</label>
+                    {% if is_edit %}
+                        <input type="text" class="form-control" value="{{ form.instance.bs_date }}" disabled>
+                        {{ form.bs_date }}
+                    {% else %}
+                        {{ form.bs_date }}
+                    {% endif %}
+                    {% if form.bs_date.errors %}
+                        <div class="invalid-feedback d-block">{{ form.bs_date.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="id_gold_rate" class="form-label">Gold Rate (Per Tola)</label>
+                    {{ form.gold_rate }}
+                    {% if form.gold_rate.errors %}
+                        <div class="invalid-feedback d-block">{{ form.gold_rate.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="id_silver_rate" class="form-label">Silver Rate (Per Tola)</label>
+                    {{ form.silver_rate }}
+                    {% if form.silver_rate.errors %}
+                        <div class="invalid-feedback d-block">{{ form.silver_rate.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                {% if is_edit %}
+                <div class="form-group mb-3">
+                    <label class="form-label">Gold Rate (Per 10g) - Auto-calculated</label>
+                    <input type="text" class="form-control" value="{{ form.instance.gold_rate_10g }}" disabled>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label class="form-label">Silver Rate (Per 10g) - Auto-calculated</label>
+                    <input type="text" class="form-control" value="{{ form.instance.silver_rate_10g }}" disabled>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <small><i class="bi bi-info-circle"></i> Per-10g rates will be auto-calculated when you save.</small>
+                </div>
+                {% endif %}
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{% url 'main:daily_rates' %}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">
+                        {% if is_edit %}Save Changes{% else %}Add Rate{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-control:disabled {
+        background-color: #e9ecef;
+        opacity: 1;
+    }
+</style>
+{% endblock %}

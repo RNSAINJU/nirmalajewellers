@@ -18,12 +18,27 @@
 
 {% block main_content %}
 <div class="row mb-3">
-    <div class="col-md-12">
-        <form method="get" class="d-inline">
-            <label class="form-check">
+    <div class="col-md-6">
+        <form method="get" class="d-flex gap-2 align-items-center">
+            <label class="form-check mb-0">
                 <input type="checkbox" name="active_only" class="form-check-input" value="1" {% if request.GET.active_only %}checked{% endif %} onchange="this.form.submit()">
                 <span class="form-check-label">Show Active Only</span>
             </label>
+        </form>
+    </div>
+    <div class="col-md-6">
+        <form method="get" class="d-flex gap-2">
+            <label for="sort_by" class="form-label mb-0">Sort by:</label>
+            <select name="sort_by" id="sort_by" class="form-select form-select-sm" style="max-width: 200px;" onchange="this.form.submit()">
+                <option value="name" {% if sort_by == 'name' %}selected{% endif %}>Name (A-Z)</option>
+                <option value="created_first" {% if sort_by == 'created_first' %}selected{% endif %}>Created First</option>
+                <option value="created_recent" {% if sort_by == 'created_recent' %}selected{% endif %}>Created Recently</option>
+                <option value="balance" {% if sort_by == 'balance' %}selected{% endif %}>Highest Balance</option>
+            </select>
+            <!-- Preserve active_only filter -->
+            {% if request.GET.active_only %}
+            <input type="hidden" name="active_only" value="1">
+            {% endif %}
         </form>
     </div>
 </div>
@@ -46,6 +61,7 @@
                 <th>Name</th>
                 <th>Contact Person</th>
                 <th>Phone</th>
+                <th>Created Date</th>
                 <th>Opening Balance</th>
                 <th>Current Balance</th>
                 <th>Credit Limit</th>
@@ -59,6 +75,7 @@
                 <td>{{ debtor.name }}</td>
                 <td>{{ debtor.contact_person|default:"-" }}</td>
                 <td>{{ debtor.phone|default:"-" }}</td>
+                <td><small>{{ debtor.created_at|date:"Y-m-d" }}</small></td>
                 <td>रु{{ debtor.opening_balance }}</td>
                 <td><strong>रु{{ debtor.current_balance }}</strong></td>
                 <td>रु{{ debtor.credit_limit }}</td>

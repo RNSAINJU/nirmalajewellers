@@ -8,7 +8,7 @@ from .views import (
     export_customer_excel, import_customer_excel,
     data_settings, export_all_data,
     MetalStockListView, metal_stock_detail,
-    MetalStockCreateView, MetalStockUpdateView,
+    MetalStockCreateView, MetalStockUpdateView, MetalStockDeleteView,
 )
 
 app_name = 'gsp'
@@ -34,4 +34,5 @@ urlpatterns = [
     path('metal-stock/create/', MetalStockCreateView.as_view(), name='metal_stock_create'),
     path('metal-stock/<int:pk>/', metal_stock_detail, name='metal_stock_detail'),
     path('metal-stock/<int:pk>/edit/', MetalStockUpdateView.as_view(), name='metal_stock_update'),
+    path('metal-stock/<int:pk>/delete/', MetalStockDeleteView.as_view(), name='metal_stock_delete'),
 ]

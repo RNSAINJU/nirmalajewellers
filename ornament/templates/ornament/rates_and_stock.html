@@ -215,8 +215,8 @@
                     <select id="rate-date-select" name="rate_date" onchange="updateRateDate()">
                         <option value="">-- Select a Date --</option>
                         {% for rate in daily_rates %}
-                        <option value="{{ rate.date }}" {% if selected_rate.date == rate.date %}selected{% endif %}>
-                            {{ rate.date }} ({{ rate.bs_date }})
+                        <option value="{{ rate.bs_date }}" {% if selected_rate.bs_date == rate.bs_date %}selected{% endif %}>
+                            {{ rate.bs_date }}
                         </option>
                         {% empty %}
                         <option value="">No rates available</option>
@@ -233,11 +233,7 @@
 
         {% if selected_rate %}
         <div class="rate-details">
-            <h5>Rate Details for {{ selected_rate.date }}</h5>
-            <div class="rate-item">
-                <span class="label"><i class="bi bi-calendar-event me-2"></i>Date</span>
-                <span class="value">{{ selected_rate.date }}</span>
-            </div>
+            <h5>Rate Details for {{ selected_rate.bs_date }}</h5>
             <div class="rate-item">
                 <span class="label"><i class="bi bi-calendar me-2"></i>Nepali Date</span>
                 <span class="value">{{ selected_rate.bs_date }}</span>
@@ -344,13 +340,21 @@
                         <span class="value">रू {{ selected_stock.diamond_rate|floatformat:2 }}</span>
                     </div>
                     <div class="stock-item-cell">
-                        <span class="label"><i class="bi bi-gem me-2"></i>Gold Rate (Per gram)</span>
+                        <span class="label"><i class="bi bi-gem me-2"></i>Rate Unit</span>
+                        <span class="value">{{ selected_stock.get_gold_silver_rate_unit_display }}</span>
+                    </div>
+                </div>
+                <div class="stock-item">
+                    <div class="stock-item-cell">
+                        <span class="label"><i class="bi bi-gem me-2"></i>Gold Rate (Per {{ selected_stock.get_gold_silver_rate_unit_display|lower }})</span>
                         <span class="value">रू {{ selected_stock.gold_rate|floatformat:2 }}</span>
                     </div>
                     <div class="stock-item-cell">
-                        <span class="label"><i class="bi bi-coin me-2"></i>Silver Rate (Per gram)</span>
+                        <span class="label"><i class="bi bi-coin me-2"></i>Silver Rate (Per {{ selected_stock.get_gold_silver_rate_unit_display|lower }})</span>
                         <span class="value">रू {{ selected_stock.silver_rate|floatformat:2 }}</span>
                     </div>
+                </div>
+                <div class="stock-item">
                     <div class="stock-item-cell">
                         <span class="label"><i class="bi bi-briefcase me-2"></i>Wages</span>
                         <span class="value">रू {{ selected_stock.wages|floatformat:2 }}</span>

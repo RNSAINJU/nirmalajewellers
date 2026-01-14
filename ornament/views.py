@@ -933,11 +933,11 @@ def rates_and_stock_view(request):
     from main.models import DailyRate
     
     # Get selected rate date and stock year from request
-    selected_rate_date = request.GET.get('rate_date')
+    selected_rate_bs_date = request.GET.get('rate_date')
     selected_stock_year = request.GET.get('stock_year')
     
     # Get all daily rates (fetched rates)
-    daily_rates = DailyRate.objects.all().order_by('-date')
+    daily_rates = DailyRate.objects.all().order_by('-created_at')
     
     # Get all stock years from both ornament and main app Stock models
     stock_years = Stock.objects.all().order_by('-year')
@@ -946,9 +946,9 @@ def rates_and_stock_view(request):
     selected_rate = None
     selected_stock = None
     
-    if selected_rate_date:
+    if selected_rate_bs_date:
         try:
-            selected_rate = DailyRate.objects.get(date=selected_rate_date)
+            selected_rate = DailyRate.objects.get(bs_date=selected_rate_bs_date)
         except DailyRate.DoesNotExist:
             pass
     else:
@@ -979,7 +979,7 @@ def rates_and_stock_view(request):
         'selected_rate': selected_rate,
         'selected_stock': selected_stock,
         'stock_amounts': stock_amounts,
-        'selected_rate_date': selected_rate_date,
+        'selected_rate_date': selected_rate_bs_date,
         'selected_stock_year': selected_stock_year,
     }
     

@@ -27,11 +27,23 @@ class Party(models.Model):
 
 class GoldSilverPurchase(models.Model):
 
+    RATE_UNIT_CHOICES = [
+        ('gram', 'Per Gram'),
+        ('10gram', 'Per 10 Gram'),
+        ('tola', 'Per Tola'),
+    ]
+
     class PaymentMode(models.TextChoices):
         CASH = 'cash', 'Cash'
         CARD = 'card', 'Card'
         BANK_TRANSFER = 'bank', 'Bank Transfer'
         FONEPAY = 'fonepay', 'Fonepay'
+
+    class Purity(models.TextChoices):
+        TWENTYFOURKARAT = '24K', '24 Karat'
+        TWENTYTWOKARAT = '22K', '22 Karat'
+        EIGHTEENKARAT = '18K', '18 Karat'
+        FOURTEENKARAT = '14K', '14 Karat'
 
     bill_no = models.CharField(max_length=20, unique=True)
     bill_date = NepaliDateField(null=True, blank=True)
@@ -51,6 +63,13 @@ class GoldSilverPurchase(models.Model):
         default='gold'
     )
 
+    purity = models.CharField(
+        max_length=5,
+        choices=Purity.choices,
+        default=Purity.TWENTYFOURKARAT,
+        help_text='Purity/Karat of the metal'
+    )
+
     quantity = models.DecimalField(
         max_digits=10,
         decimal_places=3,
@@ -61,6 +80,13 @@ class GoldSilverPurchase(models.Model):
     rate = models.DecimalField(
         max_digits=12, decimal_places=2,
         validators=[MinValueValidator(0)]
+    )
+
+    rate_unit = models.CharField(
+        max_length=10,
+        choices=RATE_UNIT_CHOICES,
+        default='tola',
+        help_text='Unit for rate (per gram, per 10 gram, per tola)'
     )
 
     wages = models.DecimalField(
@@ -118,8 +144,15 @@ class GoldSilverPurchase(models.Model):
         self.wages = self.wages or Decimal('0.00')
         self.discount = self.discount or Decimal('0.00')
 
-        # Calculate amount automatically
-        calculated_amount = self.quantity  * self.rate
+        # Convert rate to per-gram for calculation
+        effective_rate = self.rate
+        if self.rate_unit == '10gram':
+            effective_rate = (self.rate or Decimal('0')) / Decimal('10')
+        elif self.rate_unit == 'tola':
+            effective_rate = (self.rate or Decimal('0')) / Decimal('11.664')
+
+        # Calculate amount automatically based on chosen unit
+        calculated_amount = self.quantity * effective_rate
         self.amount = (calculated_amount + self.wages - self.discount).quantize(Decimal('0.01'))
 
         # Optional: prevent negative amount
@@ -252,6 +285,12 @@ class MetalStock(models.Model):
         EIGHTEENKARAT = '18K', '18 Karat'
         FOURTEENKARAT = '14K', '14 Karat'
 
+    RATE_UNIT_CHOICES = [
+        ('gram', 'Per Gram'),
+        ('10gram', 'Per 10 Gram'),
+        ('tola', 'Per Tola'),
+    ]
+
     # Core fields
     metal_type = models.CharField(
         max_length=10,
@@ -286,7 +325,14 @@ class MetalStock(models.Model):
         decimal_places=2,
         validators=[MinValueValidator(0)],
         default=Decimal('0.00'),
-        help_text='Cost per gram'
+        help_text='Cost per selected unit (normalized to per gram)'
+    )
+
+    rate_unit = models.CharField(
+        max_length=10,
+        choices=RATE_UNIT_CHOICES,
+        default='tola',
+        help_text='Unit for unit cost'
     )
 
     total_cost = models.DecimalField(
@@ -338,6 +384,16 @@ class MetalStock(models.Model):
         if isinstance(self.quantity, (int, float)):
             self.quantity = Decimal(str(self.quantity))
         self.unit_cost = self.unit_cost or Decimal('0.00')
+
+        # Convert provided cost to per-gram based on rate unit
+        per_gram_cost = self.unit_cost
+        if self.rate_unit == '10gram':
+            per_gram_cost = (self.unit_cost or Decimal('0')) / Decimal('10')
+        elif self.rate_unit == 'tola':
+            per_gram_cost = (self.unit_cost or Decimal('0')) / Decimal('11.664')
+
+        # Store normalized per-gram cost
+        self.unit_cost = per_gram_cost
 
         # Calculate total cost
         self.total_cost = (self.quantity * self.unit_cost).quantize(Decimal('0.01'))

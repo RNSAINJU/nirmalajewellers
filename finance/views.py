@@ -180,14 +180,27 @@ def salary_delete(request, pk):
 def debtor_list(request):
     debtors = SundryDebtor.objects.all()
     active_only = request.GET.get('active_only')
+    sort_by = request.GET.get('sort_by', 'name')  # Default sort by name
+    
     if active_only:
         debtors = debtors.filter(is_active=True)
+    
+    # Apply sorting
+    if sort_by == 'created_first':
+        debtors = debtors.order_by('created_at')
+    elif sort_by == 'created_recent':
+        debtors = debtors.order_by('-created_at')
+    elif sort_by == 'balance':
+        debtors = debtors.order_by('-current_balance')
+    else:  # Default: sort by name
+        debtors = debtors.order_by('name')
     
     total_balance = debtors.aggregate(Sum('current_balance'))['current_balance__sum'] or 0
     
     context = {
         'debtors': debtors,
         'total_balance': total_balance,
+        'sort_by': sort_by,
     }
     return render(request, 'finance/debtor_list.html', context)
 

@@ -40,15 +40,29 @@
             {% if form.party.errors %}<div class="text-danger small">{{ form.party.errors }}</div>{% endif %}
           </div>
 
-          <div class="mb-3">
-            <label for="metal_type" class="form-label mb-1">Metal Type</label>
-            <select id="metal_type" name="metal_type" class="form-select form-select-sm" required>
-              <option value="" disabled>Select Metal Type</option>
-              {% for key, value in form.metal_type.field.choices %}
-              <option value="{{ key }}" {% if form.metal_type.value == key %}selected{% endif %}>{{ value }}</option>
-              {% endfor %}
-            </select>
-            {% if form.metal_type.errors %}<div class="text-danger small">{{ form.metal_type.errors }}</div>{% endif %}
+          <div class="row g-2">
+            <div class="col-md-6">
+              <label for="metal_type" class="form-label mb-1">Metal Type</label>
+              <select id="metal_type" name="metal_type" class="form-select form-select-sm" required>
+                <option value="" disabled>Select Metal Type</option>
+                {% for key, value in form.metal_type.field.choices %}
+                <option value="{{ key }}" {% if form.metal_type.value == key %}selected{% endif %}>{{ value }}</option>
+                {% endfor %}
+              </select>
+              {% if form.metal_type.errors %}<div class="text-danger small">{{ form.metal_type.errors }}</div>{% endif %}
+            </div>
+
+            <div class="col-md-6">
+              <label for="id_purity" class="form-label mb-1">Purity</label>
+              <select id="id_purity" name="purity" class="form-select form-select-sm" required>
+                <option value="">Select Purity</option>
+                <option value="24K" {% if form.purity.value == "24K" %}selected{% endif %}>24 Karat</option>
+                <option value="22K" {% if form.purity.value == "22K" %}selected{% endif %}>22 Karat</option>
+                <option value="18K" {% if form.purity.value == "18K" %}selected{% endif %}>18 Karat</option>
+                <option value="14K" {% if form.purity.value == "14K" %}selected{% endif %}>14 Karat</option>
+              </select>
+              {% if form.purity.errors %}<div class="text-danger small">{{ form.purity.errors }}</div>{% endif %}
+            </div>
           </div>
 
           <div class="mb-1">
@@ -75,6 +89,15 @@
               <label for="rate" class="form-label mb-1">Rate</label>
               <input type="number" id="rate" name="rate" class="form-control form-control-sm" value="{{ form.rate.value|default:'' }}" placeholder="Rate" step="0.01" required>
               {% if form.rate.errors %}<div class="text-danger small">{{ form.rate.errors }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label for="id_rate_unit" class="form-label mb-1">Rate Unit</label>
+              <select id="id_rate_unit" name="rate_unit" class="form-select form-select-sm" required>
+                <option value="tola" {% if form.rate_unit.value == 'tola' or not form.rate_unit.value %}selected{% endif %}>Per Tola</option>
+                <option value="10gram" {% if form.rate_unit.value == '10gram' %}selected{% endif %}>Per 10 Gram</option>
+                <option value="gram" {% if form.rate_unit.value == 'gram' %}selected{% endif %}>Per Gram</option>
+              </select>
+              {% if form.rate_unit.errors %}<div class="text-danger small">{{ form.rate_unit.errors }}</div>{% endif %}
             </div>
             <div class="col-md-6">
               <label for="wages" class="form-label mb-1">Wages</label>
@@ -133,18 +156,30 @@
     const options = { ndpYear: true, ndpMonth: true, ndpYearCount: 10 };
     new NepaliDatePicker({ target: '#id_bill_date', ...options });
 
+    // Style purity select field
+    const puritySelect = document.getElementById('id_purity');
+    if (puritySelect) {
+      puritySelect.classList.add('form-select', 'form-select-sm');
+    }
+
     const $q = document.getElementById('quantity');
     const $r = document.getElementById('rate');
+    const $u = document.getElementById('id_rate_unit');
     const $w = document.getElementById('wages');
     const $d = document.getElementById('discount');
     const $a = document.getElementById('amount');
     function D(x){ const n = parseFloat(x); return isNaN(n) ? 0 : n; }
+    function unitMultiplier(){
+      if ($u && $u.value === '10gram') return 1/10;
+      if ($u && $u.value === 'tola') return 1/11.664;
+      return 1;
+    }
     function recalc(){
-      const subtotal = D($q.value) * D($r.value);
+      const subtotal = D($q.value) * D($r.value) * unitMultiplier();
       const amt = subtotal + D($w.value) - D($d.value);
       $a.value = amt.toFixed(2);
     }
-    [$q,$r,$w,$d].forEach(el => el && el.addEventListener('input', recalc));
+    [$q,$r,$w,$d,$u].forEach(el => el && el.addEventListener('input', recalc));
   });
 
   // Party selection from modal

@@ -540,6 +540,19 @@
 
   <!-- Today Tab -->
   <div id="pl-today" class="pl-tab-content active">
+    {% if today_rate %}
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 15px; border-radius: 8px; color: white; margin-bottom: 15px; font-size: 0.9rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <strong>Date:</strong> {{ today_date_label }}
+        </div>
+        <div style="text-align: right;">
+          <strong>Gold:</strong> रु {{ today_rate.gold_rate|floatformat:2 }}/tola<br>
+          <strong>Silver:</strong> रु {{ today_rate.silver_rate|floatformat:2 }}/tola
+        </div>
+      </div>
+    </div>
+    {% endif %}
     <div class="pl-summary">
       <div class="pl-item">
         <div class="pl-item-label">Gold Ornaments</div>
@@ -565,6 +578,19 @@
 
   <!-- Yesterday Tab -->
   <div id="pl-yesterday" class="pl-tab-content">
+    {% if yesterday_rate %}
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 15px; border-radius: 8px; color: white; margin-bottom: 15px; font-size: 0.9rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <strong>Date:</strong> {{ yesterday_date_label }}
+        </div>
+        <div style="text-align: right;">
+          <strong>Gold:</strong> रु {{ yesterday_rate.gold_rate|floatformat:2 }}/tola<br>
+          <strong>Silver:</strong> रु {{ yesterday_rate.silver_rate|floatformat:2 }}/tola
+        </div>
+      </div>
+    </div>
+    {% endif %}
     <div class="pl-summary">
       <div class="pl-item">
         <div class="pl-item-label">Gold Ornaments</div>
@@ -583,7 +609,7 @@
       </div>
     </div>
     <div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 20px; border-radius: 10px; color: white; text-align: center; margin-top: 15px;">
-      <div style="font-size: 0.9rem; opacity: 0.9;">Total Yesterday</div>
+      <div style="font-size: 0.9rem; opacity: 0.9;">Total Yesterday ({{ yesterday_date_label }})</div>
       <div style="font-size: 2rem; font-weight: 700;">रु {{ yesterday_totals.total_amount|floatformat:2 }}</div>
     </div>
   </div>
@@ -605,20 +631,50 @@
     <div class="pl-summary" style="margin-top: 25px;">
       <div class="pl-item">
         <div class="pl-item-label">Gold Difference</div>
-        <div class="pl-item-value {% if today_totals.gold_amount < yesterday_totals.gold_amount %}loss{% endif %}">
-          {% if today_totals.gold_amount >= yesterday_totals.gold_amount %}+{% endif %}रु {{ today_totals.gold_amount|add:"-"|add:yesterday_totals.gold_amount|floatformat:2 }}
+        <div class="pl-item-value {% if pl_gold_diff < 0 %}loss{% endif %}">
+          {% if pl_gold_diff >= 0 %}+{% endif %}रु {{ pl_gold_diff|floatformat:2 }}
+        </div>
+        <div style="font-size: 0.85rem; color: #9ca3af; margin-top: 5px;">
+          {{ today_totals.gold_amount|floatformat:2 }} - {{ yesterday_totals.gold_amount|floatformat:2 }}
+        </div>
+        <div style="font-size: 0.85rem; color: #6b7280; margin-top: 3px;">
+          {% if pl_gold_percent >= 0 %}
+            ↑ {{ pl_gold_percent|floatformat:2 }}% increase
+          {% else %}
+            ↓ {{ pl_gold_percent|floatformat:2 }}% decrease
+          {% endif %}
         </div>
       </div>
       <div class="pl-item">
         <div class="pl-item-label">Silver Difference</div>
-        <div class="pl-item-value {% if today_totals.silver_amount < yesterday_totals.silver_amount %}loss{% endif %}">
-          {% if today_totals.silver_amount >= yesterday_totals.silver_amount %}+{% endif %}रु {{ today_totals.silver_amount|add:"-"|add:yesterday_totals.silver_amount|floatformat:2 }}
+        <div class="pl-item-value {% if pl_silver_diff < 0 %}loss{% endif %}">
+          {% if pl_silver_diff >= 0 %}+{% endif %}रु {{ pl_silver_diff|floatformat:2 }}
+        </div>
+        <div style="font-size: 0.85rem; color: #9ca3af; margin-top: 5px;">
+          {{ today_totals.silver_amount|floatformat:2 }} - {{ yesterday_totals.silver_amount|floatformat:2 }}
+        </div>
+        <div style="font-size: 0.85rem; color: #6b7280; margin-top: 3px;">
+          {% if pl_silver_percent >= 0 %}
+            ↑ {{ pl_silver_percent|floatformat:2 }}% increase
+          {% else %}
+            ↓ {{ pl_silver_percent|floatformat:2 }}% decrease
+          {% endif %}
         </div>
       </div>
       <div class="pl-item">
         <div class="pl-item-label">Diamond Difference</div>
-        <div class="pl-item-value {% if today_totals.diamond_amount < yesterday_totals.diamond_amount %}loss{% endif %}">
-          {% if today_totals.diamond_amount >= yesterday_totals.diamond_amount %}+{% endif %}रु {{ today_totals.diamond_amount|add:"-"|add:yesterday_totals.diamond_amount|floatformat:2 }}
+        <div class="pl-item-value {% if pl_diamond_diff < 0 %}loss{% endif %}">
+          {% if pl_diamond_diff >= 0 %}+{% endif %}रु {{ pl_diamond_diff|floatformat:2 }}
+        </div>
+        <div style="font-size: 0.85rem; color: #9ca3af; margin-top: 5px;">
+          {{ today_totals.diamond_amount|floatformat:2 }} - {{ yesterday_totals.diamond_amount|floatformat:2 }}
+        </div>
+        <div style="font-size: 0.85rem; color: #6b7280; margin-top: 3px;">
+          {% if pl_diamond_percent >= 0 %}
+            ↑ {{ pl_diamond_percent|floatformat:2 }}% increase
+          {% else %}
+            ↓ {{ pl_diamond_percent|floatformat:2 }}% decrease
+          {% endif %}
         </div>
       </div>
     </div>
@@ -655,12 +711,10 @@
       <div class="pl-difference-label">Closing Rate vs Today's Rate</div>
       <div class="pl-difference-value">{% if closing_today_difference >= 0 %}+{% endif %}रु {{ closing_today_difference|floatformat:2 }}</div>
       <div class="pl-difference-percent">
-        {% if closing_today_difference > 0 %}
-          ↑ Higher valuation at stock closing rate
-        {% elif closing_today_difference < 0 %}
-          ↓ Lower valuation at stock closing rate
+        {% if closing_today_percent >= 0 %}
+          ↑ {{ closing_today_percent|floatformat:2 }}% increase
         {% else %}
-          = Same valuation
+          ↓ {{ closing_today_percent|floatformat:2 }}% decrease
         {% endif %}
       </div>
     </div>
@@ -671,17 +725,47 @@
         <div class="pl-item-value {% if closing_today_gold_diff < 0 %}loss{% endif %}">
           {% if closing_today_gold_diff >= 0 %}+{% endif %}रु {{ closing_today_gold_diff|floatformat:2 }}
         </div>
+        <div style="font-size: 0.85rem; color: #9ca3af; margin-top: 5px;">
+          {{ today_totals.gold_amount|floatformat:2 }} - {{ stock_closing_totals.gold_amount|floatformat:2 }}
+        </div>
+        <div style="font-size: 0.85rem; color: #6b7280; margin-top: 3px;">
+          {% if closing_today_gold_percent >= 0 %}
+            ↑ {{ closing_today_gold_percent|floatformat:2 }}% increase
+          {% else %}
+            ↓ {{ closing_today_gold_percent|floatformat:2 }}% decrease
+          {% endif %}
+        </div>
       </div>
       <div class="pl-item">
         <div class="pl-item-label">Silver Difference</div>
         <div class="pl-item-value {% if closing_today_silver_diff < 0 %}loss{% endif %}">
           {% if closing_today_silver_diff >= 0 %}+{% endif %}रु {{ closing_today_silver_diff|floatformat:2 }}
         </div>
+        <div style="font-size: 0.85rem; color: #9ca3af; margin-top: 5px;">
+          {{ today_totals.silver_amount|floatformat:2 }} - {{ stock_closing_totals.silver_amount|floatformat:2 }}
+        </div>
+        <div style="font-size: 0.85rem; color: #6b7280; margin-top: 3px;">
+          {% if closing_today_silver_percent >= 0 %}
+            ↑ {{ closing_today_silver_percent|floatformat:2 }}% increase
+          {% else %}
+            ↓ {{ closing_today_silver_percent|floatformat:2 }}% decrease
+          {% endif %}
+        </div>
       </div>
       <div class="pl-item">
         <div class="pl-item-label">Diamond Difference</div>
         <div class="pl-item-value {% if closing_today_diamond_diff < 0 %}loss{% endif %}">
           {% if closing_today_diamond_diff >= 0 %}+{% endif %}रु {{ closing_today_diamond_diff|floatformat:2 }}
+        </div>
+        <div style="font-size: 0.85rem; color: #9ca3af; margin-top: 5px;">
+          {{ today_totals.diamond_amount|floatformat:2 }} - {{ stock_closing_totals.diamond_amount|floatformat:2 }}
+        </div>
+        <div style="font-size: 0.85rem; color: #6b7280; margin-top: 3px;">
+          {% if closing_today_diamond_percent >= 0 %}
+            ↑ {{ closing_today_diamond_percent|floatformat:2 }}% increase
+          {% else %}
+            ↓ {{ closing_today_diamond_percent|floatformat:2 }}% decrease
+          {% endif %}
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.db.models import Sum, Q, F, DecimalField
 from decimal import Decimal
@@ -52,7 +52,7 @@ def calculate_daily_ornament_totals(target_date, gold_rate=None, silver_rate=Non
     # Try to get rates for the target date
     if gold_rate is None or silver_rate is None or diamond_rate is None:
         try:
-            rate_obj = DailyRate.objects.filter(date=target_date).first()
+            rate_obj = DailyRate.objects.order_by('-created_at').first()
             if rate_obj:
                 if gold_rate is None:
                     gold_rate = rate_obj.gold_rate
@@ -221,9 +221,9 @@ def dashboard(request):
     if request.method == 'POST':
         daily_rate_form = DailyRateForm(request.POST)
         if daily_rate_form.is_valid():
-            # Get or create today's rate
-            today = date.today()
-            daily_rate, created = DailyRate.objects.get_or_create(date=today)
+            # Get or create today's rate using bs_date
+            bs_date = daily_rate_form.cleaned_data.get('bs_date')
+            daily_rate, created = DailyRate.objects.get_or_create(bs_date=bs_date)
             
             # Update rates
             daily_rate.gold_rate = daily_rate_form.cleaned_data['gold_rate']
@@ -238,9 +238,8 @@ def dashboard(request):
             messages.success(request, f'Today\'s rates {action} successfully!')
             return redirect('main:dashboard')
     else:
-        # Get today's rate if it exists
-        today = date.today()
-        today_rate = DailyRate.objects.filter(date=today).first()
+        # Get most recent rate
+        today_rate = DailyRate.objects.order_by('-created_at').first()
         if today_rate:
             daily_rate_form = DailyRateForm(instance=today_rate)
         else:
@@ -276,17 +275,39 @@ def dashboard(request):
         or 0
     )
     
-    # Calculate daily P&L
-    # Today: all current stock ornaments valued at today's rates
-    # Yesterday: same stock ornaments valued at yesterday's rates (shows rate impact)
-    today = date.today()
-    yesterday = today - timedelta(days=1)
+    # Calculate daily P&L using bs_date from DailyRate
+    # Get today's and yesterday's rates from DailyRate table
+    today_rate = DailyRate.objects.order_by('-created_at').first()
+    yesterday_rate = DailyRate.objects.order_by('-created_at')[1:2].first()
     
-    today_totals = calculate_daily_ornament_totals(today, use_date_filter=False)
-    yesterday_totals = calculate_daily_ornament_totals(yesterday, use_date_filter=False)
+    today_date_label = today_rate.bs_date if today_rate else "Today"
+    yesterday_date_label = yesterday_rate.bs_date if yesterday_rate else "Yesterday"
+    
+    # Calculate totals using today's and yesterday's rates
+    if today_rate:
+        today_totals = calculate_daily_ornament_totals(
+            date.today(),
+            gold_rate=today_rate.gold_rate,
+            silver_rate=today_rate.silver_rate,
+            diamond_rate=Decimal('0'),
+            use_date_filter=False
+        )
+    else:
+        today_totals = calculate_daily_ornament_totals(date.today(), use_date_filter=False)
+    
+    if yesterday_rate:
+        yesterday_totals = calculate_daily_ornament_totals(
+            date.today(),
+            gold_rate=yesterday_rate.gold_rate,
+            silver_rate=yesterday_rate.silver_rate,
+            diamond_rate=Decimal('0'),
+            use_date_filter=False
+        )
+    else:
+        yesterday_totals = calculate_daily_ornament_totals(date.today(), use_date_filter=False)
     
     # Calculate stock closing rate totals (using stock year rates instead of daily rates)
-    current_year = today.year
+    current_year = date.today().year
     stock_data = Stock.objects.filter(year=current_year).first()
     if not stock_data:
         # Fall back to most recent stock record if current year not available
@@ -294,14 +315,14 @@ def dashboard(request):
     
     if stock_data:
         stock_closing_totals = calculate_daily_ornament_totals(
-            today,
+            date.today(),
             gold_rate=stock_data.gold_rate,
             silver_rate=stock_data.silver_rate,
             diamond_rate=stock_data.diamond_rate,
             use_date_filter=False
         )
     else:
-        stock_closing_totals = calculate_daily_ornament_totals(today, use_date_filter=False)
+        stock_closing_totals = calculate_daily_ornament_totals(date.today(), use_date_filter=False)
     
     # Calculate differences
     pl_difference = today_totals['total_amount'] - yesterday_totals['total_amount']
@@ -309,15 +330,49 @@ def dashboard(request):
     if yesterday_totals['total_amount'] > 0:
         pl_percent_change = (pl_difference / yesterday_totals['total_amount']) * Decimal('100')
     
+    # Calculate individual metal differences (today vs yesterday)
+    pl_gold_diff = today_totals['gold_amount'] - yesterday_totals['gold_amount']
+    pl_silver_diff = today_totals['silver_amount'] - yesterday_totals['silver_amount']
+    pl_diamond_diff = today_totals['diamond_amount'] - yesterday_totals['diamond_amount']
+    
+    # Calculate percentage changes for individual metals (today vs yesterday)
+    pl_gold_percent = Decimal('0')
+    if yesterday_totals['gold_amount'] > 0:
+        pl_gold_percent = (pl_gold_diff / yesterday_totals['gold_amount']) * Decimal('100')
+    
+    pl_silver_percent = Decimal('0')
+    if yesterday_totals['silver_amount'] > 0:
+        pl_silver_percent = (pl_silver_diff / yesterday_totals['silver_amount']) * Decimal('100')
+    
+    pl_diamond_percent = Decimal('0')
+    if yesterday_totals['diamond_amount'] > 0:
+        pl_diamond_percent = (pl_diamond_diff / yesterday_totals['diamond_amount']) * Decimal('100')
+    
     # Calculate closing vs today differences (today's rate - closing rate)
     closing_today_difference = today_totals['total_amount'] - stock_closing_totals['total_amount']
     closing_today_gold_diff = today_totals['gold_amount'] - stock_closing_totals['gold_amount']
     closing_today_silver_diff = today_totals['silver_amount'] - stock_closing_totals['silver_amount']
     closing_today_diamond_diff = today_totals['diamond_amount'] - stock_closing_totals['diamond_amount']
     
-    # Get today's rate for display
-    today = date.today()
-    latest_rate = DailyRate.objects.filter(date=today).first()
+    # Calculate percentage changes for closing vs today
+    closing_today_percent = Decimal('0')
+    if stock_closing_totals['total_amount'] > 0:
+        closing_today_percent = (closing_today_difference / stock_closing_totals['total_amount']) * Decimal('100')
+    
+    closing_today_gold_percent = Decimal('0')
+    if stock_closing_totals['gold_amount'] > 0:
+        closing_today_gold_percent = (closing_today_gold_diff / stock_closing_totals['gold_amount']) * Decimal('100')
+    
+    closing_today_silver_percent = Decimal('0')
+    if stock_closing_totals['silver_amount'] > 0:
+        closing_today_silver_percent = (closing_today_silver_diff / stock_closing_totals['silver_amount']) * Decimal('100')
+    
+    closing_today_diamond_percent = Decimal('0')
+    if stock_closing_totals['diamond_amount'] > 0:
+        closing_today_diamond_percent = (closing_today_diamond_diff / stock_closing_totals['diamond_amount']) * Decimal('100')
+    
+    # Get most recent rate for display
+    latest_rate = today_rate
 
     context = {
         'total_ornaments': total_ornaments,
@@ -334,17 +389,31 @@ def dashboard(request):
         'stock_closing_totals': stock_closing_totals,
         'pl_difference': pl_difference,
         'pl_percent_change': pl_percent_change,
+        'pl_gold_diff': pl_gold_diff,
+        'pl_silver_diff': pl_silver_diff,
+        'pl_diamond_diff': pl_diamond_diff,
+        'pl_gold_percent': pl_gold_percent,
+        'pl_silver_percent': pl_silver_percent,
+        'pl_diamond_percent': pl_diamond_percent,
         'closing_today_difference': closing_today_difference,
+        'closing_today_percent': closing_today_percent,
         'closing_today_gold_diff': closing_today_gold_diff,
         'closing_today_silver_diff': closing_today_silver_diff,
         'closing_today_diamond_diff': closing_today_diamond_diff,
+        'closing_today_gold_percent': closing_today_gold_percent,
+        'closing_today_silver_percent': closing_today_silver_percent,
+        'closing_today_diamond_percent': closing_today_diamond_percent,
+        'today_date_label': today_date_label,
+        'yesterday_date_label': yesterday_date_label,
+        'today_rate': today_rate,
+        'yesterday_rate': yesterday_rate,
     }
     return render(request, 'main/dashboard.html', context)
 
 
 def daily_rates(request):
     """List and allow editing of fetched daily rates."""
-    rates = DailyRate.objects.all().order_by('-date')
+    rates = DailyRate.objects.all().order_by('-created_at')
 
     if request.method == 'POST':
         rate_id = request.POST.get('rate_id')
@@ -375,6 +444,77 @@ def daily_rates(request):
         'rates': rates,
     }
     return render(request, 'main/daily_rates.html', context)
+
+
+def add_daily_rate(request):
+    """Add a new daily rate."""
+    if request.method == 'POST':
+        form = DailyRateForm(request.POST)
+        if form.is_valid():
+            rate_obj = form.save()
+            
+            # Auto-calculate per-10g rates from per-tola inputs
+            tola_to_10g = Decimal('10') / Decimal('11.664')
+            rate_obj.gold_rate_10g = (rate_obj.gold_rate or Decimal('0')) * tola_to_10g
+            rate_obj.silver_rate_10g = (rate_obj.silver_rate or Decimal('0')) * tola_to_10g
+            rate_obj.save()
+            
+            messages.success(request, 'Rate added successfully.')
+            return redirect('main:daily_rates')
+    else:
+        form = DailyRateForm()
+    
+    context = {
+        'form': form,
+        'title': 'Add New Rate',
+        'is_edit': False,
+    }
+    return render(request, 'main/daily_rate_form.html', context)
+
+
+def edit_daily_rate(request, pk):
+    """Edit a daily rate."""
+    rate = get_object_or_404(DailyRate, pk=pk)
+    
+    if request.method == 'POST':
+        form = DailyRateForm(request.POST, instance=rate)
+        if form.is_valid():
+            rate_obj = form.save()
+            
+            # Auto-calculate per-10g rates from per-tola inputs
+            tola_to_10g = Decimal('10') / Decimal('11.664')
+            rate_obj.gold_rate_10g = (rate_obj.gold_rate or Decimal('0')) * tola_to_10g
+            rate_obj.silver_rate_10g = (rate_obj.silver_rate or Decimal('0')) * tola_to_10g
+            rate_obj.save()
+            
+            messages.success(request, 'Rate updated successfully.')
+            return redirect('main:daily_rates')
+    else:
+        form = DailyRateForm(instance=rate)
+    
+    context = {
+        'form': form,
+        'title': f'Edit Rate - {rate.bs_date}',
+        'is_edit': True,
+    }
+    return render(request, 'main/daily_rate_form.html', context)
+
+
+def delete_daily_rate(request, pk):
+    """Delete a daily rate."""
+    rate = get_object_or_404(DailyRate, pk=pk)
+    
+    if request.method == 'POST':
+        bs_date = rate.bs_date
+        rate.delete()
+        messages.success(request, f'Rate for {bs_date} deleted successfully.')
+        return redirect('main:daily_rates')
+    
+    context = {
+        'object': rate,
+        'object_name': 'Daily Rate',
+    }
+    return render(request, 'main/daily_rate_confirm_delete.html', context)
 
 
 

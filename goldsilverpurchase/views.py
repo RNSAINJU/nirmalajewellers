@@ -45,11 +45,11 @@ class PurchaseListView(ListView):
 
         if search:
             queryset = queryset.filter(
-            Q(bill_no__icontains=search) |
-            Q(party__party_name__icontains=search) |
-            Q(metal_type__icontains=search) |
-            Q(particular__icontains=search)
-    )
+                Q(bill_no__icontains=search) |
+                Q(party__party_name__icontains=search) |
+                Q(metal_type__icontains=search) |
+                Q(particular__icontains=search)
+            )
 
         # Single date filter
         if date_str:
@@ -256,8 +256,8 @@ def export_excel(request):
     ws.title = "Purchases"
 
     headers = [
-        "Bill No", "Bill Date (BS)", "Party Name","Pan No", "Metal",
-        "Particular", "Qty", "Rate", "Wages", "Discount","Amount", "Payment","Paid", "Remarks"
+        "Bill No", "Bill Date (BS)", "Party Name","Pan No", "Metal", "Purity",
+        "Particular", "Qty", "Rate", "Rate Unit", "Wages", "Discount","Amount", "Payment","Paid", "Remarks"
     ]
     ws.append(headers)
 
@@ -268,9 +268,11 @@ def export_excel(request):
             p.party.party_name,
             p.party.panno,
             p.metal_type,
+            p.purity,
             p.particular,
             p.quantity,
             p.rate,
+            p.rate_unit,
             p.wages,
             p.discount,
             p.amount,
@@ -388,6 +390,7 @@ def import_excel(request):
                         party_name,
                         party_pan,
                         metal_type,
+                        purity,
                         particular,
                         qty,
                         rate,
@@ -439,12 +442,14 @@ def import_excel(request):
                     bill_date=bill_date,
                     party=party,
                     metal_type=metal_type,
+                    purity=purity or '24K',
                     particular=particular,
                     quantity=qty,
                     rate=rate,
+                    rate_unit=rate_unit or 'tola',
                     wages=wages,
-                    amount = amount,
-                    discount = discount,
+                    amount=amount,
+                    discount=discount,
                     payment_mode=payment_mode,
                     is_paid=bool(is_paid),
                     remarks=remarks
@@ -588,8 +593,10 @@ def export_all_data(request):
             p.party.party_name if p.party else "",
             p.particular,
             p.metal_type,
+            p.purity,
             as_float(p.quantity),
             as_float(p.rate),
+            p.rate_unit,
             as_float(p.wages),
             as_float(p.discount),
             as_float(p.amount),
@@ -609,8 +616,10 @@ def export_all_data(request):
             "Party",
             "Particular",
             "Metal Type",
+            "Purity",
             "Quantity",
             "Rate",
+            "Rate Unit",
             "Wages",
             "Discount",
             "Amount",
@@ -896,8 +905,10 @@ def import_all_data(request):
                         party_name,
                         particular,
                         metal_type,
+                        purity,
                         quantity,
                         rate,
+                        rate_unit,
                         wages,
                         discount,
                         amount,
@@ -906,7 +917,7 @@ def import_all_data(request):
                         remarks,
                         created_at,
                         updated_at,
-                    ) = row[:15]
+                    ) = row[:17]
 
                     if GoldSilverPurchase.objects.filter(bill_no=str(bill_no)).exists():
                         continue
@@ -926,8 +937,10 @@ def import_all_data(request):
                         party=party,
                         particular=particular,
                         metal_type=metal_type or "gold",
+                        purity=purity or "22K",
                         quantity=to_decimal(quantity),
                         rate=to_decimal(rate),
+                        rate_unit=rate_unit or "tola",
                         wages=to_decimal(wages),
                         discount=to_decimal(discount),
                         amount=to_decimal(amount),
@@ -1491,3 +1504,16 @@ class MetalStockUpdateView(UpdateView):
         context['title'] = 'Update Metal Stock'
         context['button_text'] = 'Update Stock'
         return context
+
+
+class MetalStockDeleteView(DeleteView):
+    """Delete a metal stock"""
+    model = MetalStock
+    template_name = 'goldsilverpurchase/metalstock_confirm_delete.html'
+    success_url = reverse_lazy('gsp:metal_stock_list')
+
+    def delete(self, request, *args, **kwargs):
+        metal_stock = self.get_object()
+        metal_type = metal_stock.get_metal_type_display()
+        messages.success(request, f"Metal stock for {metal_type} has been deleted successfully!")
+        return super().delete(request, *args, **kwargs)

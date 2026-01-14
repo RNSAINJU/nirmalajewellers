@@ -3,12 +3,12 @@ from .models import Stock, DailyRate
 
 @admin.register(DailyRate)
 class DailyRateAdmin(admin.ModelAdmin):
-    list_display = ['date', 'bs_date', 'gold_rate', 'gold_rate_10g', 'silver_rate', 'silver_rate_10g', 'get_updated_at']
-    list_filter = ['date', 'bs_date']
+    list_display = ['bs_date', 'gold_rate', 'gold_rate_10g', 'silver_rate', 'silver_rate_10g', 'get_created_at']
+    list_filter = ['bs_date', 'created_at']
     readonly_fields = ['created_at', 'updated_at']
     fieldsets = (
         ('Date', {
-            'fields': ('date', 'bs_date')
+            'fields': ('bs_date',)
         }),
         ('Rates (per tola)', {
             'fields': ('gold_rate', 'silver_rate')
@@ -22,9 +22,9 @@ class DailyRateAdmin(admin.ModelAdmin):
         }),
     )
     
-    def get_updated_at(self, obj):
-        return obj.updated_at.strftime('%Y-%m-%d %H:%M')
-    get_updated_at.short_description = 'Last Updated'
+    def get_created_at(self, obj):
+        return obj.created_at.strftime('%Y-%m-%d %H:%M')
+    get_created_at.short_description = 'Created'
 
 
 @admin.register(Stock)

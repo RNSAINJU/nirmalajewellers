@@ -56,20 +56,25 @@
 </div>
 
 <div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">Rate Details</h5>
+    <a href="{% url 'main:add_daily_rate' %}" class="btn btn-sm btn-success">
+      <i class="bi bi-plus-circle"></i> Add Rate
+    </a>
+  </div>
   <div class="card-body">
     {% if rates %}
     <div class="table-responsive">
       <table class="table table-hover rates-table">
         <thead>
           <tr>
-            <th style="min-width: 130px;">Date (AD)</th>
             <th style="min-width: 160px;">Date (BS)</th>
             <th>Gold / tola (रू)</th>
             <th>Gold / 10g (रू)</th>
             <th>Silver / tola (रू)</th>
             <th>Silver / 10g (रू)</th>
             <th>Updated</th>
-            <th style="min-width: 120px;">Actions</th>
+            <th style="min-width: 180px;">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -79,7 +84,6 @@
             <input type="hidden" name="rate_id" value="{{ r.id }}">
           </form>
           <tr>
-            <td>{{ r.date }}</td>
             <td>{{ r.bs_date }}</td>
             <td>
               <input form="rate-form-{{ r.id }}" type="number" step="0.01" name="gold_rate" class="form-control form-control-sm" value="{{ r.gold_rate|floatformat:2 }}" aria-label="Gold rate per tola">
@@ -92,6 +96,8 @@
             <td>{{ r.updated_at|date:"Y-m-d H:i" }}</td>
             <td>
               <button type="submit" form="rate-form-{{ r.id }}" class="btn btn-sm btn-primary">Save</button>
+              <a href="{% url 'main:edit_daily_rate' r.id %}" class="btn btn-sm btn-info">Edit</a>
+              <a href="{% url 'main:delete_daily_rate' r.id %}" class="btn btn-sm btn-danger">Delete</a>
             </td>
           </tr>
           {% endfor %}
