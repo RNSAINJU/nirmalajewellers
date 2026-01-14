@@ -325,14 +325,14 @@ class MetalStock(models.Model):
         decimal_places=2,
         validators=[MinValueValidator(0)],
         default=Decimal('0.00'),
-        help_text='Cost per selected unit (normalized to per gram)'
+        help_text='Cost per selected unit'
     )
 
     rate_unit = models.CharField(
         max_length=10,
         choices=RATE_UNIT_CHOICES,
         default='tola',
-        help_text='Unit for unit cost'
+        help_text='Unit for rate (per gram, per 10 gram, per tola)'
     )
 
     total_cost = models.DecimalField(
@@ -379,24 +379,22 @@ class MetalStock(models.Model):
         return f"{self.get_metal_type_display()} - {stock_type_display} ({self.purity})"
 
     def save(self, *args, **kwargs):
-        """Auto-calculate total cost"""
+        """Auto-calculate total cost based on rate_unit"""
         # Ensure Decimal values
         if isinstance(self.quantity, (int, float)):
             self.quantity = Decimal(str(self.quantity))
         self.unit_cost = self.unit_cost or Decimal('0.00')
 
-        # Convert provided cost to per-gram based on rate unit
+        # Calculate total cost based on unit_cost and rate_unit
+        # Convert unit_cost to per-gram for total_cost calculation
         per_gram_cost = self.unit_cost
         if self.rate_unit == '10gram':
             per_gram_cost = (self.unit_cost or Decimal('0')) / Decimal('10')
         elif self.rate_unit == 'tola':
-            per_gram_cost = (self.unit_cost or Decimal('0')) / Decimal('11.664')
+            per_gram_cost = (self.unit_cost or Decimal('0')) / Decimal('11.665')
 
-        # Store normalized per-gram cost
-        self.unit_cost = per_gram_cost
-
-        # Calculate total cost
-        self.total_cost = (self.quantity * self.unit_cost).quantize(Decimal('0.01'))
+        # Calculate total cost (quantity is in grams)
+        self.total_cost = (self.quantity * per_gram_cost).quantize(Decimal('0.01'))
 
         super().save(*args, **kwargs)
 
@@ -411,6 +409,22 @@ class MetalStock(models.Model):
         }
         threshold = minimum_thresholds.get(self.metal_type, Decimal('0.000'))
         return self.quantity < threshold
+
+    @property
+    def unit_cost_per_tola(self):
+        """Get unit cost converted to per-tola"""
+        if self.rate_unit == 'tola':
+            return self.unit_cost
+        elif self.rate_unit == '10gram':
+            return (self.unit_cost * Decimal('10'))
+        elif self.rate_unit == 'gram':
+            return (self.unit_cost * Decimal('11.665'))
+        return Decimal('0.00')
+
+    @property
+    def get_rate_unit_display_with_tola(self):
+        """Get display text with tola value"""
+        return f"{self.get_rate_unit_display()} (₹{self.unit_cost_per_tola:.2f}/tola)"
 
 
 class MetalStockMovement(models.Model):

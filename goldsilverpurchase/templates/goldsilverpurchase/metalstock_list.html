@@ -183,15 +183,15 @@
         <div class="col-md-6 mb-3">
             <div class="stats-card p-4 h-100" style="border-left: 5px solid #ffc107;">
                 <div class="stat-label"><i class="fas fa-chart-line text-warning"></i> Avg Gold Purchase Rate</div>
-                <div class="stat-number" style="color: #ff9800;">₹{{ avg_gold_purchase_rate|floatformat:2 }}</div>
-                <small class="text-muted">Average (original unit) | <strong>Tola: ₹{{ avg_gold_purchase_rate_tola|floatformat:2 }}</strong></small>
+                <div class="stat-number" style="color: #ff9800;">₹{{ avg_gold_purchase_rate_tola|floatformat:2 }}/tola</div>
+                <small class="text-muted">Average purchase rate in tola</small>
             </div>
         </div>
         <div class="col-md-6 mb-3">
             <div class="stats-card p-4 h-100" style="border-left: 5px solid #c0c0c0;">
                 <div class="stat-label"><i class="fas fa-chart-line" style="color: #c0c0c0;"></i> Avg Silver Purchase Rate</div>
-                <div class="stat-number" style="color: #999;">₹{{ avg_silver_purchase_rate|floatformat:2 }}</div>
-                <small class="text-muted">Average (original unit) | <strong>Tola: ₹{{ avg_silver_purchase_rate_tola|floatformat:2 }}</strong></small>
+                <div class="stat-number" style="color: #999;">₹{{ avg_silver_purchase_rate_tola|floatformat:2 }}/tola</div>
+                <small class="text-muted">Average purchase rate in tola</small>
             </div>
         </div>
     </div>
@@ -288,7 +288,10 @@
                         </td>
                         <td>{{ stock.purity }}</td>
                         <td class="fw-bold">{{ stock.quantity }}</td>
-                        <td>₹{{ stock.unit_cost|floatformat:2 }}</td>
+                        <td>
+                            <div>₹{{ stock.unit_cost|floatformat:2 }}/{{ stock.get_rate_unit_display }}</div>
+                            <small class="text-muted">₹{{ stock.unit_cost_per_tola|floatformat:2 }}/tola</small>
+                        </td>
                         <td>₹{{ stock.total_cost|floatformat:2 }}</td>
                         <td>
                             {% if stock.location %}
