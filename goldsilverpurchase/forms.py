@@ -37,23 +37,57 @@ class PartyForm(forms.ModelForm):
 
 
 class CustomerPurchaseForm(forms.ModelForm):
-    purchase_date = NepaliDateField(required=False)
+    purchase_date = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'YYYY-MM-DD (e.g., 2082-09-30)'
+        }),
+        help_text='Optional: Date in Nepali calendar format'
+    )
 
     class Meta:
         model = CustomerPurchase
         fields = [
             'purchase_date', 'customer_name', 'location',
-            'phone_no', 'metal_type', 'ornament_name', 'weight', 'percentage', 'final_weight', 'refined_weight', 'rate', 'amount'
+            'phone_no', 'metal_type', 'ornament_name', 'weight', 'percentage', 'refined_weight', 'rate', 'rate_unit'
         ]
+    
+    def clean_purchase_date(self):
+        """Parse and validate purchase date - lenient since it's optional"""
+        date_str = self.cleaned_data.get('purchase_date')
+        
+        if not date_str:
+            return None
+        
+        # Accept any YYYY-MM-DD format string without strict validation
+        # since field is optional and Nepali calendar has varying month lengths
+        return str(date_str).strip()
 
     def clean(self):
         cleaned = super().clean()
         weight = cleaned.get('weight') or Decimal('0')
+        percentage = cleaned.get('percentage') or Decimal('0')
+        refined_weight = cleaned.get('refined_weight') or Decimal('0')
         rate = cleaned.get('rate') or Decimal('0')
+        rate_unit = cleaned.get('rate_unit') or 'tola'
         amount = cleaned.get('amount')
 
+        # Calculate final_weight: weight - (weight * percentage / 100)
+        final_weight = weight - (weight * percentage / Decimal('100'))
+        cleaned['final_weight'] = final_weight
+
         if amount in (None, ''):
-            cleaned['amount'] = (weight * rate).quantize(Decimal('0.01')) if weight and rate else Decimal('0.00')
+            # Calculate amount based on rate_unit
+            TOLA_TO_GRAM = Decimal('11.6643')
+            if rate_unit == 'gram':
+                calc_amount = refined_weight * rate
+            elif rate_unit == '10gram':
+                calc_amount = (refined_weight / Decimal('10')) * rate
+            elif rate_unit == 'tola':
+                calc_amount = (refined_weight / TOLA_TO_GRAM) * rate
+            else:
+                calc_amount = Decimal('0.00')
+            cleaned['amount'] = calc_amount.quantize(Decimal('0.01')) if calc_amount else Decimal('0.00')
 
         return cleaned
 

@@ -5,23 +5,31 @@
     <h1 class="text-center mb-4" style="color: #667eea; font-weight: 700;">Customer Purchases</h1>
 
     <div class="row g-3 mb-4">
-        <div class="col-md-3">
+        <div class="col-md-2">
             <div class="card shadow-sm border-0" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);">
                 <div class="card-body text-white text-center">
                     <h6 class="mb-1">Total Weight</h6>
-                    <h3 class="mb-0">{{ total_weight|floatformat:3 }} <small style="font-size:0.6em;opacity:0.9;">tola</small></h3>
+                    <h3 class="mb-0">{{ total_weight|floatformat:3 }} <small style="font-size:0.6em;opacity:0.9;">तोल</small></h3>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
             <div class="card shadow-sm border-0" style="background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);">
                 <div class="card-body text-white text-center">
-                    <h6 class="mb-1">Refined Weight</h6>
-                    <h3 class="mb-0">{{ total_refined_weight|floatformat:3 }} <small style="font-size:0.6em;opacity:0.9;">tola</small></h3>
+                    <h6 class="mb-1">Final Weight</h6>
+                    <h3 class="mb-0">{{ total_final_weight|floatformat:3 }} <small style="font-size:0.6em;opacity:0.9;">तोल</small></h3>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
+            <div class="card shadow-sm border-0" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">
+                <div class="card-body text-white text-center">
+                    <h6 class="mb-1">Profit Weight</h6>
+                    <h3 class="mb-0">{{ total_profit_weight|floatformat:3 }} <small style="font-size:0.6em;opacity:0.9;">तोल</small></h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
             <div class="card shadow-sm border-0" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
                 <div class="card-body text-white text-center">
                     <h6 class="mb-1">Total Amount</h6>
@@ -29,10 +37,18 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3 d-flex align-items-center justify-content-center flex-wrap gap-2">
-            <a href="{% url 'gsp:customer_purchase_create' %}" class="btn btn-primary btn-lg">Create Customer Purchase</a>
-            <a href="{% url 'gsp:customer_export_excel' %}" class="btn btn-success btn-lg">Export Excel</a>
-            <a href="{% url 'gsp:customer_import_excel' %}" class="btn btn-outline-info btn-lg">Import Excel</a>
+        <div class="col-md-2">
+            <div class="card shadow-sm border-0" style="background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);">
+                <div class="card-body text-white text-center">
+                    <h6 class="mb-1">Total Profit</h6>
+                    <h3 class="mb-0">रु{{ total_profit|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 d-flex align-items-center justify-content-center flex-wrap gap-2">
+            <a href="{% url 'gsp:customer_purchase_create' %}" class="btn btn-primary btn-sm">Create</a>
+            <a href="{% url 'gsp:customer_export_excel' %}" class="btn btn-success btn-sm">Export</a>
+            <a href="{% url 'gsp:customer_import_excel' %}" class="btn btn-outline-info btn-sm">Import</a>
         </div>
     </div>
 
@@ -67,14 +83,14 @@
                     <th>SN</th>
                     <th>Date</th>
                     <th>Customer</th>
-                    <th>Location</th>
-                    <th>Phone</th>
                     <th>Metal</th>
                     <th>Ornament</th>
-                    <th class="text-end">Weight (तोल)</th>
-                    <th class="text-end">Refined Weight (तोल)</th>
-                    <th class="text-end">Rate (per तोल)</th>
+                    <th class="text-end">Weight</th>
+                    <th class="text-end">Final Weight</th>
+                    <th class="text-end">Profit Weight</th>
+                    <th class="text-end">Rate</th>
                     <th class="text-end">Amount</th>
+                    <th class="text-end">Profit</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -84,14 +100,14 @@
                     <td>{{ cp.sn }}</td>
                     <td>{{ cp.purchase_date }}</td>
                     <td>{{ cp.customer_name }}</td>
-                    <td>{{ cp.location }}</td>
-                    <td>{{ cp.phone_no }}</td>
                     <td>{{ cp.get_metal_type_display }}</td>
                     <td>{{ cp.ornament_name }}</td>
                     <td class="text-end">{{ cp.weight|floatformat:3 }}</td>
-                    <td class="text-end">{{ cp.refined_weight|floatformat:3 }}</td>
+                    <td class="text-end">{{ cp.final_weight|floatformat:3 }}</td>
+                    <td class="text-end"><span class="badge bg-info">{{ cp.profit_weight|floatformat:3 }}</span></td>
                     <td class="text-end">{{ cp.rate|floatformat:2 }}</td>
                     <td class="text-end">{{ cp.amount|floatformat:2 }}</td>
+                    <td class="text-end"><span class="badge bg-success">रु{{ cp.profit|floatformat:2 }}</span></td>
                     <td>
                         <a href="{% url 'gsp:customer_purchase_update' cp.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
                         <a href="{% url 'gsp:customer_purchase_delete' cp.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>

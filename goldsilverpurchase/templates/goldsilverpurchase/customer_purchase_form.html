@@ -18,9 +18,9 @@
             <label class="form-label mb-1">
               Purchase Date (BS)
             </label>
-            <input type="text" name="purchase_date" id="id_purchase_date" class="form-control form-control-sm {% if form.purchase_date.errors %}is-invalid{% endif %}" placeholder="YYYY-MM-DD" value="{{ form.purchase_date.value|default:'' }}">
-            {% if form.purchase_date.errors %}<div class="text-danger small mt-1">{{ form.purchase_date.errors }}</div>{% endif %}
-            <small class="text-muted">Optional: Nepali date format</small>
+            <input type="text" name="purchase_date" id="id_purchase_date" class="form-control form-control-sm {% if form.purchase_date.errors %}is-invalid{% endif %}" placeholder="YYYY-MM-DD (e.g., 2082-09-30)" value="{{ form.purchase_date.value|default:'' }}">
+            {% if form.purchase_date.errors %}<div class="text-danger small mt-1">{{ form.purchase_date.errors|join:', ' }}</div>{% endif %}
+            <small class="text-muted">Optional: Nepali date in BS format</small>
           </div>
 
           <div class="mb-3">
@@ -100,7 +100,27 @@
           </div>
 
           <div class="row g-3 mt-2">
-            <div class="col-md-6">
+            <div class="col-md-4">
+              <label class="form-label mb-1">
+                Rate <span class="text-danger fw-bold">*</span>
+              </label>
+              <input type="number" step="0.01" name="rate" id="id_rate" class="form-control form-control-sm {% if form.rate.errors %}is-invalid{% endif %}" value="{{ form.rate.value|default:'' }}" placeholder="0.00" required>
+              {% if form.rate.errors %}<div class="text-danger small mt-1">{{ form.rate.errors }}</div>{% endif %}
+              <small class="text-muted">Price per unit</small>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label mb-1">
+                Rate Unit <span class="text-danger fw-bold">*</span>
+              </label>
+              <select id="id_rate_unit" name="rate_unit" class="form-select form-select-sm {% if form.rate_unit.errors %}is-invalid{% endif %}" required>
+                <option value="">Select Rate Unit</option>
+                <option value="gram" {% if form.rate_unit.value == 'gram' %}selected{% endif %}>Per Gram</option>
+                <option value="10gram" {% if form.rate_unit.value == '10gram' %}selected{% endif %}>Per 10 Gram</option>
+                <option value="tola" {% if form.rate_unit.value == 'tola' %}selected{% endif %}>Per Tola</option>
+              </select>
+              {% if form.rate_unit.errors %}<div class="text-danger small mt-1">{{ form.rate_unit.errors }}</div>{% endif %}
+            </div>
+            <div class="col-md-4">
               <label class="form-label mb-1">
                 Refined Weight (तोल) <span class="text-danger fw-bold">*</span>
               </label>
@@ -108,24 +128,29 @@
               {% if form.refined_weight.errors %}<div class="text-danger small mt-1">{{ form.refined_weight.errors }}</div>{% endif %}
               <small class="text-muted">Net weight after refining</small>
             </div>
-            <div class="col-md-6">
-              <label class="form-label mb-1">
-                Rate <span class="text-danger fw-bold">*</span>
-              </label>
-              <input type="number" step="0.01" name="rate" id="id_rate" class="form-control form-control-sm {% if form.rate.errors %}is-invalid{% endif %}" value="{{ form.rate.value|default:'' }}" placeholder="0.00" required>
-              {% if form.rate.errors %}<div class="text-danger small mt-1">{{ form.rate.errors }}</div>{% endif %}
-              <small class="text-muted">Price per तोल</small>
-            </div>
           </div>
 
           <div class="row g-3 mt-2">
-            <div class="col-md-12">
+            <div class="col-md-4">
               <label class="form-label mb-1">
                 Amount
               </label>
-              <input type="number" step="0.01" name="amount" id="id_amount" class="form-control form-control-sm bg-light {% if form.amount.errors %}is-invalid{% endif %}" value="{{ form.amount.value|default:'' }}" placeholder="Auto-calculated" readonly>
-              {% if form.amount.errors %}<div class="text-danger small mt-1">{{ form.amount.errors }}</div>{% endif %}
-              <small class="text-muted">(Final Weight ÷ 11.664) × Rate (auto-calculated)</small>
+              <input type="number" step="0.01" id="id_amount" class="form-control form-control-sm bg-light" value="0.00" placeholder="Auto-calculated" readonly>
+              <small class="text-muted">(Refined Weight ÷ unit_conversion) × Rate (auto-calculated)</small>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label mb-1">
+                Profit Weight (तोल)
+              </label>
+              <input type="number" step="0.001" id="id_profit_weight" class="form-control form-control-sm bg-light" value="0.000" placeholder="Auto-calculated" readonly>
+              <small class="text-muted">Refined Weight - Final Weight (auto-calculated)</small>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label mb-1">
+                Profit/Loss
+              </label>
+              <input type="number" step="0.01" id="id_profit" class="form-control form-control-sm bg-light" value="0.00" placeholder="Auto-calculated" readonly>
+              <small class="text-muted">(Profit Weight ÷ unit_conversion) × Rate (auto-calculated)</small>
             </div>
           </div>
         </div>
@@ -147,32 +172,88 @@
 <script src="https://cdn.jsdelivr.net/npm/nepali-datepicker-v3@3.7.0/dist/js/nepali.datepicker.min.js"></script>
 <script>
   window.addEventListener('DOMContentLoaded', function () {
+    console.log('DOMContentLoaded - Starting calculations');
+    
     const options = { ndpYear: true, ndpMonth: true, ndpYearCount: 10 };
     new NepaliDatePicker({ target: '#id_purchase_date', ...options });
 
     const $w = document.getElementById('id_weight');
     const $p = document.getElementById('id_percentage');
     const $fw = document.getElementById('id_final_weight');
+    const $rw = document.querySelector('input[name="refined_weight"]');
     const $r = document.getElementById('id_rate');
+    const $u = document.getElementById('id_rate_unit');
     const $a = document.getElementById('id_amount');
+    const $pw = document.getElementById('id_profit_weight');
+    const $pr = document.getElementById('id_profit');
+    
+    console.log('Form elements loaded:', {
+      weight: !!$w, percentage: !!$p, finalWeight: !!$fw, refinedWeight: !!$rw,
+      rate: !!$r, rateUnit: !!$u, amount: !!$a, profitWeight: !!$pw, profit: !!$pr
+    });
+    
+    // Check if all elements exist
+    if (!$w || !$p || !$fw || !$rw || !$r || !$u || !$a || !$pw || !$pr) {
+      console.error('Missing form elements for calculation', {
+        weight: !!$w, percentage: !!$p, finalWeight: !!$fw, refinedWeight: !!$rw,
+        rate: !!$r, rateUnit: !!$u, amount: !!$a, profitWeight: !!$pw, profit: !!$pr
+      });
+      return;
+    }
     
     function D(x){ const n = parseFloat(x); return isNaN(n) ? 0 : n; }
     
-    function recalc(){
-      const weight = D($w.value);
-      const percentage = D($p.value);
-      const rate = D($r.value);
-      
-      // Calculate final weight: weight - (weight * percentage / 100)
-      const finalWeight = weight - (weight * percentage / 100);
-      $fw.value = Math.max(0, finalWeight).toFixed(3);
-      
-      // Calculate amount: (final weight / 11.664) * rate
-      const amt = (Math.max(0, finalWeight) / 11.664) * rate;
-      $a.value = Math.max(0, amt).toFixed(2);
+    function unitDivisor(){
+      if ($u && $u.value === '10gram') return 10;
+      if ($u && $u.value === 'tola') return 11.6643;
+      return 1; // gram
     }
     
-    [$w, $p, $r].forEach(el => el && el.addEventListener('input', recalc));
+    function recalc(){
+      try {
+        const weight = D($w.value);
+        const percentage = D($p.value);
+        const rate = D($r.value);
+        const refinedWeight = D($rw.value);
+        
+        console.log('Input values:', { weight, percentage, rate, refinedWeight });
+        
+        // Calculate final weight: weight - (weight * percentage / 100)
+        const finalWeight = weight - (weight * percentage / 100);
+        console.log('Final weight calculation: ' + weight + ' - (' + weight + ' * ' + percentage + ' / 100) = ' + finalWeight);
+        
+        $fw.value = Math.max(0, finalWeight).toFixed(3);
+        
+        // Calculate profit weight: refined_weight - final_weight
+        const profitWeight = refinedWeight - finalWeight;
+        $pw.value = profitWeight.toFixed(3);
+        
+        // Calculate amount based on refined_weight and rate_unit
+        const divisor = unitDivisor();
+        const amt = (Math.max(0, refinedWeight) / divisor) * rate;
+        $a.value = Math.max(0, amt).toFixed(2);
+        
+        // Calculate profit based on profit_weight and rate_unit
+        const profitAmt = (profitWeight / divisor) * rate;
+        $pr.value = profitAmt.toFixed(2);
+        
+        console.log('Calculation complete:', { finalWeight, profitWeight, amount: amt, profit: profitAmt });
+      } catch (e) {
+        console.error('Calculation error:', e);
+      }
+    }
+    
+    // Attach listeners
+    const elements = [$w, $p, $r, $u, $rw];
+    elements.forEach(el => {
+      if (el) {
+        el.addEventListener('input', recalc);
+        el.addEventListener('change', recalc);
+      }
+    });
+    
+    console.log('Initial calculation running');
+    // Initial calculation
     recalc();
   });
 </script>
