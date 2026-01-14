@@ -93,9 +93,10 @@
             <div class="col-md-6">
               <label for="id_rate_unit" class="form-label mb-1">Rate Unit</label>
               <select id="id_rate_unit" name="rate_unit" class="form-select form-select-sm" required>
-                <option value="tola" {% if form.rate_unit.value == 'tola' or not form.rate_unit.value %}selected{% endif %}>Per Tola</option>
-                <option value="10gram" {% if form.rate_unit.value == '10gram' %}selected{% endif %}>Per 10 Gram</option>
+                <option value="">Select Rate Unit</option>
                 <option value="gram" {% if form.rate_unit.value == 'gram' %}selected{% endif %}>Per Gram</option>
+                <option value="10gram" {% if form.rate_unit.value == '10gram' %}selected{% endif %}>Per 10 Gram</option>
+                <option value="tola" {% if form.rate_unit.value == 'tola' %}selected{% endif %}>Per Tola</option>
               </select>
               {% if form.rate_unit.errors %}<div class="text-danger small">{{ form.rate_unit.errors }}</div>{% endif %}
             </div>

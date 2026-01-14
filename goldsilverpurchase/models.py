@@ -137,25 +137,41 @@ class GoldSilverPurchase(models.Model):
         return f"{self.bill_no} - {self.particular or 'Untitled'}"
 
     def save(self, *args, **kwargs):
-            # Ensure Decimal values
+        # Conversion constant: 1 tola = 11.6643 grams
+        TOLA_TO_GRAM = Decimal('11.6643')
+        
+        # Ensure Decimal values
         if isinstance(self.quantity, (int, float)):
             self.quantity = Decimal(str(self.quantity))
         self.rate = self.rate or Decimal('0.00')
         self.wages = self.wages or Decimal('0.00')
         self.discount = self.discount or Decimal('0.00')
+        
+        # Ensure rate_unit is set (don't let it be auto-changed)
+        if not self.rate_unit:
+            self.rate_unit = 'tola'  # Default only if empty
 
-        # Convert rate to per-gram for calculation
-        effective_rate = self.rate
-        if self.rate_unit == '10gram':
-            effective_rate = (self.rate or Decimal('0')) / Decimal('10')
+        # Calculate amount based on rate_unit
+        # Quantity is always in grams
+        if self.rate_unit == 'gram':
+            # Rate is per gram, quantity is in grams
+            # Amount = quantity * rate
+            calculated_amount = self.quantity * self.rate
+        elif self.rate_unit == '10gram':
+            # Rate is per 10 grams, quantity is in grams
+            # Amount = (quantity / 10) * rate
+            calculated_amount = (self.quantity / Decimal('10')) * self.rate
         elif self.rate_unit == 'tola':
-            effective_rate = (self.rate or Decimal('0')) / Decimal('11.664')
+            # Rate is per tola (11.6643 grams), quantity is in grams
+            # Amount = (quantity / 11.6643) * rate
+            calculated_amount = (self.quantity / TOLA_TO_GRAM) * self.rate
+        else:
+            calculated_amount = Decimal('0.00')
 
-        # Calculate amount automatically based on chosen unit
-        calculated_amount = self.quantity * effective_rate
+        # Calculate final amount with wages and discount
         self.amount = (calculated_amount + self.wages - self.discount).quantize(Decimal('0.01'))
 
-        # Optional: prevent negative amount
+        # Prevent negative amount
         if self.amount < 0:
             self.amount = Decimal('0.00')
 
@@ -163,8 +179,22 @@ class GoldSilverPurchase(models.Model):
 
     @property
     def subtotal(self):
-        """Calculate subtotal without wages and discount"""
-        return (self.quantity * self.rate).quantize(Decimal('0.01'))
+        """Calculate subtotal based on rate_unit without wages and discount"""
+        TOLA_TO_GRAM = Decimal('11.6643')
+        
+        if self.rate_unit == 'gram':
+            # Rate is per gram
+            subtotal = self.quantity * self.rate
+        elif self.rate_unit == '10gram':
+            # Rate is per 10 grams
+            subtotal = (self.quantity / Decimal('10')) * self.rate
+        elif self.rate_unit == 'tola':
+            # Rate is per tola
+            subtotal = (self.quantity / TOLA_TO_GRAM) * self.rate
+        else:
+            subtotal = Decimal('0.00')
+        
+        return subtotal.quantize(Decimal('0.01'))
     
     # @property
     # def total_weight(self):
@@ -391,7 +421,7 @@ class MetalStock(models.Model):
         if self.rate_unit == '10gram':
             per_gram_cost = (self.unit_cost or Decimal('0')) / Decimal('10')
         elif self.rate_unit == 'tola':
-            per_gram_cost = (self.unit_cost or Decimal('0')) / Decimal('11.665')
+            per_gram_cost = (self.unit_cost or Decimal('0')) / Decimal('11.6643')
 
         # Calculate total cost (quantity is in grams)
         self.total_cost = (self.quantity * per_gram_cost).quantize(Decimal('0.01'))
@@ -418,7 +448,7 @@ class MetalStock(models.Model):
         elif self.rate_unit == '10gram':
             return (self.unit_cost * Decimal('10'))
         elif self.rate_unit == 'gram':
-            return (self.unit_cost * Decimal('11.665'))
+            return (self.unit_cost * Decimal('11.6643'))
         return Decimal('0.00')
 
     @property

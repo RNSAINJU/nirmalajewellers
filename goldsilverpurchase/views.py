@@ -118,8 +118,8 @@ class PurchaseCreateView(CreateView):
     model = GoldSilverPurchase
     fields = [
         'bill_no', 'bill_date', 'party',
-        'particular', 'metal_type', 'quantity',
-        'rate', 'wages', 'discount','amount', 'payment_mode'
+        'particular', 'metal_type', 'purity', 'quantity',
+        'rate', 'rate_unit', 'wages', 'discount','amount', 'payment_mode'
     ]
     template_name = 'goldsilverpurchase/purchase_form.html'
     success_url = reverse_lazy('gsp:purchaselist')
@@ -129,8 +129,8 @@ class PurchaseUpdateView(UpdateView):
     model = GoldSilverPurchase
     fields = [
         'bill_no', 'bill_date', 'party',
-        'particular', 'metal_type', 'quantity',
-        'rate', 'wages','discount', 'amount', 'payment_mode',
+        'particular', 'metal_type', 'purity', 'quantity',
+        'rate', 'rate_unit', 'wages','discount', 'amount', 'payment_mode',
         'is_paid', 'remarks'
     ]
     template_name = 'goldsilverpurchase/purchase_form.html'
@@ -394,6 +394,7 @@ def import_excel(request):
                         particular,
                         qty,
                         rate,
+                        rate_unit,
                         wages,
                         discount,
                         amount,
@@ -1456,8 +1457,8 @@ class MetalStockListView(ListView):
         ]
         
         # Average unit cost rates from MetalStock (weighted by quantity)
-        # 1 tola = 11.665 grams
-        TOLA_TO_GRAM = Decimal('11.665')
+        # 1 tola = 11.6643 grams
+        TOLA_TO_GRAM = Decimal('11.6643')
         
         # Get all gold and silver from MetalStock
         gold_stocks = MetalStock.objects.filter(metal_type='gold')
