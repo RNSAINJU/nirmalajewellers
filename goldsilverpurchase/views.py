@@ -1,7 +1,7 @@
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.db import models
-from django.db.models import Sum, Q, F, IntegerField
+from django.db.models import Sum, Q, F, IntegerField, Avg
 from django.db.models.functions import Cast
 from .models import GoldSilverPurchase, Party, CustomerPurchase, MetalStock, MetalStockType, MetalStockMovement
 from ornament.models import Ornament, MainCategory, SubCategory, Kaligar
@@ -1454,6 +1454,19 @@ class MetalStockListView(ListView):
         context['low_stock_items'] = [
             item for item in self.get_queryset() if item.is_low_stock
         ]
+        
+        # Average purchase rates
+        gold_avg_rate = (
+            GoldSilverPurchase.objects.filter(metal_type__icontains='gold')
+            .aggregate(avg=Avg('rate'))['avg'] or Decimal('0.00')
+        )
+        silver_avg_rate = (
+            GoldSilverPurchase.objects.filter(metal_type__icontains='silver')
+            .aggregate(avg=Avg('rate'))['avg'] or Decimal('0.00')
+        )
+        
+        context['avg_gold_purchase_rate'] = gold_avg_rate
+        context['avg_silver_purchase_rate'] = silver_avg_rate
         
         return context
 
