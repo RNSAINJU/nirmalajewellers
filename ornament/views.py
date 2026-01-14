@@ -43,9 +43,13 @@ class OrnamentListView(ListView):
     context_object_name = 'ornaments'
     # Order by latest entry first
     ordering = ['-id']
+    paginate_by = 10  # Show 10 ornaments per page
 
     def get_queryset(self):
         qs = super().get_queryset()
+        
+        # Optimize with prefetch_related for foreign keys
+        qs = qs.select_related('maincategory', 'subcategory', 'kaligar')
 
         # Filters
         code = self.request.GET.get("code")
@@ -62,11 +66,11 @@ class OrnamentListView(ListView):
 
         if search:
             qs = qs.filter(
-            Q(weight__icontains=search) |
-            Q(diamond_weight__icontains=search) |
-            Q(ornament_name__icontains=search) |
-            Q(gross_weight__icontains=search)
-    )
+                Q(weight__icontains=search) |
+                Q(diamond_weight__icontains=search) |
+                Q(ornament_name__icontains=search) |
+                Q(gross_weight__icontains=search)
+            )
 
         if code:
             qs = qs.filter(code__icontains=code)
@@ -99,71 +103,13 @@ class OrnamentListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        qs = context['ornaments']
-
-        # Total weight calculation
-        context['total_weight'] = qs.aggregate(total=Sum('weight'))['total'] or 0
-
-        # Ornament counts by metal type - single query with values().annotate()
-        metal_counts = Ornament.objects.values('metal_type').annotate(
-            count=Sum(1)
-        )
-        metal_count_dict = {item['metal_type']: item['count'] for item in metal_counts}
         
-        context['gold_count'] = metal_count_dict.get('Gold', 0)
-        context['silver_count'] = metal_count_dict.get('Silver', 0)
-        context['diamond_count'] = metal_count_dict.get('Diamond', 0)
-        
-        # Diamond total amount calculation
-        diamond_ornaments = Ornament.objects.filter(metal_type='Diamond')
-        diamond_agg = diamond_ornaments.aggregate(
-            diamond_amount=Sum(F('diamond_weight') * F('diamond_rate'), output_field=DecimalField()),
-            total_jyala=Sum(F('jyala'), output_field=DecimalField()),
-            total_stone=Sum(F('stone_totalprice'), output_field=DecimalField())
-        )
-        total_diamond_amount = diamond_agg.get('diamond_amount') or 0
-        try:
-            gold_rate = Stock.objects.get(year=2082).gold_rate
-        except Stock.DoesNotExist:
-            gold_rate = Decimal('0')
-        total_jyala = diamond_agg.get('total_jyala') or 0
-        total_stone_amount = diamond_agg.get('total_stone') or 0
-        total_gold_amount = diamond_ornaments.aggregate(
-            total=Sum((F('weight') * 0.59 )* (gold_rate), output_field=DecimalField())
-        )['total'] or 0
-        context['diamond_total_amount'] = total_diamond_amount+total_gold_amount+total_jyala+total_stone_amount
-
-        # Gold total amount calculation
-        gold_ornaments = Ornament.objects.filter(metal_type='Gold')
-        total_gold_ornament_jarti = gold_ornaments.aggregate(
-            total=Sum(F('jarti')* gold_rate, output_field=DecimalField())
-        )['total'] or 0
-        total_gold_ornament_weight = gold_ornaments.aggregate(
-            total=Sum('weight')
-        )['total'] or 0
-        context['gold_total_weight'] = total_gold_ornament_weight
-        
-        # Gold weight breakdown by individual karat type
-        gold_24k_weight = gold_ornaments.filter(type='24KARAT').aggregate(
-            total=Sum('weight')
-        )['total'] or Decimal('0')
-        gold_22k_weight = gold_ornaments.filter(type='22KARAT').aggregate(
-            total=Sum('weight')
-        )['total'] or Decimal('0')
-        gold_18k_weight = gold_ornaments.filter(type='18KARAT').aggregate(
-            total=Sum('weight')
-        )['total'] or Decimal('0')
-        gold_14k_weight = gold_ornaments.filter(type='14KARAT').aggregate(
-            total=Sum('weight')
-        )['total'] or Decimal('0')
-        gold_24k_finalweight= gold_24k_weight + (gold_22k_weight * Decimal('0.92'))+ (gold_18k_weight * Decimal('0.75')) + (gold_14k_weight * Decimal('0.58'))
-        total_gold_ornament_amount=gold_24k_finalweight * gold_rate
-        context['gold_total_amount'] = total_gold_ornament_amount + total_gold_ornament_jarti
-        context['gold_24k_finalweight'] = gold_24k_finalweight
-        context['gold_24k_weight'] = gold_24k_weight
-        context['gold_22k_weight'] = gold_22k_weight
-        context['gold_18k_weight'] = gold_18k_weight
-        context['gold_14k_weight'] = gold_14k_weight
+        # Total weight calculation for current page only
+        page_ornaments = context['ornaments']
+        total_weight = Decimal('0')
+        for ornament in page_ornaments:
+            total_weight += ornament.weight or Decimal('0')
+        context['total_weight'] = total_weight
 
         # Filters back to template
         context['metal_type'] = self.request.GET.get('metal_type')
@@ -175,15 +121,17 @@ class OrnamentListView(ListView):
         context['kaligar'] = Kaligar.objects.all()
         context['selected_kaligar'] = self.request.GET.get('kaligar', '')
 
-        # Group ornaments by status
-        ornaments_by_status = {}
+        # Status choices for display
         status_choices = {choice[0]: choice[1] for choice in Ornament.StatusCategory.choices}
+        context['status_choices'] = status_choices
         
+        # Group PAGINATED ornaments by status using Python filtering (not QuerySet)
+        ornaments_by_status = {}
         for status_key in status_choices:
-            ornaments_by_status[status_key] = self.get_queryset().filter(status=status_key).order_by('-ornament_date', '-id')
+            # Use list comprehension since page_ornaments is a list, not a QuerySet
+            ornaments_by_status[status_key] = [o for o in page_ornaments if o.status == status_key]
         
         context['ornaments_by_status'] = ornaments_by_status
-        context['status_choices'] = status_choices
 
         return context
 
