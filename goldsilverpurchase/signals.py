@@ -32,37 +32,15 @@ def add_refined_weight_to_metal_stock(sender, instance, created, **kwargs):
     rate_unit, and unit_cost=rate.
     """
     try:
-        print(f"[DEBUG] CustomerPurchase signal triggered for {instance.sn}, created={created}")
-        print(f"[DEBUG] Metal type: {instance.metal_type}, Refined weight: {instance.refined_weight}")
-        
-        # Map metal types from CustomerPurchase to MetalStock
-        metal_type_map = {
-            'gold': MetalStock.MetalType.GOLD,
-            'silver': MetalStock.MetalType.SILVER,
-            'diamond': 'diamond',
-        }
-        
-        # Get the metal type for this purchase
-        purchase_metal_type = metal_type_map.get(instance.metal_type)
-        print(f"[DEBUG] Mapped metal type: {purchase_metal_type}")
-        print(f"[DEBUG] MetalStock.MetalType.GOLD = {MetalStock.MetalType.GOLD}")
-        print(f"[DEBUG] MetalStock.MetalType.SILVER = {MetalStock.MetalType.SILVER}")
-        
-        # Skip if metal type is not in MetalStock (e.g., diamond)
-        if purchase_metal_type not in [MetalStock.MetalType.GOLD, MetalStock.MetalType.SILVER]:
-            print(f"[DEBUG] Skipping because metal_type {purchase_metal_type} not in allowed types")
-            return
-        
         # Get or create refined stock type
         refined_stock_type, _ = MetalStockType.objects.get_or_create(
             name=MetalStockType.StockTypeChoices.REFINED,
             defaults={'description': 'Refined metal stock'}
         )
-        print(f"[DEBUG] Refined stock type: {refined_stock_type}")
         
         # Get or create MetalStock for refined metal
         metal_stock, created_stock = MetalStock.objects.get_or_create(
-            metal_type=purchase_metal_type,
+            metal_type=instance.metal_type,
             stock_type=refined_stock_type,
             purity=MetalStock.Purity.TWENTYFOURKARAT,  # Always 24K
             defaults={
@@ -73,13 +51,13 @@ def add_refined_weight_to_metal_stock(sender, instance, created, **kwargs):
             }
         )
         
-        # Update rate_unit if it changed
+        # Update rate_unit if needed
         if metal_stock.rate_unit != instance.rate_unit:
             metal_stock.rate_unit = instance.rate_unit
         
         if created:
             # NEW PURCHASE: add the refined weight
-            print(f"[DEBUG] NEW PURCHASE - Adding refined weight {instance.refined_weight}")
+            old_quantity = metal_stock.quantity
             metal_stock.quantity = (metal_stock.quantity + instance.refined_weight).quantize(Decimal('0.001'))
             
             # Calculate new unit cost based on weighted average
@@ -92,7 +70,6 @@ def add_refined_weight_to_metal_stock(sender, instance, created, **kwargs):
                 metal_stock.unit_cost = (new_total / metal_stock.quantity).quantize(Decimal('0.01'))
         else:
             # UPDATED PURCHASE: remove old value, add new value
-            print(f"[DEBUG] UPDATED PURCHASE - Recalculating stock")
             cache = _CUSTOMER_PURCHASE_CACHE.get(instance.pk)
             
             if cache:
@@ -100,7 +77,6 @@ def add_refined_weight_to_metal_stock(sender, instance, created, **kwargs):
                 old_rate = cache['rate']
                 
                 # Remove old contribution
-                print(f"[DEBUG] Removing old refined weight: {old_refined_weight}")
                 metal_stock.quantity = (metal_stock.quantity - old_refined_weight).quantize(Decimal('0.001'))
                 
                 # Remove old cost contribution
@@ -109,7 +85,6 @@ def add_refined_weight_to_metal_stock(sender, instance, created, **kwargs):
                 new_total = old_total - old_cost
                 
                 # Add new contribution
-                print(f"[DEBUG] Adding new refined weight: {instance.refined_weight}")
                 metal_stock.quantity = (metal_stock.quantity + instance.refined_weight).quantize(Decimal('0.001'))
                 
                 # Add new cost contribution
@@ -131,7 +106,6 @@ def add_refined_weight_to_metal_stock(sender, instance, created, **kwargs):
             metal_stock.quantity = Decimal('0.000')
         
         metal_stock.save()
-        print(f"[DEBUG] MetalStock saved: {metal_stock}, quantity={metal_stock.quantity}, unit_cost={metal_stock.unit_cost}")
         
     except Exception as e:
         print(f"[ERROR] Error adding refined weight to MetalStock for customer purchase {instance.sn}: {str(e)}")
