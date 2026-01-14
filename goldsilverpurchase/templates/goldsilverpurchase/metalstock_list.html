@@ -256,116 +256,186 @@
         </form>
     </div>
 
-    <!-- Metal Stocks Table -->
+    <!-- Metal Stocks Table - Tabbed Interface -->
     <div class="table-container">
-        {% if metal_stocks %}
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>Metal Type</th>
-                        <th>Stock Type</th>
-                        <th>Purity</th>
-                        <th>Quantity (g)</th>
-                        <th>Unit Cost</th>
-                        <th>Total Cost</th>
-                        <th>Location</th>
-                        <th>Status</th>
-                        <th>Last Updated</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for stock in metal_stocks %}
-                    <tr>
-                        <td>
-                            <strong>{{ stock.get_metal_type_display }}</strong>
-                        </td>
-                        <td>
-                            <span class="badge {% if stock.stock_type.name == 'raw' %}badge-raw{% else %}badge-refined{% endif %}">
-                                {{ stock.stock_type.get_name_display }}
-                            </span>
-                        </td>
-                        <td>{{ stock.purity }}</td>
-                        <td class="fw-bold">{{ stock.quantity }}</td>
-                        <td>
-                            <div>₹{{ stock.unit_cost|floatformat:2 }}/{{ stock.get_rate_unit_display }}</div>
-                            <small class="text-muted">₹{{ stock.unit_cost_per_tola|floatformat:2 }}/tola</small>
-                        </td>
-                        <td>₹{{ stock.total_cost|floatformat:2 }}</td>
-                        <td>
-                            {% if stock.location %}
-                                <small class="text-muted">{{ stock.location }}</small>
-                            {% else %}
-                                <small class="text-muted text-danger">Not specified</small>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if stock.is_low_stock %}
-                                <span class="stock-status stock-low">Low Stock</span>
-                            {% else %}
-                                <span class="stock-status stock-good">Good</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <small>{{ stock.last_updated|date:"Y-m-d" }}</small>
-                        </td>
-                        <td>
-                            <div style="display: flex; gap: 8px;">
-                                <a href="{% url 'gsp:metal_stock_detail' stock.pk %}" class="btn-view">
-                                    <i class="fas fa-eye"></i> View
-                                </a>
-                                <a href="{% url 'gsp:metal_stock_update' stock.pk %}" class="btn-view" style="background: #28a745;">
-                                    <i class="fas fa-edit"></i> Edit
-                                </a>
-                                <a href="{% url 'gsp:metal_stock_delete' stock.pk %}" class="btn-view" style="background: #dc3545;" onclick="return confirm('Are you sure you want to delete this metal stock?');">
-                                    <i class="fas fa-trash"></i> Delete
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+        <!-- Tabs Navigation -->
+        <ul class="nav nav-tabs mb-4" id="metalTabs" role="tablist" style="border-bottom: 2px solid #e9ecef;">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="gold-tab" data-bs-toggle="tab" data-bs-target="#goldTab" type="button" role="tab" aria-controls="goldTab" aria-selected="true" style="color: #ff9800; font-weight: 600; border-bottom: 3px solid transparent;">
+                    <i class="fas fa-crown"></i> Gold Stocks
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="silver-tab" data-bs-toggle="tab" data-bs-target="#silverTab" type="button" role="tab" aria-controls="silverTab" aria-selected="false" style="color: #999; font-weight: 600; border-bottom: 3px solid transparent;">
+                    <i class="fas fa-gem"></i> Silver Stocks
+                </button>
+            </li>
+        </ul>
 
-        <!-- Pagination -->
-        {% if is_paginated %}
-        <nav aria-label="Page navigation" class="mt-4">
-            <ul class="pagination">
-                {% if page_obj.has_previous %}
-                <li class="page-item">
-                    <a class="page-link" href="?page=1">First</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
-                </li>
+        <!-- Tab Content -->
+        <div class="tab-content" id="metalTabContent">
+            <!-- Gold Tab -->
+            <div class="tab-pane fade show active" id="goldTab" role="tabpanel" aria-labelledby="gold-tab">
+                {% if gold_stocks %}
+                <div class="mb-3">
+                    <h5 style="color: #ff9800;"><i class="fas fa-crown"></i> Gold Stock Summary</h5>
+                    <p class="text-muted">Total Quantity: <strong>{{ gold_stocks|length }}</strong> items</p>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr style="background: linear-gradient(135deg, #ff9800 0%, #ffc107 100%); color: white;">
+                                <th>Stock Type</th>
+                                <th>Purity</th>
+                                <th>Quantity (g)</th>
+                                <th>Unit Cost</th>
+                                <th>Total Cost</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th>Last Updated</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stock in gold_stocks %}
+                            <tr>
+                                <td>
+                                    <span class="badge {% if stock.stock_type.name == 'raw' %}badge-raw{% else %}badge-refined{% endif %}">
+                                        {{ stock.stock_type.get_name_display }}
+                                    </span>
+                                </td>
+                                <td>{{ stock.purity }}</td>
+                                <td class="fw-bold">{{ stock.quantity }}</td>
+                                <td>
+                                    <div>₹{{ stock.unit_cost|floatformat:2 }}/{{ stock.get_rate_unit_display }}</div>
+                                    <small class="text-muted">₹{{ stock.unit_cost_per_tola|floatformat:2 }}/tola</small>
+                                </td>
+                                <td>₹{{ stock.total_cost|floatformat:2 }}</td>
+                                <td>
+                                    {% if stock.location %}
+                                        <small class="text-muted">{{ stock.location }}</small>
+                                    {% else %}
+                                        <small class="text-muted text-danger">Not specified</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if stock.is_low_stock %}
+                                        <span class="stock-status stock-low">Low Stock</span>
+                                    {% else %}
+                                        <span class="stock-status stock-good">Good</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small>{{ stock.last_updated|date:"Y-m-d" }}</small>
+                                </td>
+                                <td>
+                                    <div style="display: flex; gap: 8px;">
+                                        <a href="{% url 'gsp:metal_stock_detail' stock.pk %}" class="btn-view">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                        <a href="{% url 'gsp:metal_stock_update' stock.pk %}" class="btn-view" style="background: #28a745;">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </a>
+                                        <a href="{% url 'gsp:metal_stock_delete' stock.pk %}" class="btn-view" style="background: #dc3545;" onclick="return confirm('Are you sure?');">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info text-center py-5">
+                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                    <h5>No Gold Stocks Found</h5>
+                    <p>No gold stock items match your current filter.</p>
+                </div>
                 {% endif %}
+            </div>
 
-                <li class="page-item active">
-                    <span class="page-link">
-                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-                    </span>
-                </li>
-
-                {% if page_obj.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last</a>
-                </li>
+            <!-- Silver Tab -->
+            <div class="tab-pane fade" id="silverTab" role="tabpanel" aria-labelledby="silver-tab">
+                {% if silver_stocks %}
+                <div class="mb-3">
+                    <h5 style="color: #999;"><i class="fas fa-gem"></i> Silver Stock Summary</h5>
+                    <p class="text-muted">Total Quantity: <strong>{{ silver_stocks|length }}</strong> items</p>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr style="background: linear-gradient(135deg, #999 0%, #c0c0c0 100%); color: white;">
+                                <th>Stock Type</th>
+                                <th>Purity</th>
+                                <th>Quantity (g)</th>
+                                <th>Unit Cost</th>
+                                <th>Total Cost</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th>Last Updated</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stock in silver_stocks %}
+                            <tr>
+                                <td>
+                                    <span class="badge {% if stock.stock_type.name == 'raw' %}badge-raw{% else %}badge-refined{% endif %}">
+                                        {{ stock.stock_type.get_name_display }}
+                                    </span>
+                                </td>
+                                <td>{{ stock.purity }}</td>
+                                <td class="fw-bold">{{ stock.quantity }}</td>
+                                <td>
+                                    <div>₹{{ stock.unit_cost|floatformat:2 }}/{{ stock.get_rate_unit_display }}</div>
+                                    <small class="text-muted">₹{{ stock.unit_cost_per_tola|floatformat:2 }}/tola</small>
+                                </td>
+                                <td>₹{{ stock.total_cost|floatformat:2 }}</td>
+                                <td>
+                                    {% if stock.location %}
+                                        <small class="text-muted">{{ stock.location }}</small>
+                                    {% else %}
+                                        <small class="text-muted text-danger">Not specified</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if stock.is_low_stock %}
+                                        <span class="stock-status stock-low">Low Stock</span>
+                                    {% else %}
+                                        <span class="stock-status stock-good">Good</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small>{{ stock.last_updated|date:"Y-m-d" }}</small>
+                                </td>
+                                <td>
+                                    <div style="display: flex; gap: 8px;">
+                                        <a href="{% url 'gsp:metal_stock_detail' stock.pk %}" class="btn-view">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                        <a href="{% url 'gsp:metal_stock_update' stock.pk %}" class="btn-view" style="background: #28a745;">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </a>
+                                        <a href="{% url 'gsp:metal_stock_delete' stock.pk %}" class="btn-view" style="background: #dc3545;" onclick="return confirm('Are you sure?');">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info text-center py-5">
+                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                    <h5>No Silver Stocks Found</h5>
+                    <p>No silver stock items match your current filter.</p>
+                </div>
                 {% endif %}
-            </ul>
-        </nav>
-        {% endif %}
-        {% else %}
-        <div class="alert alert-info text-center py-5">
-            <i class="fas fa-inbox fa-3x mb-3"></i>
-            <h5>No Metal Stocks Found</h5>
-            <p>No metal stocks match your current filter. Try adjusting your search criteria.</p>
+            </div>
         </div>
-        {% endif %}
     </div>
 </div>
 

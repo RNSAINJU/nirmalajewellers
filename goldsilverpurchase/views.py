@@ -1415,7 +1415,10 @@ class MetalStockListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Summary statistics
+        # Get the filtered base queryset
+        filtered_queryset = self.get_queryset()
+        
+        # Summary statistics (always use unfiltered totals for dashboard)
         context['total_gold_quantity'] = (
             MetalStock.objects.filter(metal_type='gold')
             .aggregate(total=Sum('quantity'))['total'] or Decimal('0.000')
@@ -1451,18 +1454,21 @@ class MetalStockListView(ListView):
             stock_type__name='refined'
         ).aggregate(total=Sum('quantity'))['total'] or Decimal('0.000')
         
-        # Low stock alerts
+        # Low stock alerts (from filtered queryset)
         context['low_stock_items'] = [
-            item for item in self.get_queryset() if item.is_low_stock
+            item for item in filtered_queryset if item.is_low_stock
         ]
+        
+        # Split filtered queryset into gold and silver for tabs
+        gold_stocks = filtered_queryset.filter(metal_type='gold')
+        silver_stocks = filtered_queryset.filter(metal_type='silver')
+        
+        context['gold_stocks'] = gold_stocks
+        context['silver_stocks'] = silver_stocks
         
         # Average unit cost rates from MetalStock (weighted by quantity)
         # 1 tola = 11.6643 grams
         TOLA_TO_GRAM = Decimal('11.6643')
-        
-        # Get all gold and silver from MetalStock
-        gold_stocks = MetalStock.objects.filter(metal_type='gold')
-        silver_stocks = MetalStock.objects.filter(metal_type='silver')
         
         # Function to calculate weighted average cost in tola
         def calculate_weighted_average_cost(stock_qs):
