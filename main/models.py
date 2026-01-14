@@ -4,7 +4,7 @@ from datetime import datetime, date
 
 class DailyRate(models.Model):
     """Store daily gold and silver rates from FENEGOSIDA."""
-    bs_date = models.CharField(max_length=50, unique=True, help_text="Nepali date (e.g., '11 Poush 2082')")
+    bs_date = models.CharField(max_length=50, help_text="Nepali date (e.g., '11 Poush 2082')")
 
     # Per tola rates
     gold_rate = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'), help_text="Gold rate per tola")
