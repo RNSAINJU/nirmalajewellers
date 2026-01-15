@@ -41,7 +41,16 @@
                         <p><strong>Opening Balance:</strong><br><span class="h5">रु{{ creditor.opening_balance }}</span></p>
                     </div>
                     <div class="col-md-3">
-                        <p><strong>Current Balance:</strong><br><span class="h5 {% if creditor.current_balance > 0 %}text-danger{% else %}text-success{% endif %}">रु{{ creditor.current_balance }}</span></p>
+                        <p><strong>Current Balance:</strong><br><span class="h5 {% if calculated_balance > 0 %}text-danger{% else %}text-success{% endif %}">रु{{ calculated_balance|floatformat:2 }}</span></p>
+                    </div>
+                    <div class="col-md-3">
+                        <p><strong>Payment Status:</strong><br>
+                            {% if creditor.is_paid %}
+                            <span class="badge bg-success">Paid</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">Pending</span>
+                            {% endif %}
+                        </p>
                     </div>
                 </div>
             </div>
@@ -67,6 +76,7 @@
                                 <th>Amount</th>
                                 <th>Due Date</th>
                                 <th>Description</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -78,6 +88,14 @@
                                 <td><strong>रु{{ transaction.amount }}</strong></td>
                                 <td>{{ transaction.due_date|default:"-" }}</td>
                                 <td>{{ transaction.description|default:"-"|truncatewords:10 }}</td>
+                                <td>
+                                    <a href="{% url 'finance:creditor_transaction_update' transaction.pk %}" class="btn btn-sm btn-warning" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{% url 'finance:creditor_transaction_delete' transaction.pk %}" class="btn btn-sm btn-danger" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -94,6 +112,17 @@
 <div class="row mt-3">
     <div class="col-md-12">
         <div class="d-flex gap-2">
+            {% if creditor.is_paid %}
+            <form method="post" action="{% url 'finance:creditor_mark_unpaid' creditor.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-warning">Mark Pending</button>
+            </form>
+            {% else %}
+            <form method="post" action="{% url 'finance:creditor_mark_paid' creditor.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-success">Mark Paid</button>
+            </form>
+            {% endif %}
             <a href="{% url 'finance:creditor_update' creditor.pk %}" class="btn btn-warning">Edit</a>
             <a href="{% url 'finance:creditor_delete' creditor.pk %}" class="btn btn-danger">Delete</a>
             <a href="{% url 'finance:creditor_list' %}" class="btn btn-secondary">Back</a>

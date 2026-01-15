@@ -37,7 +37,11 @@ urlpatterns = [
     path('debtors/<int:pk>/', views.debtor_detail, name='debtor_detail'),
     path('debtors/<int:pk>/edit/', views.debtor_update, name='debtor_update'),
     path('debtors/<int:pk>/delete/', views.debtor_delete, name='debtor_delete'),
+    path('debtors/<int:pk>/mark-paid/', views.debtor_mark_paid, name='debtor_mark_paid'),
+    path('debtors/<int:pk>/mark-unpaid/', views.debtor_mark_unpaid, name='debtor_mark_unpaid'),
     path('debtors/<int:debtor_id>/transaction/add/', views.debtor_transaction_create, name='debtor_transaction_create'),
+    path('debtors/transactions/<int:pk>/edit/', views.debtor_transaction_update, name='debtor_transaction_update'),
+    path('debtors/transactions/<int:pk>/delete/', views.debtor_transaction_delete, name='debtor_transaction_delete'),
     path('debtors/export/', views.debtor_export, name='debtor_export'),
     path('debtors/import/', views.debtor_import, name='debtor_import'),
     
@@ -47,7 +51,11 @@ urlpatterns = [
     path('creditors/<int:pk>/', views.creditor_detail, name='creditor_detail'),
     path('creditors/<int:pk>/edit/', views.creditor_update, name='creditor_update'),
     path('creditors/<int:pk>/delete/', views.creditor_delete, name='creditor_delete'),
+    path('creditors/<int:pk>/mark-paid/', views.creditor_mark_paid, name='creditor_mark_paid'),
+    path('creditors/<int:pk>/mark-unpaid/', views.creditor_mark_unpaid, name='creditor_mark_unpaid'),
     path('creditors/<int:creditor_id>/transaction/add/', views.creditor_transaction_create, name='creditor_transaction_create'),
+    path('creditors/transactions/<int:pk>/edit/', views.creditor_transaction_update, name='creditor_transaction_update'),
+    path('creditors/transactions/<int:pk>/delete/', views.creditor_transaction_delete, name='creditor_transaction_delete'),
     path('creditors/export/', views.creditor_export, name='creditor_export'),
     path('creditors/import/', views.creditor_import, name='creditor_import'),
     

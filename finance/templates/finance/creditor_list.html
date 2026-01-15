@@ -49,6 +49,7 @@
                 <th>BS Date</th>
                 <th>Opening Balance</th>
                 <th>Current Balance</th>
+                <th>Payment Status</th>
                 <th>Status</th>
                 <th>Actions</th>
             </tr>
@@ -63,6 +64,13 @@
                 <td>रु{{ creditor.opening_balance }}</td>
                 <td><strong>रु{{ creditor.current_balance }}</strong></td>
                 <td>
+                    {% if creditor.is_paid %}
+                    <span class="badge bg-success">Paid</span>
+                    {% else %}
+                    <span class="badge bg-warning text-dark">Pending</span>
+                    {% endif %}
+                </td>
+                <td>
                     {% if creditor.is_active %}
                     <span class="badge bg-success">Active</span>
                     {% else %}
@@ -70,6 +78,21 @@
                     {% endif %}
                 </td>
                 <td>
+                    {% if creditor.is_paid %}
+                    <form method="post" action="{% url 'finance:creditor_mark_unpaid' creditor.pk %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-warning" title="Mark Pending">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                        </button>
+                    </form>
+                    {% else %}
+                    <form method="post" action="{% url 'finance:creditor_mark_paid' creditor.pk %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-success" title="Mark Paid">
+                            <i class="bi bi-check2-circle"></i>
+                        </button>
+                    </form>
+                    {% endif %}
                     <a href="{% url 'finance:creditor_detail' creditor.pk %}" class="btn btn-sm btn-info" title="View">
                         <i class="bi bi-eye"></i>
                     </a>

@@ -47,7 +47,7 @@ class EmployeeSalaryForm(forms.ModelForm):
 class SundryDebtorForm(forms.ModelForm):
     class Meta:
         model = SundryDebtor
-        fields = ['name', 'contact_person', 'phone', 'address', 'bs_date', 'opening_balance', 'current_balance', 'credit_limit', 'is_active', 'notes']
+        fields = ['name', 'contact_person', 'phone', 'address', 'bs_date', 'opening_balance', 'current_balance', 'credit_limit', 'is_paid', 'is_active', 'notes']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Debtor Name'}),
             'contact_person': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Contact Person'}),
@@ -56,6 +56,7 @@ class SundryDebtorForm(forms.ModelForm):
             'opening_balance': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Opening Balance', 'step': '0.01'}),
             'current_balance': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Current Balance', 'step': '0.01'}),
             'credit_limit': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Credit Limit', 'step': '0.01'}),
+            'is_paid': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Notes'}),
         }
@@ -77,7 +78,7 @@ class DebtorTransactionForm(forms.ModelForm):
 class SundryCreditorForm(forms.ModelForm):
     class Meta:
         model = SundryCreditor
-        fields = ['name', 'contact_person', 'phone', 'address', 'bs_date', 'opening_balance', 'current_balance', 'is_active', 'notes']
+        fields = ['name', 'contact_person', 'phone', 'address', 'bs_date', 'opening_balance', 'current_balance', 'is_paid', 'is_active', 'notes']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Creditor Name'}),
             'contact_person': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Contact Person'}),
@@ -85,6 +86,7 @@ class SundryCreditorForm(forms.ModelForm):
             'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Address'}),
             'opening_balance': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Opening Balance', 'step': '0.01'}),
             'current_balance': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Current Balance', 'step': '0.01'}),
+            'is_paid': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Notes'}),
         }

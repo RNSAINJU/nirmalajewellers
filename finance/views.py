@@ -32,7 +32,7 @@ def finance_dashboard(request):
     pending_salaries = EmployeeSalary.objects.filter(status='pending').aggregate(Sum('total_salary'))['total_salary__sum'] or 0
     
     # Debtor metrics - calculate from transactions
-    active_debtors = SundryDebtor.objects.filter(is_active=True)
+    active_debtors = SundryDebtor.objects.filter(is_active=True, is_paid=False)
     total_debtor_balance = sum(debtor.get_calculated_balance() for debtor in active_debtors)
     total_debtors = active_debtors.count()
     
@@ -219,7 +219,7 @@ def salary_delete(request, pk):
 def debtor_list(request):
     debtors = SundryDebtor.objects.all()
     active_only = request.GET.get('active_only')
-    sort_by = request.GET.get('sort_by', 'name')  # Default sort by name
+    sort_by = request.GET.get('sort_by', 'latest')  # Default sort by latest BS date
     
     if active_only:
         debtors = debtors.filter(is_active=True)
@@ -235,6 +235,8 @@ def debtor_list(request):
         debtors = debtors.order_by('-created_at')
     elif sort_by == 'balance':
         debtors = debtors.order_by('-current_balance')
+    elif sort_by == 'latest':
+        debtors = debtors.order_by('-bs_date', '-created_at')
     else:  # Default: sort by name
         debtors = debtors.order_by('name')
     
@@ -283,6 +285,24 @@ def debtor_delete(request, pk):
 
 
 @login_required
+def debtor_mark_paid(request, pk):
+    debtor = get_object_or_404(SundryDebtor, pk=pk)
+    if request.method == 'POST':
+        debtor.is_paid = True
+        debtor.save(update_fields=['is_paid'])
+    return redirect('finance:debtor_list')
+
+
+@login_required
+def debtor_mark_unpaid(request, pk):
+    debtor = get_object_or_404(SundryDebtor, pk=pk)
+    if request.method == 'POST':
+        debtor.is_paid = False
+        debtor.save(update_fields=['is_paid'])
+    return redirect('finance:debtor_list')
+
+
+@login_required
 def debtor_detail(request, pk):
     debtor = get_object_or_404(SundryDebtor, pk=pk)
     transactions = debtor.transactions.all()
@@ -314,6 +334,31 @@ def debtor_transaction_create(request, debtor_id):
     return render(request, 'finance/debtor_transaction_form.html', {'form': form, 'debtor': debtor, 'title': 'Add Transaction'})
 
 
+@login_required
+def debtor_transaction_update(request, pk):
+    transaction = get_object_or_404(DebtorTransaction, pk=pk)
+    debtor = transaction.debtor
+    if request.method == 'POST':
+        form = DebtorTransactionForm(request.POST, instance=transaction)
+        if form.is_valid():
+            form.save()
+            return redirect('finance:debtor_detail', pk=debtor.pk)
+    else:
+        form = DebtorTransactionForm(instance=transaction)
+    return render(request, 'finance/debtor_transaction_form.html', {'form': form, 'debtor': debtor, 'title': 'Edit Transaction', 'object': transaction})
+
+
+@login_required
+def debtor_transaction_delete(request, pk):
+    transaction = get_object_or_404(DebtorTransaction, pk=pk)
+    debtor = transaction.debtor
+    if request.method == 'POST':
+        transaction.delete()
+        debtor.update_balance_from_transactions()
+        return redirect('finance:debtor_detail', pk=debtor.pk)
+    return render(request, 'finance/debtor_transaction_confirm_delete.html', {'object': transaction, 'debtor': debtor})
+
+
 # SUNDRY CREDITOR VIEWS
 @login_required
 def creditor_list(request):
@@ -321,6 +366,8 @@ def creditor_list(request):
     active_only = request.GET.get('active_only')
     if active_only:
         creditors = creditors.filter(is_active=True)
+
+    creditors = creditors.order_by('-bs_date', '-created_at')
     
     total_balance = creditors.aggregate(Sum('current_balance'))['current_balance__sum'] or 0
     
@@ -366,13 +413,35 @@ def creditor_delete(request, pk):
 
 
 @login_required
+def creditor_mark_paid(request, pk):
+    creditor = get_object_or_404(SundryCreditor, pk=pk)
+    if request.method == 'POST':
+        creditor.is_paid = True
+        creditor.save(update_fields=['is_paid'])
+    return redirect('finance:creditor_list')
+
+
+@login_required
+def creditor_mark_unpaid(request, pk):
+    creditor = get_object_or_404(SundryCreditor, pk=pk)
+    if request.method == 'POST':
+        creditor.is_paid = False
+        creditor.save(update_fields=['is_paid'])
+    return redirect('finance:creditor_list')
+
+
+@login_required
 def creditor_detail(request, pk):
     creditor = get_object_or_404(SundryCreditor, pk=pk)
     transactions = creditor.transactions.all()
     
+    creditor.update_balance_from_transactions()
+    calculated_balance = creditor.get_calculated_balance()
+
     context = {
         'creditor': creditor,
         'transactions': transactions,
+        'calculated_balance': calculated_balance,
     }
     return render(request, 'finance/creditor_detail.html', context)
 
@@ -390,6 +459,31 @@ def creditor_transaction_create(request, creditor_id):
     else:
         form = CreditorTransactionForm(initial={'creditor': creditor})
     return render(request, 'finance/creditor_transaction_form.html', {'form': form, 'creditor': creditor, 'title': 'Add Transaction'})
+
+
+@login_required
+def creditor_transaction_update(request, pk):
+    transaction = get_object_or_404(CreditorTransaction, pk=pk)
+    creditor = transaction.creditor
+    if request.method == 'POST':
+        form = CreditorTransactionForm(request.POST, instance=transaction)
+        if form.is_valid():
+            form.save()
+            return redirect('finance:creditor_detail', pk=creditor.pk)
+    else:
+        form = CreditorTransactionForm(instance=transaction)
+    return render(request, 'finance/creditor_transaction_form.html', {'form': form, 'creditor': creditor, 'title': 'Edit Transaction', 'object': transaction})
+
+
+@login_required
+def creditor_transaction_delete(request, pk):
+    transaction = get_object_or_404(CreditorTransaction, pk=pk)
+    creditor = transaction.creditor
+    if request.method == 'POST':
+        transaction.delete()
+        creditor.update_balance_from_transactions()
+        return redirect('finance:creditor_detail', pk=creditor.pk)
+    return render(request, 'finance/creditor_transaction_confirm_delete.html', {'object': transaction, 'creditor': creditor})
 
 
 # IMPORT/EXPORT HELPERS

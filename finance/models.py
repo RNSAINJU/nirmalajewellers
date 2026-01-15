@@ -101,6 +101,7 @@ class SundryDebtor(models.Model):
     opening_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     current_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     credit_limit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    is_paid = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -189,6 +190,7 @@ class SundryCreditor(models.Model):
     bs_date = NepaliDateField(blank=True, null=True)
     opening_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     current_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    is_paid = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -199,7 +201,36 @@ class SundryCreditor(models.Model):
         verbose_name_plural = "Sundry Creditors"
     
     def __str__(self):
-        return f"{self.name} - Balance: रु{self.current_balance}"
+        return f"{self.name} - Balance: रु{self.get_calculated_balance()}"
+
+    def get_calculated_balance(self):
+        """
+        Calculate current balance based on transactions.
+        Current Balance = Opening Balance + Bills/Debit Memos - Payments/Credit Memos
+        """
+        from django.db.models import Sum
+
+        balance = self.opening_balance
+
+        transactions = self.transactions.all()
+
+        if transactions.exists():
+            bill_total = transactions.filter(
+                transaction_type__in=['bill', 'debit_memo']
+            ).aggregate(Sum('amount'))['amount__sum'] or Decimal('0')
+
+            payment_total = transactions.filter(
+                transaction_type__in=['payment', 'credit_memo']
+            ).aggregate(Sum('amount'))['amount__sum'] or Decimal('0')
+
+            balance = balance + bill_total - payment_total
+
+        return balance
+
+    def update_balance_from_transactions(self):
+        """Update the current_balance field based on transaction calculations"""
+        self.current_balance = self.get_calculated_balance()
+        self.save(update_fields=['current_balance'])
 
 
 class CreditorTransaction(models.Model):
@@ -226,3 +257,8 @@ class CreditorTransaction(models.Model):
     
     def __str__(self):
         return f"{self.creditor.name} - {self.get_transaction_type_display()} - रु{self.amount}"
+
+    def save(self, *args, **kwargs):
+        """Auto-update creditor balance when transaction is saved"""
+        super().save(*args, **kwargs)
+        self.creditor.update_balance_from_transactions()
