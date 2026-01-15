@@ -214,6 +214,7 @@
                     <tr>
                         <th>Movement Type</th>
                         <th>Quantity (g)</th>
+                        <th>Rate</th>
                         <th>Reference Type</th>
                         <th>Reference ID</th>
                         <th>Notes</th>
@@ -240,6 +241,7 @@
                             {% endif %}
                         </td>
                         <td class="fw-bold">{{ movement.quantity }}</td>
+                        <td>{{ movement.rate|floatformat:2 }}</td>
                         <td>
                             {% if movement.reference_type %}
                                 <small class="text-muted">{{ movement.reference_type }}</small>

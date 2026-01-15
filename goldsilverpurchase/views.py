@@ -18,6 +18,7 @@ from decimal import Decimal
 from .forms import CustomerPurchaseForm, MetalStockForm
 from openpyxl import Workbook
 from .forms_movement import MetalStockMovementForm
+from datetime import date, datetime
 
 def D(value):
     """Convert None, empty, float, int safely to Decimal."""
@@ -131,13 +132,30 @@ def export_metalstock_xlsx(request):
     ws.append(headers)
     for stock in MetalStock.objects.all():
         base_row = [
-            stock.id, stock.metal_type, stock.stock_type.name if stock.stock_type else '', stock.purity, stock.quantity, stock.unit_cost, stock.rate_unit, stock.total_cost, stock.location, stock.remarks
+            stock.id,
+            stock.metal_type,
+            stock.stock_type.name if stock.stock_type else '',
+            stock.purity,
+            float(stock.quantity) if stock.quantity is not None else '',
+            float(stock.unit_cost) if stock.unit_cost is not None else '',
+            stock.rate_unit,
+            float(stock.total_cost) if stock.total_cost is not None else '',
+            stock.location or '',
+            stock.remarks or ''
         ]
         movements = stock.movements.all()
         if movements.exists():
             for m in movements:
                 ws.append(base_row + [
-                    m.id, m.movement_type, m.quantity, m.rate, m.reference_type, m.reference_id, m.notes, str(m.movement_date), str(m.created_at)
+                    m.id,
+                    m.movement_type,
+                    float(m.quantity) if m.quantity is not None else '',
+                    float(m.rate) if m.rate is not None else '',
+                    m.reference_type or '',
+                    m.reference_id or '',
+                    m.notes or '',
+                    str(m.movement_date) if m.movement_date else '',
+                    str(m.created_at) if m.created_at else ''
                 ])
         else:
             ws.append(base_row + ['','','','','','','','',''])
@@ -161,6 +179,7 @@ def export_metalstock_xlsx(request):
 @method_decorator(csrf_exempt, name='dispatch')
 class ImportMetalStockXLSXView(View):
     def post(self, request):
+        from datetime import date, datetime
         file = request.FILES.get('file')
         if not file:
             return HttpResponse('No file uploaded.', status=400)
@@ -170,43 +189,46 @@ class ImportMetalStockXLSXView(View):
         from django.utils.dateparse import parse_date
         stocks = {}
         rows = list(ws.iter_rows(min_row=2, values_only=True))
-        for row in rows:
-            stock_id, metal_type, stock_type_name, purity, quantity, unit_cost, rate_unit, total_cost, location, remarks, \
-            movement_id, movement_type, movement_qty, movement_rate, reference_type, reference_id, notes, movement_date, created_at = row
-            if stock_id not in stocks:
-                stock_type = MetalStockType.objects.filter(name=stock_type_name).first()
+        errors = []
+        for idx, row in enumerate(rows, start=2):
+            try:
+                stock_id, metal_type, stock_type_name, purity, quantity, unit_cost, rate_unit, total_cost, location, remarks, \
+                movement_id, movement_type, movement_qty, movement_rate, reference_type, reference_id, notes, movement_date, created_at = row
+                stock_type = MetalStockType.objects.filter(name=stock_type_name).first() if stock_type_name else None
                 stock, _ = MetalStock.objects.get_or_create(
                     id=stock_id,
                     defaults={
-                        'metal_type': metal_type,
+                        'metal_type': metal_type or '',
                         'stock_type': stock_type,
-                        'purity': purity,
+                        'purity': purity or '',
                         'quantity': Decimal(quantity or 0),
                         'unit_cost': Decimal(unit_cost or 0),
-                        'rate_unit': rate_unit,
+                        'rate_unit': rate_unit or '',
                         'total_cost': Decimal(total_cost or 0),
-                        'location': location,
-                        'remarks': remarks,
+                        'location': location or '',
+                        'remarks': remarks or '',
                     }
                 )
                 stocks[stock_id] = stock
-            else:
-                stock = stocks[stock_id]
-            # Import movement if present
-            if movement_id:
-                MetalStockMovement.objects.get_or_create(
-                    id=movement_id,
-                    defaults={
-                        'metal_stock': stock,
-                        'movement_type': movement_type,
-                        'quantity': Decimal(movement_qty or 0),
-                        'rate': Decimal(movement_rate or 0),
-                        'reference_type': reference_type,
-                        'reference_id': reference_id,
-                        'notes': notes,
-                        'movement_date': parse_date(str(movement_date)) if movement_date else None,
-                    }
-                )
+                # Import movement if present
+                if movement_id:
+                    MetalStockMovement.objects.get_or_create(
+                        id=movement_id,
+                        defaults={
+                            'metal_stock': stock,
+                            'movement_type': movement_type or '',
+                            'quantity': Decimal(movement_qty or 0),
+                            'rate': Decimal(movement_rate or 0),
+                            'reference_type': reference_type or '',
+                            'reference_id': reference_id or '',
+                            'notes': notes or '',
+                            'movement_date': parse_date(movement_date) if isinstance(movement_date, str) and movement_date else movement_date if isinstance(movement_date, (date, datetime)) else None,
+                        }
+                    )
+            except Exception as e:
+                errors.append(f"Row {idx}: {str(e)}")
+        if errors:
+            return HttpResponse('Import completed with errors:\n' + '\n'.join(errors), status=400)
         return HttpResponse('Import completed.')
 class PurchaseCreateView(CreateView):
     model = GoldSilverPurchase
@@ -1083,7 +1105,7 @@ def import_all_data(request):
                         purchase_date=to_date(purchase_date),
                         customer_name=customer_name or "",
                         location=location or "",
-                        phone_no=phone_no or "",
+                        phone_no=phone_no or "0000000000",
                         metal_type=metal_type or "gold",
                         ornament_name=ornament_name or "",
                         weight=to_decimal(weight),
