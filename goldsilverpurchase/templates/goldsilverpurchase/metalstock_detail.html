@@ -165,6 +165,10 @@
                 <div class="info-value">₹{{ metal_stock.unit_cost|floatformat:2 }}/g</div>
             </div>
             <div class="info-item">
+                <div class="info-label">Avg Unit Cost (Stock In)</div>
+                <div class="info-value">₹{{ avg_unit_cost_from_movements|floatformat:2 }}/g</div>
+            </div>
+            <div class="info-item">
                 <div class="info-label">Total Cost</div>
                 <div class="info-value">₹{{ metal_stock.total_cost|floatformat:2 }}</div>
             </div>

@@ -1622,9 +1622,19 @@ def metal_stock_detail(request, pk):
     metal_stock.quantity = total_in - total_out + total_adj
     metal_stock.save()
     movements = MetalStockMovement.objects.filter(metal_stock=metal_stock).order_by('-movement_date')
+    # Calculate average unit cost from 'in' movements
+    in_movements = movements.filter(movement_type='in')
+    total_qty = 0
+    total_cost = 0
+    for m in in_movements:
+        if m.rate and m.quantity:
+            total_qty += float(m.quantity)
+            total_cost += float(m.rate) * float(m.quantity)
+    avg_unit_cost = (total_cost / total_qty) if total_qty else 0
     context = {
         'metal_stock': metal_stock,
         'movements': movements,
+        'avg_unit_cost_from_movements': avg_unit_cost,
     }
     return render(request, 'goldsilverpurchase/metalstock_detail.html', context)
 
