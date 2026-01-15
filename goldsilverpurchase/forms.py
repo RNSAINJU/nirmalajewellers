@@ -134,19 +134,23 @@ class MetalStockForm(forms.ModelForm):
     # Custom field for movement
     add_quantity = forms.DecimalField(
         max_digits=12, decimal_places=3, required=False, label="Add Quantity (grams)",
-        widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.001', 'placeholder': 'Enter quantity to add'})
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.001', 'placeholder': 'Enter quantity to add'}),
+        initial=None
     )
     movement_notes = forms.CharField(
         required=False, label="Movement Notes",
-        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Notes for this stock movement'})
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Notes for this stock movement'}),
+        initial=None
     )
 
     def clean(self):
         cleaned = super().clean()
         unit_cost = cleaned.get('unit_cost')
         add_quantity = cleaned.get('add_quantity')
-        if add_quantity is not None and add_quantity < 0:
-            raise ValidationError("Add quantity must be zero or positive.")
-        if unit_cost and unit_cost < 0:
+        # Only validate add_quantity if provided and not blank
+        if add_quantity not in (None, ''):
+            if add_quantity < 0:
+                raise ValidationError("Add quantity must be zero or positive.")
+        if unit_cost not in (None, '') and unit_cost < 0:
             raise ValidationError("Unit cost cannot be negative.")
         return cleaned

@@ -457,12 +457,15 @@ class MetalStock(models.Model):
         help_text='Auto-calculated: Quantity × Unit Cost'
     )
 
-    # Location/Storage
+    class LocationChoices(models.TextChoices):
+        GOLD_SILVER_PURCHASE = 'GoldSilverPurchase', 'Gold/Silver Purchase'
+        CUSTOMER_PURCHASE = 'CustomerPurchase', 'Customer Purchase'
+
     location = models.CharField(
-        max_length=255,
-        blank=True,
-        null=True,
-        help_text='Storage location (e.g., Safe, Almirah, etc.)'
+        max_length=32,
+        choices=LocationChoices.choices,
+        default=LocationChoices.GOLD_SILVER_PURCHASE,
+        help_text='Source of this stock: Gold/Silver Purchase or Customer Purchase.'
     )
 
     # Remarks and notes
@@ -494,22 +497,36 @@ class MetalStock(models.Model):
         return f"{self.get_metal_type_display()} - {stock_type_display} ({self.purity})"
 
     def save(self, *args, **kwargs):
-        """Auto-calculate total cost based on rate_unit"""
+        """Set unit_cost to the average rate of 'in' MetalStockMovement, then calculate total cost."""
+        from decimal import Decimal, ROUND_HALF_UP
         # Ensure Decimal values
         if isinstance(self.quantity, (int, float)):
             self.quantity = Decimal(str(self.quantity))
-        self.unit_cost = self.unit_cost or Decimal('0.00')
 
-        # Calculate total cost based on unit_cost and rate_unit
-        # Convert unit_cost to per-gram for total_cost calculation
-        per_gram_cost = self.unit_cost
-        if self.rate_unit == '10gram':
-            per_gram_cost = (self.unit_cost or Decimal('0')) / Decimal('10')
-        elif self.rate_unit == 'tola':
-            per_gram_cost = (self.unit_cost or Decimal('0')) / Decimal('11.6643')
+        # Only calculate averages if PK exists (object is saved)
+        if self.pk:
+            in_movements = self.movements.filter(movement_type='in')
+            total_qty = Decimal('0.00')
+            total_cost = Decimal('0.00')
+            for m in in_movements:
+                if m.rate and m.quantity:
+                    total_qty += m.quantity
+                    total_cost += m.rate * m.quantity
+            if total_qty > 0:
+                avg_rate = (total_cost / total_qty).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+                self.unit_cost = avg_rate
+            else:
+                self.unit_cost = Decimal('0.00')
 
-        # Calculate total cost (quantity is in grams)
-        self.total_cost = (self.quantity * per_gram_cost).quantize(Decimal('0.01'))
+            # Calculate total cost based on unit_cost and rate_unit
+            per_gram_cost = self.unit_cost
+            if self.rate_unit == '10gram':
+                per_gram_cost = (self.unit_cost or Decimal('0')) / Decimal('10')
+            elif self.rate_unit == 'tola':
+                per_gram_cost = (self.unit_cost or Decimal('0')) / Decimal('11.6643')
+
+            # Calculate total cost (quantity is in grams)
+            self.total_cost = (self.quantity * per_gram_cost).quantize(Decimal('0.01'))
 
         super().save(*args, **kwargs)
 

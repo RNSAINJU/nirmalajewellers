@@ -97,11 +97,12 @@ class MetalStockAdmin(admin.ModelAdmin):
     inlines = [MetalStockMovementInline]
 
     def save_model(self, request, obj, form, change):
-        # Save MetalStock without changing quantity directly
+        # Always save MetalStock first to ensure PK exists
+        super().save_model(request, obj, form, change)
         add_quantity = form.cleaned_data.get('add_quantity')
         movement_notes = form.cleaned_data.get('movement_notes')
-        super().save_model(request, obj, form, change)
-        if add_quantity:
+        # Only create movement if add_quantity is positive and this is an add (not edit)
+        if add_quantity and add_quantity > 0:
             from .models import MetalStockMovement
             MetalStockMovement.objects.create(
                 metal_stock=obj,
@@ -111,7 +112,7 @@ class MetalStockAdmin(admin.ModelAdmin):
                 reference_type='Manual Add',
                 reference_id=None
             )
-            # Update MetalStock quantity
+            # Update MetalStock quantity and save again
             obj.quantity += add_quantity
             obj.save()
 

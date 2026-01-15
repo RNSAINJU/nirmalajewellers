@@ -1,11 +1,57 @@
 from django.db.models.signals import post_save, post_delete, pre_save
 from django.dispatch import receiver
 from decimal import Decimal
-from .models import GoldSilverPurchase, MetalStock, MetalStockType, CustomerPurchase
+from .models import MetalStock, MetalStockType, MetalStockMovement, GoldSilverPurchase
+
+# --- MetalStockMovement for GoldSilverPurchase (always create for 'raw') ---
+@receiver(post_save, sender=GoldSilverPurchase)
+def create_or_update_metal_stock_and_movement_for_raw(sender, instance, created, **kwargs):
+    particular = instance.particular or ''
+    if 'raw' not in particular.lower():
+        return
+    stock_type = MetalStockType.objects.filter(name='raw').first()
+    if not stock_type:
+        return
+    metal_stock, ms_created = MetalStock.objects.get_or_create(
+        metal_type=instance.metal_type,
+        purity=instance.purity or '24K',
+        stock_type=stock_type,
+        defaults={
+            'quantity': 0,
+            'unit_cost': 0,
+            'rate_unit': instance.rate_unit or 'tola',
+        }
+    )
+    if not ms_created and not metal_stock.rate_unit:
+        metal_stock.rate_unit = instance.rate_unit or 'tola'
+        metal_stock.save()
+    # Always update or create the movement for this purchase
+    MetalStockMovement.objects.update_or_create(
+        metal_stock=metal_stock,
+        reference_type='GoldSilverPurchase',
+        reference_id=instance.bill_no,
+        defaults={
+            'movement_type': 'in',
+            'quantity': instance.quantity,
+            'rate': instance.rate,
+            'notes': instance.remarks,
+            'movement_date': instance.bill_date
+        }
+    )
+    # Immediately recalculate MetalStock
+    metal_stock.save()
+from .models import GoldSilverPurchase, MetalStock, MetalStockType, CustomerPurchase, MetalStockMovement
+
+
+# Ensure all signal decorators are defined before use
+
 
 
 # Store CustomerPurchase original values to detect changes
 _CUSTOMER_PURCHASE_CACHE = {}
+
+# Store GoldSilverPurchase original values to detect changes
+_PURCHASE_CACHE = {}
 
 
 @receiver(pre_save, sender=CustomerPurchase)
@@ -27,22 +73,19 @@ def cache_customer_purchase_values(sender, instance, **kwargs):
 @receiver(post_save, sender=CustomerPurchase)
 def add_refined_weight_to_metal_stock(sender, instance, created, **kwargs):
     """
-    When a CustomerPurchase is saved, automatically add the refined weight to MetalStock
-    with metal_type, stock_type='refined', purity='24K', quantity=refined_weight,
-    rate_unit, and unit_cost=rate.
+    On save: update or create MetalStockMovement for refined stock.
+    On edit: update the movement.
+    On delete: handled separately.
     """
     try:
-        # Get or create refined stock type
         refined_stock_type, _ = MetalStockType.objects.get_or_create(
             name=MetalStockType.StockTypeChoices.REFINED,
             defaults={'description': 'Refined metal stock'}
         )
-        
-        # Get or create MetalStock for refined metal
-        metal_stock, created_stock = MetalStock.objects.get_or_create(
+        metal_stock, _ = MetalStock.objects.get_or_create(
             metal_type=instance.metal_type,
             stock_type=refined_stock_type,
-            purity=MetalStock.Purity.TWENTYFOURKARAT,  # Always 24K
+            purity=MetalStock.Purity.TWENTYFOURKARAT,
             defaults={
                 'quantity': Decimal('0.000'),
                 'unit_cost': Decimal('0.00'),
@@ -50,65 +93,26 @@ def add_refined_weight_to_metal_stock(sender, instance, created, **kwargs):
                 'total_cost': Decimal('0.00'),
             }
         )
-        
-        # Update rate_unit if needed
         if metal_stock.rate_unit != instance.rate_unit:
             metal_stock.rate_unit = instance.rate_unit
-        
-        if created:
-            # NEW PURCHASE: add the refined weight
-            old_quantity = metal_stock.quantity
-            metal_stock.quantity = (metal_stock.quantity + instance.refined_weight).quantize(Decimal('0.001'))
-            
-            # Calculate new unit cost based on weighted average
-            old_total = metal_stock.total_cost or Decimal('0.00')
-            purchase_contribution = instance.refined_weight * instance.rate
-            new_total = old_total + purchase_contribution
-            metal_stock.total_cost = new_total.quantize(Decimal('0.01'))
-            
-            if metal_stock.quantity > 0:
-                metal_stock.unit_cost = (new_total / metal_stock.quantity).quantize(Decimal('0.01'))
-        else:
-            # UPDATED PURCHASE: remove old value, add new value
-            cache = _CUSTOMER_PURCHASE_CACHE.get(instance.pk)
-            
-            if cache:
-                old_refined_weight = cache['refined_weight']
-                old_rate = cache['rate']
-                
-                # Remove old contribution
-                metal_stock.quantity = (metal_stock.quantity - old_refined_weight).quantize(Decimal('0.001'))
-                
-                # Remove old cost contribution
-                old_total = metal_stock.total_cost or Decimal('0.00')
-                old_cost = old_refined_weight * old_rate
-                new_total = old_total - old_cost
-                
-                # Add new contribution
-                metal_stock.quantity = (metal_stock.quantity + instance.refined_weight).quantize(Decimal('0.001'))
-                
-                # Add new cost contribution
-                new_cost = instance.refined_weight * instance.rate
-                new_total = new_total + new_cost
-                metal_stock.total_cost = new_total.quantize(Decimal('0.01'))
-                
-                if metal_stock.quantity > 0:
-                    metal_stock.unit_cost = (new_total / metal_stock.quantity).quantize(Decimal('0.01'))
-                else:
-                    metal_stock.unit_cost = Decimal('0.00')
-                
-                # Clean up cache
-                if instance.pk in _CUSTOMER_PURCHASE_CACHE:
-                    del _CUSTOMER_PURCHASE_CACHE[instance.pk]
-        
-        # Prevent negative quantity
-        if metal_stock.quantity < 0:
-            metal_stock.quantity = Decimal('0.000')
-        
+            metal_stock.save()
+        notes = f"{instance.customer_name or ''}-{instance.ornament_name or ''}"
+        movement, _ = MetalStockMovement.objects.update_or_create(
+            metal_stock=metal_stock,
+            reference_type='CustomerPurchase',
+            reference_id=str(instance.pk),
+            defaults={
+                'movement_type': 'in',
+                'quantity': instance.refined_weight,
+                'rate': instance.rate,
+                'notes': notes,
+                'movement_date': instance.purchase_date or instance.created_at,
+            }
+        )
+        # Immediately recalculate MetalStock
         metal_stock.save()
-        
     except Exception as e:
-        print(f"[ERROR] Error adding refined weight to MetalStock for customer purchase {instance.sn}: {str(e)}")
+        print(f"[ERROR] Error adding/updating refined weight to MetalStock for customer purchase {getattr(instance, 'sn', instance.pk)}: {str(e)}")
         import traceback
         traceback.print_exc()
 
@@ -116,60 +120,25 @@ def add_refined_weight_to_metal_stock(sender, instance, created, **kwargs):
 @receiver(post_delete, sender=CustomerPurchase)
 def remove_refined_weight_from_metal_stock(sender, instance, **kwargs):
     """
-    When a CustomerPurchase is deleted, remove the refined weight from MetalStock
+    When a CustomerPurchase is deleted, remove the related MetalStockMovement and recalculate MetalStock.
     """
     try:
-        print(f"[DEBUG] CustomerPurchase DELETE signal triggered for {instance.sn}")
-        print(f"[DEBUG] Metal type: {instance.metal_type}, Refined weight: {instance.refined_weight}")
-        
-        # Map metal types from CustomerPurchase to MetalStock
-        metal_type_map = {
-            'gold': MetalStock.MetalType.GOLD,
-            'silver': MetalStock.MetalType.SILVER,
-            'diamond': 'diamond',
-        }
-        
-        # Get the metal type for this purchase
-        purchase_metal_type = metal_type_map.get(instance.metal_type)
-        
-        # Skip if metal type is not in MetalStock (e.g., diamond)
-        if purchase_metal_type not in [MetalStock.MetalType.GOLD, MetalStock.MetalType.SILVER]:
-            return
-        
-        # Try to find the MetalStock record
-        try:
-            refined_stock_type = MetalStockType.objects.get(name=MetalStockType.StockTypeChoices.REFINED)
-            metal_stock = MetalStock.objects.get(
-                metal_type=purchase_metal_type,
-                stock_type=refined_stock_type,
-                purity=MetalStock.Purity.TWENTYFOURKARAT,
-            )
-            
-            # Remove the refined weight from quantity
-            print(f"[DEBUG] Removing refined weight {instance.refined_weight} from stock")
-            metal_stock.quantity = (metal_stock.quantity - instance.refined_weight).quantize(Decimal('0.001'))
-            
-            # Remove cost contribution
-            purchase_cost = instance.refined_weight * instance.rate
-            old_total = metal_stock.total_cost or Decimal('0.00')
-            new_total = (old_total - purchase_cost).quantize(Decimal('0.01'))
-            metal_stock.total_cost = new_total
-            
-            # Recalculate unit cost
-            if metal_stock.quantity > 0:
-                metal_stock.unit_cost = (new_total / metal_stock.quantity).quantize(Decimal('0.01'))
-            else:
-                metal_stock.unit_cost = Decimal('0.00')
-                metal_stock.quantity = Decimal('0.000')
-            
-            metal_stock.save()
-            print(f"[DEBUG] MetalStock updated after delete: quantity={metal_stock.quantity}, unit_cost={metal_stock.unit_cost}")
-            
-        except MetalStock.DoesNotExist:
-            print(f"[DEBUG] MetalStock not found for {instance.metal_type}")
-        
+        refined_stock_type = MetalStockType.objects.get(name=MetalStockType.StockTypeChoices.REFINED)
+        metal_stock = MetalStock.objects.get(
+            metal_type=instance.metal_type,
+            stock_type=refined_stock_type,
+            purity=MetalStock.Purity.TWENTYFOURKARAT,
+        )
+        # Delete the related movement
+        MetalStockMovement.objects.filter(
+            metal_stock=metal_stock,
+            reference_type='CustomerPurchase',
+            reference_id=str(instance.pk)
+        ).delete()
+        # Recalculate MetalStock (unit_cost, total_cost)
+        metal_stock.save()
     except Exception as e:
-        print(f"[ERROR] Error removing refined weight from MetalStock for customer purchase {instance.sn}: {str(e)}")
+        print(f"[ERROR] Error removing refined weight from MetalStock for customer purchase {getattr(instance, 'sn', instance.pk)}: {str(e)}")
         import traceback
         traceback.print_exc()
 

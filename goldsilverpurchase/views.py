@@ -578,7 +578,7 @@ def import_excel(request):
                 discount=to_decimal(discount)
 
                 # =============== 5️⃣ Create Purchase ===============
-                GoldSilverPurchase.objects.create(
+                purchase = GoldSilverPurchase.objects.create(
                     bill_no=str(bill_no),
                     bill_date=bill_date,
                     party=party,
@@ -596,6 +596,41 @@ def import_excel(request):
                     remarks=remarks
                 )
 
+                # --- MetalStock logic ---
+                # Determine stock_type: 'raw' if 'raw' in particular, else error
+                stock_type_name = 'raw' if particular and 'raw' in particular.lower() else None
+                if not stock_type_name:
+                    messages.error(request, f"Purchase {purchase.bill_no}: Only 'raw' gold is supported for stock. Add 'raw' in particular.")
+                    continue
+                stock_type = MetalStockType.objects.filter(name=stock_type_name).first()
+                if not stock_type:
+                    stock_type = MetalStockType.objects.create(name=stock_type_name)
+                # Always create MetalStock if not exists for metal_type, purity, and stock_type
+                metal_stock, created = MetalStock.objects.get_or_create(
+                    metal_type=metal_type,
+                    purity=purity or '24K',
+                    stock_type=stock_type,
+                    defaults={
+                        'quantity': 0,
+                        'unit_cost': 0,
+                        'rate_unit': rate_unit or 'tola',
+                    }
+                )
+                # If it exists, ensure rate_unit is set (for legacy rows)
+                if not created and not metal_stock.rate_unit:
+                    metal_stock.rate_unit = rate_unit or 'tola'
+                    metal_stock.save()
+                # --- MetalStockMovement logic ---
+                MetalStockMovement.objects.create(
+                    metal_stock=metal_stock,
+                    movement_type='in',
+                    quantity=qty,
+                    rate=rate,
+                    reference_type='GoldSilverPurchase',
+                    reference_id=purchase.bill_no,
+                    notes=remarks,
+                    movement_date=bill_date
+                )
                 imported += 1
 
             messages.success(
@@ -1690,6 +1725,24 @@ class MetalStockCreateView(CreateView):
     success_url = reverse_lazy('gsp:metal_stock_list')
 
     def form_valid(self, form):
+        # Always save MetalStock first to get a primary key
+        self.object = form.save(commit=False)
+        self.object.save()  # Ensure PK exists
+        add_quantity = form.cleaned_data.get('add_quantity')
+        movement_notes = form.cleaned_data.get('movement_notes')
+        if add_quantity not in (None, '') and add_quantity > 0:
+            # Update quantity and save again
+            self.object.quantity += add_quantity
+            self.object.save()
+            MetalStockMovement.objects.create(
+                metal_stock=self.object,
+                movement_type='in',
+                quantity=add_quantity,
+                rate=self.object.unit_cost,
+                reference_type='Manual',
+                reference_id=None,
+                notes=movement_notes or 'Initial stock added on creation.'
+            )
         messages.success(self.request, f"Metal stock for {form.cleaned_data['metal_type']} created successfully!")
         return super().form_valid(form)
 
