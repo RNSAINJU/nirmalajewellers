@@ -17,23 +17,23 @@
           <div class="mb-3">
             <label class="form-label mb-1">
               Purchase Date (BS)
-            </label>
+                  Amount
             <input type="text" name="purchase_date" id="id_purchase_date" class="form-control form-control-sm {% if form.purchase_date.errors %}is-invalid{% endif %}" placeholder="YYYY-MM-DD (e.g., 2082-09-30)" value="{{ form.purchase_date.value|default:'' }}">
-            {% if form.purchase_date.errors %}<div class="text-danger small mt-1">{{ form.purchase_date.errors|join:', ' }}</div>{% endif %}
+                <input type="number" step="0.01" id="id_amount" class="form-control form-control-sm bg-light" value="{{ form.amount.value|default_if_none:'0.00' }}" placeholder="Auto-calculated" readonly>
             <small class="text-muted">Optional: Nepali date in BS format</small>
           </div>
 
           <div class="mb-3">
             <label class="form-label mb-1">
               Customer Name <span class="text-danger fw-bold">*</span>
-            </label>
+                <input type="number" step="0.001" id="id_profit_weight" class="form-control form-control-sm bg-light" value="{{ form.profit_weight.value|default_if_none:'0.000' }}" placeholder="Auto-calculated" readonly>
             <input type="text" name="customer_name" class="form-control form-control-sm {% if form.customer_name.errors %}is-invalid{% endif %}" value="{{ form.customer_name.value|default:'' }}" placeholder="Full name" required>
             {% if form.customer_name.errors %}<div class="text-danger small mt-1">{{ form.customer_name.errors }}</div>{% endif %}
           </div>
 
           <div class="mb-3">
             <label class="form-label mb-1">
-              Metal Type <span class="text-danger fw-bold">*</span>
+                <input type="number" step="0.01" id="id_profit" class="form-control form-control-sm bg-light" value="{{ form.profit.value|default_if_none:'0.00' }}" placeholder="Auto-calculated" readonly>
             </label>
             <select name="metal_type" class="form-select form-select-sm {% if form.metal_type.errors %}is-invalid{% endif %}" required>
               <option value="">-- Select Metal Type --</option>
@@ -41,7 +41,7 @@
               <option value="{{ key }}" {% if form.metal_type.value == key %}selected{% endif %}>{{ value }}</option>
               {% endfor %}
             </select>
-            {% if form.metal_type.errors %}<div class="text-danger small mt-1">{{ form.metal_type.errors }}</div>{% endif %}
+                <input type="number" step="0.001" name="final_weight" id="id_final_weight" class="form-control form-control-sm bg-light {% if form.final_weight.errors %}is-invalid{% endif %}" value="{{ form.final_weight.value|default_if_none:'0.000' }}" placeholder="Auto-calculated" readonly>
           </div>
 
           <div class="row g-3">
@@ -135,21 +135,21 @@
               <label class="form-label mb-1">
                 Amount
               </label>
-              <input type="number" step="0.01" id="id_amount" class="form-control form-control-sm bg-light" value="0.00" placeholder="Auto-calculated" readonly>
+              <input type="number" step="0.01" name="amount" id="id_amount" class="form-control form-control-sm bg-light" value="{{ form.amount.value|default_if_none:'0.00' }}" placeholder="Auto-calculated" readonly>
               <small class="text-muted">(Refined Weight ÷ unit_conversion) × Rate (auto-calculated)</small>
             </div>
             <div class="col-md-4">
               <label class="form-label mb-1">
                 Profit Weight (तोल)
               </label>
-              <input type="number" step="0.001" id="id_profit_weight" class="form-control form-control-sm bg-light" value="0.000" placeholder="Auto-calculated" readonly>
+              <input type="number" step="0.001" name="profit_weight" id="id_profit_weight" class="form-control form-control-sm bg-light" value="{{ form.profit_weight.value|default_if_none:'0.000' }}" placeholder="Auto-calculated" readonly>
               <small class="text-muted">Refined Weight - Final Weight (auto-calculated)</small>
             </div>
             <div class="col-md-4">
               <label class="form-label mb-1">
                 Profit/Loss
               </label>
-              <input type="number" step="0.01" id="id_profit" class="form-control form-control-sm bg-light" value="0.00" placeholder="Auto-calculated" readonly>
+              <input type="number" step="0.01" name="profit" id="id_profit" class="form-control form-control-sm bg-light" value="{{ form.profit.value|default_if_none:'0.00' }}" placeholder="Auto-calculated" readonly>
               <small class="text-muted">(Profit Weight ÷ unit_conversion) × Rate (auto-calculated)</small>
             </div>
           </div>

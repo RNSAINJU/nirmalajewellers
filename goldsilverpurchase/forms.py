@@ -49,7 +49,8 @@ class CustomerPurchaseForm(forms.ModelForm):
         model = CustomerPurchase
         fields = [
             'purchase_date', 'customer_name', 'location',
-            'phone_no', 'metal_type', 'ornament_name', 'weight', 'percentage', 'refined_weight', 'rate', 'rate_unit'
+            'phone_no', 'metal_type', 'ornament_name', 'weight', 'percentage', 'refined_weight', 'rate', 'rate_unit',
+            'final_weight', 'amount', 'profit_weight', 'profit'
         ]
     
     def clean_purchase_date(self):
@@ -70,21 +71,23 @@ class CustomerPurchaseForm(forms.ModelForm):
         refined_weight = cleaned.get('refined_weight') or Decimal('0')
         rate = cleaned.get('rate') or Decimal('0')
         rate_unit = cleaned.get('rate_unit') or 'tola'
-        amount = cleaned.get('amount')
 
-        # Calculate final_weight: weight - (weight * percentage / 100)
-        final_weight = weight - (weight * percentage / Decimal('100'))
-        cleaned['final_weight'] = final_weight
+        # Only calculate final_weight if not already set (i.e., on create)
+        if not cleaned.get('final_weight'):
+            final_weight = weight - (weight * percentage / Decimal('100'))
+            cleaned['final_weight'] = final_weight
+        else:
+            final_weight = cleaned.get('final_weight')
 
-        if amount in (None, ''):
-            # Calculate amount based on rate_unit
+        # Only calculate amount if not already set (i.e., on create)
+        if not cleaned.get('amount'):
             TOLA_TO_GRAM = Decimal('11.6643')
             if rate_unit == 'gram':
-                calc_amount = refined_weight * rate
+                calc_amount = final_weight * rate
             elif rate_unit == '10gram':
-                calc_amount = (refined_weight / Decimal('10')) * rate
+                calc_amount = (final_weight / Decimal('10')) * rate
             elif rate_unit == 'tola':
-                calc_amount = (refined_weight / TOLA_TO_GRAM) * rate
+                calc_amount = (final_weight / TOLA_TO_GRAM) * rate
             else:
                 calc_amount = Decimal('0.00')
             cleaned['amount'] = calc_amount.quantize(Decimal('0.01')) if calc_amount else Decimal('0.00')

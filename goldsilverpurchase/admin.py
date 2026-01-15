@@ -36,7 +36,16 @@ class CustomerPurchaseAdmin(admin.ModelAdmin):
     list_display = ('sn', 'customer_name', 'metal_type', 'ornament_name', 'weight', 'final_weight', 'refined_weight', 'profit_weight', 'amount', 'profit', 'purchase_date')
     list_filter = ('metal_type', 'purchase_date', 'customer_name')
     search_fields = ('sn', 'customer_name', 'phone_no', 'location')
-    readonly_fields = ('sn', 'final_weight', 'profit_weight', 'amount', 'profit', 'created_at', 'updated_at')
+    readonly_fields = (
+        'sn',
+        'final_weight',
+        'profit_weight',
+        'amount',
+        'profit',
+        'created_at',
+        'updated_at',
+        'saved_calculation_summary',
+    )
     
     fieldsets = (
         ('Basic Information', {
@@ -56,6 +65,18 @@ class CustomerPurchaseAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+    def saved_calculation_summary(self, obj):
+        if not obj:
+            return ""
+        return (
+            f"<b>Final Weight:</b> {obj.final_weight}<br>"
+            f"<b>Amount:</b> {obj.amount}<br>"
+            f"<b>Profit Weight:</b> {obj.profit_weight}<br>"
+            f"<b>Profit/Loss:</b> {obj.profit}"
+        )
+    saved_calculation_summary.short_description = "Saved Calculation Summary"
+    saved_calculation_summary.allow_tags = True
 
 
 @admin.register(MetalStockType)

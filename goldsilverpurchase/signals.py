@@ -38,7 +38,8 @@ def create_or_update_metal_stock_and_movement_for_raw(sender, instance, created,
             'movement_date': instance.bill_date
         }
     )
-    # Immediately recalculate MetalStock
+    # Always recalculate MetalStock after movement update/create
+    metal_stock.refresh_from_db()
     metal_stock.save()
 from .models import GoldSilverPurchase, MetalStock, MetalStockType, CustomerPurchase, MetalStockMovement
 
@@ -109,7 +110,8 @@ def add_refined_weight_to_metal_stock(sender, instance, created, **kwargs):
                 'movement_date': instance.purchase_date or instance.created_at,
             }
         )
-        # Immediately recalculate MetalStock
+        # Always recalculate MetalStock after movement update/create
+        metal_stock.refresh_from_db()
         metal_stock.save()
     except Exception as e:
         print(f"[ERROR] Error adding/updating refined weight to MetalStock for customer purchase {getattr(instance, 'sn', instance.pk)}: {str(e)}")
@@ -135,7 +137,8 @@ def remove_refined_weight_from_metal_stock(sender, instance, **kwargs):
             reference_type='CustomerPurchase',
             reference_id=str(instance.pk)
         ).delete()
-        # Recalculate MetalStock (unit_cost, total_cost)
+        # Always recalculate MetalStock after movement delete
+        metal_stock.refresh_from_db()
         metal_stock.save()
     except Exception as e:
         print(f"[ERROR] Error removing refined weight from MetalStock for customer purchase {getattr(instance, 'sn', instance.pk)}: {str(e)}")
@@ -423,20 +426,18 @@ def update_metal_stock_on_purchase_delete(sender, instance, **kwargs):
         
         if metal_stock:
             metal_stock.quantity -= instance.quantity
-            
+            # Always recalculate MetalStock after quantity change
             if metal_stock.quantity <= 0:
-                # Delete if no quantity left
+                metal_stock.save()
                 metal_stock.delete()
             else:
                 # Adjust total cost proportionally
                 if metal_stock.quantity > 0:
-                    # Recalculate by removing the deleted purchase's contribution
                     old_total = metal_stock.total_cost or Decimal('0.00')
                     purchase_total = instance.amount or (instance.quantity * instance.rate)
                     new_total = max(Decimal('0.00'), old_total - purchase_total)
                     metal_stock.unit_cost = new_total / metal_stock.quantity if metal_stock.quantity > 0 else Decimal('0.00')
                     metal_stock.total_cost = new_total
-                
                 metal_stock.save()
     
     except Exception as e:

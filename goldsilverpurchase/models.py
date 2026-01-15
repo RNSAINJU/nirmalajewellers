@@ -26,6 +26,11 @@ class Party(models.Model):
 
 
 class GoldSilverPurchase(models.Model):
+    def delete(self, *args, **kwargs):
+        from .models import MetalStockMovement
+        # Delete all MetalStockMovements referencing this purchase
+        MetalStockMovement.objects.filter(reference_type='GoldSilverPurchase', reference_id=self.bill_no).delete()
+        super().delete(*args, **kwargs)
 
     RATE_UNIT_CHOICES = [
         ('gram', 'Per Gram'),
@@ -225,6 +230,23 @@ class GoldSilverPurchase(models.Model):
 
 
 class CustomerPurchase(models.Model):
+    def delete(self, *args, **kwargs):
+        from .models import MetalStockMovement
+        # Delete all MetalStockMovements referencing this purchase
+        MetalStockMovement.objects.filter(reference_type='CustomerPurchase', reference_id=self.sn).delete()
+        super().delete(*args, **kwargs)
+
+    def get_recent_calculations(self):
+        """
+        Returns a dict of the most recent calculated values for display in admin or forms.
+        """
+        return {
+            'Final Weight': self.final_weight,
+            'Amount': self.amount,
+            'Profit Weight': self.profit_weight,
+            'Profit/Loss': self.profit,
+        }
+
     class MetalType(models.TextChoices):
         GOLD = 'gold', 'Gold'
         SILVER = 'silver', 'Silver'
