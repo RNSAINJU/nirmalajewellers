@@ -9,6 +9,8 @@ from .views import (
     data_settings, export_all_data,
     MetalStockListView, metal_stock_detail,
     MetalStockCreateView, MetalStockUpdateView, MetalStockDeleteView,
+    MetalStockMovementCreateView, MetalStockMovementUpdateView, MetalStockMovementDeleteView,
+    export_metalstock_xlsx, ImportMetalStockXLSXView,
 )
 
 app_name = 'gsp'
@@ -35,4 +37,9 @@ urlpatterns = [
     path('metal-stock/<int:pk>/', metal_stock_detail, name='metal_stock_detail'),
     path('metal-stock/<int:pk>/edit/', MetalStockUpdateView.as_view(), name='metal_stock_update'),
     path('metal-stock/<int:pk>/delete/', MetalStockDeleteView.as_view(), name='metal_stock_delete'),
+    path('metal-stock/<int:stock_pk>/add-transaction/', MetalStockMovementCreateView.as_view(), name='metal_stock_add_transaction'),
+    path('metal-stock/movement/<int:pk>/edit/', MetalStockMovementUpdateView.as_view(), name='metal_stock_movement_edit'),
+    path('metal-stock/movement/<int:pk>/delete/', MetalStockMovementDeleteView.as_view(), name='metal_stock_movement_delete'),
+    path('metal-stock/export-xlsx/', export_metalstock_xlsx, name='metal_stock_export_xlsx'),
+    path('metal-stock/import-xlsx/', ImportMetalStockXLSXView.as_view(), name='metal_stock_import_xlsx'),
 ]

@@ -17,6 +17,7 @@ from django.contrib import messages
 from decimal import Decimal
 from .forms import CustomerPurchaseForm, MetalStockForm
 from openpyxl import Workbook
+from .forms_movement import MetalStockMovementForm
 
 def D(value):
     """Convert None, empty, float, int safely to Decimal."""
@@ -112,8 +113,101 @@ class PartyCreateView(CreateView):
     fields = ['party_name', 'panno']
     template_name = 'goldsilverpurchase/party_form.html'
     success_url = reverse_lazy('gsp:purchaselist')
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.views import View
+import openpyxl
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
 
+def export_metalstock_xlsx(request):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'MetalStock'
+    headers = [
+        'StockID', 'MetalType', 'StockType', 'Purity', 'Quantity', 'UnitCost', 'RateUnit', 'TotalCost', 'Location', 'Remarks',
+        'MovementID', 'MovementType', 'MovementQty', 'MovementRate', 'ReferenceType', 'ReferenceID', 'Notes', 'MovementDate', 'CreatedAt'
+    ]
+    ws.append(headers)
+    for stock in MetalStock.objects.all():
+        base_row = [
+            stock.id, stock.metal_type, stock.stock_type.name if stock.stock_type else '', stock.purity, stock.quantity, stock.unit_cost, stock.rate_unit, stock.total_cost, stock.location, stock.remarks
+        ]
+        movements = stock.movements.all()
+        if movements.exists():
+            for m in movements:
+                ws.append(base_row + [
+                    m.id, m.movement_type, m.quantity, m.rate, m.reference_type, m.reference_id, m.notes, str(m.movement_date), str(m.created_at)
+                ])
+        else:
+            ws.append(base_row + ['','','','','','','','',''])
+    # Auto-size columns
+    for col in ws.columns:
+        max_length = 0
+        column = col[0].column_letter
+        for cell in col:
+            try:
+                if cell.value:
+                    max_length = max(max_length, len(str(cell.value)))
+            except:
+                pass
+        ws.column_dimensions[column].width = max_length + 2
+    from io import BytesIO
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=metalstock_export.xlsx'
+    wb.save(response)
+    return response
 
+@method_decorator(csrf_exempt, name='dispatch')
+class ImportMetalStockXLSXView(View):
+    def post(self, request):
+        file = request.FILES.get('file')
+        if not file:
+            return HttpResponse('No file uploaded.', status=400)
+        wb = openpyxl.load_workbook(file)
+        ws = wb.active
+        from decimal import Decimal
+        from django.utils.dateparse import parse_date
+        stocks = {}
+        rows = list(ws.iter_rows(min_row=2, values_only=True))
+        for row in rows:
+            stock_id, metal_type, stock_type_name, purity, quantity, unit_cost, rate_unit, total_cost, location, remarks, \
+            movement_id, movement_type, movement_qty, movement_rate, reference_type, reference_id, notes, movement_date, created_at = row
+            if stock_id not in stocks:
+                stock_type = MetalStockType.objects.filter(name=stock_type_name).first()
+                stock, _ = MetalStock.objects.get_or_create(
+                    id=stock_id,
+                    defaults={
+                        'metal_type': metal_type,
+                        'stock_type': stock_type,
+                        'purity': purity,
+                        'quantity': Decimal(quantity or 0),
+                        'unit_cost': Decimal(unit_cost or 0),
+                        'rate_unit': rate_unit,
+                        'total_cost': Decimal(total_cost or 0),
+                        'location': location,
+                        'remarks': remarks,
+                    }
+                )
+                stocks[stock_id] = stock
+            else:
+                stock = stocks[stock_id]
+            # Import movement if present
+            if movement_id:
+                MetalStockMovement.objects.get_or_create(
+                    id=movement_id,
+                    defaults={
+                        'metal_stock': stock,
+                        'movement_type': movement_type,
+                        'quantity': Decimal(movement_qty or 0),
+                        'rate': Decimal(movement_rate or 0),
+                        'reference_type': reference_type,
+                        'reference_id': reference_id,
+                        'notes': notes,
+                        'movement_date': parse_date(str(movement_date)) if movement_date else None,
+                    }
+                )
+        return HttpResponse('Import completed.')
 class PurchaseCreateView(CreateView):
     model = GoldSilverPurchase
     fields = [
@@ -1518,9 +1612,16 @@ class MetalStockListView(ListView):
 
 def metal_stock_detail(request, pk):
     """View stock details and its movement history"""
+    # Always re-fetch the MetalStock from the DB to get the latest quantity
+    from django.db.models import Sum
     metal_stock = MetalStock.objects.get(pk=pk)
+    # Recalculate quantity from all movements (defensive, in case of any desync)
+    total_in = metal_stock.movements.filter(movement_type='in').aggregate(total=Sum('quantity'))['total'] or 0
+    total_out = metal_stock.movements.filter(movement_type='out').aggregate(total=Sum('quantity'))['total'] or 0
+    total_adj = metal_stock.movements.filter(movement_type='adjustment').aggregate(total=Sum('quantity'))['total'] or 0
+    metal_stock.quantity = total_in - total_out + total_adj
+    metal_stock.save()
     movements = MetalStockMovement.objects.filter(metal_stock=metal_stock).order_by('-movement_date')
-    
     context = {
         'metal_stock': metal_stock,
         'movements': movements,
@@ -1575,3 +1676,100 @@ class MetalStockDeleteView(DeleteView):
         metal_type = metal_stock.get_metal_type_display()
         messages.success(request, f"Metal stock for {metal_type} has been deleted successfully!")
         return super().delete(request, *args, **kwargs)
+
+from django.urls import reverse
+from django.views.generic.edit import CreateView, UpdateView, DeleteView
+from .models import MetalStockMovement
+from .forms import MetalStockForm
+
+class MetalStockMovementCreateView(CreateView):
+    model = MetalStockMovement
+    form_class = MetalStockMovementForm
+    template_name = 'goldsilverpurchase/metalstockmovement_form.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.metal_stock = MetalStock.objects.get(pk=kwargs['stock_pk'])
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        form.instance.metal_stock = self.metal_stock
+        response = super().form_valid(form)
+        # Update MetalStock quantity
+        if form.instance.movement_type == 'in':
+            self.metal_stock.quantity += form.instance.quantity
+        elif form.instance.movement_type == 'out':
+            self.metal_stock.quantity -= form.instance.quantity
+        self.metal_stock.save()
+        return response
+
+    def get_success_url(self):
+        return reverse('gsp:metal_stock_list')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['metal_stock'] = self.metal_stock
+        return context
+
+
+class MetalStockMovementUpdateView(UpdateView):
+    model = MetalStockMovement
+    form_class = MetalStockMovementForm
+    template_name = 'goldsilverpurchase/metalstockmovement_form.html'
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        # After saving, recalculate the stock quantity from all movements
+        metal_stock = self.object.metal_stock
+        total_in = metal_stock.movements.filter(movement_type='in').aggregate(total=Sum('quantity'))['total'] or 0
+        total_out = metal_stock.movements.filter(movement_type='out').aggregate(total=Sum('quantity'))['total'] or 0
+        total_adj = metal_stock.movements.filter(movement_type='adjustment').aggregate(total=Sum('quantity'))['total'] or 0
+        metal_stock.quantity = total_in - total_out + total_adj
+        metal_stock.save()
+        return response
+
+    def get_success_url(self):
+        return reverse('gsp:metal_stock_detail', kwargs={'pk': self.object.metal_stock_id})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['metal_stock'] = self.object.metal_stock
+        context['is_edit'] = True
+        return context
+
+
+class MetalStockMovementDeleteView(DeleteView):
+    model = MetalStockMovement
+    template_name = 'goldsilverpurchase/metalstockmovement_confirm_delete.html'
+
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        metal_stock_id = self.object.metal_stock_id
+        response = super().delete(request, *args, **kwargs)
+        # After deletion, recalculate the stock quantity from all remaining movements
+        from .models import MetalStock
+        from django.db.models import Sum
+        metal_stock = MetalStock.objects.get(pk=metal_stock_id)
+        metal_stock_id = self.get_object().metal_stock_id
+        response = super().delete(request, *args, **kwargs)
+        from .models import MetalStock
+        from django.db.models import Sum
+        metal_stock = MetalStock.objects.get(pk=metal_stock_id)
+        movements = metal_stock.movements.all()
+        if not movements.exists():
+            metal_stock.quantity = 0
+        else:
+            total_in = movements.filter(movement_type='in').aggregate(total=Sum('quantity'))['total'] or 0
+            total_out = movements.filter(movement_type='out').aggregate(total=Sum('quantity'))['total'] or 0
+            total_adj = movements.filter(movement_type='adjustment').aggregate(total=Sum('quantity'))['total'] or 0
+            metal_stock.quantity = total_in - total_out + total_adj
+        metal_stock.save()
+        from django.urls import reverse
+        return redirect(reverse('gsp:metal_stock_detail', kwargs={'pk': metal_stock_id}))
+
+    def get_success_url(self):
+        return reverse('gsp:metal_stock_detail', kwargs={'pk': self.object.metal_stock_id})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['metal_stock'] = self.object.metal_stock
+        return context

@@ -541,6 +541,15 @@ class MetalStock(models.Model):
 
 class MetalStockMovement(models.Model):
     """Model to track all movements (additions/deductions) of metal stock"""
+    rate = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        default=Decimal('0.00'),
+        help_text='Rate for this transaction (per selected unit)',
+        blank=True,
+        null=True
+    )
     class MovementType(models.TextChoices):
         IN = 'in', 'Stock In'
         OUT = 'out', 'Stock Out'

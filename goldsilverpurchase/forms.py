@@ -99,11 +99,11 @@ class MetalStockForm(forms.ModelForm):
         required=True
     )
 
+    # Remove quantity from form fields for manual add, use movement instead
     class Meta:
         model = MetalStock
         fields = [
-            'metal_type', 'stock_type', 'purity', 'rate_unit', 'quantity', 
-            'unit_cost', 'location', 'remarks'
+            'metal_type', 'stock_type', 'purity', 'rate_unit', 'unit_cost', 'location', 'remarks'
         ]
         widgets = {
             'metal_type': forms.Select(attrs={
@@ -114,11 +114,6 @@ class MetalStockForm(forms.ModelForm):
             }),
             'rate_unit': forms.Select(attrs={
                 'class': 'form-select',
-            }),
-            'quantity': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'step': '0.001',
-                'placeholder': 'Enter quantity in grams'
             }),
             'unit_cost': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -136,15 +131,22 @@ class MetalStockForm(forms.ModelForm):
             }),
         }
 
+    # Custom field for movement
+    add_quantity = forms.DecimalField(
+        max_digits=12, decimal_places=3, required=False, label="Add Quantity (grams)",
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.001', 'placeholder': 'Enter quantity to add'})
+    )
+    movement_notes = forms.CharField(
+        required=False, label="Movement Notes",
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Notes for this stock movement'})
+    )
+
     def clean(self):
         cleaned = super().clean()
-        quantity = cleaned.get('quantity')
         unit_cost = cleaned.get('unit_cost')
-
-        if quantity and quantity <= 0:
-            raise ValidationError("Quantity must be greater than 0.")
-        
+        add_quantity = cleaned.get('add_quantity')
+        if add_quantity is not None and add_quantity < 0:
+            raise ValidationError("Add quantity must be zero or positive.")
         if unit_cost and unit_cost < 0:
             raise ValidationError("Unit cost cannot be negative.")
-
         return cleaned

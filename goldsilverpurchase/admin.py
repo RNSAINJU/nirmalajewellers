@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import GoldSilverPurchase, Party, MetalStock, MetalStockType, MetalStockMovement, CustomerPurchase
-from .forms import PurchaseForm, PartyForm
+from .forms import PurchaseForm, PartyForm, MetalStockForm
 
 @admin.register(GoldSilverPurchase)
 class GoldSilverPurchaseAdmin(admin.ModelAdmin):
@@ -75,14 +75,15 @@ class MetalStockAdmin(admin.ModelAdmin):
     list_display = ('metal_type', 'stock_type', 'purity', 'quantity', 'unit_cost', 'total_cost', 'location', 'last_updated')
     list_filter = ('metal_type', 'stock_type', 'purity', 'location')
     search_fields = ('location', 'remarks')
-    readonly_fields = ('total_cost', 'created_at', 'last_updated')
-    
+    readonly_fields = ('quantity', 'total_cost', 'created_at', 'last_updated')
+    form = MetalStockForm
+
     fieldsets = (
         ('Metal Information', {
             'fields': ('metal_type', 'stock_type', 'purity')
         }),
         ('Quantity & Cost', {
-            'fields': ('quantity', 'rate_unit', 'unit_cost', 'total_cost')
+            'fields': ('quantity', 'rate_unit', 'unit_cost', 'total_cost', 'add_quantity', 'movement_notes')
         }),
         ('Storage', {
             'fields': ('location', 'remarks')
@@ -92,8 +93,27 @@ class MetalStockAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
-    
+
     inlines = [MetalStockMovementInline]
+
+    def save_model(self, request, obj, form, change):
+        # Save MetalStock without changing quantity directly
+        add_quantity = form.cleaned_data.get('add_quantity')
+        movement_notes = form.cleaned_data.get('movement_notes')
+        super().save_model(request, obj, form, change)
+        if add_quantity:
+            from .models import MetalStockMovement
+            MetalStockMovement.objects.create(
+                metal_stock=obj,
+                movement_type='in',
+                quantity=add_quantity,
+                notes=movement_notes or '',
+                reference_type='Manual Add',
+                reference_id=None
+            )
+            # Update MetalStock quantity
+            obj.quantity += add_quantity
+            obj.save()
 
 
 @admin.register(MetalStockMovement)

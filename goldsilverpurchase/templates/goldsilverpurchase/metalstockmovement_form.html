@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <div class="form-container">
+        <a href="{% url 'gsp:metal_stock_list' %}" style="color: #667eea; text-decoration: none; font-weight: 600; margin-bottom: 20px; display: inline-block;">
+            <i class="fas fa-arrow-left"></i> Back to Stocks
+        </a>
+        <div class="form-header">
+            <h2><i class="fas fa-exchange-alt"></i> Add Metal Stock Transaction</h2>
+            <p>Record a new stock movement for this metal stock</p>
+        </div>
+        {% if form.non_field_errors %}
+        <div class="form-errors">
+            <strong>Error:</strong>
+            <ul class="errorlist">
+                {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="form-group mb-3">
+                <label for="{{ form.movement_type.id_for_label }}" class="form-label">Movement Type <span style="color: #dc3545;">*</span></label>
+                {{ form.movement_type }}
+            </div>
+            <div class="form-group mb-3">
+                <label for="{{ form.quantity.id_for_label }}" class="form-label">Quantity (grams) <span style="color: #dc3545;">*</span></label>
+                {{ form.quantity }}
+            </div>
+            <div class="form-group mb-3">
+                <label for="{{ form.rate.id_for_label }}" class="form-label">Rate (per unit)</label>
+                {{ form.rate }}
+            </div>
+            <div class="form-group mb-3">
+                <label for="{{ form.notes.id_for_label }}" class="form-label">Notes</label>
+                {{ form.notes }}
+            </div>
+            <div class="form-group mb-3">
+                <label for="{{ form.movement_date.id_for_label }}" class="form-label">Movement Date</label>
+                {{ form.movement_date }}
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Add Transaction</button>
+            <a href="{% url 'gsp:metal_stock_list' %}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}
