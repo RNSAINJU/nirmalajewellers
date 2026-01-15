@@ -20,7 +20,7 @@ class Expense(models.Model):
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
     description = models.CharField(max_length=255)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
-    expense_date = models.DateField()
+    expense_date = NepaliDateField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     notes = models.TextField(blank=True, null=True)
@@ -64,14 +64,14 @@ class EmployeeSalary(models.Model):
     ]
     
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='salaries')
-    month = models.DateField()  # First day of the month
+    month = NepaliDateField()  # First day of the month
     base_salary = models.DecimalField(max_digits=12, decimal_places=2)
     bonus = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     deductions = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     total_salary = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     amount_paid = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    paid_date = models.DateField(blank=True, null=True)
+    paid_date = NepaliDateField(blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
