@@ -123,15 +123,17 @@ from django.core.files.base import ContentFile
 
 def export_metalstock_xlsx(request):
     wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = 'MetalStock'
-    headers = [
-        'StockID', 'MetalType', 'StockType', 'Purity', 'Quantity', 'UnitCost', 'RateUnit', 'TotalCost', 'Location', 'Remarks',
-        'MovementID', 'MovementType', 'MovementQty', 'MovementRate', 'ReferenceType', 'ReferenceID', 'Notes', 'MovementDate', 'CreatedAt'
+    ws_stock = wb.active
+    ws_stock.title = 'MetalStock'
+    ws_movement = wb.create_sheet(title='MetalStockMovement')
+
+    # MetalStock sheet
+    stock_headers = [
+        'StockID', 'MetalType', 'StockType', 'Purity', 'Quantity', 'UnitCost', 'RateUnit', 'TotalCost', 'Location', 'Remarks', 'CreatedAt', 'LastUpdated'
     ]
-    ws.append(headers)
+    ws_stock.append(stock_headers)
     for stock in MetalStock.objects.all():
-        base_row = [
+        ws_stock.append([
             stock.id,
             stock.metal_type,
             stock.stock_type.name if stock.stock_type else '',
@@ -141,35 +143,43 @@ def export_metalstock_xlsx(request):
             stock.rate_unit,
             float(stock.total_cost) if stock.total_cost is not None else '',
             stock.location or '',
-            stock.remarks or ''
-        ]
-        movements = stock.movements.all()
-        if movements.exists():
-            for m in movements:
-                ws.append(base_row + [
-                    m.id,
-                    m.movement_type,
-                    float(m.quantity) if m.quantity is not None else '',
-                    float(m.rate) if m.rate is not None else '',
-                    m.reference_type or '',
-                    m.reference_id or '',
-                    m.notes or '',
-                    str(m.movement_date) if m.movement_date else '',
-                    str(m.created_at) if m.created_at else ''
-                ])
-        else:
-            ws.append(base_row + ['','','','','','','','',''])
-    # Auto-size columns
-    for col in ws.columns:
-        max_length = 0
-        column = col[0].column_letter
-        for cell in col:
-            try:
-                if cell.value:
-                    max_length = max(max_length, len(str(cell.value)))
-            except:
-                pass
-        ws.column_dimensions[column].width = max_length + 2
+            stock.remarks or '',
+            str(stock.created_at) if stock.created_at else '',
+            str(stock.last_updated) if stock.last_updated else ''
+        ])
+
+    # MetalStockMovement sheet
+    movement_headers = [
+        'MovementID', 'MetalStockID', 'MovementType', 'Quantity', 'Rate', 'ReferenceType', 'ReferenceID', 'Notes', 'MovementDate', 'CreatedAt'
+    ]
+    ws_movement.append(movement_headers)
+    for m in MetalStockMovement.objects.all():
+        ws_movement.append([
+            m.id,
+            m.metal_stock.id if m.metal_stock else '',
+            m.movement_type,
+            float(m.quantity) if m.quantity is not None else '',
+            float(m.rate) if m.rate is not None else '',
+            m.reference_type or '',
+            m.reference_id or '',
+            m.notes or '',
+            str(m.movement_date) if m.movement_date else '',
+            str(m.created_at) if m.created_at else ''
+        ])
+
+    # Auto-size columns for both sheets
+    for ws in [ws_stock, ws_movement]:
+        for col in ws.columns:
+            max_length = 0
+            column = col[0].column_letter
+            for cell in col:
+                try:
+                    if cell.value:
+                        max_length = max(max_length, len(str(cell.value)))
+                except:
+                    pass
+            ws.column_dimensions[column].width = max_length + 2
+
     from io import BytesIO
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = 'attachment; filename=metalstock_export.xlsx'
@@ -184,18 +194,18 @@ class ImportMetalStockXLSXView(View):
         if not file:
             return HttpResponse('No file uploaded.', status=400)
         wb = openpyxl.load_workbook(file)
-        ws = wb.active
         from decimal import Decimal
         from django.utils.dateparse import parse_date
-        stocks = {}
-        rows = list(ws.iter_rows(min_row=2, values_only=True))
+        # --- Import MetalStock sheet ---
+        ws_stock = wb['MetalStock'] if 'MetalStock' in wb.sheetnames else wb.active
+        stock_rows = list(ws_stock.iter_rows(min_row=2, values_only=True))
+        stock_objs = {}
         errors = []
-        for idx, row in enumerate(rows, start=2):
+        for idx, row in enumerate(stock_rows, start=2):
             try:
-                stock_id, metal_type, stock_type_name, purity, quantity, unit_cost, rate_unit, total_cost, location, remarks, \
-                movement_id, movement_type, movement_qty, movement_rate, reference_type, reference_id, notes, movement_date, created_at = row
+                stock_id, metal_type, stock_type_name, purity, quantity, unit_cost, rate_unit, total_cost, location, remarks, created_at, last_updated = row
                 stock_type = MetalStockType.objects.filter(name=stock_type_name).first() if stock_type_name else None
-                stock, _ = MetalStock.objects.get_or_create(
+                stock, _ = MetalStock.objects.update_or_create(
                     id=stock_id,
                     defaults={
                         'metal_type': metal_type or '',
@@ -209,24 +219,35 @@ class ImportMetalStockXLSXView(View):
                         'remarks': remarks or '',
                     }
                 )
-                stocks[stock_id] = stock
-                # Import movement if present
-                if movement_id:
-                    MetalStockMovement.objects.get_or_create(
+                stock_objs[stock_id] = stock
+            except Exception as e:
+                errors.append(f"Stock Row {idx}: {str(e)}")
+        # --- Import MetalStockMovement sheet ---
+        if 'MetalStockMovement' in wb.sheetnames:
+            ws_movement = wb['MetalStockMovement']
+            movement_rows = list(ws_movement.iter_rows(min_row=2, values_only=True))
+            for idx, row in enumerate(movement_rows, start=2):
+                try:
+                    movement_id, metal_stock_id, movement_type, quantity, rate, reference_type, reference_id, notes, movement_date, created_at = row
+                    stock = stock_objs.get(metal_stock_id) or MetalStock.objects.filter(id=metal_stock_id).first()
+                    if not stock:
+                        errors.append(f"Movement Row {idx}: MetalStockID {metal_stock_id} not found.")
+                        continue
+                    MetalStockMovement.objects.update_or_create(
                         id=movement_id,
                         defaults={
                             'metal_stock': stock,
                             'movement_type': movement_type or '',
-                            'quantity': Decimal(movement_qty or 0),
-                            'rate': Decimal(movement_rate or 0),
+                            'quantity': Decimal(quantity or 0),
+                            'rate': Decimal(rate or 0),
                             'reference_type': reference_type or '',
                             'reference_id': reference_id or '',
                             'notes': notes or '',
                             'movement_date': parse_date(movement_date) if isinstance(movement_date, str) and movement_date else movement_date if isinstance(movement_date, (date, datetime)) else None,
                         }
                     )
-            except Exception as e:
-                errors.append(f"Row {idx}: {str(e)}")
+                except Exception as e:
+                    errors.append(f"Movement Row {idx}: {str(e)}")
         if errors:
             return HttpResponse('Import completed with errors:\n' + '\n'.join(errors), status=400)
         return HttpResponse('Import completed.')

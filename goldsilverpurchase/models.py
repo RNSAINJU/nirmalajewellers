@@ -480,6 +480,9 @@ class MetalStock(models.Model):
         verbose_name = "Metal Stock"
         verbose_name_plural = "Metal Stocks"
         ordering = ['-last_updated', '-created_at']
+        constraints = [
+            models.UniqueConstraint(fields=['metal_type', 'stock_type'], name='unique_metaltype_stocktype')
+        ]
         indexes = [
             models.Index(fields=['metal_type', 'stock_type']),
             models.Index(fields=['metal_type', 'purity']),
