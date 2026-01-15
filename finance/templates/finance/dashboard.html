@@ -1,0 +1,234 @@
+{% extends 'finance/base_finance.html' %}
+{% load static %}
+
+{% block main_content %}
+<div class="container-fluid">
+    <!-- Main Dashboard Cards -->
+    <div class="row g-4 mb-5">
+        <!-- Expenses Card -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card dashboard-card" style="border-left: 4px solid #e74c3c;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-0" style="font-size: 0.85rem;">Total Expenses</p>
+                            <h3 class="mb-0 mt-2" style="color: #e74c3c;">रु{{ total_expenses|floatformat:2 }}</h3>
+                        </div>
+                        <i class="bi bi-cash-flow" style="font-size: 2rem; color: #e74c3c; opacity: 0.3;"></i>
+                    </div>
+                    <hr class="my-2">
+                    <a href="{% url 'finance:expense_list' %}" class="text-decoration-none small">
+                        <i class="bi bi-arrow-right"></i> View All Expenses
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Employees Card -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card dashboard-card" style="border-left: 4px solid #3498db;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-0" style="font-size: 0.85rem;">Active Employees</p>
+                            <h3 class="mb-0 mt-2" style="color: #3498db;">{{ total_employees }}</h3>
+                        </div>
+                        <i class="bi bi-people-fill" style="font-size: 2rem; color: #3498db; opacity: 0.3;"></i>
+                    </div>
+                    <hr class="my-2">
+                    <a href="{% url 'finance:employee_list' %}" class="text-decoration-none small">
+                        <i class="bi bi-arrow-right"></i> View Employees
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending Salaries Card -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card dashboard-card" style="border-left: 4px solid #f39c12;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-0" style="font-size: 0.85rem;">Pending Salaries</p>
+                            <h3 class="mb-0 mt-2" style="color: #f39c12;">रु{{ pending_salaries|floatformat:2 }}</h3>
+                        </div>
+                        <i class="bi bi-hourglass-split" style="font-size: 2rem; color: #f39c12; opacity: 0.3;"></i>
+                    </div>
+                    <hr class="my-2">
+                    <a href="{% url 'finance:salary_list' %}" class="text-decoration-none small">
+                        <i class="bi bi-arrow-right"></i> View Salaries
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Paid Salaries Card -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card dashboard-card" style="border-left: 4px solid #27ae60;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-0" style="font-size: 0.85rem;">Total Paid Salaries</p>
+                            <h3 class="mb-0 mt-2" style="color: #27ae60;">रु{{ total_salaries|floatformat:2 }}</h3>
+                        </div>
+                        <i class="bi bi-check-circle-fill" style="font-size: 2rem; color: #27ae60; opacity: 0.3;"></i>
+                    </div>
+                    <hr class="my-2">
+                    <a href="{% url 'finance:salary_list' %}?status=paid" class="text-decoration-none small">
+                        <i class="bi bi-arrow-right"></i> View Paid Salaries
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Secondary Metrics Row -->
+    <div class="row g-4 mb-5">
+        <!-- Debtors Card -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card dashboard-card" style="border-left: 4px solid #9b59b6;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-0" style="font-size: 0.85rem;">Sundry Debtors</p>
+                            <h3 class="mb-0 mt-2" style="color: #9b59b6;">{{ total_debtors }}</h3>
+                            <small class="text-muted">Balance: रु{{ total_debtor_balance|floatformat:2 }}</small>
+                        </div>
+                        <i class="bi bi-person-check-fill" style="font-size: 2rem; color: #9b59b6; opacity: 0.3;"></i>
+                    </div>
+                    <hr class="my-2">
+                    <a href="{% url 'finance:debtor_list' %}" class="text-decoration-none small">
+                        <i class="bi bi-arrow-right"></i> View Debtors
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Creditors Card -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card dashboard-card" style="border-left: 4px solid #e67e22;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-0" style="font-size: 0.85rem;">Sundry Creditors</p>
+                            <h3 class="mb-0 mt-2" style="color: #e67e22;">{{ total_creditors }}</h3>
+                            <small class="text-muted">Balance: रु{{ total_creditor_balance|floatformat:2 }}</small>
+                        </div>
+                        <i class="bi bi-person-x-fill" style="font-size: 2rem; color: #e67e22; opacity: 0.3;"></i>
+                    </div>
+                    <hr class="my-2">
+                    <a href="{% url 'finance:creditor_list' %}" class="text-decoration-none small">
+                        <i class="bi bi-arrow-right"></i> View Creditors
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Sections -->
+    <div class="row g-4">
+        <!-- Expenses by Category -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Expenses by Category</h5>
+                </div>
+                <div class="card-body">
+                    {% if expenses_by_category %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Category</th>
+                                    <th class="text-end">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for expense in expenses_by_category %}
+                                <tr>
+                                    <td>
+                                        <span class="badge" style="background: {% cycle '#3498db' '#e74c3c' '#f39c12' '#27ae60' '#9b59b6' %};">
+                                            {{ expense.category|upper }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end">रु{{ expense.total|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center py-4">No expenses recorded yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Expenses -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Recent Expenses</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_expenses %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Description</th>
+                                    <th class="text-end">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for expense in recent_expenses %}
+                                <tr>
+                                    <td><small>{{ expense.expense_date }}</small></td>
+                                    <td>{{ expense.description|truncatewords:3 }}</td>
+                                    <td class="text-end"><strong>रु{{ expense.amount|floatformat:2 }}</strong></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center py-4">No expenses recorded yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .dashboard-card {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        border-radius: 8px;
+        border: none;
+    }
+
+    .dashboard-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px);
+    }
+
+    .dashboard-card .card-body {
+        padding: 1.5rem;
+    }
+
+    .dashboard-card .card-body hr {
+        margin: 0.5rem 0;
+    }
+
+    .dashboard-card a {
+        color: inherit;
+        font-weight: 500;
+    }
+
+    .dashboard-card a:hover {
+        opacity: 0.7;
+    }
+</style>
+{% endblock %}

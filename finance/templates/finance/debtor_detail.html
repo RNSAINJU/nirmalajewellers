@@ -41,7 +41,7 @@
                         <p><strong>Opening Balance:</strong><br><span class="h5">रु{{ debtor.opening_balance }}</span></p>
                     </div>
                     <div class="col-md-3">
-                        <p><strong>Current Balance:</strong><br><span class="h5 {% if debtor.current_balance > 0 %}text-danger{% else %}text-success{% endif %}">रु{{ debtor.current_balance }}</span></p>
+                        <p><strong>Current Balance:</strong><br><span class="h5 {% if calculated_balance > 0 %}text-danger{% else %}text-success{% endif %}">रु{{ calculated_balance|floatformat:2 }}</span></p>
                     </div>
                     <div class="col-md-3">
                         <p><strong>Credit Limit:</strong><br><span class="h5">रु{{ debtor.credit_limit }}</span></p>

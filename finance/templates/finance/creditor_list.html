@@ -46,6 +46,7 @@
                 <th>Name</th>
                 <th>Contact Person</th>
                 <th>Phone</th>
+                <th>BS Date</th>
                 <th>Opening Balance</th>
                 <th>Current Balance</th>
                 <th>Status</th>
@@ -58,6 +59,7 @@
                 <td>{{ creditor.name }}</td>
                 <td>{{ creditor.contact_person|default:"-" }}</td>
                 <td>{{ creditor.phone|default:"-" }}</td>
+                <td><small>{{ creditor.bs_date|default:"-" }}</small></td>
                 <td>रु{{ creditor.opening_balance }}</td>
                 <td><strong>रु{{ creditor.current_balance }}</strong></td>
                 <td>

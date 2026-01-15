@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.db import models
 from django.utils import timezone
 from nepali_datetime_field.models import NepaliDateField
@@ -96,6 +97,7 @@ class SundryDebtor(models.Model):
     contact_person = models.CharField(max_length=100, blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True, null=True)
     address = models.TextField(blank=True, null=True)
+    bs_date = NepaliDateField(blank=True, null=True)
     opening_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     current_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     credit_limit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
@@ -105,11 +107,44 @@ class SundryDebtor(models.Model):
     notes = models.TextField(blank=True, null=True)
     
     class Meta:
-        ordering = ['name']
+        ordering = ['-created_at']
         verbose_name_plural = "Sundry Debtors"
     
     def __str__(self):
-        return f"{self.name} - Balance: रु{self.current_balance}"
+        return f"{self.name} - Balance: रु{self.get_calculated_balance()}"
+    
+    def get_calculated_balance(self):
+        """
+        Calculate current balance based on transactions.
+        Current Balance = Opening Balance + Invoices/Debit Memos - Payments/Credit Memos
+        """
+        from django.db.models import Sum
+        
+        # Get opening balance as starting point
+        balance = self.opening_balance
+        
+        # Get all transactions and calculate balance
+        transactions = self.transactions.all()
+        
+        if transactions.exists():
+            # Add invoices and debit memos
+            invoice_total = transactions.filter(
+                transaction_type__in=['invoice', 'debit_memo']
+            ).aggregate(Sum('amount'))['amount__sum'] or Decimal('0')
+            
+            # Subtract payments and credit memos
+            payment_total = transactions.filter(
+                transaction_type__in=['payment', 'credit_memo']
+            ).aggregate(Sum('amount'))['amount__sum'] or Decimal('0')
+            
+            balance = balance + invoice_total - payment_total
+        
+        return balance
+    
+    def update_balance_from_transactions(self):
+        """Update the current_balance field based on transaction calculations"""
+        self.current_balance = self.get_calculated_balance()
+        self.save(update_fields=['current_balance'])
 
 
 class DebtorTransaction(models.Model):
@@ -136,6 +171,12 @@ class DebtorTransaction(models.Model):
     
     def __str__(self):
         return f"{self.debtor.name} - {self.get_transaction_type_display()} - रु{self.amount}"
+    
+    def save(self, *args, **kwargs):
+        """Auto-update debtor balance when transaction is saved"""
+        super().save(*args, **kwargs)
+        # Update the debtor's current_balance after transaction is saved
+        self.debtor.update_balance_from_transactions()
 
 
 class SundryCreditor(models.Model):
@@ -145,6 +186,7 @@ class SundryCreditor(models.Model):
     contact_person = models.CharField(max_length=100, blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True, null=True)
     address = models.TextField(blank=True, null=True)
+    bs_date = NepaliDateField(blank=True, null=True)
     opening_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     current_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     is_active = models.BooleanField(default=True)

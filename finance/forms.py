@@ -47,7 +47,7 @@ class EmployeeSalaryForm(forms.ModelForm):
 class SundryDebtorForm(forms.ModelForm):
     class Meta:
         model = SundryDebtor
-        fields = ['name', 'contact_person', 'phone', 'address', 'opening_balance', 'current_balance', 'credit_limit', 'is_active', 'notes']
+        fields = ['name', 'contact_person', 'phone', 'address', 'bs_date', 'opening_balance', 'current_balance', 'credit_limit', 'is_active', 'notes']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Debtor Name'}),
             'contact_person': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Contact Person'}),
@@ -77,7 +77,7 @@ class DebtorTransactionForm(forms.ModelForm):
 class SundryCreditorForm(forms.ModelForm):
     class Meta:
         model = SundryCreditor
-        fields = ['name', 'contact_person', 'phone', 'address', 'opening_balance', 'current_balance', 'is_active', 'notes']
+        fields = ['name', 'contact_person', 'phone', 'address', 'bs_date', 'opening_balance', 'current_balance', 'is_active', 'notes']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Creditor Name'}),
             'contact_person': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Contact Person'}),

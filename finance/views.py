@@ -16,6 +16,45 @@ from .forms import ExpenseForm, EmployeeForm, EmployeeSalaryForm, SundryDebtorFo
 from .models import Expense, Employee, EmployeeSalary, SundryDebtor, DebtorTransaction, SundryCreditor, CreditorTransaction
 
 
+# FINANCE DASHBOARD
+@login_required
+def finance_dashboard(request):
+    """Finance dashboard with key metrics and summaries"""
+    
+    # Expenses metrics
+    total_expenses = Expense.objects.aggregate(Sum('amount'))['amount__sum'] or 0
+    expenses_by_category = Expense.objects.values('category').annotate(total=Sum('amount')).order_by('-total')
+    recent_expenses = Expense.objects.all().order_by('-expense_date')[:5]
+    
+    # Employee metrics
+    total_employees = Employee.objects.filter(is_active=True).count()
+    total_salaries = EmployeeSalary.objects.filter(status='paid').aggregate(Sum('total_salary'))['total_salary__sum'] or 0
+    pending_salaries = EmployeeSalary.objects.filter(status='pending').aggregate(Sum('total_salary'))['total_salary__sum'] or 0
+    
+    # Debtor metrics - calculate from transactions
+    active_debtors = SundryDebtor.objects.filter(is_active=True)
+    total_debtor_balance = sum(debtor.get_calculated_balance() for debtor in active_debtors)
+    total_debtors = active_debtors.count()
+    
+    # Creditor metrics
+    total_creditor_balance = SundryCreditor.objects.filter(is_active=True).aggregate(Sum('current_balance'))['current_balance__sum'] or 0
+    total_creditors = SundryCreditor.objects.filter(is_active=True).count()
+    
+    context = {
+        'total_expenses': total_expenses,
+        'expenses_by_category': expenses_by_category,
+        'recent_expenses': recent_expenses,
+        'total_employees': total_employees,
+        'total_salaries': total_salaries,
+        'pending_salaries': pending_salaries,
+        'total_debtor_balance': total_debtor_balance,
+        'total_debtors': total_debtors,
+        'total_creditor_balance': total_creditor_balance,
+        'total_creditors': total_creditors,
+    }
+    return render(request, 'finance/dashboard.html', context)
+
+
 # EXPENSE VIEWS
 @login_required
 def expense_list(request):
@@ -185,6 +224,10 @@ def debtor_list(request):
     if active_only:
         debtors = debtors.filter(is_active=True)
     
+    # Recalculate all debtor balances from transactions
+    for debtor in debtors:
+        debtor.update_balance_from_transactions()
+    
     # Apply sorting
     if sort_by == 'created_first':
         debtors = debtors.order_by('created_at')
@@ -195,7 +238,7 @@ def debtor_list(request):
     else:  # Default: sort by name
         debtors = debtors.order_by('name')
     
-    total_balance = debtors.aggregate(Sum('current_balance'))['current_balance__sum'] or 0
+    total_balance = sum(debtor.get_calculated_balance() for debtor in debtors)
     
     context = {
         'debtors': debtors,
@@ -244,9 +287,14 @@ def debtor_detail(request, pk):
     debtor = get_object_or_404(SundryDebtor, pk=pk)
     transactions = debtor.transactions.all()
     
+    # Update balance from transactions
+    debtor.update_balance_from_transactions()
+    calculated_balance = debtor.get_calculated_balance()
+    
     context = {
         'debtor': debtor,
         'transactions': transactions,
+        'calculated_balance': calculated_balance,
     }
     return render(request, 'finance/debtor_detail.html', context)
 
@@ -636,21 +684,37 @@ def salary_import(request):
 @login_required
 def debtor_export(request):
     wb = Workbook()
-    ws = wb.active
-    ws.title = "Debtors"
     
-    ws.append(["name", "contact_person", "phone", "address", "opening_balance", "current_balance", "credit_limit", "is_active", "notes"])
+    # Debtors Sheet
+    ws_debtors = wb.active
+    ws_debtors.title = "Debtors"
+    ws_debtors.append(["name", "contact_person", "phone", "address", "bs_date", "opening_balance", "current_balance", "credit_limit", "is_active", "notes"])
     for d in SundryDebtor.objects.all().order_by('name'):
-        ws.append([
+        ws_debtors.append([
             d.name,
             d.contact_person or '',
             d.phone or '',
             d.address or '',
+            str(d.bs_date) if d.bs_date else '',
             float(d.opening_balance),
             float(d.current_balance),
             float(d.credit_limit),
             'true' if d.is_active else 'false',
             d.notes or '',
+        ])
+    
+    # Debtor Transactions Sheet
+    ws_transactions = wb.create_sheet("Debtor Transactions")
+    ws_transactions.append(["debtor_name", "transaction_type", "reference_no", "amount", "transaction_date", "due_date", "description"])
+    for transaction in DebtorTransaction.objects.select_related('debtor').all().order_by('debtor__name', '-transaction_date'):
+        ws_transactions.append([
+            transaction.debtor.name,
+            transaction.transaction_type,
+            transaction.reference_no or '',
+            float(transaction.amount),
+            str(transaction.transaction_date) if transaction.transaction_date else '',
+            str(transaction.due_date) if transaction.due_date else '',
+            transaction.description or '',
         ])
     
     output = BytesIO()
@@ -661,7 +725,7 @@ def debtor_export(request):
         output.read(),
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
-    response['Content-Disposition'] = 'attachment; filename="debtors.xlsx"'
+    response['Content-Disposition'] = 'attachment; filename="debtors_with_transactions.xlsx"'
     return response
 
 
@@ -671,31 +735,65 @@ def debtor_import(request):
         file = request.FILES['file']
         try:
             wb = openpyxl.load_workbook(file)
-            ws = wb.active
-            created = 0
+            created_debtors = 0
+            created_transactions = 0
             
-            for row in ws.iter_rows(min_row=2, values_only=True):
-                if not any(row):
-                    continue
-                name, contact_person, phone, address, opening_balance, current_balance, credit_limit, is_active, notes = row[:9]
-                
-                is_active_bool = str(is_active).lower() in ['1', 'true', 'yes', 'y']
-                debtor, created_flag = SundryDebtor.objects.update_or_create(
-                    name=name or '',
-                    defaults={
-                        'contact_person': contact_person or '',
-                        'phone': phone or '',
-                        'address': address or '',
-                        'opening_balance': _safe_decimal(opening_balance),
-                        'current_balance': _safe_decimal(current_balance),
-                        'credit_limit': _safe_decimal(credit_limit),
-                        'is_active': is_active_bool,
-                        'notes': notes or '',
-                    }
-                )
-                if created_flag:
-                    created += 1
-            messages.success(request, f"Imported {created} debtors (matching by name)")
+            # Import Debtors from first sheet
+            if 'Debtors' in wb.sheetnames:
+                ws_debtors = wb['Debtors']
+                for row in ws_debtors.iter_rows(min_row=2, values_only=True):
+                    if not any(row):
+                        continue
+                    name, contact_person, phone, address, bs_date, opening_balance, current_balance, credit_limit, is_active, notes = row[:10]
+                    
+                    is_active_bool = str(is_active).lower() in ['1', 'true', 'yes', 'y']
+                    debtor, created_flag = SundryDebtor.objects.update_or_create(
+                        name=name or '',
+                        defaults={
+                            'contact_person': contact_person or '',
+                            'phone': phone or '',
+                            'address': address or '',
+                            'bs_date': _extract_date(bs_date),
+                            'opening_balance': _safe_decimal(opening_balance),
+                            'current_balance': _safe_decimal(current_balance),
+                            'credit_limit': _safe_decimal(credit_limit),
+                            'is_active': is_active_bool,
+                            'notes': notes or '',
+                        }
+                    )
+                    if created_flag:
+                        created_debtors += 1
+            
+            # Import Debtor Transactions from second sheet
+            if 'Debtor Transactions' in wb.sheetnames:
+                ws_transactions = wb['Debtor Transactions']
+                for row in ws_transactions.iter_rows(min_row=2, values_only=True):
+                    if not any(row):
+                        continue
+                    debtor_name, transaction_type, reference_no, amount, transaction_date, due_date, description = row[:7]
+                    
+                    # Find the debtor by name
+                    try:
+                        debtor = SundryDebtor.objects.get(name=debtor_name)
+                        transaction_date_str = _extract_date(transaction_date)
+                        if not transaction_date_str:
+                            continue
+                        
+                        # Create transaction
+                        DebtorTransaction.objects.create(
+                            debtor=debtor,
+                            transaction_type=transaction_type or 'invoice',
+                            reference_no=reference_no or '',
+                            amount=_safe_decimal(amount),
+                            transaction_date=transaction_date_str,
+                            due_date=_extract_date(due_date),
+                            description=description or '',
+                        )
+                        created_transactions += 1
+                    except SundryDebtor.DoesNotExist:
+                        continue
+            
+            messages.success(request, f"Imported {created_debtors} debtors and {created_transactions} transactions")
         except Exception as e:
             messages.error(request, f"Import failed: {str(e)}")
     return redirect('finance:debtor_list')
@@ -708,13 +806,14 @@ def creditor_export(request):
     ws = wb.active
     ws.title = "Creditors"
     
-    ws.append(["name", "contact_person", "phone", "address", "opening_balance", "current_balance", "is_active", "notes"])
+    ws.append(["name", "contact_person", "phone", "address", "bs_date", "opening_balance", "current_balance", "is_active", "notes"])
     for c in SundryCreditor.objects.all().order_by('name'):
         ws.append([
             c.name,
             c.contact_person or '',
             c.phone or '',
             c.address or '',
+            str(c.bs_date) if c.bs_date else '',
             float(c.opening_balance),
             float(c.current_balance),
             'true' if c.is_active else 'false',
@@ -745,7 +844,7 @@ def creditor_import(request):
             for row in ws.iter_rows(min_row=2, values_only=True):
                 if not any(row):
                     continue
-                name, contact_person, phone, address, opening_balance, current_balance, is_active, notes = row[:8]
+                name, contact_person, phone, address, bs_date, opening_balance, current_balance, is_active, notes = row[:9]
                 
                 is_active_bool = str(is_active).lower() in ['1', 'true', 'yes', 'y']
                 _, created_flag = SundryCreditor.objects.update_or_create(
@@ -754,6 +853,7 @@ def creditor_import(request):
                         'contact_person': contact_person or '',
                         'phone': phone or '',
                         'address': address or '',
+                        'bs_date': _extract_date(bs_date),
                         'opening_balance': _safe_decimal(opening_balance),
                         'current_balance': _safe_decimal(current_balance),
                         'is_active': is_active_bool,
