@@ -230,6 +230,9 @@ class GoldSilverPurchase(models.Model):
 
 
 class CustomerPurchase(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
     def delete(self, *args, **kwargs):
         from .models import MetalStockMovement
         # Delete all MetalStockMovements referencing this purchase
@@ -264,42 +267,61 @@ class CustomerPurchase(models.Model):
     customer_name = models.CharField(max_length=255)
     location = models.CharField(max_length=255, blank=True, null=True)
     phone_no = models.CharField(max_length=20, blank=True, null=True)
-    metal_type = models.CharField(max_length=10, choices=MetalType.choices, default=MetalType.GOLD)
+    metal_type = models.CharField(max_length=10, choices=MetalType.choices)
     ornament_name = models.CharField(max_length=255)
     weight = models.DecimalField(max_digits=10, decimal_places=3, validators=[MinValueValidator(0)], default=Decimal('0.000'))
     percentage = models.DecimalField(max_digits=5, decimal_places=2, validators=[MinValueValidator(0)], default=Decimal('0.00'), blank=True, null=True, help_text='Percentage of weight (e.g., for loss calculation)')
     final_weight = models.DecimalField(max_digits=10, decimal_places=3, validators=[MinValueValidator(0)], default=Decimal('0.000'), blank=True, null=True, help_text='Final weight after applying percentage')
-    refined_weight = models.DecimalField(max_digits=10, decimal_places=3, validators=[MinValueValidator(0)], default=Decimal('0.000'))
-    rate = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)], default=Decimal('0.00'))
+    refined_status = models.CharField(
+        max_length=10,
+        choices=[('no', 'No'), ('yes', 'Yes')],
+        default='no',
+        verbose_name='Refined',
+        help_text='Has this purchase been refined?'
+    )
+    refined_weight = models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        validators=[MinValueValidator(0)],
+        default=Decimal('0.000'),
+        blank=True,
+        null=True,
+        help_text='Weight after refining (if applicable)'
+    )
+    weight = models.DecimalField(max_digits=10, decimal_places=3, validators=[MinValueValidator(0)], blank=True, null=True)
+    final_weight = models.DecimalField(max_digits=10, decimal_places=3, validators=[MinValueValidator(0)], blank=True, null=True, help_text='Final weight after applying percentage')
+    refined_status = models.CharField(
+        max_length=10,
+        choices=[('no', 'No'), ('yes', 'Yes')],
+        default='no',
+        verbose_name='Refined',
+        help_text='Has this purchase been refined?'
+    )
+    refined_weight = models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        validators=[MinValueValidator(0)],
+        blank=True,
+        null=True,
+        help_text='Weight after refining (if applicable)'
+    )
+    rate = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)], blank=True, null=True)
     rate_unit = models.CharField(
         max_length=10,
         choices=RATE_UNIT_CHOICES,
         default='tola',
         help_text='Unit for rate (per gram, per 10 gram, per tola)'
     )
-    amount = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)], default=Decimal('0.00'), blank=True, null=True, help_text='Auto-calculated: Weight × Rate')
-    profit_weight = models.DecimalField(max_digits=10, decimal_places=3, validators=[MinValueValidator(Decimal('-999999.999'))], default=Decimal('0.000'), blank=True, null=True, help_text='Auto-calculated: Refined Weight - Final Weight')
-    profit = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(Decimal('-999999.99'))], default=Decimal('0.00'), blank=True, null=True, help_text='Auto-calculated: Profit Weight × Rate (adjusted for rate_unit)')
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ['-sn']
-        indexes = [
-            models.Index(fields=['sn']),
-            models.Index(fields=['customer_name']),
-            models.Index(fields=['purchase_date']),
-        ]
+    amount = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)], blank=True, null=True, help_text='Auto-calculated: Weight × Rate')
+    profit_weight = models.DecimalField(max_digits=10, decimal_places=3, validators=[MinValueValidator(Decimal('-999999.999'))], blank=True, null=True, help_text='Auto-calculated: Refined Weight - Final Weight')
+    profit = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(Decimal('-999999.99'))], blank=True, null=True, help_text='Auto-calculated: Profit Weight × Rate (adjusted for rate_unit)')
 
     def __str__(self):
         return f"{self.sn} - {self.customer_name}"
-    
+
     def save(self, *args, **kwargs):
         """Auto-generate SN and calculate amount based on rate_unit"""
-        # Conversion constant: 1 tola = 11.6643 grams
         TOLA_TO_GRAM = Decimal('11.6643')
-        
         # Auto-generate SN if not provided
         if not self.sn:
             all_purchases = CustomerPurchase.objects.all().values_list('sn', flat=True)
@@ -307,79 +329,48 @@ class CustomerPurchase(models.Model):
             for sn in all_purchases:
                 if sn and str(sn).isdigit():
                     numeric_sns.append(int(sn))
-            
             if numeric_sns:
                 last_num = max(numeric_sns)
                 self.sn = str(last_num + 1)
             else:
                 self.sn = "1"
-        
-        # Ensure Decimal values
-        if self.weight is None:
-            self.weight = Decimal('0.000')
-        elif isinstance(self.weight, (int, float)):
-            self.weight = Decimal(str(self.weight))
-        
-        if self.refined_weight is None:
-            self.refined_weight = Decimal('0.000')
-        elif isinstance(self.refined_weight, (int, float)):
-            self.refined_weight = Decimal(str(self.refined_weight))
-        
-        if self.percentage is None:
-            self.percentage = Decimal('0.00')
-        elif isinstance(self.percentage, (int, float)):
-            self.percentage = Decimal(str(self.percentage))
-        
-        self.rate = self.rate or Decimal('0.00')
-        
-        # Ensure rate_unit is set (don't let it be auto-changed)
-        if not self.rate_unit:
-            self.rate_unit = 'tola'  # Default only if empty
-        
-        # Calculate final_weight: weight - (weight * percentage / 100)
-        percentage_val = self.percentage or Decimal('0.00')
-        self.final_weight = (self.weight - (self.weight * percentage_val / Decimal('100'))).quantize(Decimal('0.001'))
-        
-        # Calculate profit_weight: refined_weight - final_weight
-        self.profit_weight = (self.refined_weight - self.final_weight).quantize(Decimal('0.001'))
-        
+
+        # Calculate profit_weight
+        if self.refined_weight is not None and self.final_weight is not None:
+            self.profit_weight = (self.refined_weight - self.final_weight).quantize(Decimal('0.001'))
+        else:
+            self.profit_weight = None
+
         # Calculate amount based on rate_unit
-        # Final weight is in grams
-        if self.rate_unit == 'gram':
-            # Rate is per gram, final_weight is in grams
-            # Amount = final_weight * rate
-            calculated_amount = self.final_weight * self.rate
-        elif self.rate_unit == '10gram':
-            # Rate is per 10 grams, final_weight is in grams
-            # Amount = (final_weight / 10) * rate
-            calculated_amount = (self.final_weight / Decimal('10')) * self.rate
-        elif self.rate_unit == 'tola':
-            # Rate is per tola (11.6643 grams), final_weight is in grams
-            # Amount = (final_weight / 11.6643) * rate
-            calculated_amount = (self.final_weight / TOLA_TO_GRAM) * self.rate
+        if self.final_weight is not None and self.rate is not None:
+            if self.rate_unit == 'gram':
+                calculated_amount = self.final_weight * self.rate
+            elif self.rate_unit == '10gram':
+                calculated_amount = (self.final_weight / Decimal('10')) * self.rate
+            elif self.rate_unit == 'tola':
+                calculated_amount = (self.final_weight / TOLA_TO_GRAM) * self.rate
+            else:
+                calculated_amount = Decimal('0.00')
+            self.amount = calculated_amount.quantize(Decimal('0.01'))
+            if self.amount < 0:
+                self.amount = Decimal('0.00')
         else:
-            calculated_amount = Decimal('0.00')
+            self.amount = None
 
-        # Set amount
-        self.amount = calculated_amount.quantize(Decimal('0.01'))
-
-        # Prevent negative amount
-        if self.amount < 0:
-            self.amount = Decimal('0.00')
-        
-        # Calculate profit based on profit_weight and rate_unit
-        if self.rate_unit == 'gram':
-            calculated_profit = self.profit_weight * self.rate
-        elif self.rate_unit == '10gram':
-            calculated_profit = (self.profit_weight / Decimal('10')) * self.rate
-        elif self.rate_unit == 'tola':
-            calculated_profit = (self.profit_weight / TOLA_TO_GRAM) * self.rate
+        # Calculate profit
+        if self.profit_weight is not None and self.rate is not None:
+            if self.rate_unit == 'gram':
+                calculated_profit = self.profit_weight * self.rate
+            elif self.rate_unit == '10gram':
+                calculated_profit = (self.profit_weight / Decimal('10')) * self.rate
+            elif self.rate_unit == 'tola':
+                calculated_profit = (self.profit_weight / TOLA_TO_GRAM) * self.rate
+            else:
+                calculated_profit = Decimal('0.00')
+            self.profit = calculated_profit.quantize(Decimal('0.01'))
         else:
-            calculated_profit = Decimal('0.00')
+            self.profit = None
 
-        # Set profit
-        self.profit = calculated_profit.quantize(Decimal('0.01'))
-        
         super().save(*args, **kwargs)
 
 
@@ -505,9 +496,9 @@ class MetalStock(models.Model):
         verbose_name = "Metal Stock"
         verbose_name_plural = "Metal Stocks"
         ordering = ['-last_updated', '-created_at']
-        constraints = [
-            models.UniqueConstraint(fields=['metal_type', 'stock_type'], name='unique_metaltype_stocktype')
-        ]
+        # constraints = [
+        #     models.UniqueConstraint(fields=['metal_type', 'stock_type'], name='unique_metaltype_stocktype')
+        # ]
         indexes = [
             models.Index(fields=['metal_type', 'stock_type']),
             models.Index(fields=['metal_type', 'purity']),

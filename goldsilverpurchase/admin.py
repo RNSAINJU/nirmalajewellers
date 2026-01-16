@@ -33,7 +33,7 @@ class PartyAdmin(admin.ModelAdmin):
 
 @admin.register(CustomerPurchase)
 class CustomerPurchaseAdmin(admin.ModelAdmin):
-    list_display = ('sn', 'customer_name', 'metal_type', 'ornament_name', 'weight', 'final_weight', 'refined_weight', 'profit_weight', 'amount', 'profit', 'purchase_date')
+    list_display = ('sn', 'customer_name', 'metal_type', 'ornament_name', 'weight', 'final_weight', 'refined_status', 'refined_weight', 'profit_weight', 'amount', 'profit', 'purchase_date')
     list_filter = ('metal_type', 'purchase_date', 'customer_name')
     search_fields = ('sn', 'customer_name', 'phone_no', 'location')
     readonly_fields = (
@@ -55,7 +55,7 @@ class CustomerPurchaseAdmin(admin.ModelAdmin):
             'fields': ('metal_type', 'ornament_name')
         }),
         ('Weight Information', {
-            'fields': ('weight', 'percentage', 'final_weight', 'refined_weight', 'profit_weight')
+            'fields': ('weight', 'percentage', 'final_weight', 'refined_status', 'refined_weight', 'profit_weight')
         }),
         ('Pricing', {
             'fields': ('rate', 'rate_unit', 'amount', 'profit')

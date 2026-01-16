@@ -19,29 +19,24 @@
               Purchase Date (BS)
                   Amount
             <input type="text" name="purchase_date" id="id_purchase_date" class="form-control form-control-sm {% if form.purchase_date.errors %}is-invalid{% endif %}" placeholder="YYYY-MM-DD (e.g., 2082-09-30)" value="{{ form.purchase_date.value|default:'' }}">
-                <input type="number" step="0.01" id="id_amount" class="form-control form-control-sm bg-light" value="{{ form.amount.value|default_if_none:'0.00' }}" placeholder="Auto-calculated" readonly>
             <small class="text-muted">Optional: Nepali date in BS format</small>
           </div>
 
           <div class="mb-3">
             <label class="form-label mb-1">
               Customer Name <span class="text-danger fw-bold">*</span>
-                <input type="number" step="0.001" id="id_profit_weight" class="form-control form-control-sm bg-light" value="{{ form.profit_weight.value|default_if_none:'0.000' }}" placeholder="Auto-calculated" readonly>
             <input type="text" name="customer_name" class="form-control form-control-sm {% if form.customer_name.errors %}is-invalid{% endif %}" value="{{ form.customer_name.value|default:'' }}" placeholder="Full name" required>
             {% if form.customer_name.errors %}<div class="text-danger small mt-1">{{ form.customer_name.errors }}</div>{% endif %}
           </div>
 
           <div class="mb-3">
-            <label class="form-label mb-1">
-                <input type="number" step="0.01" id="id_profit" class="form-control form-control-sm bg-light" value="{{ form.profit.value|default_if_none:'0.00' }}" placeholder="Auto-calculated" readonly>
-            </label>
+          
             <select name="metal_type" class="form-select form-select-sm {% if form.metal_type.errors %}is-invalid{% endif %}" required>
               <option value="">-- Select Metal Type --</option>
               {% for key, value in form.metal_type.field.choices %}
               <option value="{{ key }}" {% if form.metal_type.value == key %}selected{% endif %}>{{ value }}</option>
               {% endfor %}
             </select>
-                <input type="number" step="0.001" name="final_weight" id="id_final_weight" class="form-control form-control-sm bg-light {% if form.final_weight.errors %}is-invalid{% endif %}" value="{{ form.final_weight.value|default_if_none:'0.000' }}" placeholder="Auto-calculated" readonly>
           </div>
 
           <div class="row g-3">

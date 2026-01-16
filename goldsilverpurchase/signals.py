@@ -79,40 +79,61 @@ def add_refined_weight_to_metal_stock(sender, instance, created, **kwargs):
     On delete: handled separately.
     """
     try:
-        refined_stock_type, _ = MetalStockType.objects.get_or_create(
-            name=MetalStockType.StockTypeChoices.REFINED,
-            defaults={'description': 'Refined metal stock'}
-        )
-        metal_stock, _ = MetalStock.objects.get_or_create(
-            metal_type=instance.metal_type,
-            stock_type=refined_stock_type,
-            purity=MetalStock.Purity.TWENTYFOURKARAT,
-            defaults={
-                'quantity': Decimal('0.000'),
-                'unit_cost': Decimal('0.00'),
-                'rate_unit': instance.rate_unit,
-                'total_cost': Decimal('0.00'),
-            }
-        )
-        if metal_stock.rate_unit != instance.rate_unit:
-            metal_stock.rate_unit = instance.rate_unit
+        # Only add to stock movement if refined_status is 'yes' and refined_weight is set and > 0
+        if instance.refined_status == 'yes' and instance.refined_weight and instance.refined_weight > 0:
+            refined_stock_type, _ = MetalStockType.objects.get_or_create(
+                name=MetalStockType.StockTypeChoices.REFINED,
+                defaults={'description': 'Refined metal stock'}
+            )
+            metal_stock, _ = MetalStock.objects.get_or_create(
+                metal_type=instance.metal_type,
+                stock_type=refined_stock_type,
+                purity=MetalStock.Purity.TWENTYFOURKARAT,
+                defaults={
+                    'quantity': Decimal('0.000'),
+                    'unit_cost': Decimal('0.00'),
+                    'rate_unit': instance.rate_unit,
+                    'total_cost': Decimal('0.00'),
+                }
+            )
+            if metal_stock.rate_unit != instance.rate_unit:
+                metal_stock.rate_unit = instance.rate_unit
+                metal_stock.save()
+            notes = f"{instance.customer_name or ''}-{instance.ornament_name or ''}"
+            movement, _ = MetalStockMovement.objects.update_or_create(
+                metal_stock=metal_stock,
+                reference_type='CustomerPurchase',
+                reference_id=str(instance.pk),
+                defaults={
+                    'movement_type': 'in',
+                    'quantity': instance.refined_weight,
+                    'rate': instance.rate,
+                    'notes': notes,
+                    'movement_date': instance.purchase_date or instance.created_at,
+                }
+            )
+            # Always recalculate MetalStock after movement update/create
+            metal_stock.refresh_from_db()
             metal_stock.save()
-        notes = f"{instance.customer_name or ''}-{instance.ornament_name or ''}"
-        movement, _ = MetalStockMovement.objects.update_or_create(
-            metal_stock=metal_stock,
-            reference_type='CustomerPurchase',
-            reference_id=str(instance.pk),
-            defaults={
-                'movement_type': 'in',
-                'quantity': instance.refined_weight,
-                'rate': instance.rate,
-                'notes': notes,
-                'movement_date': instance.purchase_date or instance.created_at,
-            }
-        )
-        # Always recalculate MetalStock after movement update/create
-        metal_stock.refresh_from_db()
-        metal_stock.save()
+        else:
+            # If not refined or no refined_weight, remove any existing movement for this purchase
+            refined_stock_type = MetalStockType.objects.filter(name=MetalStockType.StockTypeChoices.REFINED).first()
+            if refined_stock_type:
+                try:
+                    metal_stock = MetalStock.objects.get(
+                        metal_type=instance.metal_type,
+                        stock_type=refined_stock_type,
+                        purity=MetalStock.Purity.TWENTYFOURKARAT,
+                    )
+                    MetalStockMovement.objects.filter(
+                        metal_stock=metal_stock,
+                        reference_type='CustomerPurchase',
+                        reference_id=str(instance.pk)
+                    ).delete()
+                    metal_stock.refresh_from_db()
+                    metal_stock.save()
+                except MetalStock.DoesNotExist:
+                    pass
     except Exception as e:
         print(f"[ERROR] Error adding/updating refined weight to MetalStock for customer purchase {getattr(instance, 'sn', instance.pk)}: {str(e)}")
         import traceback
