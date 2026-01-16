@@ -49,7 +49,7 @@ class CustomerPurchaseForm(forms.ModelForm):
         model = CustomerPurchase
         fields = [
             'purchase_date', 'customer_name', 'location',
-            'phone_no', 'metal_type', 'ornament_name', 'weight', 'percentage', 'refined_status', 'refined_weight', 'rate', 'rate_unit'
+            'phone_no', 'metal_type', 'ornament_name', 'weight', 'percentage', 'final_weight', 'refined_status', 'refined_weight', 'rate', 'rate_unit', 'amount', 'profit_weight', 'profit'
         ]
     
     def clean_purchase_date(self):

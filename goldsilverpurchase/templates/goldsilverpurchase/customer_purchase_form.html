@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 {% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nepali-datepicker-v3@3.7.0/dist/css/nepali.datepicker.min.css">
+<script src="https://cdn.jsdelivr.net/npm/nepali-datepicker-v3@3.7.0/dist/js/nepali.datepicker.min.js"></script>
 <div class="container mt-5">
   <h1 class="text-center mb-4">{{ form_title }}</h1>
 
@@ -8,6 +10,20 @@
   </div>
 
   <form method="post" class="row g-4" novalidate>
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger">
+            <ul class="mb-0">
+              {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+        {% for field in form %}
+          {% for error in field.errors %}
+            <div class="alert alert-danger">{{ field.label }}: {{ error }}</div>
+          {% endfor %}
+        {% endfor %}
     {% csrf_token %}
 
     <div class="col-lg-6">
@@ -30,7 +46,8 @@
           </div>
 
           <div class="mb-3">
-          
+          <label class="form-label mb-1">
+              Metal Type <span class="text-danger fw-bold">*</span>
             <select name="metal_type" class="form-select form-select-sm {% if form.metal_type.errors %}is-invalid{% endif %}" required>
               <option value="">-- Select Metal Type --</option>
               {% for key, value in form.metal_type.field.choices %}
@@ -40,6 +57,18 @@
           </div>
 
           <div class="row g-3">
+                        <div class="mb-3">
+                          <label class="form-label mb-1">
+                            Refined <span class="text-danger fw-bold">*</span>
+                          </label>
+                          <select name="refined_status" class="form-select form-select-sm {% if form.refined_status.errors %}is-invalid{% endif %}" required>
+                            <option value="">-- Select Refined Status --</option>
+                            {% for key, value in form.refined_status.field.choices %}
+                            <option value="{{ key }}" {% if form.refined_status.value == key %}selected{% endif %}>{{ value }}</option>
+                            {% endfor %}
+                          </select>
+                          {% if form.refined_status.errors %}<div class="text-danger small mt-1">{{ form.refined_status.errors }}</div>{% endif %}
+                        </div>
             <div class="col-md-6">
               <label class="form-label mb-1">Location</label>
               <input type="text" name="location" class="form-control form-control-sm {% if form.location.errors %}is-invalid{% endif %}" value="{{ form.location.value|default:'' }}" placeholder="Location (optional)">
@@ -88,9 +117,9 @@
               <label class="form-label mb-1">
                 Final Weight (तोल)
               </label>
-              <input type="number" step="0.001" name="final_weight" id="id_final_weight" class="form-control form-control-sm bg-light {% if form.final_weight.errors %}is-invalid{% endif %}" value="{{ form.final_weight.value|default:'' }}" placeholder="0.000" readonly>
+              <input type="number" step="0.001" name="final_weight" id="id_final_weight" class="form-control form-control-sm bg-light {% if form.final_weight.errors %}is-invalid{% endif %}" value="{{ form.final_weight.value|default:''|floatformat:'3' }}" placeholder="0.000" readonly>
               {% if form.final_weight.errors %}<div class="text-danger small mt-1">{{ form.final_weight.errors }}</div>{% endif %}
-              <small class="text-muted">Weight - (Weight × Percentage)</small>
+              <small class="text-muted">Final Weight = Weight - (Weight × Percentage / 100)</small>
             </div>
           </div>
 
@@ -153,6 +182,11 @@
     </div>
 
     <div class="col-12 d-flex justify-content-end gap-2">
+      <!-- Hidden fields for required model fields not shown in UI -->
+      <input type="hidden" name="final_weight" id="id_final_weight_hidden" value="{{ form.final_weight.value|default:'' }}">
+      <input type="hidden" name="amount" id="id_amount_hidden" value="{{ form.amount.value|default:'' }}">
+      <input type="hidden" name="profit_weight" id="id_profit_weight_hidden" value="{{ form.profit_weight.value|default:'' }}">
+      <input type="hidden" name="profit" id="id_profit_hidden" value="{{ form.profit.value|default:'' }}">
       <button type="submit" class="btn btn-success">
         <i class="bi bi-check-circle me-1"></i>Save Purchase
       </button>
@@ -170,7 +204,11 @@
     console.log('DOMContentLoaded - Starting calculations');
     
     const options = { ndpYear: true, ndpMonth: true, ndpYearCount: 10 };
-    new NepaliDatePicker({ target: '#id_purchase_date', ...options });
+    if (typeof NepaliDatePicker !== 'undefined') {
+      new NepaliDatePicker({ target: '#id_purchase_date', ...options });
+    } else {
+      console.warn('NepaliDatePicker is not loaded. Date picker will not be available.');
+    }
 
     const $w = document.getElementById('id_weight');
     const $p = document.getElementById('id_percentage');
@@ -182,9 +220,15 @@
     const $pw = document.getElementById('id_profit_weight');
     const $pr = document.getElementById('id_profit');
     
+    // Also update hidden fields for submission
+    const $fw_hidden = document.getElementById('id_final_weight_hidden');
+    const $a_hidden = document.getElementById('id_amount_hidden');
+    const $pw_hidden = document.getElementById('id_profit_weight_hidden');
+    const $pr_hidden = document.getElementById('id_profit_hidden');
     console.log('Form elements loaded:', {
       weight: !!$w, percentage: !!$p, finalWeight: !!$fw, refinedWeight: !!$rw,
-      rate: !!$r, rateUnit: !!$u, amount: !!$a, profitWeight: !!$pw, profit: !!$pr
+      rate: !!$r, rateUnit: !!$u, amount: !!$a, profitWeight: !!$pw, profit: !!$pr,
+      fw_hidden: !!$fw_hidden, a_hidden: !!$a_hidden, pw_hidden: !!$pw_hidden, pr_hidden: !!$pr_hidden
     });
     
     // Check if all elements exist
@@ -217,20 +261,24 @@
         const finalWeight = weight - (weight * percentage / 100);
         console.log('Final weight calculation: ' + weight + ' - (' + weight + ' * ' + percentage + ' / 100) = ' + finalWeight);
         
-        $fw.value = Math.max(0, finalWeight).toFixed(3);
+        $fw.value = (Math.max(0, finalWeight)).toFixed(3);
+        if ($fw_hidden) $fw_hidden.value = $fw.value;
         
         // Calculate profit weight: refined_weight - final_weight
         const profitWeight = refinedWeight - finalWeight;
         $pw.value = profitWeight.toFixed(3);
+        if ($pw_hidden) $pw_hidden.value = $pw.value;
         
         // Calculate amount based on refined_weight and rate_unit
         const divisor = unitDivisor();
         const amt = (Math.max(0, refinedWeight) / divisor) * rate;
         $a.value = Math.max(0, amt).toFixed(2);
+        if ($a_hidden) $a_hidden.value = $a.value;
         
         // Calculate profit based on profit_weight and rate_unit
         const profitAmt = (profitWeight / divisor) * rate;
         $pr.value = profitAmt.toFixed(2);
+        if ($pr_hidden) $pr_hidden.value = $pr.value;
         
         console.log('Calculation complete:', { finalWeight, profitWeight, amount: amt, profit: profitAmt });
       } catch (e) {
@@ -238,7 +286,7 @@
       }
     }
     
-    // Attach listeners
+    // Attach listeners and always recalc on input/change
     const elements = [$w, $p, $r, $u, $rw];
     elements.forEach(el => {
       if (el) {
@@ -246,10 +294,33 @@
         el.addEventListener('change', recalc);
       }
     });
-    
-    console.log('Initial calculation running');
-    // Initial calculation
-    recalc();
+
+    // Debug: log all values on every recalc
+    function recalcWithDebug() {
+      recalc();
+      console.log('[DEBUG] After recalc:', {
+        weight: $w.value,
+        percentage: $p.value,
+        finalWeight: $fw.value,
+        refinedWeight: $rw.value,
+        rate: $r.value,
+        rateUnit: $u.value,
+        amount: $a.value,
+        profitWeight: $pw.value,
+        profit: $pr.value
+      });
+    }
+    elements.forEach(el => {
+      if (el) {
+        el.removeEventListener('input', recalc);
+        el.removeEventListener('change', recalc);
+        el.addEventListener('input', recalcWithDebug);
+        el.addEventListener('change', recalcWithDebug);
+      }
+    });
+
+    // Initial calculation with debug
+    recalcWithDebug();
   });
 </script>
 {% endblock %}
