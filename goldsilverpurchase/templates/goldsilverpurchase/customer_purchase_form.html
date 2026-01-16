@@ -2,14 +2,14 @@
 {% block content %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nepali-datepicker-v3@3.7.0/dist/css/nepali.datepicker.min.css">
 <script src="https://cdn.jsdelivr.net/npm/nepali-datepicker-v3@3.7.0/dist/js/nepali.datepicker.min.js"></script>
-<div class="container mt-5">
-  <h1 class="text-center mb-4">{{ form_title }}</h1>
+<div class="container-fluid px-2 px-md-4 mt-4">
+  <h1 class="text-center mb-4" style="font-size:2rem;">{{ form_title }}</h1>
 
-  <div class="alert alert-info" role="alert">
+  <div class="alert alert-info mb-3" role="alert">
     <small><span class="text-danger fw-bold">*</span> indicates required fields</small>
   </div>
 
-  <form method="post" class="row g-4" novalidate>
+  <form method="post" class="row g-4 needs-validation" novalidate autocomplete="off">
         {% if form.non_field_errors %}
           <div class="alert alert-danger">
             <ul class="mb-0">
@@ -26,8 +26,8 @@
         {% endfor %}
     {% csrf_token %}
 
-    <div class="col-lg-6">
-      <div class="card shadow-sm h-100">
+    <div class="col-12 col-lg-6">
+      <div class="card shadow-sm h-100 mb-3 mb-lg-0">
         <div class="card-header bg-light fw-semibold">Customer & Purchase Information</div>
         <div class="card-body">
           <div class="mb-3">
@@ -97,7 +97,7 @@
       </div>
     </div>
 
-    <div class="col-lg-6">
+    <div class="col-12 col-lg-6">
       <div class="card shadow-sm h-100">
         <div class="card-header bg-light fw-semibold">Ornament & Valuation Details</div>
         <div class="card-body">
@@ -194,16 +194,16 @@
       </div>
     </div>
 
-    <div class="col-12 d-flex justify-content-end gap-2">
+    <div class="col-12 d-flex flex-column flex-md-row justify-content-end gap-2 mt-3">
       <!-- Hidden fields for required model fields not shown in UI -->
       <input type="hidden" name="final_weight" id="id_final_weight_hidden" value="{{ form.final_weight.value|default:'' }}">
       <input type="hidden" name="amount" id="id_amount_hidden" value="{{ form.amount.value|default:'' }}">
       <input type="hidden" name="profit_weight" id="id_profit_weight_hidden" value="{{ form.profit_weight.value|default:'' }}">
       <input type="hidden" name="profit" id="id_profit_hidden" value="{{ form.profit.value|default:'' }}">
-      <button type="submit" class="btn btn-success">
+      <button type="submit" class="btn btn-success btn-lg w-100 w-md-auto mb-2 mb-md-0">
         <i class="bi bi-check-circle me-1"></i>Save Purchase
       </button>
-      <a href="{% url 'gsp:customer_purchase_list' %}" class="btn btn-secondary">
+      <a href="{% url 'gsp:customer_purchase_list' %}" class="btn btn-secondary btn-lg w-100 w-md-auto">
         <i class="bi bi-x-circle me-1"></i>Cancel
       </a>
     </div>

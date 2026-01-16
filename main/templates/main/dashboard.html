@@ -398,44 +398,47 @@
   }
 </style>
 
-<div class="dashboard-header">
-  <h1>💎 Dashboard</h1>
-  <p>Welcome to Nirmal Jewellers Management System</p>
-</div>
+<div class="container-fluid px-2 px-md-4">
+  <div class="dashboard-header py-3">
+    <h1 class="mb-2" style="font-size:2.2rem;">💎 Dashboard</h1>
+    <p class="mb-0">Welcome to Nirmal Jewellers Management System</p>
+  </div>
 
 <!-- Daily Rate Input Section -->
 {% if not latest_rate %}
-<div class="rate-input-card">
-  <h2>
+<div class="rate-input-card mb-4">
+  <h2 class="d-flex align-items-center gap-2 mb-3">
     <span>📊</span>
     Today's Metal Rates
   </h2>
-  <form method="post" class="rate-input-form">
+  <form method="post" class="row g-2 rate-input-form">
     {% csrf_token %}
-    <div class="form-group">
-      <label for="{{ daily_rate_form.bs_date.id_for_label }}">{{ daily_rate_form.bs_date.label }}</label>
+    <div class="form-group col-12 col-md-4">
+      <label for="{{ daily_rate_form.bs_date.id_for_label }}" class="form-label">{{ daily_rate_form.bs_date.label }}</label>
       {{ daily_rate_form.bs_date }}
       {% if daily_rate_form.bs_date.errors %}
         <small class="text-danger">{{ daily_rate_form.bs_date.errors }}</small>
       {% endif %}
     </div>
-    <div class="form-group">
-      <label for="{{ daily_rate_form.gold_rate.id_for_label }}">{{ daily_rate_form.gold_rate.label }}</label>
+    <div class="form-group col-12 col-md-4">
+      <label for="{{ daily_rate_form.gold_rate.id_for_label }}" class="form-label">{{ daily_rate_form.gold_rate.label }}</label>
       {{ daily_rate_form.gold_rate }}
       {% if daily_rate_form.gold_rate.errors %}
         <small class="text-danger">{{ daily_rate_form.gold_rate.errors }}</small>
       {% endif %}
     </div>
-    <div class="form-group">
-      <label for="{{ daily_rate_form.silver_rate.id_for_label }}">{{ daily_rate_form.silver_rate.label }}</label>
+    <div class="form-group col-12 col-md-4">
+      <label for="{{ daily_rate_form.silver_rate.id_for_label }}" class="form-label">{{ daily_rate_form.silver_rate.label }}</label>
       {{ daily_rate_form.silver_rate }}
       {% if daily_rate_form.silver_rate.errors %}
         <small class="text-danger">{{ daily_rate_form.silver_rate.errors }}</small>
       {% endif %}
     </div>
-    <button type="submit" class="btn btn-light">
-      <span>💾 Save</span>
-    </button>
+    <div class="col-12 d-grid d-md-flex justify-content-md-end mt-2">
+      <button type="submit" class="btn btn-light btn-lg w-100 w-md-auto">
+        <span>💾 Save</span>
+      </button>
+    </div>
   </form>
 </div>
 {% endif %}
