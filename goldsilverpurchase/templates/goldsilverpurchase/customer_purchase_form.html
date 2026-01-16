@@ -57,6 +57,19 @@
           </div>
 
           <div class="row g-3">
+                                    <div class="col-md-4">
+                                      <label class="form-label mb-1">
+                                        Purity <span class="text-danger fw-bold">*</span>
+                                      </label>
+                                      <select name="purity" id="id_purity" class="form-select form-select-sm {% if form.purity.errors %}is-invalid{% endif %}" required>
+                                        <option value="">-- Select Purity --</option>
+                                        {% for key, value in form.purity.field.choices %}
+                                          <option value="{{ key }}" {% if form.purity.value == key %}selected{% endif %}>{{ value }}</option>
+                                        {% endfor %}
+                                      </select>
+                                      {% if form.purity.errors %}<div class="text-danger small mt-1">{{ form.purity.errors }}</div>{% endif %}
+                                      <small class="text-muted">Select gold purity/karat</small>
+                                    </div>
                         <div class="mb-3">
                           <label class="form-label mb-1">
                             Refined <span class="text-danger fw-bold">*</span>

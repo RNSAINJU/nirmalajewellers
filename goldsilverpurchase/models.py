@@ -230,6 +230,18 @@ class GoldSilverPurchase(models.Model):
 
 
 class CustomerPurchase(models.Model):
+    class Purity(models.TextChoices):
+        TWENTYFOURKARAT = '24K', '24 Karat'
+        TWENTYTWOKARAT = '22K', '22 Karat'
+        EIGHTEENKARAT = '18K', '18 Karat'
+        FOURTEENKARAT = '14K', '14 Karat'
+    
+    purity = models.CharField(
+        max_length=5,
+        choices=Purity.choices,
+        default=Purity.TWENTYTWOKARAT,
+        help_text='Purity/Karat of the metal'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
