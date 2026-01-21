@@ -1,7 +1,9 @@
 {% extends 'finance/base_finance.html' %}
 
 {% block action_buttons %}
-<!-- Add Loan button or actions here if needed -->
+<a href="{% url 'finance:loan_create' %}" class="btn btn-primary">
+    <i class="bi bi-plus-lg"></i> Add Loan
+</a>
 {% endblock %}
 
 {% block main_content %}
@@ -12,7 +14,36 @@
                 <h5 class="mb-0">Loan Management</h5>
             </div>
             <div class="card-body">
-                <p>This is a placeholder page for Loan management. You can add, view, and manage loans here in the future.</p>
+                {% if loans %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Bank Name</th>
+                                <th>Amount (रु)</th>
+                                <th>Interest Rate (%)</th>
+                                <th>Start Date</th>
+                                <th>Notes</th>
+                                <th>Added</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for loan in loans %}
+                            <tr>
+                                <td>{{ loan.bank_name }}</td>
+                                <td>{{ loan.amount }}</td>
+                                <td>{{ loan.interest_rate }}</td>
+                                <td>{{ loan.start_date }}</td>
+                                <td>{{ loan.notes|default:'—' }}</td>
+                                <td>{{ loan.created_at|date:'Y-m-d H:i' }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info mb-0">No loans found. Click "Add Loan" to create one.</div>
+                {% endif %}
             </div>
         </div>
     </div>

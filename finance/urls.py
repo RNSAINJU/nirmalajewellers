@@ -9,6 +9,7 @@ urlpatterns = [
 
     # Loan
     path('loans/', __import__('finance.views_loan').views_loan.loan_list, name='loan_list'),
+    path('loans/add/', __import__('finance.views_loan').views_loan.loan_create, name='loan_create'),
     
     # Expenses
     path('expenses/', views.expense_list, name='expense_list'),

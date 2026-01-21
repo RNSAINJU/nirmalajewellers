@@ -1,4 +1,19 @@
+
 from django import forms
+from .models import Loan
+
+class LoanForm(forms.ModelForm):
+    class Meta:
+        model = Loan
+        fields = ['bank_name', 'amount', 'interest_rate', 'start_date', 'notes']
+        widgets = {
+            'bank_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Bank Name'}),
+            'amount': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Loan Amount', 'step': '0.01'}),
+            'interest_rate': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Interest Rate (%)', 'step': '0.01'}),
+            'start_date': forms.DateInput(attrs={'class': 'form-control nepali-date', 'placeholder': 'Start Date'}),
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Notes (optional)'}),
+        }
+
 from .models import Expense, Employee, EmployeeSalary, SundryDebtor, DebtorTransaction, SundryCreditor, CreditorTransaction
 
 

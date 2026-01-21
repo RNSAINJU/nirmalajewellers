@@ -3,6 +3,23 @@ from django.db import models
 from django.utils import timezone
 from nepali_datetime_field.models import NepaliDateField
 
+class Loan(models.Model):
+    """Model for loans from various banks"""
+    bank_name = models.CharField(max_length=255)
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    interest_rate = models.DecimalField(max_digits=5, decimal_places=2, help_text="Annual interest rate (%)")
+    start_date = NepaliDateField()
+    notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-start_date', '-created_at']
+        verbose_name_plural = "Loans"
+
+    def __str__(self):
+        return f"{self.bank_name} - रु{self.amount} @ {self.interest_rate}%"
+
 
 class Expense(models.Model):
     """Model for managing business expenses"""
