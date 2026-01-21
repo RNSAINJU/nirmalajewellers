@@ -6,6 +6,9 @@ app_name = 'finance'
 urlpatterns = [
     # Dashboard
     path('dashboard/', views.finance_dashboard, name='finance_dashboard'),
+
+    # Loan
+    path('loans/', __import__('finance.views_loan').views_loan.loan_list, name='loan_list'),
     
     # Expenses
     path('expenses/', views.expense_list, name='expense_list'),

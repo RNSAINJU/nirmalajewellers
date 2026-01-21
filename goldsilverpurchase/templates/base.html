@@ -330,7 +330,10 @@
                     Sundry Debtors
                 </a>
                 <a href="{% url 'finance:creditor_list' %}" class="nav-link ms-3">
-                    Sundry Creditors
+        	    Sundry Creditors
+                </a>
+                <a href="{% url 'finance:loan_list' %}" class="nav-link ms-3 {% if request.resolver_match.url_name == 'loan_list' %}active{% endif %}" id="loanTab">
+                    <i class="bi bi-cash-stack me-2"></i> Loan
                 </a>
             </div>
         </li>
