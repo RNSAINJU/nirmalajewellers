@@ -1,7 +1,9 @@
 
+from decimal import Decimal
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.db.models import Sum
 from .models import Loan
 from .forms import LoanForm
 
@@ -9,7 +11,23 @@ from .forms import LoanForm
 @login_required
 def loan_list(request):
     loans = Loan.objects.all().order_by('-start_date', '-created_at')
-    return render(request, 'finance/loan_list.html', {'loans': loans})
+    
+    # Calculate total loan amount
+    total_loan_amount = loans.aggregate(Sum('amount'))['amount__sum'] or Decimal('0')
+    
+    # Calculate total monthly interest amount
+    # Formula: (Loan Amount * Interest Rate) / 100 / 12 for each loan
+    total_monthly_interest = Decimal('0')
+    for loan in loans:
+        monthly_interest = (loan.amount * loan.interest_rate) / 100 / 12
+        total_monthly_interest += monthly_interest
+    
+    context = {
+        'loans': loans,
+        'total_loan_amount': total_loan_amount,
+        'total_monthly_interest': total_monthly_interest,
+    }
+    return render(request, 'finance/loan_list.html', context)
 
 
 @login_required

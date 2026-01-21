@@ -7,6 +7,29 @@
 {% endblock %}
 
 {% block main_content %}
+<div class="row mb-3">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="row g-0">
+                    <div class="col-md-6 border-end p-3">
+                        <div class="text-center">
+                            <h6 class="text-muted mb-2">Total Loan Amount</h6>
+                            <h3 class="mb-0 text-primary">रु{{ total_loan_amount }}</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-6 p-3">
+                        <div class="text-center">
+                            <h6 class="text-muted mb-2">Total Monthly Interest</h6>
+                            <h3 class="mb-0 text-success">रु{{ total_monthly_interest }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-md-12">
         <div class="card">
