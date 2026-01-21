@@ -114,6 +114,28 @@
         color: #0a58ca;
         text-decoration: underline;
     }
+    /* Compact ornament chips */
+    .ornament-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        max-width: 260px;
+    }
+    .ornament-chip {
+        background: #eef2ff;
+        color: #4338ca;
+        border: 1px solid #c7d2fe;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+    .ornament-chip-muted {
+        background: #f3f4f6;
+        color: #4b5563;
+        border-color: #e5e7eb;
+    }
 </style>
 
 <div class="container mt-5">
@@ -224,23 +246,49 @@
                 {% for sale in sales %}
                 {% with order=sale.order %}
                 <tr>
-                    <td>{{ sale.bill_no }}</td>
+                    <td>
+                        <a href="{% url 'sales:sale_update' sale.pk %}" class="text-decoration-none fw-semibold">{{ sale.bill_no }}</a>
+                    </td>
                     <td>{{ sale.sale_date|bs_date }}</td>
                     <td>{{ order.sn }}</td>
                     <td>{{ order.order_date|bs_date }}</td>
                     <td>{{ order.customer_name }}</td>
                     <td>{{ order.phone_number }}</td>
                     <td>
-                        {% for line in order.order_ornaments.all %}
-                            <small>• <a class="ornament-link" href="{% url 'ornament:update' line.ornament.id %}" target="_blank" rel="noopener">{{ line.ornament.ornament_name }}</a> ({{ line.ornament.metal_type }}, {{ line.ornament.type }}) — {{ line.ornament.weight|default:0|floatformat:3 }} </small><br/>
-                        {% empty %}
-                            <small class="text-muted">No ornaments</small>
-                        {% endfor %}
+                        {% with items=order.order_ornaments.all %}
+                            {% if items %}
+                                <div class="ornament-chips" title="{% for line in items %}{{ line.ornament.ornament_name }} ({{ line.ornament.metal_type }}, {{ line.ornament.type }}){% if not forloop.last %}, {% endif %}{% endfor %}">
+                                    {% for line in items|slice:":3" %}
+                                        <a href="{% url 'ornament:update' line.ornament.id %}" class="text-decoration-none ornament-link"><span class="ornament-chip">{{ line.ornament.ornament_name }} • {{ line.ornament.metal_type }}</span></a>
+                                    {% endfor %}
+                                    {% if items|length > 3 %}
+                                        <span class="ornament-chip ornament-chip-muted">+{{ items|length|add:"-3" }} more</span>
+                                    {% endif %}
+                                </div>
+                            {% else %}
+                                <small class="text-muted">No ornaments</small>
+                            {% endif %}
+                        {% endwith %}
                     </td>
                     <td>{{ sale.total_weight|default:0|floatformat:3 }}</td>
-                    <td>{{ order.total }}</td>
-                    <td>{{ order.payment_amount }} ({{ order.get_payment_mode_display }})</td>
-                    <td>{{ order.remaining_amount }}</td>
+                    <td>रु{{ order.total|floatformat:2 }}</td>
+                    <td>
+                        {% if order.total_paid > 0 %}
+                            रु{{ order.total_paid|floatformat:2 }}
+                            {% if order.payments.count > 1 %}
+                                <small class="text-muted">(Mixed)</small><br>
+                                {% for payment in order.payments.all %}
+                                    <small>• {{ payment.get_payment_mode_display }}: रु{{ payment.amount|floatformat:2 }}</small><br>
+                                {% endfor %}
+                            {% elif order.payments.count == 1 %}
+                                <small class="text-muted">({{ order.payments.first.get_payment_mode_display }})</small>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-danger">रु0.00</span>
+                            <small class="text-muted">(Unpaid)</small>
+                        {% endif %}
+                    </td>
+                    <td>रु{{ order.remaining_amount|floatformat:2 }}</td>
                     <td><span class="badge bg-info">{{ order.get_status_display }}</span></td>
                     <td class="text-center">
                         <div class="btn-group" role="group">

@@ -152,16 +152,18 @@ class OrderListView(ListView):
     paginate_by = 25
 
     def get_queryset(self):
-        """Show only orders that have not yet been converted to sales."""
+        """Show only orders that have not yet been converted to sales, except for delivered orders which should always show."""
         qs = super().get_queryset()
+        # Show orders without sales OR delivered orders (delivered orders should be visible even if in sales)
         return (
-            qs.filter(sale__isnull=True)
+            qs.filter(Q(sale__isnull=True) | Q(status='delivered'))
             .annotate(total_weight=Sum('order_ornaments__ornament__weight'))
             .prefetch_related(
                 'order_ornaments__ornament',
                 'payments',
                 'ornaments',  # ornament FK on Ornament model if present
             )
+            .distinct()  # Remove duplicates from OR condition
         )
 
     def get_context_data(self, **kwargs):

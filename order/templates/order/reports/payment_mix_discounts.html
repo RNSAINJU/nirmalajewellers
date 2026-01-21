@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block title %}Payment Mix & Discounts Report{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-wallet"></i> Payment Mix & Discount Analysis</h2>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h6 class="card-title">Orders with Discount</h6>
+                    <h3>{{ orders_with_discount }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h6 class="card-title">Total Discount Given</h6>
+                    <h3>₹{{ total_discount|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h6 class="card-title">Discount as % of Total</h6>
+                    <h3>{{ discount_percent }}%</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modes Breakdown -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="mb-0">Payment Mode Distribution</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Payment Mode</th>
+                            <th class="text-end">Count</th>
+                            <th class="text-end">Total Amount</th>
+                            <th class="text-end">Avg Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mode in payment_modes %}
+                        <tr>
+                            <td>
+                                <span class="badge bg-secondary">{{ mode.payment_mode|title }}</span>
+                            </td>
+                            <td class="text-end">{{ mode.count }}</td>
+                            <td class="text-end fw-bold">₹{{ mode.total_amount|floatformat:2 }}</td>
+                            <td class="text-end">₹{{ mode.avg_amount|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">No payment data</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Discount Summary -->
+    <div class="card">
+        <div class="card-header">
+            <h6 class="mb-0">Discount Summary</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <tbody>
+                        <tr>
+                            <th style="width: 40%">Orders with Discount</th>
+                            <td class="text-end">{{ orders_with_discount }}</td>
+                        </tr>
+                        <tr>
+                            <th>Total Discount Amount</th>
+                            <td class="text-end fw-bold">₹{{ total_discount|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <th>Average Discount per Order</th>
+                            <td class="text-end">₹{{ avg_discount|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <th>Discount as % of Total Sales</th>
+                            <td class="text-end fw-bold">{{ discount_percent }}%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

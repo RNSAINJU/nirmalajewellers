@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}Margin by Category Report{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-graph-up-arrow"></i> Margin Analysis by Category</h2>
+    </div>
+
+    <!-- Margin Details Table -->
+    <div class="card">
+        <div class="card-header">
+            <h6 class="mb-0">Sales Performance by Metal Type</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Metal Type</th>
+                            <th class="text-end">Orders</th>
+                            <th class="text-end">Total Sales</th>
+                            <th class="text-end">Avg Order Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in margin_data %}
+                        <tr>
+                            <td>
+                                <span class="badge bg-info">{{ item.ornament__metal_type|title }}</span>
+                            </td>
+                            <td class="text-end">
+                                <span class="badge bg-primary">{{ item.order_count }}</span>
+                            </td>
+                            <td class="text-end fw-bold">₹{{ item.total_sales|floatformat:2 }}</td>
+                            <td class="text-end">₹{{ item.avg_order_value|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">No data available</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <p class="text-muted small mt-3">
+        <strong>Note:</strong> Margin analysis shows sales performance by metal type category. Higher average order value typically indicates better margin or premium products.
+    </p>
+</div>
+{% endblock %}

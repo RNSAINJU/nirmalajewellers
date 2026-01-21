@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}Stock Aging Report{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-hourglass-split"></i> Stock Aging Analysis</h2>
+    </div>
+
+    <!-- Aging Buckets Summary -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h6 class="card-title">Recent (< 30 days)</h6>
+                    <h3>{{ recent }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h6 class="card-title">Aged (30-60 days)</h6>
+                    <h3>{{ aged }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h6 class="card-title">Old (60-90 days)</h6>
+                    <h3>{{ old }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <h6 class="card-title">Very Old (> 90 days)</h6>
+                    <h3>{{ very_old }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Table -->
+    <div class="card">
+        <div class="card-header">
+            <h6 class="mb-0">Inventory Age Distribution</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <tbody>
+                        <tr>
+                            <th style="width: 40%">Recent (< 30 days)</th>
+                            <td class="text-end">{{ recent }} items</td>
+                            <td class="text-end"><strong>{% widthratio recent total 100 %}%</strong></td>
+                        </tr>
+                        <tr>
+                            <th>Aged (30-60 days)</th>
+                            <td class="text-end">{{ aged }} items</td>
+                            <td class="text-end"><strong>{% widthratio aged total 100 %}%</strong></td>
+                        </tr>
+                        <tr>
+                            <th>Old (60-90 days)</th>
+                            <td class="text-end">{{ old }} items</td>
+                            <td class="text-end"><strong>{% widthratio old total 100 %}%</strong></td>
+                        </tr>
+                        <tr>
+                            <th>Very Old (> 90 days)</th>
+                            <td class="text-end">{{ very_old }} items</td>
+                            <td class="text-end"><strong>{% widthratio very_old total 100 %}%</strong></td>
+                        </tr>
+                        <tr class="fw-bold">
+                            <th>Total</th>
+                            <td class="text-end">{{ total }} items</td>
+                            <td class="text-end">100%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <p class="text-muted small mt-3">
+        <strong>Note:</strong> Stock aging is calculated based on last update date of ornaments in inventory. High percentage of old stock may indicate slow-moving items or need for inventory clearance.
+    </p>
+</div>
+
+<style>
+    .divide { opacity: 0; }
+</style>
+{% endblock %}

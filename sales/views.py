@@ -361,7 +361,7 @@ def sales_export_excel(request):
         "Subtotal",
         "Tax",
         "Total",
-        "Payment Mode",
+        "Payment Modes",
         "Paid Amount",
         "Remaining Amount",
     ]
@@ -382,8 +382,8 @@ def sales_export_excel(request):
             o.subtotal,
             o.tax,
             o.total,
-            o.get_payment_mode_display(),
-            o.payment_amount,
+            ", ".join([p.get_payment_mode_display() for p in o.payments.all()]) if o.payments.exists() else "",
+            o.total_paid,
             o.remaining_amount,
         ])
 
@@ -802,7 +802,7 @@ class ExcelImportProcessor:
         }
         
         for idx, header in enumerate(headers):
-            header_lower = header.lower().strip()
+            header_lower = str(header or '').lower().strip()
             
             if 'bill' in header_lower:
                 col_map['bill_no'] = idx
@@ -867,8 +867,8 @@ class ExcelImportProcessor:
     def create_complete_order(self, bill_no, order_info, ornaments_list):
         """Create complete order with all ornaments."""
         try:
-            customer_name = order_info.get('customer_name', '').strip()
-            phone_number = order_info.get('phone_number', '').strip()
+            customer_name = str(order_info.get('customer_name') or '').strip()
+            phone_number = str(order_info.get('phone_number') or '').strip()
             
             if not customer_name:
                 return {'success': False, 'error': 'Customer name is required'}
@@ -896,7 +896,6 @@ class ExcelImportProcessor:
                 order_date=order_date,
                 deliver_date=deliver_date,
                 status=order_info.get('status', 'delivered'),
-                payment_mode=order_info.get('payment_mode', 'cash'),
                 discount=order_info.get('discount', Decimal('0')),
                 tax=order_info.get('tax', Decimal('0')),
             )
@@ -956,41 +955,36 @@ class ExcelImportProcessor:
             discount = order_info.get('discount', Decimal('0'))
             tax = order_info.get('tax', Decimal('0'))
             
-            if total_line_amount > 0:
-                total_amount = total_line_amount
-            else:
-                total_amount = Decimal('0')
+            total_amount = total_line_amount if total_line_amount > 0 else Decimal('0')
             
             order.amount = total_line_amount or total_amount
             order.subtotal = max(Decimal('0'), order.amount - discount)
             order.total = order.subtotal + tax
-            # Payment amount should not exceed order total
-            order.payment_amount = min(total_amount, order.total)
-            order.remaining_amount = max(Decimal('0'), order.total - order.payment_amount)
-            order.payment_mode = payment_mode
+            paid_amount = min(total_amount, order.total)
+            order.remaining_amount = max(Decimal('0'), order.total - paid_amount)
             order.save(update_fields=[
-                'amount', 'subtotal', 'total', 'payment_amount', 'remaining_amount', 'payment_mode'
+                'amount', 'subtotal', 'total', 'remaining_amount'
             ])
             
             # Create payment
-            if total_amount > 0:
+            if paid_amount > 0:
                 OrderPayment.objects.create(
                     order=order,
                     payment_mode=payment_mode,
-                    amount=total_amount,
+                    amount=paid_amount,
                 )
                 
                 if payment_mode == 'sundry_debtor':
                     debtor, created = SundryDebtor.objects.get_or_create(
                         name=customer_name,
                         defaults={
-                            'credit_limit': order.payment_amount,
-                            'current_balance': order.payment_amount,
+                            'credit_limit': paid_amount,
+                            'current_balance': paid_amount,
                         }
                     )
                     
                     if not created:
-                        debtor.current_balance = debtor.current_balance + order.payment_amount
+                        debtor.current_balance = debtor.current_balance + paid_amount
                         debtor.save(update_fields=['current_balance', 'updated_at'])
                     
                     payment = order.payments.first()
@@ -1021,7 +1015,7 @@ class ExcelImportProcessor:
         
         try:
             if isinstance(date_value, str):
-                date_str = date_value.strip()
+                date_str = str(date_value).strip()
                 
                 if len(date_str) == 10 and date_str[4] == '-' and date_str[7] == '-':
                     parts = date_str.split('-')
@@ -1045,7 +1039,7 @@ class ExcelImportProcessor:
         if not metal_type_str:
             return 'gold'
         
-        metal_lower = metal_type_str.lower().strip()
+        metal_lower = str(metal_type_str).lower().strip()
         if 'silver' in metal_lower:
             return 'silver'
         elif 'platinum' in metal_lower:
@@ -1058,7 +1052,7 @@ class ExcelImportProcessor:
         if not purity_str:
             return 'twentyfourkarat'
         
-        purity_lower = purity_str.lower().strip().replace(' ', '').replace('k', '')
+        purity_lower = str(purity_str).lower().strip().replace(' ', '').replace('k', '')
         
         if '24' in purity_lower or purity_lower == 'twentyfourkarat':
             return 'twentyfourkarat'

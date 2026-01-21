@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+
+{% block title %}Debtor Aging Report{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-calendar3"></i> Debtor Aging Report</h2>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h6 class="card-title">Current (< 30d)</h6>
+                    <h3>{{ current|length }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h6 class="card-title">30-60 Days</h6>
+                    <h3>{{ thirty|length }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h6 class="card-title">60-90 Days</h6>
+                    <h3>{{ sixty|length }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <h6 class="card-title">90+ Days</h6>
+                    <h3>{{ ninety_plus|length }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Debtors (< 30 days) -->
+    {% if current %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="mb-0"><i class="bi bi-check-circle"></i> Current (< 30 Days)</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Customer Name</th>
+                            <th class="text-end">Phone</th>
+                            <th class="text-end">Orders</th>
+                            <th class="text-end">Total Due</th>
+                            <th class="text-end">Paid</th>
+                            <th class="text-end">% Paid</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for debtor in current %}
+                        <tr>
+                            <td><strong>{{ debtor.customer_name }}</strong></td>
+                            <td class="text-end">{{ debtor.phone_number }}</td>
+                            <td class="text-end"><span class="badge bg-info">{{ debtor.total_orders }}</span></td>
+                            <td class="text-end fw-bold">₹{{ debtor.total_due|floatformat:2 }}</td>
+                            <td class="text-end">₹{{ debtor.paid|floatformat:2 }}</td>
+                            <td class="text-end"><span class="badge bg-success">{{ debtor.paid|floatformat:0 }}%</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 30-60 Days Overdue -->
+    {% if thirty %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="mb-0"><i class="bi bi-exclamation-circle"></i> 30-60 Days Overdue</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Customer Name</th>
+                            <th class="text-end">Phone</th>
+                            <th class="text-end">Orders</th>
+                            <th class="text-end">Total Due</th>
+                            <th class="text-end">Paid</th>
+                            <th class="text-end">% Paid</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for debtor in thirty %}
+                        <tr class="table-light">
+                            <td><strong>{{ debtor.customer_name }}</strong></td>
+                            <td class="text-end">{{ debtor.phone_number }}</td>
+                            <td class="text-end"><span class="badge bg-warning">{{ debtor.total_orders }}</span></td>
+                            <td class="text-end fw-bold">₹{{ debtor.total_due|floatformat:2 }}</td>
+                            <td class="text-end">₹{{ debtor.paid|floatformat:2 }}</td>
+                            <td class="text-end"><span class="badge bg-warning">{{ debtor.paid|floatformat:0 }}%</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 60-90 Days Overdue -->
+    {% if sixty %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="mb-0"><i class="bi bi-exclamation-triangle"></i> 60-90 Days Overdue</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Customer Name</th>
+                            <th class="text-end">Phone</th>
+                            <th class="text-end">Orders</th>
+                            <th class="text-end">Total Due</th>
+                            <th class="text-end">Paid</th>
+                            <th class="text-end">% Paid</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for debtor in sixty %}
+                        <tr class="table-warning">
+                            <td><strong>{{ debtor.customer_name }}</strong></td>
+                            <td class="text-end">{{ debtor.phone_number }}</td>
+                            <td class="text-end"><span class="badge bg-warning">{{ debtor.total_orders }}</span></td>
+                            <td class="text-end fw-bold">₹{{ debtor.total_due|floatformat:2 }}</td>
+                            <td class="text-end">₹{{ debtor.paid|floatformat:2 }}</td>
+                            <td class="text-end"><span class="badge bg-danger">{{ debtor.paid|floatformat:0 }}%</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 90+ Days Overdue (Critical) -->
+    {% if ninety_plus %}
+    <div class="card mb-4">
+        <div class="card-header bg-danger">
+            <h6 class="mb-0 text-white"><i class="bi bi-exclamation-circle-fill"></i> CRITICAL: 90+ Days Overdue</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0">
+                    <thead class="table-danger">
+                        <tr>
+                            <th>Customer Name</th>
+                            <th class="text-end">Phone</th>
+                            <th class="text-end">Orders</th>
+                            <th class="text-end">Total Due</th>
+                            <th class="text-end">Paid</th>
+                            <th class="text-end">% Paid</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for debtor in ninety_plus %}
+                        <tr class="table-danger">
+                            <td><strong>{{ debtor.customer_name }}</strong></td>
+                            <td class="text-end">{{ debtor.phone_number }}</td>
+                            <td class="text-end"><span class="badge bg-danger">{{ debtor.total_orders }}</span></td>
+                            <td class="text-end fw-bold">₹{{ debtor.total_due|floatformat:2 }}</td>
+                            <td class="text-end">₹{{ debtor.paid|floatformat:2 }}</td>
+                            <td class="text-end"><span class="badge bg-danger">{{ debtor.paid|floatformat:0 }}%</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Summary -->
+    <div class="card">
+        <div class="card-header">
+            <h6 class="mb-0">Debtor Summary</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <tbody>
+                        <tr>
+                            <th style="width: 40%">Total Debtors</th>
+                            <td class="text-end fw-bold">{{ total_debtors }}</td>
+                        </tr>
+                        <tr>
+                            <th>Total Pending Amount</th>
+                            <td class="text-end fw-bold">₹{{ total_pending|floatformat:2 }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

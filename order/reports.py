@@ -1,7 +1,7 @@
 """Order reports and analytics views"""
 from django.shortcuts import render
 from django.views import View
-from django.db.models import Sum, Count, Q, F, DecimalField, Case, When, Value
+from django.db.models import Sum, Count, Q, F, DecimalField, Case, When, Value, Max, Min
 from django.db.models.functions import Coalesce, TruncMonth, TruncYear
 from decimal import Decimal
 from datetime import datetime, timedelta
@@ -16,7 +16,9 @@ class OrderDashboardReport(View):
         date_from = request.GET.get('date_from')
         date_to = request.GET.get('date_to')
         
-        orders_qs = Order.objects.all()
+        orders_qs = Order.objects.all().annotate(
+            paid=Coalesce(Sum('payments__amount'), Decimal('0'), output_field=DecimalField())
+        )
         
         if date_from:
             orders_qs = orders_qs.filter(order_date__gte=date_from)
@@ -29,7 +31,7 @@ class OrderDashboardReport(View):
             total=Coalesce(Sum('total'), Decimal('0'), output_field=DecimalField())
         )['total']
         total_collected = orders_qs.aggregate(
-            total=Coalesce(Sum('payment_amount'), Decimal('0'), output_field=DecimalField())
+            total=Coalesce(Sum('payments__amount'), Decimal('0'), output_field=DecimalField())
         )['total']
         total_pending = total_revenue - total_collected
         
@@ -45,10 +47,10 @@ class OrderDashboardReport(View):
             amount=Coalesce(Sum('total'), Decimal('0'), output_field=DecimalField())
         ).order_by('-count')
         
-        # Payment methods summary
-        payment_summary = orders_qs.values('payment_mode').annotate(
-            count=Count('sn'),
-            amount=Coalesce(Sum('total'), Decimal('0'), output_field=DecimalField())
+        # Payment methods summary (from payments)
+        payment_summary = OrderPayment.objects.values('payment_mode').annotate(
+            count=Count('id'),
+            amount=Coalesce(Sum('amount'), Decimal('0'), output_field=DecimalField())
         ).order_by('-count')
         
         # Monthly trend
@@ -57,14 +59,14 @@ class OrderDashboardReport(View):
         ).values('month').annotate(
             count=Count('sn'),
             revenue=Coalesce(Sum('total'), Decimal('0'), output_field=DecimalField()),
-            collected=Coalesce(Sum('payment_amount'), Decimal('0'), output_field=DecimalField())
+            collected=Coalesce(Sum('payments__amount'), Decimal('0'), output_field=DecimalField())
         ).order_by('month')
         
         # Top customers by revenue
         top_customers = orders_qs.values('customer_name').annotate(
             order_count=Count('sn'),
             total_amount=Coalesce(Sum('total'), Decimal('0'), output_field=DecimalField()),
-            paid_amount=Coalesce(Sum('payment_amount'), Decimal('0'), output_field=DecimalField()),
+            paid_amount=Coalesce(Sum('payments__amount'), Decimal('0'), output_field=DecimalField()),
             pending=F('total_amount') - F('paid_amount')
         ).order_by('-total_amount')[:10]
         
@@ -127,7 +129,7 @@ class OrderSalesAnalysis(View):
         for order in orders_qs.order_by('-order_date'):
             ornament_count = order.order_ornaments.count()
             metal_count = order.order_metals.count()
-            pending = order.total - order.payment_amount
+            pending = order.total - order.total_paid
             order_details.append({
                 'sn': order.sn,
                 'customer_name': order.customer_name,
@@ -139,9 +141,9 @@ class OrderSalesAnalysis(View):
                 'discount': float(order.discount),
                 'tax': float(order.tax),
                 'total': float(order.total),
-                'paid': float(order.payment_amount),
+                'paid': float(order.total_paid),
                 'pending': float(pending),
-                'collection_percent': round((float(order.payment_amount) / float(order.total) * 100) if order.total > 0 else 0, 2)
+                'collection_percent': round((float(order.total_paid) / float(order.total) * 100) if order.total > 0 else 0, 2)
             })
         
         context = {
@@ -165,19 +167,21 @@ class OrderPaymentAnalysis(View):
     """Payment collection and pending analysis"""
     
     def get(self, request):
-        orders_qs = Order.objects.all()
+        orders_qs = Order.objects.all().annotate(
+            paid=Coalesce(Sum('payments__amount'), Decimal('0'), output_field=DecimalField())
+        )
         
         # Payment status breakdown
         fully_paid = orders_qs.filter(remaining_amount=0).count()
-        partial_paid = orders_qs.filter(remaining_amount__gt=0, payment_amount__gt=0).count()
-        unpaid = orders_qs.filter(payment_amount=0).count()
+        partial_paid = orders_qs.filter(remaining_amount__gt=0, paid__gt=0).count()
+        unpaid = orders_qs.filter(paid=0).count()
         
         total_pending = orders_qs.aggregate(
             total=Coalesce(Sum('remaining_amount'), Decimal('0'), output_field=DecimalField())
         )['total']
         
         total_collected = orders_qs.aggregate(
-            total=Coalesce(Sum('payment_amount'), Decimal('0'), output_field=DecimalField())
+            total=Coalesce(Sum('paid'), Decimal('0'), output_field=DecimalField())
         )['total']
         
         total_due = orders_qs.aggregate(
@@ -197,7 +201,7 @@ class OrderPaymentAnalysis(View):
             order_count=Count('sn'),
             total_pending=Coalesce(Sum('remaining_amount'), Decimal('0'), output_field=DecimalField()),
             total_due=Coalesce(Sum('total'), Decimal('0'), output_field=DecimalField()),
-            paid=Coalesce(Sum('payment_amount'), Decimal('0'), output_field=DecimalField())
+            paid=Coalesce(Sum('payments__amount'), Decimal('0'), output_field=DecimalField())
         ).order_by('-total_pending')
         
         # Calculate percentage paid for each customer
@@ -267,7 +271,7 @@ class OrderCustomerAnalysis(View):
         customer_details = orders_qs.values('customer_name', 'phone_number').annotate(
             order_count=Count('sn'),
             total_spent=Coalesce(Sum('total'), Decimal('0'), output_field=DecimalField()),
-            paid=Coalesce(Sum('payment_amount'), Decimal('0'), output_field=DecimalField()),
+            paid=Coalesce(Sum('payments__amount'), Decimal('0'), output_field=DecimalField()),
             pending=Coalesce(Sum('remaining_amount'), Decimal('0'), output_field=DecimalField()),
             avg_order_value=Coalesce(Sum('total') / Count('sn'), Decimal('0'), output_field=DecimalField())
         ).order_by('-total_spent')
@@ -280,3 +284,197 @@ class OrderCustomerAnalysis(View):
         }
         
         return render(request, 'order/reports/customer_analysis.html', context)
+
+
+class FastSlowMoversReport(View):
+    """Identify fast-moving and slow-moving ornaments by order frequency"""
+    
+    def get(self, request):
+        from .models import OrderOrnament
+        
+        # Ornament movement analysis
+        ornament_movement = OrderOrnament.objects.values(
+            'ornament__code', 'ornament__ornament_name'
+        ).annotate(
+            order_count=Count('order', distinct=True),
+            line_count=Count('id'),
+            total_value=Coalesce(Sum('line_amount'), Decimal('0'), output_field=DecimalField()),
+            last_order_date=Max('order__order_date')
+        ).order_by('-order_count')
+        
+        # Split into fast & slow movers (threshold: median)
+        movement_list = list(ornament_movement)
+        total = len(movement_list)
+        threshold_idx = total // 2 if total > 0 else 0
+        
+        fast_movers = movement_list[:threshold_idx]
+        slow_movers = movement_list[threshold_idx:]
+        
+        context = {
+            'fast_movers': fast_movers,
+            'slow_movers': slow_movers,
+            'total_ornaments': total,
+        }
+        
+        return render(request, 'order/reports/fast_slow_movers.html', context)
+
+
+class StockAgingReport(View):
+    """Analyze ornament stock age and inventory aging"""
+    
+    def get(self, request):
+        from ornament.models import Ornament
+        from datetime import datetime, timedelta
+        
+        # Define aging buckets
+        today = datetime.now().date()
+        thirty_days_ago = today - timedelta(days=30)
+        sixty_days_ago = today - timedelta(days=60)
+        ninety_days_ago = today - timedelta(days=90)
+        
+        ornaments = Ornament.objects.all()
+        
+        # Categorize by age
+        very_old = ornaments.filter(updated_at__lt=ninety_days_ago).count()
+        old = ornaments.filter(updated_at__range=[sixty_days_ago, ninety_days_ago]).count()
+        aged = ornaments.filter(updated_at__range=[thirty_days_ago, sixty_days_ago]).count()
+        recent = ornaments.filter(updated_at__gte=thirty_days_ago).count()
+        
+        context = {
+            'very_old': very_old,
+            'old': old,
+            'aged': aged,
+            'recent': recent,
+            'total': ornaments.count(),
+        }
+        
+        return render(request, 'order/reports/stock_aging.html', context)
+
+
+class MarginByCategoryReport(View):
+    """Margin analysis by ornament category/type"""
+    
+    def get(self, request):
+        from .models import OrderOrnament
+        
+        # Get ornaments with their category info
+        margin_data = OrderOrnament.objects.values(
+            'ornament__metal_type'
+        ).annotate(
+            total_sales=Coalesce(Sum('line_amount'), Decimal('0'), output_field=DecimalField()),
+            order_count=Count('order', distinct=True),
+            avg_order_value=Coalesce(Sum('line_amount') / Count('order', distinct=True), Decimal('0'), output_field=DecimalField())
+        ).order_by('-total_sales')
+        
+        context = {
+            'margin_data': list(margin_data),
+        }
+        
+        return render(request, 'order/reports/margin_by_category.html', context)
+
+
+class PaymentMixDiscountsReport(View):
+    """Payment modes mix and discount analysis"""
+    
+    def get(self, request):
+        # Payment mode distribution
+        payment_modes = OrderPayment.objects.values('payment_mode').annotate(
+            count=Count('id'),
+            total_amount=Coalesce(Sum('amount'), Decimal('0'), output_field=DecimalField()),
+            avg_amount=Coalesce(Sum('amount') / Count('id'), Decimal('0'), output_field=DecimalField())
+        ).order_by('-total_amount')
+        
+        # Discount analysis
+        orders_with_discount = Order.objects.filter(discount__gt=0)
+        total_discount = orders_with_discount.aggregate(
+            total=Coalesce(Sum('discount'), Decimal('0'), output_field=DecimalField())
+        )['total']
+        
+        avg_discount = orders_with_discount.aggregate(
+            avg=Coalesce(Sum('discount') / Count('sn'), Decimal('0'), output_field=DecimalField())
+        )['avg'] if orders_with_discount.count() > 0 else Decimal('0')
+        
+        # Calculate discount percentage
+        total_sales = Order.objects.aggregate(
+            total=Coalesce(Sum('total'), Decimal('0'), output_field=DecimalField())
+        )['total']
+        
+        discount_percent = (float(total_discount) / float(total_sales) * 100) if total_sales > 0 else 0
+        
+        context = {
+            'payment_modes': list(payment_modes),
+            'orders_with_discount': orders_with_discount.count(),
+            'total_discount': float(total_discount),
+            'avg_discount': float(avg_discount),
+            'discount_percent': round(discount_percent, 2),
+        }
+        
+        return render(request, 'order/reports/payment_mix_discounts.html', context)
+
+
+class DebtorAgingReport(View):
+    """Analyze debtor accounts aging and collections"""
+    
+    def get(self, request):
+        # Pending customers with aging info
+        from datetime import datetime, timedelta
+        from django.utils import timezone
+        
+        # Use today's date in a timezone-aware way
+        today = timezone.now().date()
+        thirty_days_ago = today - timedelta(days=30)
+        sixty_days_ago = today - timedelta(days=60)
+        ninety_days_ago = today - timedelta(days=90)
+        
+        # Get customers with outstanding balance
+        debtors = Order.objects.filter(
+            remaining_amount__gt=0
+        ).values('customer_name', 'phone_number').annotate(
+            total_due=Coalesce(Sum('remaining_amount'), Decimal('0'), output_field=DecimalField()),
+            total_orders=Count('sn'),
+            oldest_order_date=Min('order_date'),
+            paid=Coalesce(Sum('payments__amount'), Decimal('0'), output_field=DecimalField()),
+            total_amount=Coalesce(Sum('total'), Decimal('0'), output_field=DecimalField())
+        ).order_by('-total_due')
+        
+        # Categorize by age
+        current = []
+        thirty = []
+        sixty = []
+        ninety_plus = []
+        
+        for debtor in debtors:
+            oldest_date = debtor.get('oldest_order_date')
+            if oldest_date:
+                # Convert NepaliDate to Python date if needed
+                try:
+                    # If it's a NepaliDate object, convert to Python date
+                    if hasattr(oldest_date, 'to_date_object'):
+                        oldest_python_date = oldest_date.to_date_object()
+                    else:
+                        oldest_python_date = oldest_date
+                    
+                    days_old = (today - oldest_python_date).days
+                except (AttributeError, TypeError):
+                    # Skip if conversion fails
+                    continue
+                
+                if days_old < 30:
+                    current.append(debtor)
+                elif days_old < 60:
+                    thirty.append(debtor)
+                elif days_old < 90:
+                    sixty.append(debtor)
+                else:
+                    ninety_plus.append(debtor)
+        
+        context = {
+            'current': current,
+            'thirty': thirty,
+            'sixty': sixty,
+            'ninety_plus': ninety_plus,
+            'total_debtors': len(list(debtors)),
+            'total_pending': sum(float(d['total_due']) for d in debtors),
+        }
+        
+        return render(request, 'order/reports/debtor_aging.html', context)
