@@ -25,6 +25,7 @@
                                 <th>Start Date</th>
                                 <th>Notes</th>
                                 <th>Added</th>
+                                <th class="text-end">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -36,6 +37,16 @@
                                 <td>{{ loan.start_date }}</td>
                                 <td>{{ loan.notes|default:'—' }}</td>
                                 <td>{{ loan.created_at|date:'Y-m-d H:i' }}</td>
+                                <td class="text-end">
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'finance:loan_update' loan.pk %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-pencil"></i> Edit
+                                        </a>
+                                        <a href="{% url 'finance:loan_delete' loan.pk %}" class="btn btn-sm btn-outline-danger">
+                                            <i class="bi bi-trash"></i> Delete
+                                        </a>
+                                    </div>
+                                </td>
                             </tr>
                         {% endfor %}
                         </tbody>
