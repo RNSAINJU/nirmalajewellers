@@ -160,8 +160,24 @@ class OrnamentCreateView(CreateView):
         return initial
 
     def form_valid(self, form):
-        # Cloudinary image is automatically handled by ModelForm
-        return super().form_valid(form)
+        try:
+            # Cloudinary image is automatically handled by ModelForm
+            result = super().form_valid(form)
+            
+            # Check if Cloudinary upload failed but form saved anyway
+            if hasattr(form, '_cloudinary_failed') and form._cloudinary_failed:
+                messages.warning(
+                    self.request,
+                    'Ornament created successfully, but image upload failed due to network restrictions. '
+                    'Images may not be uploadable on this server (PythonAnywhere firewall).'
+                )
+            
+            return result
+        except Exception as e:
+            # Handle unexpected errors
+            error_msg = str(e)
+            messages.error(self.request, f'Error creating ornament: {error_msg}')
+            return self.form_invalid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -182,8 +198,24 @@ class OrnamentUpdateView(UpdateView):
     success_url = reverse_lazy('ornament:list')
 
     def form_valid(self, form):
-        # Cloudinary image is automatically handled by ModelForm
-        return super().form_valid(form)
+        try:
+            # Cloudinary image is automatically handled by ModelForm
+            result = super().form_valid(form)
+            
+            # Check if Cloudinary upload failed but form saved anyway
+            if hasattr(form, '_cloudinary_failed') and form._cloudinary_failed:
+                messages.warning(
+                    self.request,
+                    'Ornament updated successfully, but image upload failed due to network restrictions. '
+                    'Images may not be uploadable on this server (PythonAnywhere firewall).'
+                )
+            
+            return result
+        except Exception as e:
+            # Handle unexpected errors
+            error_msg = str(e)
+            messages.error(self.request, f'Error updating ornament: {error_msg}')
+            return self.form_invalid(form)
 
     def get_success_url(self):
         # Check if there's a 'next' parameter to redirect back to

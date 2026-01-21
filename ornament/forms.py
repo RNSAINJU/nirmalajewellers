@@ -87,7 +87,28 @@ class OrnamentForm(forms.ModelForm):
         # For new objects, let the signal handle auto-generation
 
         if commit:
-            instance.save()
+            try:
+                # If editing existing ornament and no new image uploaded, preserve existing image
+                if instance.pk and 'image' not in self.changed_data:
+                    # No new image uploaded, save without touching image field
+                    instance.save(update_fields=[f for f in self.changed_data if f != 'image'])
+                else:
+                    # New ornament or new image uploaded
+                    instance.save()
+            except Exception as e:
+                # If Cloudinary connection fails (common on PythonAnywhere), try to save without the image
+                error_msg = str(e)
+                if any(keyword in error_msg.lower() for keyword in ['cloudinary', 'connection refused', 'max retries', 'errno 111', 'tcpkeepalive']):
+                    # Clear the image field and try again
+                    if hasattr(instance, 'image'):
+                        old_image = instance.image
+                        instance.image = None
+                    instance.save()
+                    # Store that image upload failed for view to handle
+                    self._cloudinary_failed = True
+                else:
+                    # Re-raise other exceptions
+                    raise
 
         return instance
 
