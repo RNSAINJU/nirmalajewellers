@@ -12,6 +12,8 @@ urlpatterns = [
     path('loans/add/', __import__('finance.views_loan').views_loan.loan_create, name='loan_create'),
     path('loans/<int:pk>/edit/', __import__('finance.views_loan').views_loan.loan_update, name='loan_update'),
     path('loans/<int:pk>/delete/', __import__('finance.views_loan').views_loan.loan_delete, name='loan_delete'),
+    path('loans/export/', __import__('finance.views_loan').views_loan.loan_export, name='loan_export'),
+    path('loans/import/', __import__('finance.views_loan').views_loan.loan_import, name='loan_import'),
     
     # Expenses
     path('expenses/', views.expense_list, name='expense_list'),

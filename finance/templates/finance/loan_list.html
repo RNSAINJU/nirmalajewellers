@@ -4,6 +4,12 @@
 <a href="{% url 'finance:loan_create' %}" class="btn btn-primary">
     <i class="bi bi-plus-lg"></i> Add Loan
 </a>
+<a href="{% url 'finance:loan_export' %}" class="btn btn-success">
+    <i class="bi bi-download"></i> Export
+</a>
+<a href="{% url 'finance:loan_import' %}" class="btn btn-info">
+    <i class="bi bi-upload"></i> Import
+</a>
 {% endblock %}
 
 {% block main_content %}
