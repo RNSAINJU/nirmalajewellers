@@ -276,35 +276,46 @@ def salary_delete(request, pk):
 # SUNDRY DEBTOR VIEWS
 @login_required
 def debtor_list(request):
-    debtors = SundryDebtor.objects.all()
+    all_debtors = SundryDebtor.objects.all()
     active_only = request.GET.get('active_only')
-    sort_by = request.GET.get('sort_by', 'latest')  # Default sort by latest BS date
-    
+    sort_by = request.GET.get('sort_by', 'latest')
+    tab = request.GET.get('tab', 'unpaid')
+
     if active_only:
-        debtors = debtors.filter(is_active=True)
-    
-    # Recalculate all debtor balances from transactions
-    for debtor in debtors:
+        all_debtors = all_debtors.filter(is_active=True)
+
+    # Split by paid/unpaid
+    paid_debtors = all_debtors.filter(is_paid=True)
+    unpaid_debtors = all_debtors.filter(is_paid=False)
+
+    # Sorting
+    def sort_debtors(qs):
+        if sort_by == 'created_first':
+            return qs.order_by('created_at')
+        elif sort_by == 'created_recent':
+            return qs.order_by('-created_at')
+        elif sort_by == 'balance':
+            return qs.order_by('-current_balance')
+        elif sort_by == 'latest':
+            return qs.order_by('-bs_date', '-created_at')
+        else:
+            return qs.order_by('name')
+
+    paid_debtors = sort_debtors(paid_debtors)
+    unpaid_debtors = sort_debtors(unpaid_debtors)
+
+    # Recalculate balances
+    for debtor in all_debtors:
         debtor.update_balance_from_transactions()
-    
-    # Apply sorting
-    if sort_by == 'created_first':
-        debtors = debtors.order_by('created_at')
-    elif sort_by == 'created_recent':
-        debtors = debtors.order_by('-created_at')
-    elif sort_by == 'balance':
-        debtors = debtors.order_by('-current_balance')
-    elif sort_by == 'latest':
-        debtors = debtors.order_by('-bs_date', '-created_at')
-    else:  # Default: sort by name
-        debtors = debtors.order_by('name')
-    
-    total_balance = sum(debtor.get_calculated_balance() for debtor in debtors)
-    
+
+    total_balance = sum(debtor.get_calculated_balance() for debtor in unpaid_debtors)
+
     context = {
-        'debtors': debtors,
+        'paid_debtors': paid_debtors,
+        'unpaid_debtors': unpaid_debtors,
         'total_balance': total_balance,
         'sort_by': sort_by,
+        'tab': tab,
     }
     return render(request, 'finance/debtor_list.html', context)
 
