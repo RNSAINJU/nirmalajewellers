@@ -17,6 +17,9 @@ from .views import (
     ornament_weight_report,
     rates_and_stock_view,
     kaligar_list,
+    StoneListView, StoneCreateView,
+    MotimalaListView, MotimalaCreateView,
+    PoteyListView, PoteyCreateView,
 )
 
 app_name = 'ornament'
@@ -38,5 +41,11 @@ urlpatterns = [
     path('report/', ornament_report, name='report'),
     path('weight-report/', ornament_weight_report, name='weight_report'),
     path('rates-and-stock/', rates_and_stock_view, name='rates_and_stock'),
+    path('stones/', StoneListView.as_view(), name='stone_list'),
+    path('stones/create/', StoneCreateView.as_view(), name='stone_create'),
+    path('motimala/', MotimalaListView.as_view(), name='motimala_list'),
+    path('motimala/create/', MotimalaCreateView.as_view(), name='motimala_create'),
+    path('potey/', PoteyListView.as_view(), name='potey_list'),
+    path('potey/create/', PoteyCreateView.as_view(), name='potey_create'),
 ]
 

@@ -1,3 +1,66 @@
+from django.db import models
+# Stone Model
+class Stone(models.Model):
+    name = models.CharField(max_length=255)
+    cost_per_carat = models.DecimalField(max_digits=10, decimal_places=2)
+    carat = models.DecimalField(max_digits=10, decimal_places=3)
+    cost_price = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
+    sales_per_carat = models.DecimalField(max_digits=10, decimal_places=2)
+    sales_price = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
+    profit = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        self.cost_price = (self.cost_per_carat or 0) * (self.carat or 0)
+        self.sales_price = (self.sales_per_carat or 0) * (self.carat or 0)
+        self.profit = (self.sales_price or 0) - (self.cost_price or 0)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+# Motimala Model
+class Motimala(models.Model):
+    name = models.CharField(max_length=255)
+    cost_per_mala = models.DecimalField(max_digits=10, decimal_places=2)
+    quantity = models.PositiveIntegerField()
+    cost_price = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
+    sales_per_mala = models.DecimalField(max_digits=10, decimal_places=2)
+    sales_price = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
+    profit = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        self.cost_price = (self.cost_per_mala or 0) * (self.quantity or 0)
+        self.sales_price = (self.sales_per_mala or 0) * (self.quantity or 0)
+        self.profit = (self.sales_price or 0) - (self.cost_price or 0)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+# Potey Model
+class Potey(models.Model):
+    name = models.CharField(max_length=255)
+    loon = models.PositiveIntegerField()
+    cost_per_loon = models.DecimalField(max_digits=10, decimal_places=2)
+    cost_price = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
+    sales_per_loon = models.DecimalField(max_digits=10, decimal_places=2)
+    sales_price = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
+    profit = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        self.cost_price = (self.cost_per_loon or 0) * (self.loon or 0)
+        self.sales_price = (self.sales_per_loon or 0) * (self.loon or 0)
+        self.profit = (self.sales_price or 0) - (self.cost_price or 0)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
 from datetime import date
 from decimal import Decimal
 from os import name

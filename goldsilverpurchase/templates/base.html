@@ -256,9 +256,9 @@
                     <i class="bi bi-chevron-down"></i>
                 </a>
                 <div class="collapse ps-3" id="stoneMotiMenu">
-                    <a href="#" class="nav-link">Stones</a>
-                    <a href="#" class="nav-link">Moti Mala</a>
-                    <a href="#" class="nav-link">Potey</a>
+                    <a href="{% url 'ornament:stone_list' %}" class="nav-link {% if request.resolver_match.url_name == 'stone_list' %}active{% endif %}">Stones</a>
+                    <a href="{% url 'ornament:motimala_list' %}" class="nav-link {% if request.resolver_match.url_name == 'motimala_list' %}active{% endif %}">Moti Mala</a>
+                    <a href="{% url 'ornament:potey_list' %}" class="nav-link {% if request.resolver_match.url_name == 'potey_list' %}active{% endif %}">Potey</a>
                 </div>
             </div>
         </li>
@@ -326,6 +326,9 @@
             <div class="collapse" id="financeMenu">
                 <a href="{% url 'finance:finance_dashboard' %}" class="nav-link ms-3">
                     <i class="bi bi-graph-up me-2"></i>Dashboard
+                </a>
+                <a href="{% url 'finance:balance_sheet' %}" class="nav-link ms-3 {% if request.resolver_match.url_name == 'balance_sheet' %}active{% endif %}">
+                    <i class="bi bi-journal me-2"></i> Balance Sheet
                 </a>
                 <a href="{% url 'finance:expense_list' %}" class="nav-link ms-3">
                     Expenses

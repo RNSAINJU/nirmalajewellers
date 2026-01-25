@@ -1,3 +1,59 @@
+from django.db import models
+from django.urls import reverse_lazy
+from .models import Ornament, Stone, Motimala, Potey
+# Import ListView and CreateView for generic class-based views
+from django.views.generic import ListView, CreateView
+from .forms import OrnamentForm
+# Stones List and Create Views
+from django.utils.decorators import method_decorator
+from django.contrib.auth.decorators import login_required
+
+@method_decorator(login_required, name='dispatch')
+class StoneListView(ListView):
+    model = Stone
+    template_name = 'ornament/stone_list.html'
+    context_object_name = 'stones'
+    ordering = ['-id']
+    paginate_by = 10
+
+@method_decorator(login_required, name='dispatch')
+class StoneCreateView(CreateView):
+    model = Stone
+    fields = ['name', 'cost_per_carat', 'carat', 'sales_per_carat']
+    template_name = 'ornament/stone_form.html'
+    success_url = reverse_lazy('ornament:stone_list')
+
+# Motimala List and Create Views
+@method_decorator(login_required, name='dispatch')
+class MotimalaListView(ListView):
+    model = Motimala
+    template_name = 'ornament/motimala_list.html'
+    context_object_name = 'motimalas'
+    ordering = ['-id']
+    paginate_by = 10
+
+@method_decorator(login_required, name='dispatch')
+class MotimalaCreateView(CreateView):
+    model = Motimala
+    fields = ['name', 'cost_per_mala', 'quantity', 'sales_per_mala']
+    template_name = 'ornament/motimala_form.html'
+    success_url = reverse_lazy('ornament:motimala_list')
+
+# Potey List and Create Views
+@method_decorator(login_required, name='dispatch')
+class PoteyListView(ListView):
+    model = Potey
+    template_name = 'ornament/potey_list.html'
+    context_object_name = 'poteys'
+    ordering = ['-id']
+    paginate_by = 10
+
+@method_decorator(login_required, name='dispatch')
+class PoteyCreateView(CreateView):
+    model = Potey
+    fields = ['name', 'loon', 'cost_per_loon', 'sales_per_loon']
+    template_name = 'ornament/potey_form.html'
+    success_url = reverse_lazy('ornament:potey_list')
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.db.models import Sum, F, DecimalField

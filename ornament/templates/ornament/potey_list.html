@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Potey</h2>
+    <a href="{% url 'ornament:potey_create' %}" class="btn btn-primary mb-3">Add Potey</a>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Loon</th>
+                <th>Cost/Loon</th>
+                <th>Cost Price</th>
+                <th>Sales/Loon</th>
+                <th>Sales Price</th>
+                <th>Profit</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for potey in poteys %}
+            <tr>
+                <td>{{ potey.name }}</td>
+                <td>{{ potey.loon }}</td>
+                <td>{{ potey.cost_per_loon }}</td>
+                <td>{{ potey.cost_price }}</td>
+                <td>{{ potey.sales_per_loon }}</td>
+                <td>{{ potey.sales_price }}</td>
+                <td>{{ potey.profit }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7">No potey found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Motimala</h2>
+    <a href="{% url 'ornament:motimala_create' %}" class="btn btn-primary mb-3">Add Motimala</a>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Cost/Mala</th>
+                <th>Quantity</th>
+                <th>Cost Price</th>
+                <th>Sales/Mala</th>
+                <th>Sales Price</th>
+                <th>Profit</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for moti in motimalas %}
+            <tr>
+                <td>{{ moti.name }}</td>
+                <td>{{ moti.cost_per_mala }}</td>
+                <td>{{ moti.quantity }}</td>
+                <td>{{ moti.cost_price }}</td>
+                <td>{{ moti.sales_per_mala }}</td>
+                <td>{{ moti.sales_price }}</td>
+                <td>{{ moti.profit }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7">No motimala found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
