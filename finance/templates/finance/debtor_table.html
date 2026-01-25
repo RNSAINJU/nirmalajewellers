@@ -25,6 +25,9 @@
                     {% endif %}
                 </td>
                 <td>
+                    <a href="{% url 'finance:debtor_detail' debtor.pk %}" class="btn btn-sm btn-info" title="View Transactions">
+                        <i class="bi bi-list-ul"></i> Transactions
+                    </a>
                     <a href="{% url 'finance:debtor_update' debtor.pk %}" class="btn btn-sm btn-warning">
                         <i class="bi bi-pencil"></i>
                     </a>
