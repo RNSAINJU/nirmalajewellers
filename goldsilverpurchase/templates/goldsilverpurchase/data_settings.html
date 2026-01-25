@@ -14,7 +14,10 @@
                 <h5 class="mb-3">Export Data</h5>
                 <p class="text-muted small">Download all your data (purchases, orders, sales, ornaments, payments) in one Excel file with multiple sheets.</p>
                 <a href="{% url 'gsp:export_all_data' %}" class="btn btn-primary">
-                    <i class="bi bi-download me-1"></i> Export All Data
+                    <i class="bi bi-download me-1"></i> Export All Data (Excel)
+                </a>
+                <a href="{% url 'gsp:export_all_data_json' %}" class="btn btn-success">
+                    <i class="bi bi-download me-1"></i> Export All Data (JSON)
                 </a>
                 
                 <hr class="my-3">
@@ -28,13 +31,31 @@
             <!-- Import Section -->
             <div class="col-md-6">
                 <h5 class="mb-3">Import Data</h5>
-                <p class="text-muted small">Upload an exported Excel file to restore all data at once. Existing records with matching keys will be skipped.</p>
+                <p class="text-muted small">Use the Import Wizard for a guided experience with progress tracking and better error handling.</p>
+                <a href="{% url 'gsp:import_wizard' %}" class="btn btn-success mb-3">
+                    <i class="bi bi-magic me-1"></i> Import Wizard (Recommended)
+                </a>
+                
+                <hr class="my-3">
+                
+                <p class="text-muted small">Or upload an exported Excel file directly to restore all data at once. Existing records with matching keys will be skipped.</p>
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
-                    <div class="input-group">
+                    <div class="input-group mb-2">
                         <input type="file" name="import_file" accept=".xlsx" class="form-control" required>
-                        <button class="btn btn-success" type="submit">
-                            <i class="bi bi-upload me-1"></i> Import Data
+                        <button class="btn btn-outline-success" type="submit">
+                            <i class="bi bi-upload me-1"></i> Import (Excel)
+                        </button>
+                    </div>
+                </form>
+                
+                <p class="text-muted small">Or upload a JSON file for faster restoration:</p>
+                <form method="post" action="{% url 'gsp:import_all_data_json' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="input-group mb-2">
+                        <input type="file" name="import_file" accept=".json" class="form-control" required>
+                        <button class="btn btn-outline-success" type="submit">
+                            <i class="bi bi-upload me-1"></i> Import (JSON)
                         </button>
                     </div>
                 </form>

@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-cloud-upload me-2"></i>Import Wizard</h5>
+                <a href="{% url 'gsp:data_settings' %}" class="btn btn-sm btn-light">
+                    <i class="bi bi-arrow-left me-1"></i>Back
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8 mx-auto">
+                    <p class="text-muted mb-4">
+                        Upload your backup file (XLSX or JSON) to import all data. The wizard will guide you through the process and show progress for each model.
+                    </p>
+
+                    <form id="importForm" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label for="importFile" class="form-label fw-bold">Select Backup File</label>
+                            <input type="file" class="form-control" id="importFile" name="import_file" 
+                                   accept=".xlsx,.json" required>
+                            <div class="form-text">
+                                Supported formats: Excel (.xlsx) or JSON (.json)
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="skipExisting" name="skip_existing" checked>
+                                <label class="form-check-label" for="skipExisting">
+                                    Skip existing records (recommended)
+                                </label>
+                            </div>
+                            <div class="form-text">
+                                If checked, records with duplicate keys will be skipped. If unchecked, duplicates may cause errors.
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Import Order:</strong> Data will be imported in the correct dependency order to avoid foreign key errors.
+                        </div>
+
+                        <div id="progressContainer" style="display: none;">
+                            <h6 class="mb-3">Import Progress</h6>
+                            <div class="progress mb-2" style="height: 25px;">
+                                <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                                     role="progressbar" style="width: 0%">0%</div>
+                            </div>
+                            <div id="currentModel" class="text-muted small mb-3"></div>
+                            
+                            <div id="importLog" class="border rounded p-3" style="max-height: 400px; overflow-y: auto; background-color: #f8f9fa;">
+                                <div class="text-muted">Preparing import...</div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg" id="startImport">
+                                <i class="bi bi-upload me-2"></i>Start Import
+                            </button>
+                        </div>
+                    </form>
+
+                    <div id="completionMessage" style="display: none;" class="mt-4">
+                        <div class="alert alert-success">
+                            <h5 class="alert-heading"><i class="bi bi-check-circle me-2"></i>Import Completed!</h5>
+                            <p class="mb-0" id="completionSummary"></p>
+                            <hr>
+                            <a href="{% url 'gsp:data_settings' %}" class="btn btn-success">
+                                <i class="bi bi-arrow-left me-1"></i>Back to Data Settings
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('importForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = document.getElementById('progressBar');
+    const currentModel = document.getElementById('currentModel');
+    const importLog = document.getElementById('importLog');
+    const startButton = document.getElementById('startImport');
+    const completionMessage = document.getElementById('completionMessage');
+    const completionSummary = document.getElementById('completionSummary');
+    
+    // Show progress container
+    progressContainer.style.display = 'block';
+    startButton.disabled = true;
+    startButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Importing...';
+    importLog.innerHTML = '<div class="text-info"><i class="bi bi-hourglass-split me-2"></i>Starting import process...</div>';
+    
+    // Send request
+    fetch('{% url "gsp:import_wizard_process" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            progressBar.style.width = '100%';
+            progressBar.textContent = '100%';
+            progressBar.classList.remove('progress-bar-animated');
+            progressBar.classList.add('bg-success');
+            
+            // Build summary
+            let summary = '<strong>Summary:</strong><br>';
+            let totalImported = 0;
+            for (const [model, count] of Object.entries(data.imported)) {
+                summary += `• ${model}: ${count} records<br>`;
+                totalImported += count;
+            }
+            summary += `<br><strong>Total: ${totalImported} records imported</strong>`;
+            
+            if (data.errors && data.errors.length > 0) {
+                summary += `<br><br><strong class="text-warning">Warnings: ${data.errors.length}</strong>`;
+            }
+            
+            completionSummary.innerHTML = summary;
+            completionMessage.style.display = 'block';
+            
+            // Show detailed log
+            let logHTML = '<div class="text-success mb-2"><i class="bi bi-check-circle me-2"></i><strong>Import completed successfully!</strong></div>';
+            
+            for (const [model, count] of Object.entries(data.imported)) {
+                logHTML += `<div class="text-success small">✓ ${model}: ${count} records imported</div>`;
+            }
+            
+            if (data.skipped && Object.keys(data.skipped).length > 0) {
+                logHTML += '<hr><div class="text-warning small mt-2"><strong>Skipped (existing records):</strong></div>';
+                for (const [model, count] of Object.entries(data.skipped)) {
+                    logHTML += `<div class="text-muted small">⊘ ${model}: ${count} records skipped</div>`;
+                }
+            }
+            
+            if (data.errors && data.errors.length > 0) {
+                logHTML += '<hr><div class="text-warning small mt-2"><strong>Warnings:</strong></div>';
+                data.errors.forEach(err => {
+                    logHTML += `<div class="text-warning small">⚠ ${err}</div>`;
+                });
+            }
+            
+            importLog.innerHTML = logHTML;
+            
+        } else {
+            progressBar.classList.remove('progress-bar-animated');
+            progressBar.classList.add('bg-danger');
+            importLog.innerHTML = `<div class="text-danger"><i class="bi bi-x-circle me-2"></i><strong>Import failed:</strong> ${data.error}</div>`;
+            startButton.disabled = false;
+            startButton.innerHTML = '<i class="bi bi-upload me-2"></i>Retry Import';
+        }
+    })
+    .catch(error => {
+        progressBar.classList.remove('progress-bar-animated');
+        progressBar.classList.add('bg-danger');
+        importLog.innerHTML = `<div class="text-danger"><i class="bi bi-x-circle me-2"></i><strong>Error:</strong> ${error.message}</div>`;
+        startButton.disabled = false;
+        startButton.innerHTML = '<i class="bi bi-upload me-2"></i>Retry Import';
+    });
+});
+</script>
+
+<style>
+#importLog div {
+    padding: 2px 0;
+}
+</style>
+{% endblock %}
