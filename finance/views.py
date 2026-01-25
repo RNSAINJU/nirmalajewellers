@@ -1,3 +1,62 @@
+from django.contrib.auth.decorators import login_required
+# Add salaries for all active employees for the previous Nepali month
+@login_required
+def add_previous_month_salaries(request):
+    if request.method == 'POST':
+        today = ndt.date.today()
+        # Go to previous month
+        if today.month == 1:
+            prev_month = 12
+            prev_year = today.year - 1
+        else:
+            prev_month = today.month - 1
+            prev_year = today.year
+        prev_month_start = ndt.date(prev_year, prev_month, 1)
+        added = 0
+        for emp in Employee.objects.filter(is_active=True):
+            if not EmployeeSalary.objects.filter(employee=emp, month=prev_month_start).exists():
+                EmployeeSalary.objects.create(
+                    employee=emp,
+                    month=prev_month_start,
+                    base_salary=emp.base_salary,
+                    bonus=0,
+                    deductions=0,
+                    amount_paid=0,
+                    status='pending',
+                )
+                added += 1
+        if added:
+            messages.success(request, f"Added salary for {added} employee(s) for {prev_month_start.strftime('%B %Y')} (previous month).")
+        else:
+            messages.info(request, "Salaries for previous month already exist for all employees.")
+    return redirect('finance:salary_list')
+from nepali_datetime_field.models import NepaliDateField
+import nepali_datetime as ndt
+# Add salaries for all active employees for the current Nepali month
+@login_required
+def add_current_month_salaries(request):
+    if request.method == 'POST':
+        today = ndt.date.today()
+        month_start = ndt.date(today.year, today.month, 1)
+        added = 0
+        for emp in Employee.objects.filter(is_active=True):
+            # Avoid duplicate for same employee/month
+            if not EmployeeSalary.objects.filter(employee=emp, month=month_start).exists():
+                EmployeeSalary.objects.create(
+                    employee=emp,
+                    month=month_start,
+                    base_salary=emp.base_salary,
+                    bonus=0,
+                    deductions=0,
+                    amount_paid=0,
+                    status='pending',
+                )
+                added += 1
+        if added:
+            messages.success(request, f"Added salary for {added} employee(s) for {month_start.strftime('%B %Y')}.")
+        else:
+            messages.info(request, "Salaries for current month already exist for all employees.")
+    return redirect('finance:salary_list')
 from decimal import Decimal
 from io import BytesIO
 import openpyxl

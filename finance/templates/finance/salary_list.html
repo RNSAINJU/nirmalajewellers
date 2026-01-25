@@ -14,6 +14,18 @@
         <input type="file" name="file" accept=".xlsx" class="d-none" onchange="this.form.submit()">
     </label>
 </form>
+<form method="post" action="{% url 'finance:add_current_month_salaries' %}" class="d-inline ms-2">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-success">
+        <i class="bi bi-calendar-plus"></i> Add Current Month Salaries
+    </button>
+</form>
+<form method="post" action="{% url 'finance:add_previous_month_salaries' %}" class="d-inline ms-2">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-warning">
+        <i class="bi bi-calendar-minus"></i> Add Previous Month Salaries
+    </button>
+</form>
 {% endblock %}
 
 {% block main_content %}

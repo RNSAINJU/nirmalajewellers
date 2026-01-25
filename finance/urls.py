@@ -36,6 +36,8 @@ urlpatterns = [
     # Salaries
     path('salaries/', views.salary_list, name='salary_list'),
     path('salaries/add/', views.salary_create, name='salary_create'),
+    path('salaries/add-current-month/', views.add_current_month_salaries, name='add_current_month_salaries'),
+    path('salaries/add-previous-month/', views.add_previous_month_salaries, name='add_previous_month_salaries'),
     path('salaries/<int:pk>/edit/', views.salary_update, name='salary_update'),
     path('salaries/<int:pk>/delete/', views.salary_delete, name='salary_delete'),
     path('salaries/export/', views.salary_export, name='salary_export'),
