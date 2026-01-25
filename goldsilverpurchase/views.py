@@ -894,9 +894,9 @@ def export_all_data(request):
 
     # Ornament sheet
     ornament_rows = [
-        (o.id, o.ornament_name, o.category, o.ornament_type, o.metal_type, o.weight, o.purity, o.rate, o.status, o.stock_date, o.sold_date, o.created_at, o.updated_at) for o in Ornament.objects.all().order_by("created_at")
+        (o.id, o.code, o.ornament_name, o.type, o.ornament_type, o.metal_type, o.weight, o.status, o.created_at, o.updated_at) for o in Ornament.objects.all().order_by("created_at")
     ]
-    add_sheet("Ornament", ["ID", "Name", "Category", "Type", "Metal Type", "Weight", "Purity", "Rate", "Status", "Stock Date", "Sold Date", "Created At", "Updated At"], ornament_rows)
+    add_sheet("Ornament", ["ID", "Code", "Name", "Type", "Ornament Type", "Metal Type", "Weight", "Status", "Created At", "Updated At"], ornament_rows)
 
     # Kaligar sheet
     kaligar_rows = [
@@ -1763,16 +1763,13 @@ def export_all_data_json(request):
         data['Ornament'] = [
             {
                 'id': o.id,
+                'code': o.code,
                 'ornament_name': o.ornament_name,
-                'category': o.category,
+                'type': o.type,
                 'ornament_type': o.ornament_type,
                 'metal_type': o.metal_type,
                 'weight': str(o.weight),
-                'purity': o.purity,
-                'rate': str(o.rate),
                 'status': o.status,
-                'stock_date': str(o.stock_date) if o.stock_date else None,
-                'sold_date': str(o.sold_date) if o.sold_date else None,
                 'created_at': str(o.created_at),
                 'updated_at': str(o.updated_at),
             }
