@@ -141,6 +141,17 @@ class SaleUpdateView(UpdateView):
     fields = ["bill_no", "sale_date"]
     template_name = "sales/sale_form.html"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Add the related order to the context
+        order = self.object.order
+        context['order'] = order
+        # Ornaments for this order
+        context['order_ornaments'] = order.order_ornaments.select_related('ornament').all() if order else []
+        # Raw metal lines for this sale
+        context['sale_metals'] = self.object.sale_metals.select_related('stock_type').all() if self.object else []
+        return context
+
     def get_success_url(self):
         return reverse_lazy("sales:sales_list")
 
@@ -219,8 +230,6 @@ class DirectSaleCreateView(CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Indicate that this is a sales create page so the shared
-        # template can hide order-specific bits and show sales fields.
         context["is_sale_create"] = True
         context.setdefault("form_title", "Create Sale")
         context["payment_choices"] = Order.PAYMENT_CHOICES
@@ -231,9 +240,31 @@ class DirectSaleCreateView(CreateView):
             default_sale_date = ndt.date.today()
         except Exception:
             default_sale_date = ""
-
         context.setdefault("sale_date", default_sale_date)
-        context.setdefault("bill_no", "")
+
+        # Auto-generate the next available bill_no (as string)
+        from .models import Sale
+        import re
+        existing_bill_nos = set(Sale.objects.exclude(bill_no__isnull=True).exclude(bill_no__exact='').values_list('bill_no', flat=True))
+        # Find the next integer bill_no not in use (skip any that exist)
+        max_bill = 1
+        bill_no_candidate = None
+        while True:
+            bill_no_candidate = str(max_bill)
+            if bill_no_candidate not in existing_bill_nos:
+                break
+            max_bill += 1
+        context.setdefault("bill_no", bill_no_candidate)
+
+        # Add metal stock formset for adding raw metals (same as order)
+        from .forms import SalesMetalStockFormSet
+        if self.request.POST:
+            instance = getattr(self, 'object', None)
+            context['metal_stock_formset'] = SalesMetalStockFormSet(self.request.POST, instance=instance)
+        else:
+            context['metal_stock_formset'] = SalesMetalStockFormSet(instance=None)
+        context['metal_formset_prefix'] = context['metal_stock_formset'].prefix
+
         return context
 
     def get_success_url(self):
@@ -242,6 +273,29 @@ class DirectSaleCreateView(CreateView):
     def form_valid(self, form):
         # Save the order first
         self.object = form.save()
+
+        # Create the Sale for this order using sales-specific fields from the form when provided.
+        raw_sale_date = self.request.POST.get("sale_date") or None
+        bill_no = self.request.POST.get("bill_no") or str(self.object.sn)
+
+        if raw_sale_date:
+            sale_date = raw_sale_date
+        else:
+            sale_date = self.object.deliver_date or self.object.order_date
+            if sale_date is None:
+                try:
+                    sale_date = ndt.date.today()
+                except Exception:
+                    sale_date = None
+
+        sale_obj = Sale.objects.create(order=self.object, sale_date=sale_date, bill_no=bill_no)
+
+        # --- Save SalesMetalStockFormSet (raw metal details) ---
+        from .forms import SalesMetalStockFormSet
+        metal_stock_formset = SalesMetalStockFormSet(self.request.POST, instance=sale_obj)
+        if metal_stock_formset.is_valid():
+            metal_stock_formset.save()
+        # ---
 
         # Create per-line OrderOrnament entries from JSON payload
         order_lines_raw = form.cleaned_data.get("order_lines_json") or "[]"
@@ -302,23 +356,6 @@ class DirectSaleCreateView(CreateView):
 
         # Recompute order totals from created lines (amount/subtotal/total/remaining)
         self.object.recompute_totals_from_lines()
-
-        # Immediately create a Sale for this order using sales-specific
-        # fields from the form when provided.
-        raw_sale_date = self.request.POST.get("sale_date") or None
-        bill_no = self.request.POST.get("bill_no") or str(self.object.sn)
-
-        if raw_sale_date:
-            sale_date = raw_sale_date
-        else:
-            sale_date = self.object.deliver_date or self.object.order_date
-            if sale_date is None:
-                try:
-                    sale_date = ndt.date.today()
-                except Exception:
-                    sale_date = None
-
-        Sale.objects.create(order=self.object, sale_date=sale_date, bill_no=bill_no)
 
         # Mark order as delivered for direct sales
         self.object.status = "delivered"

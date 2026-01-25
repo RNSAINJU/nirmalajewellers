@@ -418,19 +418,25 @@ class OrderMetalStock(models.Model):
         return f"Order {self.order_id} - {self.get_metal_type_display()} ({self.purity}) - {self.quantity}g"
 
     def save(self, *args, **kwargs):
-        """Auto-calculate line amount"""
-        # Ensure Decimal values
+        """Auto-calculate line amount based on rate_unit (gram, 10gram, tola)."""
         if isinstance(self.quantity, (int, float)):
             self.quantity = Decimal(str(self.quantity))
         elif self.quantity is None:
             self.quantity = Decimal('0.00')
-            
         self.rate_per_gram = self.rate_per_gram or Decimal('0.00')
 
-        # Calculate line amount
-        if self.quantity and self.rate_per_gram:
-            self.line_amount = (self.quantity * self.rate_per_gram).quantize(Decimal('0.01'))
+        qty = self.quantity or Decimal('0.00')
+        rate = self.rate_per_gram or Decimal('0.00')
+        unit = self.rate_unit or 'gram'
+        if qty and rate:
+            if unit == 'gram':
+                self.line_amount = (qty * rate).quantize(Decimal('0.01'))
+            elif unit == '10gram':
+                self.line_amount = ((qty / Decimal('10')) * rate).quantize(Decimal('0.01'))
+            elif unit == 'tola':
+                self.line_amount = ((qty / Decimal('11.664')) * rate).quantize(Decimal('0.01'))
+            else:
+                self.line_amount = (qty * rate).quantize(Decimal('0.01'))
         else:
             self.line_amount = Decimal('0.00')
-
         super().save(*args, **kwargs)

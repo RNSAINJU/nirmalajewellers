@@ -1729,5 +1729,54 @@ function initializeMetalStocks() {
     updateOrderTotal();
 }
 </script>
+<script>
+// --- Auto-calculate line amount for metal stock rows ---
+function calculateLineAmount(row) {
+    const qtyInput = row.querySelector('.quantity');
+    const rateInput = row.querySelector('.rate');
+    const unitSelect = row.querySelector('select[name$="rate_unit"]');
+    const lineAmountInput = row.querySelector('.line-amount');
+    if (!qtyInput || !rateInput || !unitSelect || !lineAmountInput) return;
+    const qty = parseFloat(qtyInput.value) || 0;
+    const rate = parseFloat(rateInput.value) || 0;
+    const unit = unitSelect.value;
+    let amount = 0;
+    if (qty && rate) {
+        if (unit === 'gram') {
+            amount = qty * rate;
+        } else if (unit === '10gram') {
+            amount = (qty / 10) * rate;
+        } else if (unit === 'tola') {
+            amount = (qty / 11.664) * rate;
+        } else {
+            amount = qty * rate;
+        }
+    }
+    lineAmountInput.value = amount.toFixed(2);
+    // Trigger financial summary update
+    if (typeof updateOrderTotal === 'function') updateOrderTotal();
+}
+
+function setupMetalRowCalculation(row) {
+    const qtyInput = row.querySelector('.quantity');
+    const rateInput = row.querySelector('.rate');
+    const unitSelect = row.querySelector('select[name$="rate_unit"]');
+    if (qtyInput) qtyInput.addEventListener('input', () => calculateLineAmount(row));
+    if (rateInput) rateInput.addEventListener('input', () => calculateLineAmount(row));
+    if (unitSelect) unitSelect.addEventListener('change', () => calculateLineAmount(row));
+    // Also trigger updateOrderTotal on change
+    if (qtyInput) qtyInput.addEventListener('input', () => { if (typeof updateOrderTotal === 'function') updateOrderTotal(); });
+    if (rateInput) rateInput.addEventListener('input', () => { if (typeof updateOrderTotal === 'function') updateOrderTotal(); });
+    if (unitSelect) unitSelect.addEventListener('change', () => { if (typeof updateOrderTotal === 'function') updateOrderTotal(); });
+    // Initial calculation
+    calculateLineAmount(row);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.metal-stock-row').forEach(row => {
+        setupMetalRowCalculation(row);
+    });
+});
+</script>
 
 {% endblock %}
