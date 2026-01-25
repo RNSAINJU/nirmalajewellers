@@ -816,15 +816,15 @@ def export_all_data(request):
     
     # Party sheet
     party_rows = [
-        (p.id, p.party_name, p.panno, p.created_at, p.updated_at) for p in Party.objects.all().order_by("created_at")
+        (p.id, p.party_name, p.panno) for p in Party.objects.all().order_by("id")
     ]
-    add_sheet("Party", ["ID", "Party Name", "PAN No", "Created At", "Updated At"], party_rows)
+    add_sheet("Party", ["ID", "Party Name", "PAN No"], party_rows)
 
     # MetalStockType sheet
     metal_type_rows = [
-        (mt.id, mt.name, mt.created_at, mt.updated_at) for mt in MetalStockType.objects.all().order_by("created_at")
+        (mt.id, mt.name, mt.description) for mt in MetalStockType.objects.all().order_by("id")
     ]
-    add_sheet("MetalStockType", ["ID", "Name", "Created At", "Updated At"], metal_type_rows)
+    add_sheet("MetalStockType", ["ID", "Name", "Description"], metal_type_rows)
 
     gsp_rows = [
         (p.bill_no, p.bill_date, p.party.party_name if p.party else "", p.particular, p.metal_type, p.purity, p.quantity, p.rate, p.rate_unit, p.wages, p.discount, p.amount, p.payment_mode, p.is_paid, p.remarks, p.created_at, p.updated_at) for p in GoldSilverPurchase.objects.select_related("party").order_by("created_at")
@@ -882,15 +882,15 @@ def export_all_data(request):
 
     # MainCategory sheet
     main_cat_rows = [
-        (mc.id, mc.name, mc.created_at, mc.updated_at) for mc in MainCategory.objects.all().order_by("created_at")
+        (mc.id, mc.name) for mc in MainCategory.objects.all().order_by("id")
     ]
-    add_sheet("MainCategory", ["ID", "Name", "Created At", "Updated At"], main_cat_rows)
+    add_sheet("MainCategory", ["ID", "Name"], main_cat_rows)
 
     # SubCategory sheet
     sub_cat_rows = [
-        (sc.id, sc.name, sc.main_category.name if sc.main_category else "", sc.created_at, sc.updated_at) for sc in SubCategory.objects.select_related("main_category").all().order_by("created_at")
+        (sc.id, sc.name) for sc in SubCategory.objects.all().order_by("id")
     ]
-    add_sheet("SubCategory", ["ID", "Name", "Main Category", "Created At", "Updated At"], sub_cat_rows)
+    add_sheet("SubCategory", ["ID", "Name"], sub_cat_rows)
 
     # Ornament sheet
     ornament_rows = [
@@ -900,27 +900,27 @@ def export_all_data(request):
 
     # Kaligar sheet
     kaligar_rows = [
-        (k.id, k.name, k.address, k.phone, k.created_at, k.updated_at) for k in Kaligar.objects.all().order_by("created_at")
+        (k.id, k.name, k.address, k.phone_no) for k in Kaligar.objects.all().order_by("id")
     ]
-    add_sheet("Kaligar", ["ID", "Name", "Address", "Phone", "Created At", "Updated At"], kaligar_rows)
+    add_sheet("Kaligar", ["ID", "Name", "Address", "Phone"], kaligar_rows)
 
     # Kaligar_Ornaments sheet
     kaligar_orn_rows = [
-        (ko.id, ko.kaligar.name if ko.kaligar else "", ko.ornament_name, ko.metal_type, ko.quantity, ko.weight_per_piece, ko.total_weight, ko.created_at, ko.updated_at) for ko in Kaligar_Ornaments.objects.select_related("kaligar").all().order_by("created_at")
+        (ko.id, ko.kaligar.name if ko.kaligar else "", ko.date, ko.gold_given, ko.ornament_weight, ko.jarti, ko.gold_return, ko.gold_loss, ko.gold_purity) for ko in Kaligar_Ornaments.objects.select_related("kaligar").all().order_by("id")
     ]
-    add_sheet("Kaligar_Ornaments", ["ID", "Kaligar", "Ornament Name", "Metal Type", "Quantity", "Weight Per Piece", "Total Weight", "Created At", "Updated At"], kaligar_orn_rows)
+    add_sheet("Kaligar_Ornaments", ["ID", "Kaligar", "Date", "Gold Given", "Ornament Weight", "Jarti", "Gold Return", "Gold Loss", "Gold Purity"], kaligar_orn_rows)
 
     # Kaligar_CashAccount sheet
     kaligar_cash_rows = [
-        (kc.id, kc.kaligar.name if kc.kaligar else "", kc.debit, kc.credit, kc.date, kc.description, kc.created_at, kc.updated_at) for kc in Kaligar_CashAccount.objects.select_related("kaligar").all().order_by("created_at")
+        (kc.id, kc.kaligar.name if kc.kaligar else "", kc.date, kc.particular, kc.amount_taken, kc.to_pay, kc.provided_by) for kc in Kaligar_CashAccount.objects.select_related("kaligar").all().order_by("id")
     ]
-    add_sheet("Kaligar_CashAccount", ["ID", "Kaligar", "Debit", "Credit", "Date", "Description", "Created At", "Updated At"], kaligar_cash_rows)
+    add_sheet("Kaligar_CashAccount", ["ID", "Kaligar", "Date", "Particular", "Amount Taken", "To Pay", "Provided By"], kaligar_cash_rows)
 
     # Kaligar_GoldAccount sheet
     kaligar_gold_rows = [
-        (kg.id, kg.kaligar.name if kg.kaligar else "", kg.gold_in, kg.gold_out, kg.date, kg.description, kg.created_at, kg.updated_at) for kg in Kaligar_GoldAccount.objects.select_related("kaligar").all().order_by("created_at")
+        (kg.id, kg.kaligar.name if kg.kaligar else "", kg.date, kg.gold_deposit, kg.gold_loss, kg.gold_remaining) for kg in Kaligar_GoldAccount.objects.select_related("kaligar").all().order_by("id")
     ]
-    add_sheet("Kaligar_GoldAccount", ["ID", "Kaligar", "Gold In", "Gold Out", "Date", "Description", "Created At", "Updated At"], kaligar_gold_rows)
+    add_sheet("Kaligar_GoldAccount", ["ID", "Kaligar", "Date", "Gold Deposit", "Gold Loss", "Gold Remaining"], kaligar_gold_rows)
 
     # --- Order Models ---
     from order.models import Order, OrderMetalStock, OrderPayment, OrderOrnament, DebtorPayment
@@ -1567,8 +1567,6 @@ def export_all_data_json(request):
                 'id': p.id,
                 'party_name': p.party_name,
                 'panno': p.panno,
-                'created_at': str(p.created_at),
-                'updated_at': str(p.updated_at),
             }
             for p in Party.objects.all()
         ]
@@ -1577,8 +1575,7 @@ def export_all_data_json(request):
             {
                 'id': mt.id,
                 'name': mt.name,
-                'created_at': str(mt.created_at),
-                'updated_at': str(mt.updated_at),
+                'description': mt.description,
             }
             for mt in MetalStockType.objects.all()
         ]
@@ -1751,8 +1748,6 @@ def export_all_data_json(request):
             {
                 'id': mc.id,
                 'name': mc.name,
-                'created_at': str(mc.created_at),
-                'updated_at': str(mc.updated_at),
             }
             for mc in MainCategory.objects.all()
         ]
@@ -1761,11 +1756,8 @@ def export_all_data_json(request):
             {
                 'id': sc.id,
                 'name': sc.name,
-                'main_category': sc.main_category.name if sc.main_category else "",
-                'created_at': str(sc.created_at),
-                'updated_at': str(sc.updated_at),
             }
-            for sc in SubCategory.objects.select_related("main_category").all()
+            for sc in SubCategory.objects.all()
         ]
 
         data['Ornament'] = [
@@ -1792,9 +1784,7 @@ def export_all_data_json(request):
                 'id': k.id,
                 'name': k.name,
                 'address': k.address,
-                'phone': k.phone,
-                'created_at': str(k.created_at),
-                'updated_at': str(k.updated_at),
+                'phone_no': k.phone_no,
             }
             for k in Kaligar.objects.all()
         ]
@@ -1803,13 +1793,13 @@ def export_all_data_json(request):
             {
                 'id': ko.id,
                 'kaligar': ko.kaligar.name if ko.kaligar else "",
-                'ornament_name': ko.ornament_name,
-                'metal_type': ko.metal_type,
-                'quantity': ko.quantity,
-                'weight_per_piece': str(ko.weight_per_piece) if ko.weight_per_piece else None,
-                'total_weight': str(ko.total_weight) if ko.total_weight else None,
-                'created_at': str(ko.created_at),
-                'updated_at': str(ko.updated_at),
+                'date': str(ko.date) if ko.date else None,
+                'gold_given': str(ko.gold_given) if ko.gold_given else None,
+                'ornament_weight': str(ko.ornament_weight) if ko.ornament_weight else None,
+                'jarti': str(ko.jarti) if ko.jarti else None,
+                'gold_return': str(ko.gold_return) if ko.gold_return else None,
+                'gold_loss': str(ko.gold_loss) if ko.gold_loss else None,
+                'gold_purity': ko.gold_purity,
             }
             for ko in Kaligar_Ornaments.objects.select_related("kaligar").all()
         ]
@@ -1818,12 +1808,11 @@ def export_all_data_json(request):
             {
                 'id': kc.id,
                 'kaligar': kc.kaligar.name if kc.kaligar else "",
-                'debit': str(kc.debit) if kc.debit else None,
-                'credit': str(kc.credit) if kc.credit else None,
                 'date': str(kc.date) if kc.date else None,
-                'description': kc.description,
-                'created_at': str(kc.created_at),
-                'updated_at': str(kc.updated_at),
+                'particular': kc.particular,
+                'amount_taken': str(kc.amount_taken) if kc.amount_taken else None,
+                'to_pay': str(kc.to_pay) if kc.to_pay else None,
+                'provided_by': kc.provided_by,
             }
             for kc in Kaligar_CashAccount.objects.select_related("kaligar").all()
         ]
@@ -1832,12 +1821,10 @@ def export_all_data_json(request):
             {
                 'id': kg.id,
                 'kaligar': kg.kaligar.name if kg.kaligar else "",
-                'gold_in': str(kg.gold_in) if kg.gold_in else None,
-                'gold_out': str(kg.gold_out) if kg.gold_out else None,
                 'date': str(kg.date) if kg.date else None,
-                'description': kg.description,
-                'created_at': str(kg.created_at),
-                'updated_at': str(kg.updated_at),
+                'gold_deposit': str(kg.gold_deposit) if kg.gold_deposit else None,
+                'gold_loss': str(kg.gold_loss) if kg.gold_loss else None,
+                'gold_remaining': str(kg.gold_remaining) if kg.gold_remaining else None,
             }
             for kg in Kaligar_GoldAccount.objects.select_related("kaligar").all()
         ]
