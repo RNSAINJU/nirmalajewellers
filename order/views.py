@@ -540,14 +540,20 @@ class OrderUpdateView(UpdateView):
         ctx['initial_payments_json'] = json.dumps(payments)
         
         # Add metal stock formset for editing
+        # Always load all OrderMetalStock rows for this order, even if sale exists
         if self.request.POST:
-            ctx['metal_stock_formset'] = MetalStockFormSet(self.request.POST, instance=self.object)
+            formset = MetalStockFormSet(self.request.POST, instance=self.object)
         else:
-            ctx['metal_stock_formset'] = MetalStockFormSet(instance=self.object)
-        
-        # Pass formset prefix to template for use in JavaScript
-        ctx['metal_formset_prefix'] = ctx['metal_stock_formset'].prefix
-        
+            formset = MetalStockFormSet(instance=self.object)
+
+        # If the order is linked to a sale, make the formset read-only but always show rows
+        if hasattr(self.object, 'sale') and self.object.sale is not None:
+            for form in formset.forms:
+                for field in form.fields:
+                    form.fields[field].widget.attrs['readonly'] = True
+                    form.fields[field].widget.attrs['disabled'] = True
+        ctx['metal_stock_formset'] = formset
+        ctx['metal_formset_prefix'] = formset.prefix
         return ctx
 
     def get_success_url(self):

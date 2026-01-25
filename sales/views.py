@@ -74,19 +74,19 @@ class SalesListView(ListView):
     ordering = ["-bill_no"]
 
     def get_queryset(self):
+        # We'll add total_weight and total_amount in get_context_data for both ornaments and raw metals
         return (
             super()
             .get_queryset()
             .select_related("order")
-            .annotate(total_weight=Sum("order__order_ornaments__ornament__weight"))
-            .prefetch_related("order__order_ornaments__ornament")
+            .prefetch_related("order__order_ornaments__ornament", "sale_metals")
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
         context["sales_count"] = Sale.objects.count()
 
+        # Calculate gold/silver weights and total sales amount (including raw metals)
         purity_factors = {
             Ornament.TypeCategory.TWENTYFOURKARAT: Decimal("1.00"),
             Ornament.TypeCategory.TWENTHREEKARAT: Decimal("0.99"),
@@ -95,33 +95,43 @@ class SalesListView(ListView):
             Ornament.TypeCategory.FOURTEENKARAT: Decimal("0.58"),
         }
 
-        gold_lines = OrderOrnament.objects.filter(
-            order__sale__isnull=False,
-            ornament__metal_type=Ornament.MetalTypeCategory.GOLD,
-        ).select_related("ornament")
-
         gold_24_weight = Decimal("0")
-        for line in gold_lines:
-            weight = line.ornament.weight or Decimal("0")
-            factor = purity_factors.get(line.ornament.type, Decimal("1.00"))
-            gold_24_weight += weight * factor
+        silver_weight = Decimal("0")
+        total_sales_amount = Decimal("0")
 
-        silver_weight = (
-            OrderOrnament.objects.filter(
-                order__sale__isnull=False,
-                ornament__metal_type=Ornament.MetalTypeCategory.SILVER,
-            )
-            .aggregate(total=Sum("ornament__weight"))
-            .get("total")
-            or Decimal("0")
-        )
+        # For each sale, sum ornament weights and sale_metals
+        for sale in context["sales"]:
+            # Ornaments
+            for line in sale.order.order_ornaments.all():
+                weight = line.ornament.weight or Decimal("0")
+                factor = purity_factors.get(getattr(line.ornament, 'type', None), Decimal("1.00"))
+                if getattr(line.ornament, 'metal_type', None) == getattr(Ornament.MetalTypeCategory, 'GOLD', 'gold'):
+                    gold_24_weight += weight * factor
+                elif getattr(line.ornament, 'metal_type', None) == getattr(Ornament.MetalTypeCategory, 'SILVER', 'silver'):
+                    silver_weight += weight
+            # Raw metals
+            for metal in sale.sale_metals.all():
+                if metal.metal_type == 'gold':
+                    gold_24_weight += metal.quantity
+                elif metal.metal_type == 'silver':
+                    silver_weight += metal.quantity
+                total_sales_amount += metal.line_amount or Decimal("0")
+            # Add order total (ornaments + metals)
+            total_sales_amount += sale.order.total or Decimal("0")
 
-        total_sales_amount = (
-            Order.objects.filter(sale__isnull=False)
-            .aggregate(total=Sum("total"))
-            .get("total")
-            or Decimal("0")
-        )
+        # Patch each sale with a total_weight that includes both ornaments and raw metals
+
+        # Patch each sale with a total_weight and total_amount that includes both ornaments and raw metals
+        for sale in context["sales"]:
+            ornament_weight = sum([(line.ornament.weight or Decimal("0")) for line in sale.order.order_ornaments.all()])
+            metal_weight = sum([(metal.quantity or Decimal("0")) for metal in sale.sale_metals.all()])
+            sale.total_weight = ornament_weight + metal_weight
+            # Calculate total: order total + sum of all sale_metals line_amounts (to avoid double-counting, only add sale_metals if order has no ornaments)
+            metal_total = sum([(metal.line_amount or Decimal("0")) for metal in sale.sale_metals.all()])
+            if sale.order.order_ornaments.count() == 0:
+                sale.display_total = metal_total
+            else:
+                sale.display_total = sale.order.total or Decimal("0")
 
         context.update(
             {
@@ -130,7 +140,6 @@ class SalesListView(ListView):
                 "total_sales_amount": total_sales_amount,
             }
         )
-
         return context
 
 
@@ -290,11 +299,36 @@ class DirectSaleCreateView(CreateView):
 
         sale_obj = Sale.objects.create(order=self.object, sale_date=sale_date, bill_no=bill_no)
 
-        # --- Save SalesMetalStockFormSet (raw metal details) ---
+        # --- Save SalesMetalStockFormSet (raw metal details) and update MetalStock ---
         from .forms import SalesMetalStockFormSet
+        from goldsilverpurchase.models import MetalStock, MetalStockMovement
         metal_stock_formset = SalesMetalStockFormSet(self.request.POST, instance=sale_obj)
         if metal_stock_formset.is_valid():
-            metal_stock_formset.save()
+            sale_metals = metal_stock_formset.save()
+            # Deduct from MetalStock and create MetalStockMovement for each raw metal sold
+            for metal in sale_obj.sale_metals.all():
+                try:
+                    metal_stock = MetalStock.objects.get(
+                        metal_type=metal.metal_type,
+                        purity=metal.purity,
+                        stock_type=metal.stock_type
+                    )
+                    # Deduct quantity
+                    metal_stock.quantity -= metal.quantity
+                    metal_stock.save()
+                    # Create movement record
+                    MetalStockMovement.objects.create(
+                        metal_stock=metal_stock,
+                        movement_type='out',
+                        quantity=metal.quantity,
+                        rate=metal.rate_per_gram,
+                        reference_type='Sale',
+                        reference_id=f"Sale-{sale_obj.pk}",
+                        notes=f"Raw metal sold in sale {sale_obj.pk} (Order {self.object.sn})"
+                    )
+                except MetalStock.DoesNotExist:
+                    # Optionally, add a warning message
+                    messages.warning(self.request, f"No matching metal stock found for {metal.get_metal_type_display()} ({metal.purity}, {metal.stock_type}). Please add to inventory first.")
         # ---
 
         # Create per-line OrderOrnament entries from JSON payload

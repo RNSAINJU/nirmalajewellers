@@ -747,19 +747,20 @@ function addOrnamentToTable(ornament) {
         <td>${ornament.weight.toFixed(3)}</td>
         <td>
             <div class="d-flex gap-1 align-items-center">
-                <input type="number" class="form-control form-control-sm jarti-input" step="0.001" data-id="${ornament.id}" placeholder="Jarti" value="${jartiVal}">
-                <div class="btn-group btn-group-sm" role="group">
-                    <button type="button" class="btn btn-outline-secondary jarti-percentage-row" data-id="${ornament.id}" data-percentage="8">8%</button>
-                    <button type="button" class="btn btn-outline-secondary jarti-percentage-row" data-id="${ornament.id}" data-percentage="10">10%</button>
-                    <button type="button" class="btn btn-outline-secondary jarti-percentage-row" data-id="${ornament.id}" data-percentage="12">12%</button>
-                    <button type="button" class="btn btn-outline-secondary jarti-percentage-row" data-id="${ornament.id}" data-percentage="15">15%</button>
-                </div>
+                <input type="number" class="form-control form-control-sm jarti-input" step="0.001" data-id="${ornament.id}" placeholder="Jarti" value="${jartiVal}" style="min-width: 70px; width: 90px;">
+                <select class="form-select form-select-sm jarti-percentage-dropdown" data-id="${ornament.id}" style="width: 80px;">
+                    <option value="">% Jarti</option>
+                    <option value="8">8%</option>
+                    <option value="10">10%</option>
+                    <option value="12">12%</option>
+                    <option value="15">15%</option>
+                </select>
             </div>
         </td>
-        <td><input type="number" class="form-control form-control-sm gold-rate-input" step="0.01" data-id="${ornament.id}" placeholder="Rate" value="${goldRateVal}"></td>
+        <td><input type="number" class="form-control form-control-sm gold-rate-input" step="0.01" data-id="${ornament.id}" placeholder="Rate" value="${goldRateVal}" style="min-width: 80px; width: 100px;"></td>
         <td>
             <div class="d-flex gap-1 align-items-center">
-                <input type="number" class="form-control form-control-sm jyala-input" step="0.01" data-id="${ornament.id}" placeholder="Jyala" value="${jyalaVal}">
+                <input type="number" class="form-control form-control-sm jyala-input" step="0.01" data-id="${ornament.id}" placeholder="Jyala" value="${jyalaVal}" style="min-width: 70px; width: 90px;">
                 <button type="button" class="btn btn-outline-secondary btn-sm jyala-auto-btn" data-id="${ornament.id}" title="Auto: weight × 2000">Auto</button>
             </div>
         </td>
@@ -769,7 +770,7 @@ function addOrnamentToTable(ornament) {
         <td><input type="number" class="form-control form-control-sm zircon-rate-input" step="0.01" data-id="${ornament.id}" placeholder="Rate" value="${zirconRateVal}"></td>
         <td>${ornament.stone_weight.toFixed(3)}</td>
         <td><input type="number" class="form-control form-control-sm stone-rate-input" step="0.01" data-id="${ornament.id}" placeholder="Rate" value="${stoneRateVal}"></td>
-        <td><input type="number" class="form-control form-control-sm subtotal-display" readonly style="background-color: #f0f0f0; border: 1px solid #ccc;" data-id="${ornament.id}" value="${lineAmountVal}"></td>
+        <td><input type="number" class="form-control form-control-sm subtotal-display" readonly style="background-color: #f0f0f0; border: 1px solid #ccc; min-width: 120px; width: 140px; font-size: 1.1em; font-weight: 600;" data-id="${ornament.id}" value="${lineAmountVal}"></td>
         <td><button type="button" class="btn btn-sm btn-danger" onclick="removeOrnament(${ornament.id})">Remove</button></td>
     `;
     tbody.appendChild(row);
@@ -867,18 +868,16 @@ function attachOrnamentCalculationListeners(ornamentId, ornament) {
     jartiInput?.addEventListener('input', calculateSubtotal);
     jyalaInput?.addEventListener('input', calculateSubtotal);
 
-    // Per-row Jarti percentage buttons
-    document.querySelectorAll(`.jarti-percentage-row[data-id="${ornamentId}"]`).forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            const pct = parseFloat(this.getAttribute('data-percentage')) || 0;
-            calculateJartiForOrnament(ornamentId, pct);
-            // visual feedback
-            const group = document.querySelectorAll(`.jarti-percentage-row[data-id="${ornamentId}"]`);
-            group.forEach(b => { b.classList.remove('active'); b.style.backgroundColor = ''; b.style.color = ''; });
-            this.classList.add('active'); this.style.backgroundColor = '#0d6efd'; this.style.color = 'white';
+    // Jarti percentage dropdown
+    const jartiDropdown = document.querySelector(`.jarti-percentage-dropdown[data-id="${ornamentId}"]`);
+    if (jartiDropdown) {
+        jartiDropdown.addEventListener('change', function(e) {
+            const pct = parseFloat(this.value) || 0;
+            if (pct > 0) {
+                calculateJartiForOrnament(ornamentId, pct);
+            }
         });
-    });
+    }
 
     // Per-row Jyala auto button
     const jyalaAutoBtn = document.querySelector(`.jyala-auto-btn[data-id="${ornamentId}"]`);
