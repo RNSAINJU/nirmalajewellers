@@ -423,15 +423,15 @@ class OrderCreateView(CreateView):
                     
                     # Find matching metal stock (Raw type with same metal and purity)
                     try:
-                        from goldsilverpurchase.models import MetalStockType
-                        raw_stock_type = MetalStockType.objects.get(name='raw')
-                        
+                        stock_type = order_metal.stock_type
+                        if not stock_type:
+                            from goldsilverpurchase.models import MetalStockType
+                            stock_type = MetalStockType.objects.get(name__icontains='Raw')
                         metal_stock = MetalStock.objects.get(
                             metal_type=metal_type,
                             purity=order_metal.purity,
-                            stock_type=raw_stock_type
+                            stock_type=stock_type
                         )
-                        
                         # Deduct quantity from metal stock
                         metal_stock.quantity -= quantity
                         if metal_stock.quantity < 0:
@@ -440,7 +440,6 @@ class OrderCreateView(CreateView):
                                 f"Warning: {metal_stock.get_metal_type_display()} stock ({metal_stock.purity}) is now negative: {metal_stock.quantity}g"
                             )
                         metal_stock.save()
-                        
                         # Create a movement record
                         MetalStockMovement.objects.create(
                             metal_stock=metal_stock,
@@ -453,7 +452,7 @@ class OrderCreateView(CreateView):
                     except MetalStock.DoesNotExist:
                         messages.warning(
                             self.request,
-                            f"No matching metal stock found for {metal_type} ({order_metal.purity}). Please add to inventory first."
+                            f"No matching metal stock found for {metal_type} ({order_metal.purity}, {stock_type}). Please add to inventory first."
                         )
                     except Exception as e:
                         messages.warning(self.request, f"Error updating metal stock: {str(e)}")

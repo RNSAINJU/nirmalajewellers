@@ -250,6 +250,23 @@ def dashboard(request):
     total_purchase_amount = GoldSilverPurchase.objects.aggregate(total=Sum('amount'))['total'] or 0
     total_order_amount = Order.objects.aggregate(total=Sum('total'))['total'] or 0
 
+    # Sales by month for chart
+    from django.db.models.functions import TruncMonth
+    sales_by_month_qs = (
+        Order.objects
+        .filter(order_date__isnull=False)
+        .annotate(month=TruncMonth('order_date'))
+        .values('month')
+        .annotate(total=Sum('total'))
+        .order_by('month')
+    )
+    import json
+    sales_month_labels = [x['month'].strftime('%b %Y') if x['month'] else '' for x in sales_by_month_qs]
+    sales_month_totals = [float(x['total'] or 0) for x in sales_by_month_qs]
+    # For Chart.js, serialize as JSON for safe JS rendering
+    sales_month_labels_json = json.dumps(sales_month_labels)
+    sales_month_totals_json = json.dumps(sales_month_totals)
+
     # Stock report by metal type
     # Gold stock: sum of all gold purchases (quantity)
     gold_stock = (
@@ -407,6 +424,8 @@ def dashboard(request):
         'yesterday_date_label': yesterday_date_label,
         'today_rate': today_rate,
         'yesterday_rate': yesterday_rate,
+        'sales_month_labels': sales_month_labels_json,
+        'sales_month_totals': sales_month_totals_json,
     }
     return render(request, 'main/dashboard.html', context)
 

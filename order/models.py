@@ -317,8 +317,22 @@ class OrderOrnament(models.Model):
         return f"Order {self.order_id} - {self.ornament}"
 
 
+
 class OrderMetalStock(models.Model):
     """Per-order raw metal (gold/silver) line item with rates and quantities."""
+
+    RATE_UNIT_CHOICES = [
+        ('gram', 'Per Gram'),
+        ('10gram', 'Per 10 Gram'),
+        ('tola', 'Per Tola'),
+    ]
+
+    rate_unit = models.CharField(
+        max_length=10,
+        choices=RATE_UNIT_CHOICES,
+        default='gram',
+        help_text='Unit for rate (per gram, per 10 gram, per tola)'
+    )
 
     class MetalType(models.TextChoices):
         GOLD = 'gold', 'Gold'
@@ -336,6 +350,15 @@ class OrderMetalStock(models.Model):
         on_delete=models.CASCADE,
         related_name="order_metals",
         help_text="Associated order"
+    )
+
+    stock_type = models.ForeignKey(
+        'goldsilverpurchase.MetalStockType',
+        on_delete=models.PROTECT,
+        related_name='order_metal_stocks',
+        help_text='Type of stock: Raw, Refined, Scrap, Other',
+        null=True,
+        blank=True
     )
 
     metal_type = models.CharField(

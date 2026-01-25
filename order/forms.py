@@ -106,8 +106,11 @@ class OrderMetalStockForm(forms.ModelForm):
     
     class Meta:
         model = OrderMetalStock
-        fields = ['metal_type', 'purity', 'quantity', 'rate_per_gram', 'remarks']
+        fields = ['stock_type', 'metal_type', 'purity', 'quantity', 'rate_unit', 'rate_per_gram', 'remarks']
         widgets = {
+            'stock_type': forms.Select(attrs={
+                'class': 'form-select form-select-sm'
+            }),
             'metal_type': forms.Select(attrs={
                 'class': 'form-select form-select-sm'
             }),
@@ -119,6 +122,9 @@ class OrderMetalStockForm(forms.ModelForm):
                 'step': '0.001',
                 'placeholder': 'Grams',
                 'min': '0'
+            }),
+            'rate_unit': forms.Select(attrs={
+                'class': 'form-select form-select-sm'
             }),
             'rate_per_gram': forms.NumberInput(attrs={
                 'class': 'form-control form-control-sm',
@@ -160,7 +166,7 @@ MetalStockFormSet = inlineformset_factory(
     form=OrderMetalStockForm,
     extra=1,
     can_delete=True,
-    fields=['metal_type', 'purity', 'quantity', 'rate_per_gram', 'remarks'],
+    fields=['stock_type', 'metal_type', 'purity', 'quantity', 'rate_unit', 'rate_per_gram', 'remarks'],
     min_num=0,
     validate_min=False
 )

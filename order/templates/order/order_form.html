@@ -186,9 +186,11 @@
                     <table class="table table-bordered table-sm" id="metal-stocks-table">
                         <thead class="table-light">
                             <tr>
+                                <th style="width: 12%">Stock Type</th>
                                 <th style="width: 12%">Metal Type</th>
                                 <th style="width: 12%">Purity</th>
                                 <th style="width: 12%">Quantity (grams)</th>
+                                <th style="width: 12%">Rate Unit</th>
                                 <th style="width: 12%">Rate/gram</th>
                                 <th style="width: 12%">Remarks</th>
                                 <th style="width: 12%">Line Amount</th>
@@ -203,8 +205,20 @@
                                         {{ form.id }}
                                         {{ form.order }}
                                         <td>
+                                            {% with form.stock_type as field %}
+                                                <select name="{{ field.html_name }}" class="form-select form-select-sm stock-type" data-form-index="{{ forloop.counter0 }}">
+                                                    <option value="">-- Select Stock Type --</option>
+                                                    {% for st in form.fields.stock_type.queryset %}
+                                                        <option value="{{ st.pk }}" {% if form.stock_type.value == st.pk|stringformat:'s' %}selected{% endif %}>{{ st }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                {% if form.stock_type.errors %}<div class="text-danger small">{{ form.stock_type.errors }}</div>{% endif %}
+                                                <div class="small text-info mt-1" id="stock-balance-{{ forloop.counter0 }}"></div>
+                                            {% endwith %}
+                                        </td>
+                                        <td>
                                             {% with form.metal_type as field %}
-                                                <select name="{{ field.html_name }}" class="form-select form-select-sm metal-type" {% if form.is_bound %}value="{{ form.metal_type.value }}"{% endif %}>
+                                                <select name="{{ field.html_name }}" class="form-select form-select-sm metal-type" data-form-index="{{ forloop.counter0 }}" {% if form.is_bound %}value="{{ form.metal_type.value }}"{% endif %}>
                                                     <option value="">-- Select Metal --</option>
                                                     <option value="gold" {% if form.metal_type.value == "gold" %}selected{% endif %}>Gold</option>
                                                     <option value="silver" {% if form.metal_type.value == "silver" %}selected{% endif %}>Silver</option>
@@ -213,6 +227,42 @@
                                                 {% if form.metal_type.errors %}<div class="text-danger small">{{ form.metal_type.errors }}</div>{% endif %}
                                             {% endwith %}
                                         </td>
+                                        <script>
+                                        // Metal stock balance AJAX fetch
+                                        function fetchMetalStockBalance(rowIdx) {
+                                            const row = document.querySelector(`tr.metal-stock-row[data-form-index="${rowIdx}"]`);
+                                            if (!row) return;
+                                            const stockType = row.querySelector('.stock-type')?.value;
+                                            const metalType = row.querySelector('.metal-type')?.value;
+                                            const purity = row.querySelector('.purity')?.value;
+                                            if (!stockType || !metalType || !purity) {
+                                                document.getElementById(`stock-balance-${rowIdx}`).textContent = '';
+                                                return;
+                                            }
+                                            fetch(`/order/ajax/metal-stock-balance/?stock_type_id=${stockType}&metal_type=${metalType}&purity=${purity}`)
+                                                .then(r => r.json())
+                                                .then(data => {
+                                                    if (data.balance !== undefined) {
+                                                        document.getElementById(`stock-balance-${rowIdx}`).textContent = `Available: ${data.balance}g`;
+                                                    } else {
+                                                        document.getElementById(`stock-balance-${rowIdx}`).textContent = data.error || 'Error fetching balance';
+                                                    }
+                                                })
+                                                .catch(() => {
+                                                    document.getElementById(`stock-balance-${rowIdx}`).textContent = 'Error fetching balance';
+                                                });
+                                        }
+                                        document.addEventListener('DOMContentLoaded', function() {
+                                            document.querySelectorAll('.metal-stock-row').forEach(row => {
+                                                const idx = row.getAttribute('data-form-index');
+                                                row.querySelector('.stock-type')?.addEventListener('change', () => fetchMetalStockBalance(idx));
+                                                row.querySelector('.metal-type')?.addEventListener('change', () => fetchMetalStockBalance(idx));
+                                                row.querySelector('.purity')?.addEventListener('change', () => fetchMetalStockBalance(idx));
+                                                // Initial fetch
+                                                fetchMetalStockBalance(idx);
+                                            });
+                                        });
+                                        </script>
                                         <td>
                                             {% with form.purity as field %}
                                                 <select name="{{ field.html_name }}" class="form-select form-select-sm purity" {% if form.is_bound %}value="{{ form.purity.value }}"{% endif %}>
@@ -230,6 +280,16 @@
                                             {% with form.quantity as field %}
                                                 <input type="number" step="0.001" name="{{ field.html_name }}" class="form-control form-control-sm quantity" value="{{ form.quantity.value|default:'' }}" placeholder="0.000">
                                                 {% if form.quantity.errors %}<div class="text-danger small">{{ form.quantity.errors }}</div>{% endif %}
+                                            {% endwith %}
+                                        </td>
+                                        <td>
+                                            {% with form.rate_unit as field %}
+                                                <select name="{{ field.html_name }}" class="form-select form-select-sm">
+                                                    {% for val, label in form.fields.rate_unit.choices %}
+                                                        <option value="{{ val }}" {% if form.rate_unit.value == val %}selected{% endif %}>{{ label }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                {% if form.rate_unit.errors %}<div class="text-danger small">{{ form.rate_unit.errors }}</div>{% endif %}
                                             {% endwith %}
                                         </td>
                                         <td>

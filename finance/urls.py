@@ -1,9 +1,11 @@
 from django.urls import path
 from . import views
+from .views_balance import balance_sheet
 
 app_name = 'finance'
 
 urlpatterns = [
+    path('balance-sheet/', balance_sheet, name='balance_sheet'),
     # Dashboard
     path('dashboard/', views.finance_dashboard, name='finance_dashboard'),
 

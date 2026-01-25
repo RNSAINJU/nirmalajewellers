@@ -1,4 +1,6 @@
+
 {% extends 'base.html' %}
+{% include 'main/_chartjs_head.html' %}
 
 {% block content %}
 <style>
@@ -485,7 +487,41 @@
   </div>
 </div>
 
-<!-- Stock Summary -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var ctx = document.getElementById('salesByMonthChart').getContext('2d');
+    var salesByMonthChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: {{ sales_month_labels|safe }},
+        datasets: [{
+          label: 'Sales (₹)',
+          data: {{ sales_month_totals|safe }},
+          backgroundColor: 'rgba(250, 112, 154, 0.7)',
+          borderColor: 'rgba(250, 112, 154, 1)',
+          borderWidth: 2,
+          borderRadius: 6,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          title: { display: false }
+        },
+        scales: {
+          x: { grid: { display: false } },
+          y: {
+            beginAtZero: true,
+            ticks: { callback: function(value) { return '₹' + value; } }
+          }
+        }
+      }
+    });
+  });
+</script>
+<!-- Place chart after P&L and action buttons -->
+<!-- Sales by Month Chart: moved under action-buttons -->
 <div class="stock-cards">
   <div class="stock-card">
     <div class="stock-card-title">
@@ -803,6 +839,58 @@
   <a href="{% url 'main:stock_report' %}" class="btn-action" style="background-color: #9b59b6;">📊 Stock Report</a>
   <a href="{% url 'main:monthly_stock_report' %}" class="btn-action" style="background-color: #2980b9;">🗓️ Monthly Stock</a>
   <a href="/admin/" class="btn-action">⚙️ Admin</a>
+</div>
+
+<!-- Sales by Month Chart: placed at the end of dashboard -->
+<div class="row mb-4" style="margin-top: 40px;">
+  <div class="col-12">
+    <div class="card shadow-sm p-3 mb-3 bg-white rounded">
+      <h4 class="mb-3">📊 Sales by Month</h4>
+      <canvas id="salesByMonthChart" height="80"></canvas>
+      <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          var labels = {{ sales_month_labels|safe }};
+          var data = {{ sales_month_totals|safe }};
+          var ctx = document.getElementById('salesByMonthChart').getContext('2d');
+          if (labels.length && data.length && data.some(x => x > 0)) {
+            new Chart(ctx, {
+              type: 'bar',
+              data: {
+                labels: labels,
+                datasets: [{
+                  label: 'Sales (₹)',
+                  data: data,
+                  backgroundColor: 'rgba(250, 112, 154, 0.7)',
+                  borderColor: 'rgba(250, 112, 154, 1)',
+                  borderWidth: 2,
+                  borderRadius: 6,
+                }]
+              },
+              options: {
+                responsive: true,
+                plugins: {
+                  legend: { display: false },
+                  title: { display: false }
+                },
+                scales: {
+                  x: { grid: { display: false } },
+                  y: {
+                    beginAtZero: true,
+                    ticks: { callback: function(value) { return '₹' + value; } }
+                  }
+                }
+              }
+            });
+          } else {
+            ctx.font = '16px sans-serif';
+            ctx.fillStyle = '#888';
+            ctx.textAlign = 'center';
+            ctx.fillText('No sales data available', ctx.canvas.width/2, ctx.canvas.height/2);
+          }
+        });
+      </script>
+    </div>
+  </div>
 </div>
 
 {% endblock %}

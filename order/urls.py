@@ -1,4 +1,5 @@
 from django.urls import path
+from .views_ajax import get_metal_stock_balance
 from .views import (
     OrderListView,
     OrderCreateView,
@@ -29,6 +30,7 @@ from .reports import (
 app_name = 'order'
 
 urlpatterns = [
+    path('ajax/metal-stock-balance/', get_metal_stock_balance, name='ajax_metal_stock_balance'),
     path('', OrderListView.as_view(), name='list'),
     path('create/', OrderCreateView.as_view(), name='create'),
     path('update/<int:pk>/', OrderUpdateView.as_view(), name='update'),
