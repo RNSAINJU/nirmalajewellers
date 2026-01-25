@@ -128,6 +128,28 @@
         color: #0a58ca;
         text-decoration: underline;
     }
+    /* Compact ornament chips */
+    .ornament-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        max-width: 260px;
+    }
+    .ornament-chip {
+        background: #eef2ff;
+        color: #4338ca;
+        border: 1px solid #c7d2fe;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+    .ornament-chip-muted {
+        background: #f3f4f6;
+        color: #4b5563;
+        border-color: #e5e7eb;
+    }
 </style>
 
 <div class="container mt-5">
@@ -295,19 +317,35 @@
                             <tbody>
                                 {% for order in orders_list %}
                                 <tr>
-                                    <td>{{ order.sn }}</td>
+                                    <td>
+                                        <a href="{% url 'order:update' order.sn %}" class="text-decoration-none fw-semibold">{{ order.sn }}</a>
+                                    </td>
                                     <td>{{ order.order_date|bs_date }}</td>
                                     <td>{{ order.customer_name }}</td>
                                     <td>{{ order.phone_number }}</td>
                                     <td>
-                                        {% for line in order.order_ornaments.all %}
-                                            <small>• <a class="ornament-link" href="{% url 'ornament:update' line.ornament.id %}" target="_blank" rel="noopener">{{ line.ornament.ornament_name }}</a> ({{ line.ornament.metal_type }}, {{ line.ornament.type }})</small><br/>
-                                        {% endfor %}
-                                        {% for metal in order.order_metals.all %}
-                                            <small>🥇 <strong>{{ metal.get_metal_type_display }}</strong> {{ metal.purity }} - {{ metal.quantity|floatformat:3 }}g @ Rs.{{ metal.rate_per_gram }}/g</small><br/>
-                                        {% empty %}
+                                        {% with items=order.order_ornaments.all %}
+                                            {% if items %}
+                                                <div class="ornament-chips" title="{% for line in items %}{{ line.ornament.ornament_name }} ({{ line.ornament.metal_type }}, {{ line.ornament.type }}){% if not forloop.last %}, {% endif %}{% endfor %}">
+                                                    {% for line in items|slice:":3" %}
+                                                        <a href="{% url 'ornament:update' line.ornament.id %}" class="text-decoration-none ornament-link"><span class="ornament-chip">{{ line.ornament.ornament_name }} • {{ line.ornament.metal_type }}</span></a>
+                                                    {% endfor %}
+                                                    {% if items|length > 3 %}
+                                                        <span class="ornament-chip ornament-chip-muted">+{{ items|length|add:"-3" }} more</span>
+                                                    {% endif %}
+                                                </div>
+                                            {% endif %}
+                                        {% endwith %}
+                                        {% if order.order_metals.exists %}
+                                            <div class="mt-1">
+                                                {% for metal in order.order_metals.all %}
+                                                    <small>🥇 <strong>{{ metal.get_metal_type_display }}</strong> {{ metal.purity }} - {{ metal.quantity|floatformat:3 }}g @ Rs.{{ metal.rate_per_gram }}/g</small><br/>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                        {% if not order.order_ornaments.all and not order.order_metals.all %}
                                             <small class="text-muted">No items</small>
-                                        {% endfor %}
+                                        {% endif %}
                                     </td>
                                     <td>{{ order.total_weight|default:0|floatformat:3 }}</td>
                                     <td>{{ order.total }}</td>

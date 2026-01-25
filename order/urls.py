@@ -25,6 +25,11 @@ from .reports import (
     OrderPaymentAnalysis,
     OrderMetalAnalysis,
     OrderCustomerAnalysis,
+    FastSlowMoversReport,
+    StockAgingReport,
+    MarginByCategoryReport,
+    PaymentMixDiscountsReport,
+    DebtorAgingReport,
 )
 
 app_name = 'order'
@@ -54,4 +59,9 @@ urlpatterns = [
     path('reports/payments/', OrderPaymentAnalysis.as_view(), name='payment_report'),
     path('reports/metals/', OrderMetalAnalysis.as_view(), name='metal_report'),
     path('reports/customers/', OrderCustomerAnalysis.as_view(), name='customer_report'),
+    path('reports/fast-slow-movers/', FastSlowMoversReport.as_view(), name='fast_slow_movers_report'),
+    path('reports/stock-aging/', StockAgingReport.as_view(), name='stock_aging_report'),
+    path('reports/margin-by-category/', MarginByCategoryReport.as_view(), name='margin_report'),
+    path('reports/payment-mix-discounts/', PaymentMixDiscountsReport.as_view(), name='payment_mix_report'),
+    path('reports/debtor-aging/', DebtorAgingReport.as_view(), name='debtor_aging_report'),
 ]

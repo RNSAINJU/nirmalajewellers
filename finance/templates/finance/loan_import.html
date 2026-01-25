@@ -1,0 +1,38 @@
+{% extends 'finance/base_finance.html' %}
+
+{% block main_content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Import Loans from XLSX</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <strong>Import Format:</strong> The XLSX file should have the following columns:
+                    <ul class="mb-0">
+                        <li><code>bank_name</code> (required)</li>
+                        <li><code>amount</code> (required)</li>
+                        <li><code>interest_rate</code> (required)</li>
+                        <li><code>start_date</code> (required, format: YYYY-MM-DD)</li>
+                        <li><code>notes</code> (optional)</li>
+                    </ul>
+                </div>
+                
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="file" class="form-label">Select XLSX File</label>
+                        <input type="file" class="form-control" id="file" name="file" accept=".xlsx" required>
+                        <small class="text-muted">Maximum file size: 10MB</small>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Import</button>
+                        <a href="{% url 'finance:loan_list' %}" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -4,9 +4,38 @@
 <a href="{% url 'finance:loan_create' %}" class="btn btn-primary">
     <i class="bi bi-plus-lg"></i> Add Loan
 </a>
+<a href="{% url 'finance:loan_export' %}" class="btn btn-success">
+    <i class="bi bi-download"></i> Export
+</a>
+<a href="{% url 'finance:loan_import' %}" class="btn btn-info">
+    <i class="bi bi-upload"></i> Import
+</a>
 {% endblock %}
 
 {% block main_content %}
+<div class="row mb-3">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="row g-0">
+                    <div class="col-md-6 border-end p-3">
+                        <div class="text-center">
+                            <h6 class="text-muted mb-2">Total Loan Amount</h6>
+                            <h3 class="mb-0 text-primary">रु{{ total_loan_amount }}</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-6 p-3">
+                        <div class="text-center">
+                            <h6 class="text-muted mb-2">Total Monthly Interest</h6>
+                            <h3 class="mb-0 text-success">रु{{ total_monthly_interest }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-md-12">
         <div class="card">
@@ -25,6 +54,7 @@
                                 <th>Start Date</th>
                                 <th>Notes</th>
                                 <th>Added</th>
+                                <th class="text-end">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -36,6 +66,16 @@
                                 <td>{{ loan.start_date }}</td>
                                 <td>{{ loan.notes|default:'—' }}</td>
                                 <td>{{ loan.created_at|date:'Y-m-d H:i' }}</td>
+                                <td class="text-end">
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'finance:loan_update' loan.pk %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-pencil"></i> Edit
+                                        </a>
+                                        <a href="{% url 'finance:loan_delete' loan.pk %}" class="btn btn-sm btn-outline-danger">
+                                            <i class="bi bi-trash"></i> Delete
+                                        </a>
+                                    </div>
+                                </td>
                             </tr>
                         {% endfor %}
                         </tbody>
