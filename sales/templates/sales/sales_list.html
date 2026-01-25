@@ -256,7 +256,7 @@
                     <td>{{ order.phone_number }}</td>
                     <td>
                         {% with items=order.order_ornaments.all %}
-                            {% if items %}
+                            {% if items and items|length > 0 %}
                                 <div class="ornament-chips" title="{% for line in items %}{{ line.ornament.ornament_name }} ({{ line.ornament.metal_type }}, {{ line.ornament.type }}){% if not forloop.last %}, {% endif %}{% endfor %}">
                                     {% for line in items|slice:":3" %}
                                         <a href="{% url 'ornament:update' line.ornament.id %}" class="text-decoration-none ornament-link"><span class="ornament-chip">{{ line.ornament.ornament_name }} • {{ line.ornament.metal_type }}</span></a>
@@ -265,10 +265,23 @@
                                         <span class="ornament-chip ornament-chip-muted">+{{ items|length|add:"-3" }} more</span>
                                     {% endif %}
                                 </div>
-                            {% else %}
-                                <small class="text-muted">No ornaments</small>
                             {% endif %}
                         {% endwith %}
+                        {% with metals=sale.sale_metals.all %}
+                            {% if metals and metals|length > 0 %}
+                                <div class="ornament-chips mt-1" title="{% for metal in metals %}{{ metal.get_metal_type_display }} {{ metal.purity }} - {{ metal.quantity|floatformat:3 }}g @ Rs.{{ metal.rate_per_gram|floatformat:2 }}/g{% if not forloop.last %}, {% endif %}{% endfor %}">
+                                    {% for metal in metals|slice:":3" %}
+                                        <span class="ornament-chip"><i class="bi bi-award-fill text-primary me-1"></i><strong>{{ metal.get_metal_type_display }}</strong> {{ metal.purity }} - {{ metal.quantity|floatformat:3 }}g @ Rs.{{ metal.rate_per_gram|floatformat:2 }}/g</span>
+                                    {% endfor %}
+                                    {% if metals|length > 3 %}
+                                        <span class="ornament-chip ornament-chip-muted">+{{ metals|length|add:"-3" }} more</span>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        {% endwith %}
+                        {% if order.order_ornaments.count == 0 and sale.sale_metals.count == 0 %}
+                            <small class="text-muted">No ornaments</small>
+                        {% endif %}
                     </td>
                     <td>{{ sale.total_weight|default:0|floatformat:3 }}</td>
                     <td>रु{{ order.total|floatformat:2 }}</td>
