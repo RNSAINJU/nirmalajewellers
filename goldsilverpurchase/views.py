@@ -2724,6 +2724,8 @@ def import_wizard_process(request):
 
 def import_model_json(model_name, records, skip_existing=True):
     """Import a single model from JSON data."""
+    from decimal import Decimal
+    from datetime import datetime
     from finance.models import Employee, Expense, EmployeeSalary, SundryCreditor, SundryDebtor, Loan, CreditorTransaction, DebtorTransaction
     from goldsilverpurchase.models import Party, MetalStockType, GoldSilverPurchase, CustomerPurchase, MetalStock, MetalStockMovement
     from main.models import Stock, DailyRate
@@ -2775,19 +2777,146 @@ def import_model_json(model_name, records, skip_existing=True):
     if model_name not in model_map:
         return 0, 0, [f"Unknown model: {model_name}"]
     
-    # For simplicity, we'll use basic create logic - you can extend this
-    # with the detailed import logic from import_all_data function
+    Model = model_map[model_name]
+    
+    for record in records:
+        try:
+            # Convert Decimal strings back to Decimal
+            for key, value in record.items():
+                if isinstance(value, str):
+                    try:
+                        record[key] = Decimal(value) if '.' in value else value
+                    except:
+                        pass
+            
+            # Check if record exists (by ID)
+            if skip_existing and 'id' in record:
+                if Model.objects.filter(id=record['id']).exists():
+                    skipped += 1
+                    continue
+            
+            # Create the record
+            obj, created = Model.objects.update_or_create(
+                id=record.get('id'),
+                defaults={k: v for k, v in record.items() if k != 'id'}
+            )
+            if created:
+                count += 1
+            else:
+                skipped += 1
+        except Exception as e:
+            errors.append(f"{model_name} - Record {record.get('id', '?')}: {str(e)}")
     
     return count, skipped, errors
 
 
 def import_model_xlsx(sheet_name, worksheet, skip_existing=True):
     """Import a single model from XLSX sheet."""
+    from decimal import Decimal
+    from datetime import datetime
+    from finance.models import Employee, Expense, EmployeeSalary, SundryCreditor, SundryDebtor, Loan, CreditorTransaction, DebtorTransaction
+    from goldsilverpurchase.models import Party, MetalStockType, GoldSilverPurchase, CustomerPurchase, MetalStock, MetalStockMovement
+    from main.models import Stock, DailyRate
+    from ornament.models import Stone, Motimala, Potey, MainCategory, SubCategory, Kaligar, Ornament, Kaligar_Ornaments, Kaligar_CashAccount, Kaligar_GoldAccount
+    from order.models import Order, OrderMetalStock, OrderPayment, OrderOrnament, DebtorPayment
+    from sales.models import Sale, SalesMetalStock
+    
     count = 0
     skipped = 0
     errors = []
     
-    # Similar to import_model_json but reading from worksheet
-    # You can reuse logic from import_all_data function
+    # Model mapping
+    model_map = {
+        'Employee': Employee,
+        'Expense': Expense,
+        'EmployeeSalary': EmployeeSalary,
+        'SundryCreditor': SundryCreditor,
+        'SundryDebtor': SundryDebtor,
+        'Loan': Loan,
+        'CreditorTransaction': CreditorTransaction,
+        'DebtorTransaction': DebtorTransaction,
+        'Party': Party,
+        'MetalStockType': MetalStockType,
+        'GoldSilverPurchase': GoldSilverPurchase,
+        'CustomerPurchase': CustomerPurchase,
+        'MetalStock': MetalStock,
+        'MetalStockMovement': MetalStockMovement,
+        'Stock': Stock,
+        'DailyRate': DailyRate,
+        'Stone': Stone,
+        'Motimala': Motimala,
+        'Potey': Potey,
+        'MainCategory': MainCategory,
+        'SubCategory': SubCategory,
+        'Kaligar': Kaligar,
+        'Ornament': Ornament,
+        'Kaligar_Ornaments': Kaligar_Ornaments,
+        'Kaligar_CashAccount': Kaligar_CashAccount,
+        'Kaligar_GoldAccount': Kaligar_GoldAccount,
+        'Order': Order,
+        'OrderMetalStock': OrderMetalStock,
+        'OrderPayment': OrderPayment,
+        'OrderOrnament': OrderOrnament,
+        'DebtorPayment': DebtorPayment,
+        'Sale': Sale,
+        'SalesMetalStock': SalesMetalStock,
+    }
+    
+    if sheet_name not in model_map:
+        return 0, 0, [f"Unknown model: {sheet_name}"]
+    
+    Model = model_map[sheet_name]
+    
+    # Get headers from first row
+    headers = []
+    for cell in worksheet[1]:
+        if cell.value is not None:
+            headers.append(cell.value)
+    
+    # Process data rows
+    for row_idx, row in enumerate(worksheet.iter_rows(min_row=2, values_only=True), start=2):
+        if not any(row):  # Skip empty rows
+            continue
+        
+        try:
+            record = {}
+            for col_idx, header in enumerate(headers):
+                value = row[col_idx] if col_idx < len(row) else None
+                
+                # Convert value types
+                if value is not None:
+                    if isinstance(value, str):
+                        try:
+                            # Try to convert to Decimal if it's a number
+                            if '.' in value or value.isdigit():
+                                record[header] = Decimal(value)
+                            else:
+                                record[header] = value
+                        except:
+                            record[header] = value
+                    else:
+                        record[header] = value
+            
+            if not record:
+                continue
+            
+            # Check if record exists (by ID)
+            if skip_existing and 'ID' in record:
+                if Model.objects.filter(id=record['ID']).exists():
+                    skipped += 1
+                    continue
+            
+            # Create the record
+            record_id = record.pop('ID', None)
+            obj, created = Model.objects.update_or_create(
+                id=record_id if record_id else None,
+                defaults=record
+            )
+            if created:
+                count += 1
+            else:
+                skipped += 1
+        except Exception as e:
+            errors.append(f"{sheet_name} - Row {row_idx}: {str(e)}")
     
     return count, skipped, errors
