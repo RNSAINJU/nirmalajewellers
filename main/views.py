@@ -789,6 +789,26 @@ def stock_report(request):
         "amount": sum(row["amount"] for row in stock_rows),
     }
 
+    # Check if a category is selected for detail view
+    selected_category = request.GET.get("category")
+    category_ornaments = None
+
+    if selected_category:
+        # Map display label to metal_type value
+        category_map = {
+            "Gold": "Gold",
+            "Silver": "Silver",
+            "Diamond": "Diamond",
+        }
+        metal_type = category_map.get(selected_category)
+        if metal_type:
+            from ornament.models import Ornament
+            category_ornaments = Ornament.objects.filter(
+                metal_type=metal_type
+            ).exclude(
+                ornament_type=Ornament.OrnamentCategory.SALES
+            )
+
     context = {
         "totals": totals,
         "purchase_rows": purchase_rows,
@@ -799,6 +819,8 @@ def stock_report(request):
         "stock_totals": stock_totals,
         "opening_stock_rows": opening_stock_rows,
         "opening_stock_totals": opening_stock_totals,
+        "category_ornaments": category_ornaments,
+        "selected_category": selected_category,
     }
     return render(request, "main/stock_report.html", context)
 

@@ -143,7 +143,7 @@
       </thead>
       <tbody>
         {% for row in stock_rows %}
-          <tr>
+          <tr {% if row.label in 'Gold,Silver,Diamond' %} style="cursor:pointer;" onclick="window.location='?category={{ row.label }}'" {% endif %}>
             <td>{{ forloop.counter }}</td>
             <td>{{ row.label }}</td>
             <td>{{ row.qty|floatformat:2 }}</td>
@@ -151,6 +151,44 @@
             <td>{{ row.amount|floatformat:2 }}</td>
           </tr>
         {% endfor %}
+          {% if category_ornaments and selected_category %}
+            <div class="note">
+              <div class="note-title">All Ornaments for Category: {{ selected_category }}</div>
+              <table class="note-table">
+                <thead>
+                  <tr>
+                    <th>S.N.</th>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Weight</th>
+                    <th>Purity</th>
+                    <th>Jarti</th>
+                    <th>Jyala</th>
+                    <th>Created At</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for ornament in category_ornaments %}
+                    <tr>
+                      <td>{{ forloop.counter }}</td>
+                      <td>{{ ornament.name }}</td>
+                      <td>{{ ornament.type }}</td>
+                      <td>{{ ornament.weight|floatformat:2 }}</td>
+                      <td>{{ ornament.purity }}</td>
+                      <td>{{ ornament.jarti|default_if_none:"" }}</td>
+                      <td>{{ ornament.jyala|default_if_none:"" }}</td>
+                      <td>{{ ornament.created_at|date:'Y-m-d' }}</td>
+                    </tr>
+                  {% empty %}
+                    <tr><td colspan="8" style="text-align:center; color:#999;">No ornaments found for this category.</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+              <div class="actions">
+                <a class="secondary" href="?">Back to Stock Report</a>
+              </div>
+            </div>
+          {% endif %}
         <tr class="total-row">
           <td colspan="2">Totals</td>
           <td>{{ stock_totals.qty|floatformat:2 }}</td>
