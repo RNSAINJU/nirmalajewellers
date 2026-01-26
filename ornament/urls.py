@@ -20,6 +20,7 @@ from .views import (
     StoneListView, StoneCreateView,
     MotimalaListView, MotimalaCreateView,
     PoteyListView, PoteyCreateView,
+    create_kaligar_cash_account, create_kaligar_gold_account,
 )
 
 app_name = 'ornament'
@@ -47,5 +48,7 @@ urlpatterns = [
     path('motimala/create/', MotimalaCreateView.as_view(), name='motimala_create'),
     path('potey/', PoteyListView.as_view(), name='potey_list'),
     path('potey/create/', PoteyCreateView.as_view(), name='potey_create'),
+    path('kaligar/<int:kaligar_id>/create-cash-account/', create_kaligar_cash_account, name='create_kaligar_cash_account'),
+    path('kaligar/<int:kaligar_id>/create-gold-account/', create_kaligar_gold_account, name='create_kaligar_gold_account'),
 ]
 

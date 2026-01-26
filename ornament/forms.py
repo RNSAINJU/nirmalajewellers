@@ -2,7 +2,19 @@ from django import forms
 from django.core.exceptions import ValidationError
 from nepali_datetime_field.forms import NepaliDateField
 from decimal import Decimal
-from .models import Ornament
+from .models import Ornament, Kaligar_CashAccount, Kaligar_GoldAccount
+
+# Form for Kaligar_CashAccount
+class KaligarCashAccountForm(forms.ModelForm):
+    class Meta:
+        model = Kaligar_CashAccount
+        fields = ['date', 'particular', 'amount_taken', 'to_pay', 'provided_by', 'kaligar']
+
+# Form for Kaligar_GoldAccount
+class KaligarGoldAccountForm(forms.ModelForm):
+    class Meta:
+        model = Kaligar_GoldAccount
+        fields = ['date', 'gold_deposit', 'gold_loss', 'gold_remaining', 'kaligar']
 import nepali_datetime as ndt
 
 

@@ -3,6 +3,8 @@ from django.core.validators import MinValueValidator, RegexValidator
 from nepali_datetime_field.models import NepaliDateField
 from decimal import Decimal
 
+from ornament.models import Kaligar
+
 
 class Party(models.Model):
     party_name = models.CharField(max_length=255)
@@ -594,6 +596,14 @@ class MetalStockMovement(models.Model):
         help_text='Rate for this transaction (per selected unit)',
         blank=True,
         null=True
+    )
+    # Optional Kaligar (artisan) involved in this transaction
+    kaligar = models.ForeignKey(
+        Kaligar,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="Kaligar involved in this transaction (if any)"
     )
     class MovementType(models.TextChoices):
         IN = 'in', 'Stock In'

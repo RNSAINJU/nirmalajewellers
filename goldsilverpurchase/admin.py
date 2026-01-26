@@ -147,7 +147,7 @@ class MetalStockMovementAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('Stock Movement', {
-            'fields': ('metal_stock', 'movement_type', 'quantity')
+            'fields': ('metal_stock', 'movement_type', 'quantity', 'kaligar')
         }),
         ('Reference', {
             'fields': ('reference_type', 'reference_id')

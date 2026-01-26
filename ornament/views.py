@@ -3,7 +3,31 @@ from django.urls import reverse_lazy
 from .models import Ornament, Stone, Motimala, Potey
 # Import ListView and CreateView for generic class-based views
 from django.views.generic import ListView, CreateView
-from .forms import OrnamentForm
+from .forms import OrnamentForm, KaligarCashAccountForm, KaligarGoldAccountForm
+from django.shortcuts import get_object_or_404
+# Create Kaligar_CashAccount for a Kaligar
+def create_kaligar_cash_account(request, kaligar_id=None):
+    kaligar = get_object_or_404(Kaligar, id=kaligar_id) if kaligar_id else None
+    if request.method == 'POST':
+        form = KaligarCashAccountForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('ornament:kaligar_list')
+    else:
+        form = KaligarCashAccountForm(initial={'kaligar': kaligar})
+    return render(request, 'ornament/kaligar_cashaccount_form.html', {'form': form, 'kaligar': kaligar})
+
+# Create Kaligar_GoldAccount for a Kaligar
+def create_kaligar_gold_account(request, kaligar_id=None):
+    kaligar = get_object_or_404(Kaligar, id=kaligar_id) if kaligar_id else None
+    if request.method == 'POST':
+        form = KaligarGoldAccountForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('ornament:kaligar_list')
+    else:
+        form = KaligarGoldAccountForm(initial={'kaligar': kaligar})
+    return render(request, 'ornament/kaligar_goldaccount_form.html', {'form': form, 'kaligar': kaligar})
 # Stones List and Create Views
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
@@ -1055,6 +1079,8 @@ def kaligar_list(request):
         'stone_totalprice': Decimal('0'),
     }
     
+    kaligar_cash_accounts = None
+    kaligar_gold_accounts = None
     if selected_kaligar_id:
         try:
             selected_kaligar = Kaligar.objects.get(id=selected_kaligar_id)
@@ -1075,7 +1101,6 @@ def kaligar_list(request):
                         'stone_totalprice': Decimal('0'),
                     }
                 ornaments_by_metal_type[metal_type].append(ornament)
-                
                 # Add to metal type totals
                 metal_type_totals[metal_type]['weight'] += ornament.weight or Decimal('0')
                 metal_type_totals[metal_type]['jarti'] += ornament.jarti or Decimal('0')
@@ -1085,7 +1110,6 @@ def kaligar_list(request):
                 metal_type_totals[metal_type]['zircon_weight'] += ornament.zircon_weight or Decimal('0')
                 metal_type_totals[metal_type]['stone_weight'] += ornament.stone_weight or Decimal('0')
                 metal_type_totals[metal_type]['stone_totalprice'] += ornament.stone_totalprice or Decimal('0')
-                
                 # Add to overall totals
                 overall_totals['weight'] += ornament.weight or Decimal('0')
                 overall_totals['jarti'] += ornament.jarti or Decimal('0')
@@ -1095,6 +1119,9 @@ def kaligar_list(request):
                 overall_totals['zircon_weight'] += ornament.zircon_weight or Decimal('0')
                 overall_totals['stone_weight'] += ornament.stone_weight or Decimal('0')
                 overall_totals['stone_totalprice'] += ornament.stone_totalprice or Decimal('0')
+            # Add related accounts
+            kaligar_cash_accounts = selected_kaligar.cash_accounts.all().order_by('-date')
+            kaligar_gold_accounts = selected_kaligar.gold_accounts.all().order_by('-date')
         except Kaligar.DoesNotExist:
             pass
     
@@ -1125,6 +1152,8 @@ def kaligar_list(request):
         'metal_type_totals': metal_type_totals,
         'overall_totals': overall_totals,
         'total_ornament_count': total_ornament_count,
+        'kaligar_cash_accounts': kaligar_cash_accounts,
+        'kaligar_gold_accounts': kaligar_gold_accounts,
     }
     
     return render(request, 'ornament/kaligar_list.html', context)

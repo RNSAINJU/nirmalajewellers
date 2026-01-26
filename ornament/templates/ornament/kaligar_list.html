@@ -87,6 +87,14 @@
                     </h4>
                 </div>
                 <div class="card-body">
+                    <div class="mb-3">
+                        <a href="{% url 'ornament:create_kaligar_cash_account' selected_kaligar.id %}" class="btn btn-success btn-sm me-2">
+                            <i class="bi bi-cash-coin"></i> Add Cash Account
+                        </a>
+                        <a href="{% url 'ornament:create_kaligar_gold_account' selected_kaligar.id %}" class="btn btn-warning btn-sm">
+                            <i class="bi bi-coin"></i> Add Gold Account
+                        </a>
+                    </div>
                     <div class="row">
                         <div class="col-md-6">
                             <table class="table table-sm table-borderless">
@@ -123,6 +131,74 @@
                                     </td>
                                 </tr>
                             </table>
+                        </div>
+                    </div>
+
+                    <!-- Kaligar Cash Account Table -->
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <h5 class="mb-2"><i class="bi bi-cash-coin"></i> Cash Accounts</h5>
+                            {% if kaligar_cash_accounts and kaligar_cash_accounts|length > 0 %}
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-sm mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Particular</th>
+                                            <th>Amount Taken</th>
+                                            <th>To Pay</th>
+                                            <th>Provided By</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for acc in kaligar_cash_accounts %}
+                                        <tr>
+                                            <td>{{ acc.date }}</td>
+                                            <td>{{ acc.particular }}</td>
+                                            <td>{{ acc.amount_taken }}</td>
+                                            <td>{{ acc.to_pay }}</td>
+                                            <td>{{ acc.provided_by }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                                <div class="text-muted small">No cash account records.</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Kaligar Gold Account Table -->
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <h5 class="mb-2"><i class="bi bi-coin"></i> Gold Accounts</h5>
+                            {% if kaligar_gold_accounts and kaligar_gold_accounts|length > 0 %}
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-sm mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Gold Deposit</th>
+                                            <th>Gold Loss</th>
+                                            <th>Gold Remaining</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for acc in kaligar_gold_accounts %}
+                                        <tr>
+                                            <td>{{ acc.date }}</td>
+                                            <td>{{ acc.gold_deposit }}</td>
+                                            <td>{{ acc.gold_loss }}</td>
+                                            <td>{{ acc.gold_remaining }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                                <div class="text-muted small">No gold account records.</div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
