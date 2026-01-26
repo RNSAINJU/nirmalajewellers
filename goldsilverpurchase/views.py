@@ -2510,11 +2510,14 @@ class MetalStockDeleteView(DeleteView):
 from django.urls import reverse
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from .models import MetalStockMovement
+
 from .forms import MetalStockForm
+from .forms_movement import MetalStockMovementForm
+
 
 class MetalStockMovementCreateView(CreateView):
     model = MetalStockMovement
-    form_class = MetalStockForm
+    form_class = MetalStockMovementForm
     template_name = 'goldsilverpurchase/metalstockmovement_form.html'
 
     def dispatch(self, request, *args, **kwargs):
@@ -2541,9 +2544,10 @@ class MetalStockMovementCreateView(CreateView):
         return context
 
 
+
 class MetalStockMovementUpdateView(UpdateView):
     model = MetalStockMovement
-    form_class = MetalStockForm
+    form_class = MetalStockMovementForm
     template_name = 'goldsilverpurchase/metalstockmovement_form.html'
 
     def form_valid(self, form):
