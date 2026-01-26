@@ -99,7 +99,14 @@ class OrnamentListView(ListView):
     context_object_name = 'ornaments'
     # Order by latest entry first
     ordering = ['-id']
-    paginate_by = 10  # Show 10 ornaments per page
+
+    def get_paginate_by(self, queryset):
+        # If both metal_type and maincategory are set, show all (no pagination)
+        metal_type = self.request.GET.get('metal_type')
+        maincategory = self.request.GET.get('maincategory')
+        if metal_type and maincategory:
+            return None
+        return 10  # Default pagination
 
     def get_queryset(self):
         qs = super().get_queryset()
