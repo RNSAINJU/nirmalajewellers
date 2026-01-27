@@ -207,6 +207,9 @@ Created 5 detailed guides:
 
 ## 📞 Quick Links
 
+- **Total Assets Page** (NEW): `TOTAL_ASSETS_IMPLEMENTATION.md` - Simple asset tracking page
+- **Total Assets Visual Guide**: `TOTAL_ASSETS_VISUAL_GUIDE.md` - Visual reference
+- **Total Assets Guide**: `TOTAL_ASSETS_GUIDE.md` - Detailed explanation
 - **Start Testing**: Open `QUICK_DEBUG_TEST.md`
 - **See Expected Output**: Open `VISUAL_DEBUG_GUIDE.md`
 - **Detailed Guide**: Open `DEBUG_PAYMENT_GUIDE.md`

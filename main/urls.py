@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from . import views_accounts
+from . import views_assets
 
 app_name = 'main'
 
@@ -28,4 +29,7 @@ urlpatterns = [
     path('roles/create/', views_accounts.role_create, name='role_create'),
     path('roles/<int:role_id>/edit/', views_accounts.role_update, name='role_update'),
     path('roles/<int:role_id>/delete/', views_accounts.role_delete, name='role_delete'),
+    
+    # Assets URLs
+    path('total-assets/', views_assets.total_assets, name='total_assets'),
 ]

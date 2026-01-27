@@ -1,0 +1,297 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Total Assets - Nirmala Jewellers{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2 class="mb-4">📊 Total Assets Overview</h2>
+        </div>
+    </div>
+
+    <!-- Ornament Inventory Section -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">💍 Ornament Inventory</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <tr>
+                                <td><strong>Total Ornaments:</strong></td>
+                                <td class="text-end">{{ ornament_count }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Gold Weight:</strong></td>
+                                <td class="text-end">{{ total_gold_weight|floatformat:2 }} gm</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Silver Weight:</strong></td>
+                                <td class="text-end">{{ total_silver_weight|floatformat:2 }} gm</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Diamond Weight:</strong></td>
+                                <td class="text-end">{{ total_diamond_weight|floatformat:2 }} gm</td>
+                            </tr>
+                            <tr class="border-top">
+                                <td><strong>Gold Value:</strong></td>
+                                <td class="text-end"><strong>₹ {{ ornaments_gold|floatformat:2 }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Silver Value:</strong></td>
+                                <td class="text-end"><strong>₹ {{ ornaments_silver|floatformat:2 }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Diamond Value:</strong></td>
+                                <td class="text-end"><strong>₹ {{ ornaments_diamond|floatformat:2 }}</strong></td>
+                            </tr>
+                            <tr class="table-primary">
+                                <td><strong>Subtotal:</strong></td>
+                                <td class="text-end"><strong>₹ {{ ornaments_total|floatformat:2 }}</strong></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">🪙 Raw Materials</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <tr>
+                                <td><strong>Raw Gold Weight:</strong></td>
+                                <td class="text-end">{{ raw_gold_weight|floatformat:2 }} gm</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Raw Gold Value:</strong></td>
+                                <td class="text-end"><strong>₹ {{ raw_gold|floatformat:2 }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Raw Silver Weight:</strong></td>
+                                <td class="text-end">{{ raw_silver_weight|floatformat:2 }} gm</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Raw Silver Value:</strong></td>
+                                <td class="text-end"><strong>₹ {{ raw_silver|floatformat:2 }}</strong></td>
+                            </tr>
+                            <tr class="table-success">
+                                <td><strong>Subtotal:</strong></td>
+                                <td class="text-end"><strong>₹ {{ raw_gold|add:raw_silver|floatformat:2 }}</strong></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Other Inventory Section -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">💎 Stones</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center py-3">
+                        <h3 class="text-info">₹ {{ stones_total|floatformat:2 }}</h3>
+                        <small class="text-muted">Inventory Value</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">🧿 Motimala</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center py-3">
+                        <h3 class="text-warning">₹ {{ motimala_total|floatformat:2 }}</h3>
+                        <small class="text-muted">Inventory Value</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">📿 Potey</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center py-3">
+                        <h3 class="text-danger">₹ {{ potey_total|floatformat:2 }}</h3>
+                        <small class="text-muted">Inventory Value</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receivables Section -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-secondary">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">📋 Order Receivables</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center py-4">
+                        <h3>₹ {{ order_receivable|floatformat:2 }}</h3>
+                        <small class="text-muted">Pending Orders</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">👥 Sundry Debtors</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center py-4">
+                        <h3 class="text-warning">₹ {{ sundry_debtor_total|floatformat:2 }}</h3>
+                        <small class="text-muted">Parties Owe</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-secondary">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">📋 Order Receivables</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center py-4">
+                        <h3>₹ {{ order_receivable|floatformat:2 }}</h3>
+                        <small class="text-muted">Amount Customers Owe</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-success border-2">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">✅ TOTAL ASSETS</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center py-4">
+                        <h2 class="text-success">₹ {{ total_assets|floatformat:2 }}</h2>
+                        <small class="text-muted">Complete Asset Value</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Breakdown -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">📈 Asset Breakdown</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Category</th>
+                                    <th class="text-end">Amount (₹)</th>
+                                    <th class="text-end">% of Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>💍 Ornament Inventory</td>
+                                    <td class="text-end">{{ ornaments_total|floatformat:2 }}</td>
+                                    <td class="text-end">
+                                        {% widthratio ornaments_total total_assets 100 %}%
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>🪙 Raw Materials</td>
+                                    <td class="text-end">{{ raw_gold|add:raw_silver|floatformat:2 }}</td>
+                                    <td class="text-end">
+                                        {% widthratio raw_gold|add:raw_silver total_assets 100 %}%
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>💎 Stones</td>
+                                    <td class="text-end">{{ stones_total|floatformat:2 }}</td>
+                                    <td class="text-end">
+                                        {% widthratio stones_total total_assets 100 %}%
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>🧿 Motimala</td>
+                                    <td class="text-end">{{ motimala_total|floatformat:2 }}</td>
+                                    <td class="text-end">
+                                        {% widthratio motimala_total total_assets 100 %}%
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>📿 Potey</td>
+                                    <td class="text-end">{{ potey_total|floatformat:2 }}</td>
+                                    <td class="text-end">
+                                        {% widthratio potey_total total_assets 100 %}%
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>📋 Order Receivables</td>
+                                    <td class="text-end">{{ order_receivable|floatformat:2 }}</td>
+                                    <td class="text-end">
+                                        {% widthratio order_receivable total_assets 100 %}%
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>👥 Sundry Debtors</td>
+                                    <td class="text-end">{{ sundry_debtor_total|floatformat:2 }}</td>
+                                    <td class="text-end">
+                                        {% widthratio sundry_debtor_total total_assets 100 %}%
+                                    </td>
+                                </tr>
+                                <tr class="table-success border-top-2">
+                                    <td><strong>TOTAL ASSETS</strong></td>
+                                    <td class="text-end"><strong>₹ {{ total_assets|floatformat:2 }}</strong></td>
+                                    <td class="text-end"><strong>100%</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Info -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="alert alert-info" role="alert">
+                <strong>ℹ️ Note:</strong> This page shows your total physical assets including:
+                <ul class="mb-0 mt-2">
+                    <li>All ornaments in stock (converted to rupees at current rates)</li>
+                    <li>Raw metals inventory</li>
+                    <li>Stones, Motimala, and Potey at cost price</li>
+                    <li>Pending order amounts that customers owe</li>
+                    <li>Sundry debtors (parties that owe money)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
