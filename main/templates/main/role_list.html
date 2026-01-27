@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="{% url 'main:account_settings' %}" class="btn btn-outline-secondary btn-sm mb-2">
+                <i class="bi bi-arrow-left me-1"></i>Back to Users
+            </a>
+            <h2><i class="bi bi-shield-check me-2"></i>Role Management</h2>
+            <p class="text-muted mb-0">Create and manage user roles</p>
+        </div>
+        <a href="{% url 'main:role_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>Add New Role
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-white">
+            <h5 class="mb-0"><i class="bi bi-table me-2"></i>Roles List</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="5%">#</th>
+                            <th width="40%">Role Name</th>
+                            <th width="20%">Users Count</th>
+                            <th width="20%">Created</th>
+                            <th width="15%" class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in groups_with_counts %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>
+                                <strong>{{ item.group.name }}</strong>
+                            </td>
+                            <td>
+                                <span class="badge bg-primary">{{ item.user_count }} user{{ item.user_count|pluralize }}</span>
+                            </td>
+                            <td>
+                                <small class="text-muted">Role ID: {{ item.group.id }}</small>
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'main:role_update' item.group.id %}" class="btn btn-outline-primary" title="Edit Role">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{% url 'main:role_delete' item.group.id %}" class="btn btn-outline-danger" title="Delete Role">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4">
+                                <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+                                <p class="text-muted mt-2">No roles created yet</p>
+                                <a href="{% url 'main:role_create' %}" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-plus-circle me-1"></i>Create First Role
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mt-4">
+        <div class="card-body">
+            <h5><i class="bi bi-info-circle me-2"></i>About Roles</h5>
+            <p class="mb-2">Roles allow you to group users and assign permissions collectively. Common roles include:</p>
+            <ul class="mb-0">
+                <li><strong>Manager</strong> - Full access to all features</li>
+                <li><strong>Cashier</strong> - Handle sales and transactions</li>
+                <li><strong>Sales Person</strong> - Create orders and manage customers</li>
+                <li><strong>Accountant</strong> - Access financial reports</li>
+                <li><strong>Viewer</strong> - Read-only access to reports</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border-radius: 10px;
+    }
+    .table th {
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .badge {
+        font-weight: 500;
+        padding: 0.35em 0.65em;
+    }
+</style>
+{% endblock %}

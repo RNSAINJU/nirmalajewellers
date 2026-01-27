@@ -254,8 +254,8 @@ def dashboard(request):
     from django.db.models.functions import TruncMonth
     sales_by_month_qs = (
         Order.objects
-        .filter(order_date__isnull=False)
-        .annotate(month=TruncMonth('order_date'))
+        .filter(created_at__isnull=False)
+        .annotate(month=TruncMonth('created_at'))
         .values('month')
         .annotate(total=Sum('total'))
         .order_by('month')
