@@ -496,12 +496,20 @@ def import_excel(request):
 
             imported = 0
             skipped = 0
+            skipped_fetched = 0
+            skipped_duplicate = 0
+            errors = []
 
-            for row in ws.iter_rows(min_row=2, values_only=True):
-
-                if not any(row):   # skip empty rows
+            expected_cols = 25
+            for idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+                if not any(row):
                     continue
-
+                # Pad or trim row to expected columns
+                row_list = list(row) if row else []
+                if len(row_list) > expected_cols:
+                    row_list = row_list[:expected_cols]
+                elif len(row_list) < expected_cols:
+                    row_list = row_list + [None] * (expected_cols - len(row_list))
                 try:
                     (
                         ornament_date_bs,
@@ -529,69 +537,54 @@ def import_excel(request):
                         created_at,
                         updated_at,
                         status
-                    ) = row
-                except Exception:
-                    messages.error(request, "Excel format is incorrect. Columns mismatch.")
-                    return redirect("ornament:import_excel")
-
-                # =============== 1️⃣ Status  Check if it already fetched===============
-                if status == "fetched":
+                    ) = row_list
+                except Exception as e:
+                    errors.append(f"Row {idx}: Column mismatch or missing data. {e}")
                     skipped += 1
                     continue
 
-
-                # =============== 1️⃣ Duplicate Bill Check ===============
-                if Ornament.objects.filter(code=str(code)).exists():
+                # Skip duplicates only if code is not empty and already exists
+                if code and str(code).strip() and Ornament.objects.filter(code=str(code).strip()).exists():
                     skipped += 1
+                    skipped_duplicate += 1
                     continue
-
-                # =============== 2️⃣ Find/Create Main Category ===============
+                # MainCategory
                 maincategory = None
-
                 if maincategory_name:
                     maincategory = MainCategory.objects.filter(name=str(maincategory_name)).first()
-
                 if not maincategory:
-                    maincategory = MainCategory.objects.create(
-                        name=maincategory_name or "Unknown"
-                    )
-
-                # =============== 2️⃣ Find/Create Sub Category ===============
+                    maincategory = MainCategory.objects.create(name=maincategory_name or "Unknown")
+                # SubCategory
                 subcategory = None
-
                 if subcategory_name:
                     subcategory = SubCategory.objects.filter(name=str(subcategory_name)).first()
-
                 if not subcategory:
-                    subcategory = SubCategory.objects.create(
-                        name=subcategory_name or "Unknown",
-                    )
-
-                # =============== 2️⃣ Find/Create Kaligar ===============
+                    subcategory = SubCategory.objects.create(name=subcategory_name or "Unknown")
+                # Kaligar
                 kaligar = None
-
                 if kaligar_name:
                     kaligar = Kaligar.objects.filter(name=str(kaligar_name)).first()
-
                 if not kaligar:
+                    # Always create a valid 9-digit PAN
+                    pan = "123456789"
+                    try:
+                        pan = str(int(getattr(kaligar, 'panno', 123456789))).zfill(9)
+                    except Exception:
+                        pan = "123456789"
                     kaligar = Kaligar.objects.create(
                         name=kaligar_name or "Unknown",
                         phone_no="",
-                        panno=123456789,
+                        panno=pan,
                         address="",
                         stamp=""
                     )
-
-                # =============== 2️⃣ Find Order by reference (from export column) ===============
+                # Order
                 linked_order = None
                 if order:
-                    # Try direct numeric sn
                     try:
                         linked_order = Order.objects.filter(sn=int(str(order).strip())).first()
                     except Exception:
                         linked_order = None
-
-                    # Fallback: extract first integer from string like "Order 3 - Customer"
                     if linked_order is None:
                         import re
                         match = re.search(r"(\d+)", str(order))
@@ -601,20 +594,13 @@ def import_excel(request):
                                 linked_order = Order.objects.filter(sn=sn_val).first()
                             except Exception:
                                 linked_order = None
-
-                # if not order:
-                #     kaligar = Kaligar.objects.create(
-                #         name=kaligar_name or "Unknown",
-                #     )
-
-                # =============== 3️⃣ Convert BS Date ===============
+                # Date
                 try:
                     y, m, d = map(int, str(ornament_date_bs).split("-"))
                     ornament_date = ndt.date(y, m, d)
-                except:
+                except Exception:
                     ornament_date = ndt.date.today()
-
-                # =============== 4️⃣ Convert all decimals safely ===============
+                # Decimals
                 gross_weight = to_decimal(gross_weight)
                 weight = to_decimal(weight)
                 diamond_weight = to_decimal(diamond_weight)
@@ -625,41 +611,52 @@ def import_excel(request):
                 stone_totalprice = to_decimal(stone_totalprice)
                 jarti = to_decimal(jarti)
                 jyala = to_decimal(jyala)
+                # Create
+                try:
+                    Ornament.objects.create(
+                        ornament_date=str(ornament_date),
+                        code=code,
+                        metal_type=metal_type,
+                        type=type,
+                        ornament_type=ornament_type,
+                        maincategory=maincategory,
+                        subcategory=subcategory,
+                        ornament_name=ornament_name,
+                        gross_weight=gross_weight,
+                        weight=weight,
+                        diamond_weight=diamond_weight,
+                        diamond_rate=diamond_rate,
+                        zircon_weight=zircon_weight,
+                        stone_weight=stone_weight,
+                        stone_percaratprice=stone_percaratprice,
+                        stone_totalprice=stone_totalprice,
+                        jarti=jarti,
+                        jyala=jyala,
+                        kaligar=kaligar,
+                        description=description,
+                        image=image,
+                        order=linked_order,
+                        created_at=created_at,
+                        updated_at=updated_at,
+                    )
+                    imported += 1
+                except Exception as e:
+                    errors.append(f"Row {idx}: Failed to import. {e}")
+                    skipped += 1
+                    continue
 
-                # =============== 5️⃣ Create Purchase ===============
-                Ornament.objects.create(
-                    ornament_date=str(ornament_date),
-                    code=code,
-                    metal_type=metal_type,
-                    type=type,
-                    ornament_type=ornament_type,
-                    maincategory=maincategory,
-                    subcategory=subcategory,
-                    ornament_name=ornament_name,
-                    gross_weight=gross_weight,
-                    weight = weight,
-                    diamond_weight = diamond_weight,
-                    diamond_rate = diamond_rate,
-                    zircon_weight=zircon_weight,
-                    stone_weight=stone_weight,
-                    stone_percaratprice=stone_percaratprice,
-                    stone_totalprice=stone_totalprice,
-                    jarti=jarti,
-                    jyala=jyala,
-                    kaligar=kaligar,
-                    description=description,
-                    image=image,
-                    order=linked_order,
-                    created_at=created_at,
-                    updated_at=updated_at,
-                )
-
-                imported += 1
-
-            messages.success(
-                request,
-                f"Imported: {imported} | Skipped duplicates: {skipped}"
-            )
+            msg = f"Imported: {imported} | Skipped: {skipped}"
+            if skipped_fetched > 0:
+                msg += f" (Fetched: {skipped_fetched})"
+            if skipped_duplicate > 0:
+                msg += f" (Duplicates: {skipped_duplicate})"
+            if errors:
+                msg += f" | Errors: {len(errors)}"
+                for err in errors[:10]:  # Show first 10 errors
+                    messages.error(request, err)
+                if len(errors) > 10:
+                    messages.warning(request, f"... and {len(errors) - 10} more errors")
+            messages.success(request, msg)
             return redirect("ornament:list")
 
         except Exception as e:
@@ -737,260 +734,192 @@ def ornament_report(request):
 
 def ornament_weight_report(request):
     """Show ornament total net weight by metal type."""
-    from django.db.models import F, Case, When, Value
+    from django.db.models import F, Count
+    # Use latest fetched daily rates for per tola pricing
+    from main.models import DailyRate
+
+    # Only include ornaments with positive weight and status active
+    base_qs = Ornament.objects.filter(
+        ornament_type=Ornament.OrnamentCategory.STOCK,
+        status=Ornament.StatusCategory.ACTIVE,
+        weight__gt=0
+    )
+
+    # Get latest daily gold/silver per tola rates
+    daily_rate = DailyRate.objects.order_by('-created_at').first()
+    gold_rate = daily_rate.gold_rate if daily_rate else Decimal('0')
+    silver_rate = daily_rate.silver_rate if daily_rate else Decimal('0')
     
-    # Get total weight grouped by metal type
-    weight_by_metal = Ornament.objects.filter(
-        ornament_type=Ornament.OrnamentCategory.STOCK
-    ).values('metal_type').annotate(
-        total_weight=Sum('weight'),
-        total_gross_weight=Sum('gross_weight'),
-        total_jarti=Sum('jarti'),
-        total_jyala=Sum('jyala'),
-        ornament_count=Sum(1)
-    ).order_by('metal_type')
-    
-    # Get latest gold rate for calculations
-    try:
-        latest_rate = Stock.objects.latest('year')
-        gold_rate = latest_rate.gold_rate
-        silver_rate = latest_rate.silver_rate
-    except Stock.DoesNotExist:
-        gold_rate = Decimal('0')
-        silver_rate = Decimal('0')
-    
-    # Track grand total amount across all metal types
+    # Fallback to Stock rates if Daily rates not available
+    if gold_rate == 0 or silver_rate == 0:
+        try:
+            stock = Stock.objects.latest('year')
+            if gold_rate == 0:
+                gold_rate = stock.gold_rate
+            if silver_rate == 0:
+                silver_rate = stock.silver_rate
+        except Stock.DoesNotExist:
+            pass
+
+    # Group by metal type
+    weight_by_metal = list(
+        base_qs.values('metal_type').annotate(
+            total_weight=Sum('weight'),
+            total_gross_weight=Sum('gross_weight'),
+            total_jarti=Sum('jarti'),
+            total_jyala=Sum('jyala'),
+            ornament_count=Count('id')
+        ).order_by('metal_type')
+    )
+
     grand_total_amount = Decimal('0')
-    
-    # Pre-fetch all karat breakdowns in a single query per metal type
-    gold_ornaments = Ornament.objects.filter(
-        metal_type='Gold',
-        ornament_type=Ornament.OrnamentCategory.STOCK,
-    )
-    
-    silver_ornaments = Ornament.objects.filter(
-        metal_type='Silver',
-        ornament_type=Ornament.OrnamentCategory.STOCK,
-    )
-    
-    diamond_ornaments = Ornament.objects.filter(
-        metal_type='Diamond',
-        ornament_type=Ornament.OrnamentCategory.STOCK,
-    )
-    
-    # Enrich metal data with karat breakdown and total amount
+    total_gold_amount_with_diamond = Decimal('0')
+    total_silver_amount = Decimal('0')
+    total_diamond_amount = Decimal('0')
+    total_jarti_amount_all = Decimal('0')
+    total_jyala_amount_all = Decimal('0')
+    total_silver_jarti_amount_all = Decimal('0')
+    total_silver_jyala_amount_all = Decimal('0')
+    total_silver_stone_amount_all = Decimal('0')
+
     for metal in weight_by_metal:
-        if metal['metal_type'] == 'Gold':
-            # Get all karat breakdown data in one query
-            karat_data = gold_ornaments.values('type').annotate(
-                weight_sum=Sum('weight'),
-                stone_sum=Sum('stone_totalprice')
-            )
-            
-            karat_dict = {item['type']: item for item in karat_data}
-            
-            gold_24k = karat_dict.get('24KARAT', {}).get('weight_sum') or Decimal('0')
-            gold_22k = karat_dict.get('22KARAT', {}).get('weight_sum') or Decimal('0')
-            gold_18k = karat_dict.get('18KARAT', {}).get('weight_sum') or Decimal('0')
-            gold_14k = karat_dict.get('14KARAT', {}).get('weight_sum') or Decimal('0')
-            
-            # Calculate total amount in 24k equivalent
-            gold_24k_equivalent = (
-                gold_24k + 
-                (gold_22k * Decimal('0.92')) + 
-                (gold_18k * Decimal('0.75')) + 
-                (gold_14k * Decimal('0.58'))
-            )
-            
-            # Get total jarti and jyala for gold
-            total_jarti = metal['total_jarti'] or Decimal('0')
-            total_jyala = metal['total_jyala'] or Decimal('0')
-            
-            # Get total stone price for gold
-            total_stone_price = gold_ornaments.aggregate(
-                total=Sum(F('stone_totalprice'), output_field=DecimalField())
-            )['total'] or Decimal('0')
-            
-            # Calculate component amounts
-            gold_amount = gold_24k_equivalent * gold_rate
-            jarti_amount = total_jarti * gold_rate
-            
-            # Calculate total amount: ((24k gold + jarti) * rate) + jyala + stone_totalprice
-            total_amount = gold_amount + jarti_amount + total_jyala + total_stone_price
-            
-            metal['gold_24k'] = gold_24k
-            metal['gold_22k'] = gold_22k
-            metal['gold_18k'] = gold_18k
-            metal['gold_14k'] = gold_14k
-            metal['gold_24k_equivalent'] = gold_24k_equivalent
+        mtype = metal['metal_type']
+        mqs = base_qs.filter(metal_type=mtype)
+        # Karat breakdown
+        karats = mqs.values('type').annotate(weight_sum=Sum('weight'))
+        karat_dict = {k['type']: k['weight_sum'] or Decimal('0') for k in karats}
+        k24 = karat_dict.get('24KARAT', Decimal('0'))
+        k22 = karat_dict.get('22KARAT', Decimal('0'))
+        k18 = karat_dict.get('18KARAT', Decimal('0'))
+        k14 = karat_dict.get('14KARAT', Decimal('0'))
+        eq_24k = k24 + (k22 * Decimal('0.92')) + (k18 * Decimal('0.75')) + (k14 * Decimal('0.58'))
+        # Stone price
+        stone_total = mqs.aggregate(total=Sum('stone_totalprice'))['total'] or Decimal('0')
+        # Jarti/Jyala
+        total_jarti = metal['total_jarti'] or Decimal('0')
+        total_jyala = metal['total_jyala'] or Decimal('0')
+        # Amount and per-metal context fields
+        if mtype == 'Gold':
+            metal['gold_24k'] = k24
+            metal['gold_22k'] = k22
+            metal['gold_18k'] = k18
+            metal['gold_14k'] = k14
+            metal['gold_24k_equivalent'] = eq_24k
+            metal['gold_amount'] = (eq_24k / Decimal('11.664')) * gold_rate
+            metal['jarti_amount'] = (total_jarti / Decimal('11.664')) * gold_rate
+            metal['jyala_amount'] = total_jyala
+            metal['stone_amount'] = stone_total
+            amount = metal['gold_amount'] + metal['jarti_amount'] + metal['jyala_amount'] + metal['stone_amount']
+            total_gold_amount_with_diamond += metal['gold_amount']
+            total_jarti_amount_all += metal['jarti_amount']
+            total_jyala_amount_all += metal['jyala_amount']
+        elif mtype == 'Silver':
+            metal['silver_24k'] = k24
+            metal['silver_22k'] = k22
+            metal['silver_18k'] = k18
+            metal['silver_14k'] = k14
+            metal['silver_24k_equivalent'] = eq_24k
+            metal['silver_amount'] = (eq_24k / Decimal('11.664')) * silver_rate
+            metal['jarti_amount'] = (total_jarti / Decimal('11.664')) * silver_rate
+            metal['jyala_amount'] = total_jyala
+            metal['stone_amount'] = stone_total
+            amount = metal['silver_amount'] + metal['jarti_amount'] + metal['jyala_amount'] + metal['stone_amount']
+            total_silver_amount += metal['silver_amount']
+            total_silver_jarti_amount_all += metal['jarti_amount']
+            total_silver_jyala_amount_all += metal['jyala_amount']
+            total_silver_stone_amount_all += metal['stone_amount']
+            total_jarti_amount_all += metal['jarti_amount']
+            total_jyala_amount_all += metal['jyala_amount']
+        elif mtype == 'Diamond':
+            # Diamond ornament calculations (as per provided specification)
+            # Gold net weight in diamond ornaments
+            diamond_gold_net_weight = metal['total_weight'] or Decimal('0')
+            # Convert to 24K equivalent using 0.59 factor
+            diamond_gold_net_24k = diamond_gold_net_weight * Decimal('0.59')
+            # Total gold price: 24K equivalent converted to tola (/11.664) × daily gold rate per tola
+            gold_amount = (diamond_gold_net_24k / Decimal('11.664')) * gold_rate
+            # Jyala: gold net weight × 1800
+            jyala_amount = diamond_gold_net_weight * Decimal('1800')
+            # Diamond price: total diamond weight × 35000
+            diamond_weight_total = mqs.aggregate(dw=Sum('diamond_weight'))['dw'] or Decimal('0')
+            diamond_weight_amount = diamond_weight_total * Decimal('35000')
+            # Total (exclude jarti/stone per spec unless required)
+            amount = gold_amount + jyala_amount + diamond_weight_amount
+            metal['diamond_24k'] = k24
+            metal['diamond_22k'] = k22
+            metal['diamond_18k'] = k18
+            metal['diamond_14k'] = k14
+            metal['diamond_24k_equivalent'] = diamond_gold_net_24k
             metal['gold_amount'] = gold_amount
-            metal['jarti_amount'] = jarti_amount
-            metal['jyala_amount'] = total_jyala
-            metal['stone_amount'] = total_stone_price
-            metal['total_amount'] = total_amount
-            
-            # Add to grand total
-            grand_total_amount += total_amount
-            
-        elif metal['metal_type'] == 'Silver':
-            # Get all karat breakdown data in one query
-            karat_data = silver_ornaments.values('type').annotate(
-                weight_sum=Sum('weight'),
-                stone_sum=Sum('stone_totalprice')
-            )
-            
-            karat_dict = {item['type']: item for item in karat_data}
-            
-            silver_24k = karat_dict.get('24KARAT', {}).get('weight_sum') or Decimal('0')
-            silver_22k = karat_dict.get('22KARAT', {}).get('weight_sum') or Decimal('0')
-            silver_18k = karat_dict.get('18KARAT', {}).get('weight_sum') or Decimal('0')
-            silver_14k = karat_dict.get('14KARAT', {}).get('weight_sum') or Decimal('0')
-            
-            # Calculate total amount in 24k equivalent
-            silver_24k_equivalent = (
-                silver_24k + 
-                (silver_22k * Decimal('0.92')) + 
-                (silver_18k * Decimal('0.75')) + 
-                (silver_14k * Decimal('0.58'))
-            )
-            
-            # Get total jarti and jyala for silver
-            total_jarti = metal['total_jarti'] or Decimal('0')
-            total_jyala = metal['total_jyala'] or Decimal('0')
-            
-            # Get total stone price for silver
-            total_stone_price = silver_ornaments.aggregate(
-                total=Sum(F('stone_totalprice'), output_field=DecimalField())
-            )['total'] or Decimal('0')
-            
-            # Calculate component amounts
-            silver_amount = silver_24k_equivalent * silver_rate
-            jarti_amount = total_jarti * silver_rate
-            
-            # Calculate total amount: ((24k silver + jarti) * rate) + jyala + stone_totalprice
-            total_amount = silver_amount + jarti_amount + total_jyala + total_stone_price
-            
-            metal['silver_24k'] = silver_24k
-            metal['silver_22k'] = silver_22k
-            metal['silver_18k'] = silver_18k
-            metal['silver_14k'] = silver_14k
-            metal['silver_24k_equivalent'] = silver_24k_equivalent
-            metal['silver_amount'] = silver_amount
-            metal['jarti_amount'] = jarti_amount
-            metal['jyala_amount'] = total_jyala
-            metal['stone_amount'] = total_stone_price
-            metal['total_amount'] = total_amount
-            
-            # Add to grand total
-            grand_total_amount += total_amount
-            
-        elif metal['metal_type'] == 'Diamond':
-            # Calculate diamond total amount with proper karat conversion
-            # Get all karat breakdown data in one query
-            karat_data = diamond_ornaments.values('type').annotate(
-                weight_sum=Sum('weight')
-            )
-            
-            karat_dict = {item['type']: item for item in karat_data}
-            
-            diamond_24k = karat_dict.get('24KARAT', {}).get('weight_sum') or Decimal('0')
-            diamond_22k = karat_dict.get('22KARAT', {}).get('weight_sum') or Decimal('0')
-            diamond_18k = karat_dict.get('18KARAT', {}).get('weight_sum') or Decimal('0')
-            diamond_14k = karat_dict.get('14KARAT', {}).get('weight_sum') or Decimal('0')
-            
-            # Convert to 24k equivalent for diamond gold content
-            diamond_24k_equivalent = (
-                diamond_24k + 
-                (diamond_22k * Decimal('0.92')) + 
-                (diamond_18k * Decimal('0.75')) + 
-                (diamond_14k * Decimal('0.58'))
-            )
-            
-            # Gold amount (24k equivalent * gold rate)
-            total_gold_amount = diamond_24k_equivalent * gold_rate
-            
-            # Get all aggregated data in one query
-            diamond_agg = diamond_ornaments.aggregate(
-                diamond_amount=Sum(F('diamond_weight') * F('diamond_rate'), output_field=DecimalField()),
-                total_jyala=Sum(F('jyala'), output_field=DecimalField()),
-                total_stone=Sum(F('stone_totalprice'), output_field=DecimalField())
-            )
-            
-            total_diamond_amount = diamond_agg.get('diamond_amount') or Decimal('0')
-            total_jyala = diamond_agg.get('total_jyala') or Decimal('0')
-            total_stone_amount = diamond_agg.get('total_stone') or Decimal('0')
-            
-            # Jarti amount (jarti * gold rate)
-            total_jarti_amount = (metal['total_jarti'] or Decimal('0')) * gold_rate
-            
-            # Total = (24k gold * rate) + (diamond_weight * diamond_rate) + jyala + (jarti * rate) + stone_totalprice
-            total_amount = total_gold_amount + total_diamond_amount + total_jyala + total_jarti_amount + total_stone_amount
-            
-            metal['diamond_24k'] = diamond_24k
-            metal['diamond_22k'] = diamond_22k
-            metal['diamond_18k'] = diamond_18k
-            metal['diamond_14k'] = diamond_14k
-            metal['diamond_24k_equivalent'] = diamond_24k_equivalent
-            metal['gold_amount'] = total_gold_amount
-            metal['diamond_weight_amount'] = total_diamond_amount
-            metal['jarti_amount'] = total_jarti_amount
-            metal['jyala_amount'] = total_jyala
-            metal['stone_amount'] = total_stone_amount
-            metal['total_amount'] = total_amount
-            
-            # Add to grand total
-            grand_total_amount += total_amount
+            metal['diamond_weight_total'] = diamond_weight_total
+            metal['diamond_weight_amount'] = diamond_weight_amount
+            metal['jarti_amount'] = Decimal('0')
+            metal['jyala_amount'] = jyala_amount
+            metal['stone_amount'] = Decimal('0')
+            total_gold_amount_with_diamond += gold_amount
+            total_diamond_amount += diamond_weight_amount
+            total_jyala_amount_all += jyala_amount
         else:
-            # For other metal types, set to 0
-            metal['total_amount'] = Decimal('0')
-    
-    # Calculate overall totals
-    totals = Ornament.objects.filter(
-        ornament_type=Ornament.OrnamentCategory.STOCK
-    ).aggregate(
+            amount = Decimal('0')
+        # Common fields
+        metal['karat_24k'] = k24
+        metal['karat_22k'] = k22
+        metal['karat_18k'] = k18
+        metal['karat_14k'] = k14
+        metal['eq_24k'] = eq_24k
+        metal['stone_total'] = stone_total
+        metal['total_amount'] = amount
+        grand_total_amount += amount
+
+    # Overall totals
+    totals = base_qs.aggregate(
         total_weight=Sum('weight'),
         total_gross_weight=Sum('gross_weight'),
         total_jarti=Sum('jarti'),
         total_jyala=Sum('jyala'),
-        total_count=Sum(1)
+        total_count=Count('id')
     )
+    # Overall 24k equivalent for Gold
+    gold_qs = base_qs.filter(metal_type='Gold')
+    gold_karats = gold_qs.values('type').annotate(weight_sum=Sum('weight'))
+    gold_karat_dict = {k['type']: k['weight_sum'] or Decimal('0') for k in gold_karats}
+    gold_24k_total = gold_karat_dict.get('24KARAT', Decimal('0'))
+    gold_22k_total = gold_karat_dict.get('22KARAT', Decimal('0'))
+    gold_18k_total = gold_karat_dict.get('18KARAT', Decimal('0'))
+    gold_14k_total = gold_karat_dict.get('14KARAT', Decimal('0'))
+    total_gold_24k_equivalent = gold_24k_total + (gold_22k_total * Decimal('0.92')) + (gold_18k_total * Decimal('0.75')) + (gold_14k_total * Decimal('0.58'))
     
-    # Calculate total 24k equivalent gold across all ornaments
-    gold_ornaments = Ornament.objects.filter(
-        metal_type='Gold',
-        ornament_type=Ornament.OrnamentCategory.STOCK,
-    )
+    # Overall 24k equivalent for Silver
+    silver_qs = base_qs.filter(metal_type='Silver')
+    silver_karats = silver_qs.values('type').annotate(weight_sum=Sum('weight'))
+    silver_karat_dict = {k['type']: k['weight_sum'] or Decimal('0') for k in silver_karats}
+    silver_24k_total = silver_karat_dict.get('24KARAT', Decimal('0'))
+    silver_22k_total = silver_karat_dict.get('22KARAT', Decimal('0'))
+    silver_18k_total = silver_karat_dict.get('18KARAT', Decimal('0'))
+    silver_14k_total = silver_karat_dict.get('14KARAT', Decimal('0'))
+    total_silver_24k_equivalent = silver_24k_total + (silver_22k_total * Decimal('0.92')) + (silver_18k_total * Decimal('0.75')) + (silver_14k_total * Decimal('0.58'))
     
-    gold_24k_total = gold_ornaments.filter(type='24KARAT').aggregate(
-        total=Sum('weight')
-    )['total'] or Decimal('0')
-    
-    gold_22k_total = gold_ornaments.filter(type='22KARAT').aggregate(
-        total=Sum('weight')
-    )['total'] or Decimal('0')
-    
-    gold_18k_total = gold_ornaments.filter(type='18KARAT').aggregate(
-        total=Sum('weight')
-    )['total'] or Decimal('0')
-    
-    gold_14k_total = gold_ornaments.filter(type='14KARAT').aggregate(
-        total=Sum('weight')
-    )['total'] or Decimal('0')
-    
-    # Calculate 24k equivalent
-    total_24k_equivalent = (
-        gold_24k_total + 
-        (gold_22k_total * Decimal('0.92')) + 
-        (gold_18k_total * Decimal('0.75')) + 
-        (gold_14k_total * Decimal('0.58'))
-    )
-    
+    # Overall 24k equivalent for Diamond (gold content in diamond ornaments)
+    diamond_qs = base_qs.filter(metal_type='Diamond')
+    diamond_total_weight = diamond_qs.aggregate(total=Sum('weight'))['total'] or Decimal('0')
+    total_diamond_24k_equivalent = diamond_total_weight * Decimal('0.59')
+
     context = {
         'weight_by_metal': weight_by_metal,
         'totals': totals,
         'gold_rate': gold_rate,
         'grand_total_amount': grand_total_amount,
-        'total_24k_equivalent': total_24k_equivalent,
+        'total_gold_24k_equivalent': total_gold_24k_equivalent,
+        'total_silver_24k_equivalent': total_silver_24k_equivalent,
+        'total_diamond_24k_equivalent': total_diamond_24k_equivalent,
+        'total_gold_amount_with_diamond': total_gold_amount_with_diamond,
+        'total_silver_amount': total_silver_amount,
+        'total_diamond_amount': total_diamond_amount,
+        'total_jarti_amount_all': total_jarti_amount_all,
+        'total_jyala_amount_all': total_jyala_amount_all,
+        'total_silver_jarti_amount_all': total_silver_jarti_amount_all,
+        'total_silver_jyala_amount_all': total_silver_jyala_amount_all,
+        'total_silver_stone_amount_all': total_silver_stone_amount_all,
     }
     return render(request, 'ornament/ornament_weight_report.html', context)
 
