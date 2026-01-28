@@ -201,11 +201,14 @@ def total_assets(request):
     potey_total = potey_data['total_cost'] or Decimal('0')
     
     # ============================================================
-    # 6. ORDER RECEIVABLES (Amount customers owe)
+    # 6. ORDER RECEIVABLES (Amount customers owe - Remaining balance)
     # ============================================================
-    # Get all pending orders (not yet converted to sales)
-    pending_orders = Order.objects.filter(sale__isnull=True).aggregate(
-        total=Coalesce(Sum('total'), Decimal('0'))
+    # Get all orders with status: order, processing, completed
+    # Sum the remaining_amount for each order
+    pending_orders = Order.objects.filter(
+        status__in=['order', 'processing', 'completed']
+    ).aggregate(
+        total=Coalesce(Sum('remaining_amount'), Decimal('0'))
     )
     order_receivable = pending_orders['total'] or Decimal('0')
     
