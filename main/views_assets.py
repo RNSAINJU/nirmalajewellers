@@ -136,8 +136,10 @@ def total_assets(request):
     # ============================================================
     # CALCULATE: Raw metals used in pending orders (order, processing, completed)
     # ============================================================
+    # CALCULATE: Ornament metal content in pending orders (order, processing, completed)
+    # ============================================================
     
-    # Get all orders with status: order, processing, completed
+    # Get all orders with status: order, processing, completed (NOT delivered)
     pending_orders_for_metals = Order.objects.filter(
         status__in=['order', 'processing', 'completed']
     )
@@ -147,26 +149,49 @@ def total_assets(request):
     order_gold_value = Decimal('0')
     order_silver_value = Decimal('0')
     
-    # Calculate metal weights and values from order metals
+    # Calculate metal weights from ornaments in orders
+    # Using OrderOrnament to get actual ornament weights in orders
+    
     for order in pending_orders_for_metals:
-        order_metals = order.order_metals.all()
-        for metal in order_metals:
-            quantity = metal.quantity or Decimal('0')
+        # Get all ornaments in this order
+        order_ornaments = order.order_ornaments.all()
+        for order_ornament in order_ornaments:
+            ornament = order_ornament.ornament
+            if not ornament:
+                continue
             
-            # Convert to 24K equivalent based on purity
-            karat_factors = {
-                '24K': Decimal('1.00'),
-                '22K': Decimal('0.92'),
-                '18K': Decimal('0.75'),
-                '14K': Decimal('0.58'),
-            }
-            karat_factor = karat_factors.get(metal.purity, Decimal('1.00'))
-            weight_24k = quantity * karat_factor
-            
-            if metal.metal_type == 'gold':
+            # Get gold weight from ornament (stored as tolas, convert using 1 tola = 11.664 gm)
+            gold_weight = ornament.weight or Decimal('0')
+            if gold_weight > 0 and ornament.metal_type == 'Gold':
+                # Convert to 24K equivalent based on type/karat
+                # ornament.type stores values like '24KARAT', '22KARAT', etc.
+                ornament_type = str(ornament.type).replace('KARAT', '').replace('karat', '')
+                karat_factors = {
+                    '24': Decimal('1.00'),
+                    '23': Decimal('0.96'),
+                    '22': Decimal('0.92'),
+                    '18': Decimal('0.75'),
+                    '14': Decimal('0.58'),
+                }
+                karat_factor = karat_factors.get(ornament_type, Decimal('1.00'))
+                weight_24k = gold_weight * karat_factor
                 order_gold_weight_24k += weight_24k
                 order_gold_value += (weight_24k / Decimal('11.664')) * gold_rate
-            elif metal.metal_type == 'silver':
+            
+            # Get silver weight from ornament
+            silver_weight = ornament.weight or Decimal('0')
+            if silver_weight > 0 and ornament.metal_type == 'Silver':
+                # Convert to 24K equivalent based on type/karat
+                ornament_type = str(ornament.type).replace('KARAT', '').replace('karat', '')
+                karat_factors = {
+                    '24': Decimal('1.00'),
+                    '23': Decimal('0.96'),
+                    '22': Decimal('0.92'),
+                    '18': Decimal('0.75'),
+                    '14': Decimal('0.58'),
+                }
+                karat_factor = karat_factors.get(ornament_type, Decimal('1.00'))
+                weight_24k = silver_weight * karat_factor
                 order_silver_weight_24k += weight_24k
                 order_silver_value += (weight_24k / Decimal('11.664')) * silver_rate
     
@@ -203,7 +228,7 @@ def total_assets(request):
     # ============================================================
     # 6. ORDER RECEIVABLES (Amount customers owe - Remaining balance)
     # ============================================================
-    # Get all orders with status: order, processing, completed
+    # Get all orders with status: order, processing, completed (NOT delivered)
     # Sum the remaining_amount for each order
     pending_orders = Order.objects.filter(
         status__in=['order', 'processing', 'completed']
