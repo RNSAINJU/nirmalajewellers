@@ -136,12 +136,12 @@ def total_assets(request):
     # ============================================================
     # CALCULATE: Raw metals used in pending orders (order, processing, completed)
     # ============================================================
-    # CALCULATE: Ornament metal content in pending orders (order, processing, completed)
+    # CALCULATE: Ornament metal content in pending orders (order, processing)
     # ============================================================
     
-    # Get all orders with status: order, processing, completed (NOT delivered)
+    # Get all orders with status: order, processing (NOT completed or delivered)
     pending_orders_for_metals = Order.objects.filter(
-        status__in=['order', 'processing', 'completed']
+        status__in=['order', 'processing']
     )
     
     order_gold_weight_24k = Decimal('0')
