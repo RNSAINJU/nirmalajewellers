@@ -215,6 +215,7 @@
                         <th>Movement Type</th>
                         <th>Quantity (g)</th>
                         <th>Rate</th>
+                        <th>Kaligar</th>
                         <th>Reference Type</th>
                         <th>Reference ID</th>
                         <th>Notes</th>
@@ -242,6 +243,13 @@
                         </td>
                         <td class="fw-bold">{{ movement.quantity }}</td>
                         <td>{{ movement.rate|floatformat:2 }}</td>
+                        <td>
+                            {% if movement.kaligar %}
+                                <small class="text-muted">{{ movement.kaligar.name }}</small>
+                            {% else %}
+                                <small class="text-muted text-secondary">—</small>
+                            {% endif %}
+                        </td>
                         <td>
                             {% if movement.reference_type %}
                                 <small class="text-muted">{{ movement.reference_type }}</small>
