@@ -67,26 +67,55 @@
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-sm mb-0">
-                            <tr>
-                                <td><strong>Raw Gold Weight:</strong></td>
-                                <td class="text-end">{{ raw_gold_weight|floatformat:2 }} gm</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Raw Gold Value:</strong></td>
-                                <td class="text-end"><strong>₹ {{ raw_gold|floatformat:2 }}</strong></td>
-                            </tr>
-                            <tr>
-                                <td><strong>Raw Silver Weight:</strong></td>
-                                <td class="text-end">{{ raw_silver_weight|floatformat:2 }} gm</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Raw Silver Value:</strong></td>
-                                <td class="text-end"><strong>₹ {{ raw_silver|floatformat:2 }}</strong></td>
-                            </tr>
-                            <tr class="table-success">
-                                <td><strong>Subtotal:</strong></td>
-                                <td class="text-end"><strong>₹ {{ raw_gold|add:raw_silver|floatformat:2 }}</strong></td>
-                            </tr>
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Metal Type</th>
+                                    <th class="text-center">Total Stock</th>
+                                    <th class="text-center">Ordered</th>
+                                    <th class="text-center">Final Available</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Gold Row -->
+                                <tr>
+                                    <td><strong>🔶 Gold</strong></td>
+                                    <td class="text-center">
+                                        <small class="text-muted">{{ raw_gold_weight_total|floatformat:2 }} gm</small><br>
+                                        <small>₹ {{ raw_gold_total|floatformat:2 }}</small>
+                                    </td>
+                                    <td class="text-center">
+                                        <small class="text-warning">{{ order_gold_weight_24k|floatformat:2 }} gm</small><br>
+                                        <small>₹ {{ order_gold_value|floatformat:2 }}</small>
+                                    </td>
+                                    <td class="text-center bg-light">
+                                        <small><strong>{{ raw_gold_weight|floatformat:2 }} gm</strong></small><br>
+                                        <small><strong>₹ {{ raw_gold|floatformat:2 }}</strong></small>
+                                    </td>
+                                </tr>
+                                <!-- Silver Row -->
+                                <tr>
+                                    <td><strong>⚪ Silver</strong></td>
+                                    <td class="text-center">
+                                        <small class="text-muted">{{ raw_silver_weight_total|floatformat:2 }} gm</small><br>
+                                        <small>₹ {{ raw_silver_total|floatformat:2 }}</small>
+                                    </td>
+                                    <td class="text-center">
+                                        <small class="text-warning">{{ order_silver_weight_24k|floatformat:2 }} gm</small><br>
+                                        <small>₹ {{ order_silver_value|floatformat:2 }}</small>
+                                    </td>
+                                    <td class="text-center bg-light">
+                                        <small><strong>{{ raw_silver_weight|floatformat:2 }} gm</strong></small><br>
+                                        <small><strong>₹ {{ raw_silver|floatformat:2 }}</strong></small>
+                                    </td>
+                                </tr>
+                                <!-- Subtotal Row -->
+                                <tr class="table-success fw-bold">
+                                    <td>Subtotal:</td>
+                                    <td class="text-center">₹ {{ raw_gold_total|add:raw_silver_total|floatformat:2 }}</td>
+                                    <td class="text-center">₹ {{ order_gold_value|add:order_silver_value|floatformat:2 }}</td>
+                                    <td class="text-center bg-light">₹ {{ raw_gold|add:raw_silver|floatformat:2 }}</td>
+                                </tr>
+                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -184,6 +213,30 @@
         </div>
 
         <div class="col-md-4">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">💰 Cash & Bank</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm mb-0">
+                        <tr>
+                            <td>Cash in Hand:</td>
+                            <td class="text-end">₹ {{ total_cash|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td>Bank Balances:</td>
+                            <td class="text-end">₹ {{ total_bank|floatformat:2 }}</td>
+                        </tr>
+                        <tr class="table-info">
+                            <td><strong>Subtotal:</strong></td>
+                            <td class="text-end"><strong>₹ {{ cash_bank_total|floatformat:2 }}</strong></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
             <div class="card border-success border-2">
                 <div class="card-header bg-success text-white">
                     <h5 class="mb-0">✅ TOTAL ASSETS</h5>
@@ -265,6 +318,13 @@
                                         {% widthratio sundry_debtor_total total_assets 100 %}%
                                     </td>
                                 </tr>
+                                <tr>
+                                    <td>💰 Cash & Bank</td>
+                                    <td class="text-end">{{ cash_bank_total|floatformat:2 }}</td>
+                                    <td class="text-end">
+                                        {% widthratio cash_bank_total total_assets 100 %}%
+                                    </td>
+                                </tr>
                                 <tr class="table-success border-top-2">
                                     <td><strong>TOTAL ASSETS</strong></td>
                                     <td class="text-end"><strong>₹ {{ total_assets|floatformat:2 }}</strong></td>
@@ -289,6 +349,7 @@
                     <li>Stones, Motimala, and Potey at cost price</li>
                     <li>Pending order amounts that customers owe</li>
                     <li>Sundry debtors (parties that owe money)</li>
+                    <li>Cash in hand and bank account balances</li>
                 </ul>
             </div>
         </div>

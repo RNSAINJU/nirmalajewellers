@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from . import views_cashbank
 from .views_balance import balance_sheet
 
 app_name = 'finance'
@@ -70,6 +71,13 @@ urlpatterns = [
     path('creditors/transactions/<int:pk>/delete/', views.creditor_transaction_delete, name='creditor_transaction_delete'),
     path('creditors/export/', views.creditor_export, name='creditor_export'),
     path('creditors/import/', views.creditor_import, name='creditor_import'),
+    
+    # Cash and Bank Accounts
+    path('cash-bank/', views_cashbank.cashbank_list, name='cashbank_list'),
+    path('cash-bank/add/', views_cashbank.cashbank_create, name='cashbank_create'),
+    path('cash-bank/<int:pk>/edit/', views_cashbank.cashbank_update, name='cashbank_update'),
+    path('cash-bank/<int:pk>/delete/', views_cashbank.cashbank_delete, name='cashbank_delete'),
+    path('cash-bank/<int:pk>/toggle/', views_cashbank.cashbank_toggle_active, name='cashbank_toggle_active'),
     
     # Bulk Import/Export
     path('bulk-export/', views.finance_export_all, name='finance_export_all'),

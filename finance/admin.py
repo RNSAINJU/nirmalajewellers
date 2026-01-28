@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Expense, Employee, EmployeeSalary, SundryDebtor, DebtorTransaction, SundryCreditor, CreditorTransaction
+from .models import Expense, Employee, EmployeeSalary, SundryDebtor, DebtorTransaction, SundryCreditor, CreditorTransaction, CashBank
 
 
 @admin.register(Expense)
@@ -64,4 +64,28 @@ class CreditorTransactionAdmin(admin.ModelAdmin):
     list_display = ['creditor', 'transaction_type', 'amount', 'transaction_date']
     list_filter = ['transaction_type', 'transaction_date']
     search_fields = ['creditor__name', 'reference_no']
+
+
+    @admin.register(CashBank)
+    class CashBankAdmin(admin.ModelAdmin):
+        list_display = ['account_name', 'account_type', 'bank_name', 'balance', 'is_active', 'updated_at']
+        list_filter = ['account_type', 'is_active']
+        search_fields = ['account_name', 'bank_name', 'account_number']
+        readonly_fields = ['created_at', 'updated_at']
+        fieldsets = [
+            ('Account Information', {
+                'fields': ('account_type', 'account_name', 'is_active')
+            }),
+            ('Bank Details', {
+                'fields': ('bank_name', 'account_number'),
+                'description': 'Only applicable for bank accounts'
+            }),
+            ('Balance', {
+                'fields': ('balance',)
+            }),
+            ('Additional Information', {
+                'fields': ('notes', 'created_at', 'updated_at'),
+                'classes': ('collapse',)
+            }),
+        ]
     date_hierarchy = 'transaction_date'

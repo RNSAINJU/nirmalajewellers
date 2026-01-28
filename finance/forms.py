@@ -14,7 +14,7 @@ class LoanForm(forms.ModelForm):
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Notes (optional)'}),
         }
 
-from .models import Expense, Employee, EmployeeSalary, SundryDebtor, DebtorTransaction, SundryCreditor, CreditorTransaction
+from .models import Expense, Employee, EmployeeSalary, SundryDebtor, DebtorTransaction, SundryCreditor, CreditorTransaction, CashBank, CashBank
 
 
 class ExpenseForm(forms.ModelForm):
@@ -118,3 +118,22 @@ class CreditorTransactionForm(forms.ModelForm):
             'amount': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Amount', 'step': '0.01'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Description'}),
         }
+
+
+class CashBankForm(forms.ModelForm):
+    class Meta:
+        model = CashBank
+        fields = ['account_type', 'account_name', 'bank_name', 'account_number', 'balance', 'notes', 'is_active']
+        widgets = {
+            'account_type': forms.Select(attrs={'class': 'form-select'}),
+            'account_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., Main Cash, Petty Cash, NIC Asia Bank'}),
+            'bank_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Bank Name (only for bank accounts)'}),
+            'account_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Account Number (optional)'}),
+            'balance': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Current Balance', 'step': '0.01'}),
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Notes (optional)'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['is_active'].label = 'Active'

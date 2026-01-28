@@ -6,10 +6,10 @@ from decimal import Decimal
 
 from ornament.models import Ornament, Stone, Motimala, Potey
 from goldsilverpurchase.models import MetalStock
-from order.models import Order, OrderOrnament
+from order.models import Order, OrderOrnament, OrderMetalStock
 from sales.models import Sale
 from main.models import DailyRate, Stock
-from finance.models import SundryDebtor
+from finance.models import SundryDebtor, CashBank
 
 
 @login_required
@@ -117,23 +117,70 @@ def total_assets(request):
     # ============================================================
     # 2. RAW METALS (Bulk gold/silver not in ornaments)
     # ============================================================
-    raw_gold = Decimal('0')
-    raw_silver = Decimal('0')
-    raw_gold_weight = Decimal('0')
-    raw_silver_weight = Decimal('0')
+    raw_gold_total = Decimal('0')
+    raw_silver_total = Decimal('0')
+    raw_gold_weight_total = Decimal('0')
+    raw_silver_weight_total = Decimal('0')
     
     metal_stocks = MetalStock.objects.all()
-    raw_gold_weight = Decimal('0')
-    raw_silver_weight = Decimal('0')
     for stock in metal_stocks:
         if stock.metal_type.lower() == 'gold':
             gold_qty = stock.quantity or Decimal('0')
-            raw_gold_weight += gold_qty
-            raw_gold += (gold_qty / Decimal('11.664')) * gold_rate
+            raw_gold_weight_total += gold_qty
+            raw_gold_total += (gold_qty / Decimal('11.664')) * gold_rate
         elif stock.metal_type.lower() == 'silver':
             silver_qty = stock.quantity or Decimal('0')
-            raw_silver_weight += silver_qty
-            raw_silver += (silver_qty / Decimal('11.664')) * silver_rate
+            raw_silver_weight_total += silver_qty
+            raw_silver_total += (silver_qty / Decimal('11.664')) * silver_rate
+    
+    # ============================================================
+    # CALCULATE: Raw metals used in pending orders (order, processing, completed)
+    # ============================================================
+    
+    # Get all orders with status: order, processing, completed
+    pending_orders_for_metals = Order.objects.filter(
+        status__in=['order', 'processing', 'completed']
+    )
+    
+    order_gold_weight_24k = Decimal('0')
+    order_silver_weight_24k = Decimal('0')
+    order_gold_value = Decimal('0')
+    order_silver_value = Decimal('0')
+    
+    # Calculate metal weights and values from order metals
+    for order in pending_orders_for_metals:
+        order_metals = order.order_metals.all()
+        for metal in order_metals:
+            quantity = metal.quantity or Decimal('0')
+            
+            # Convert to 24K equivalent based on purity
+            karat_factors = {
+                '24K': Decimal('1.00'),
+                '22K': Decimal('0.92'),
+                '18K': Decimal('0.75'),
+                '14K': Decimal('0.58'),
+            }
+            karat_factor = karat_factors.get(metal.purity, Decimal('1.00'))
+            weight_24k = quantity * karat_factor
+            
+            if metal.metal_type == 'gold':
+                order_gold_weight_24k += weight_24k
+                order_gold_value += (weight_24k / Decimal('11.664')) * gold_rate
+            elif metal.metal_type == 'silver':
+                order_silver_weight_24k += weight_24k
+                order_silver_value += (weight_24k / Decimal('11.664')) * silver_rate
+    
+    # Calculate available (final) raw metals
+    raw_gold_weight_available = raw_gold_weight_total - order_gold_weight_24k
+    raw_silver_weight_available = raw_silver_weight_total - order_silver_weight_24k
+    raw_gold_value_available = raw_gold_total - order_gold_value
+    raw_silver_value_available = raw_silver_total - order_silver_value
+    
+    # Use available values for total assets calculation
+    raw_gold = raw_gold_value_available
+    raw_silver = raw_silver_value_available
+    raw_gold_weight = raw_gold_weight_available
+    raw_silver_weight = raw_silver_weight_available
     
     # ============================================================
     # 3. STONES VALUE
@@ -172,6 +219,19 @@ def total_assets(request):
         sundry_debtor_total += debtor.get_calculated_balance()
     
     # ============================================================
+    # 8. CASH AND BANK BALANCES (Liquid assets)
+    # ============================================================
+    # Get all active cash and bank accounts
+    cash_bank_accounts = CashBank.objects.filter(is_active=True)
+    total_cash = cash_bank_accounts.filter(account_type='cash').aggregate(
+        total=Coalesce(Sum('balance'), Decimal('0'))
+    )['total'] or Decimal('0')
+    total_bank = cash_bank_accounts.filter(account_type='bank').aggregate(
+        total=Coalesce(Sum('balance'), Decimal('0'))
+    )['total'] or Decimal('0')
+    cash_bank_total = total_cash + total_bank
+    
+    # ============================================================
     # TOTAL ASSETS
     # ============================================================
     total_assets_amount = (
@@ -182,7 +242,8 @@ def total_assets(request):
         motimala_total +
         potey_total +
         order_receivable +
-        sundry_debtor_total
+        sundry_debtor_total +
+        cash_bank_total
     )
     
     context = {
@@ -205,6 +266,18 @@ def total_assets(request):
         'raw_gold_weight': raw_gold_weight,
         'raw_silver_weight': raw_silver_weight,
         
+        # Raw metals totals (before orders)
+        'raw_gold_total': raw_gold_total,
+        'raw_silver_total': raw_silver_total,
+        'raw_gold_weight_total': raw_gold_weight_total,
+        'raw_silver_weight_total': raw_silver_weight_total,
+        
+        # Raw metals used in orders
+        'order_gold_weight_24k': order_gold_weight_24k,
+        'order_silver_weight_24k': order_silver_weight_24k,
+        'order_gold_value': order_gold_value,
+        'order_silver_value': order_silver_value,
+        
         # Other inventory
         'stones_total': stones_total,
         'motimala_total': motimala_total,
@@ -213,6 +286,11 @@ def total_assets(request):
         # Receivables
         'order_receivable': order_receivable,
         'sundry_debtor_total': sundry_debtor_total,
+        
+        # Cash and Bank
+        'total_cash': total_cash,
+        'total_bank': total_bank,
+        'cash_bank_total': cash_bank_total,
         
         # Totals
         'total_assets': total_assets_amount,

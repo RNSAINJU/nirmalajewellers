@@ -351,6 +351,9 @@
                 <a href="{% url 'finance:loan_list' %}" class="nav-link ms-3 {% if request.resolver_match.url_name == 'loan_list' %}active{% endif %}" id="loanTab">
                     <i class="bi bi-cash-stack me-2"></i> Loan
                 </a>
+                <a href="{% url 'finance:cashbank_list' %}" class="nav-link ms-3 {% if request.resolver_match.url_name == 'cashbank_list' or request.resolver_match.url_name == 'cashbank_create' or request.resolver_match.url_name == 'cashbank_update' %}active{% endif %}">
+                    <i class="bi bi-wallet2 me-2"></i> Cash & Bank
+                </a>
             </div>
         </li>
 

@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if action == 'Create' %}Create{% else %}Update{% endif %} Cash/Bank Account - Nirmal Jewellers{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        {% if action == 'Create' %}
+                            <i class="bi bi-plus-circle"></i> Create New Account
+                        {% else %}
+                            <i class="bi bi-pencil"></i> Update Account
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_account_type" class="form-label">Account Type *</label>
+                                    {{ form.account_type }}
+                                    {% if form.account_type.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.account_type.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_account_name" class="form-label">Account Name *</label>
+                                    {{ form.account_name }}
+                                    {% if form.account_name.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.account_name.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_bank_name" class="form-label">Bank Name</label>
+                                    {{ form.bank_name }}
+                                    <small class="text-muted d-block">Only for bank accounts</small>
+                                    {% if form.bank_name.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.bank_name.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_account_number" class="form-label">Account Number</label>
+                                    {{ form.account_number }}
+                                    <small class="text-muted d-block">Optional</small>
+                                    {% if form.account_number.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.account_number.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_balance" class="form-label">Current Balance *</label>
+                                    {{ form.balance }}
+                                    {% if form.balance.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.balance.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Status</label>
+                                    <div class="form-check">
+                                        {{ form.is_active }}
+                                        <label class="form-check-label" for="id_is_active">
+                                            Active Account
+                                        </label>
+                                    </div>
+                                    {% if form.is_active.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.is_active.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_notes" class="form-label">Notes</label>
+                            {{ form.notes }}
+                            <small class="text-muted d-block">Any additional notes about this account</small>
+                            {% if form.notes.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.notes.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex justify-content-between gap-2">
+                            <a href="{% url 'finance:cashbank_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Back
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Save Account
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
