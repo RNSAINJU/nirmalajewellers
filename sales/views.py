@@ -1239,6 +1239,7 @@ class SalesByMonthView(ListView):
             total_sales_amount = Decimal("0")
             total_remaining_amount = Decimal("0")
             total_profit = Decimal("0")
+            total_tax = Decimal("0")
             
             # Payment method breakdown
             payment_methods = {
@@ -1278,9 +1279,10 @@ class SalesByMonthView(ListView):
                         silver_weight += metal.quantity
                     total_sales_amount += metal.line_amount or Decimal("0")
                 
-                # Add order total and remaining amount
+                # Add order total, remaining amount, and tax
                 total_sales_amount += sale.order.total or Decimal("0")
                 total_remaining_amount += sale.order.remaining_amount or Decimal("0")
+                total_tax += sale.order.tax or Decimal("0")
                 
                 # Collect payment method totals
                 for payment in sale.order.payments.all():
@@ -1319,6 +1321,7 @@ class SalesByMonthView(ListView):
             context['total_sales_amount'] = total_sales_amount
             context['total_remaining_amount'] = total_remaining_amount
             context['total_profit'] = total_profit
+            context['total_tax'] = total_tax
             context['payment_methods'] = payment_methods
             context['sales_count'] = len(context['sales'])
         else:
@@ -1327,6 +1330,7 @@ class SalesByMonthView(ListView):
             context['total_sales_amount'] = Decimal("0")
             context['total_remaining_amount'] = Decimal("0")
             context['total_profit'] = Decimal("0")
+            context['total_tax'] = Decimal("0")
             context['payment_methods'] = {
                 'cash': Decimal("0"),
                 'fonepay': Decimal("0"),
