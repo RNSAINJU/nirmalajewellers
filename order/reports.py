@@ -591,3 +591,143 @@ class MonthlySalesReport(View):
         }
         
         return render(request, 'order/reports/monthly_sales.html', context)
+
+
+class DailyProfitLossReport(View):
+    """Daily Profit & Loss report with charts based on daily rates and stock"""
+    
+    def get(self, request):
+        from main.models import DailyRate
+        from ornament.models import Ornament
+        from datetime import timedelta
+        
+        # Get number of days to show (default 30)
+        days = int(request.GET.get('days', 30))
+        
+        # Get daily rates for the period
+        rates = DailyRate.objects.all().order_by('-created_at')[:days]
+        
+        # Purity factors for gold
+        purity_factors = {
+            Ornament.TypeCategory.TWENTYFOURKARAT: Decimal("1.00"),
+            Ornament.TypeCategory.TWENTHREEKARAT: Decimal("0.99"),
+            Ornament.TypeCategory.TWENTYTWOKARAT: Decimal("0.98"),
+            Ornament.TypeCategory.EIGHTEENKARAT: Decimal("0.75"),
+            Ornament.TypeCategory.FOURTEENKARAT: Decimal("0.58"),
+        }
+        
+        # Get current stock ornaments
+        gold_ornaments = Ornament.objects.filter(
+            metal_type=Ornament.MetalTypeCategory.GOLD,
+            ornament_type=Ornament.OrnamentCategory.STOCK,
+            status=Ornament.StatusCategory.ACTIVE
+        )
+        
+        silver_ornaments = Ornament.objects.filter(
+            metal_type=Ornament.MetalTypeCategory.SILVER,
+            ornament_type=Ornament.OrnamentCategory.STOCK,
+            status=Ornament.StatusCategory.ACTIVE
+        )
+        
+        diamond_ornaments = Ornament.objects.filter(
+            metal_type=Ornament.MetalTypeCategory.DIAMOND,
+            ornament_type=Ornament.OrnamentCategory.STOCK,
+            status=Ornament.StatusCategory.ACTIVE
+        )
+        
+        # Calculate total weights
+        gold_24k_weight = Decimal("0")
+        for ornament in gold_ornaments:
+            weight = ornament.weight or Decimal("0")
+            factor = purity_factors.get(ornament.type, Decimal("1.00"))
+            gold_24k_weight += weight * factor
+        
+        silver_weight = Decimal("0")
+        for ornament in silver_ornaments:
+            silver_weight += ornament.weight or Decimal("0")
+        
+        # Diamond: metal weight + diamond weight
+        diamond_metal_weight = Decimal("0")
+        diamond_stone_weight = Decimal("0")
+        for ornament in diamond_ornaments:
+            weight = ornament.weight or Decimal("0")
+            factor = purity_factors.get(ornament.type, Decimal("1.00"))
+            diamond_metal_weight += weight * factor
+            diamond_stone_weight += ornament.diamond_weight or Decimal("0")
+        
+        # Prepare chart data
+        chart_data = []
+        TOLA_CONVERSION = Decimal("11.664")
+        
+        for rate in reversed(list(rates)):  # Reverse to show oldest to newest
+            # Convert per tola to per gram for calculations
+            gold_rate_per_gram = (rate.gold_rate or Decimal("0")) / TOLA_CONVERSION
+            silver_rate_per_gram = (rate.silver_rate or Decimal("0")) / TOLA_CONVERSION
+            
+            # Gold value
+            gold_value = gold_24k_weight * gold_rate_per_gram
+            
+            # Silver value
+            silver_value = silver_weight * silver_rate_per_gram
+            
+            # Diamond value: metal value + stone value (assuming some diamond rate)
+            # For simplicity, using gold rate for metal part
+            diamond_metal_value = diamond_metal_weight * gold_rate_per_gram
+            # Diamond stone value at estimated rate per gram (you can adjust this)
+            diamond_rate_per_gram = Decimal("5000")  # Example rate
+            diamond_stone_value = diamond_stone_weight * diamond_rate_per_gram
+            diamond_value = diamond_metal_value + diamond_stone_value
+            
+            total_value = gold_value + silver_value + diamond_value
+            
+            chart_data.append({
+                'date': rate.bs_date,
+                'gold_rate': float(rate.gold_rate),
+                'silver_rate': float(rate.silver_rate),
+                'gold_value': float(gold_value),
+                'silver_value': float(silver_value),
+                'diamond_value': float(diamond_value),
+                'total_value': float(total_value),
+            })
+        
+        # Calculate P&L if we have at least 2 data points
+        profit_loss_data = []
+        if len(chart_data) >= 2:
+            base_value = chart_data[0]['total_value']
+            for data in chart_data:
+                pl = data['total_value'] - base_value
+                pl_percent = (pl / base_value * 100) if base_value > 0 else 0
+                profit_loss_data.append({
+                    'date': data['date'],
+                    'value': pl,
+                    'percent': pl_percent,
+                })
+        
+        # Summary statistics
+        if chart_data:
+            latest = chart_data[-1]
+            oldest = chart_data[0]
+            total_change = latest['total_value'] - oldest['total_value']
+            total_change_percent = (total_change / oldest['total_value'] * 100) if oldest['total_value'] > 0 else 0
+        else:
+            latest = oldest = None
+            total_change = total_change_percent = 0
+        
+        context = {
+            'chart_data': chart_data,
+            'profit_loss_data': profit_loss_data,
+            'gold_weight': gold_24k_weight,
+            'silver_weight': silver_weight,
+            'diamond_metal_weight': diamond_metal_weight,
+            'diamond_stone_weight': diamond_stone_weight,
+            'gold_count': gold_ornaments.count(),
+            'silver_count': silver_ornaments.count(),
+            'diamond_count': diamond_ornaments.count(),
+            'latest': latest,
+            'oldest': oldest,
+            'total_change': total_change,
+            'total_change_percent': total_change_percent,
+            'days': days,
+        }
+        
+        return render(request, 'order/reports/daily_profit_loss.html', context)
