@@ -1,0 +1,375 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .report-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        text-align: center;
+        transition: all 0.3s;
+        border-left: 4px solid;
+        height: 100%;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+    .stat-card.gold { border-color: #f59e0b; }
+    .stat-card.silver { border-color: #9ca3af; }
+    .stat-card.diamond { border-color: #8b5cf6; }
+    .stat-card.total { border-color: #10b981; }
+    .stat-card.change { border-color: #3b82f6; }
+    .stat-label {
+        font-size: 12px;
+        color: #6b7280;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+    .stat-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1f2937;
+    }
+    .stat-subvalue {
+        font-size: 14px;
+        color: #6b7280;
+        margin-top: 5px;
+    }
+    .chart-container {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+    .chart-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 20px;
+    }
+    .positive { color: #10b981; }
+    .negative { color: #ef4444; }
+    .filter-section {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+</style>
+
+<div class="container-fluid mt-4">
+    <div class="report-header">
+        <h1 class="mb-2">
+            <i class="bi bi-graph-up-arrow me-2"></i>Daily Profit & Loss Report
+        </h1>
+        <p class="mb-0 opacity-90">Track stock value changes based on daily gold, silver, and diamond rates</p>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-auto">
+                <label class="form-label fw-bold">Time Period:</label>
+                <select name="days" class="form-select" onchange="this.form.submit()">
+                    <option value="7" {% if days == 7 %}selected{% endif %}>Last 7 Days</option>
+                    <option value="15" {% if days == 15 %}selected{% endif %}>Last 15 Days</option>
+                    <option value="30" {% if days == 30 %}selected{% endif %}>Last 30 Days</option>
+                    <option value="60" {% if days == 60 %}selected{% endif %}>Last 60 Days</option>
+                    <option value="90" {% if days == 90 %}selected{% endif %}>Last 90 Days</option>
+                </select>
+            </div>
+        </form>
+    </div>
+
+    <!-- Summary Statistics -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="stat-card gold">
+                <div class="stat-label">Gold Stock</div>
+                <div class="stat-value">{{ gold_weight|floatformat:3 }}g</div>
+                <div class="stat-subvalue">{{ gold_count }} ornaments</div>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="stat-card silver">
+                <div class="stat-label">Silver Stock</div>
+                <div class="stat-value">{{ silver_weight|floatformat:3 }}g</div>
+                <div class="stat-subvalue">{{ silver_count }} ornaments</div>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="stat-card diamond">
+                <div class="stat-label">Diamond Stock</div>
+                <div class="stat-value">{{ diamond_metal_weight|floatformat:3 }}g</div>
+                <div class="stat-subvalue">{{ diamond_count }} ornaments<br>{{ diamond_stone_weight|floatformat:3 }}g stones</div>
+            </div>
+        </div>
+        {% if latest %}
+        <div class="col-lg-3 col-md-6 col-sm-6">
+            <div class="stat-card total">
+                <div class="stat-label">Current Value</div>
+                <div class="stat-value">रु{{ latest.total_value|floatformat:2 }}</div>
+                <div class="stat-subvalue">As of {{ latest.date }}</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-sm-6">
+            <div class="stat-card change">
+                <div class="stat-label">{{ days }}-Day Change</div>
+                <div class="stat-value {% if total_change >= 0 %}positive{% else %}negative{% endif %}">
+                    {% if total_change >= 0 %}+{% endif %}रु{{ total_change|floatformat:2 }}
+                </div>
+                <div class="stat-subvalue {% if total_change_percent >= 0 %}positive{% else %}negative{% endif %}">
+                    {% if total_change_percent >= 0 %}+{% endif %}{{ total_change_percent|floatformat:2 }}%
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if chart_data %}
+    <!-- Stock Value Chart -->
+    <div class="chart-container">
+        <div class="chart-title">
+            <i class="bi bi-bar-chart-line me-2"></i>Stock Value by Metal Type
+        </div>
+        <canvas id="stockValueChart" height="80"></canvas>
+    </div>
+
+    <!-- Rate Trend Chart -->
+    <div class="chart-container">
+        <div class="chart-title">
+            <i class="bi bi-graph-up me-2"></i>Daily Rate Trends (Per Tola)
+        </div>
+        <canvas id="rateTrendChart" height="80"></canvas>
+    </div>
+
+    <!-- Profit/Loss Chart -->
+    <div class="chart-container">
+        <div class="chart-title">
+            <i class="bi bi-currency-exchange me-2"></i>Profit & Loss Trend
+        </div>
+        <canvas id="profitLossChart" height="80"></canvas>
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center">
+        <i class="bi bi-info-circle me-2"></i>
+        <strong>No rate data available.</strong> Daily rates need to be recorded to generate charts.
+    </div>
+    {% endif %}
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+{% if chart_data %}
+const chartData = {{ chart_data|safe }};
+const profitLossData = {{ profit_loss_data|safe }};
+
+// Stock Value Chart
+const stockValueCtx = document.getElementById('stockValueChart').getContext('2d');
+new Chart(stockValueCtx, {
+    type: 'line',
+    data: {
+        labels: chartData.map(d => d.date),
+        datasets: [
+            {
+                label: 'Gold Value',
+                data: chartData.map(d => d.gold_value),
+                borderColor: '#f59e0b',
+                backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                borderWidth: 3,
+                tension: 0.4,
+                fill: true
+            },
+            {
+                label: 'Silver Value',
+                data: chartData.map(d => d.silver_value),
+                borderColor: '#9ca3af',
+                backgroundColor: 'rgba(156, 163, 175, 0.1)',
+                borderWidth: 3,
+                tension: 0.4,
+                fill: true
+            },
+            {
+                label: 'Diamond Value',
+                data: chartData.map(d => d.diamond_value),
+                borderColor: '#8b5cf6',
+                backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                borderWidth: 3,
+                tension: 0.4,
+                fill: true
+            },
+            {
+                label: 'Total Value',
+                data: chartData.map(d => d.total_value),
+                borderColor: '#10b981',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                borderWidth: 4,
+                tension: 0.4,
+                fill: false
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        interaction: {
+            mode: 'index',
+            intersect: false
+        },
+        plugins: {
+            legend: {
+                position: 'top',
+                labels: {
+                    usePointStyle: true,
+                    padding: 15,
+                    font: { size: 12, weight: 'bold' }
+                }
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return context.dataset.label + ': रु' + context.parsed.y.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return 'रु' + value.toLocaleString('en-IN');
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Rate Trend Chart
+const rateTrendCtx = document.getElementById('rateTrendChart').getContext('2d');
+new Chart(rateTrendCtx, {
+    type: 'line',
+    data: {
+        labels: chartData.map(d => d.date),
+        datasets: [
+            {
+                label: 'Gold Rate',
+                data: chartData.map(d => d.gold_rate),
+                borderColor: '#f59e0b',
+                backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                borderWidth: 3,
+                tension: 0.4,
+                yAxisID: 'y'
+            },
+            {
+                label: 'Silver Rate',
+                data: chartData.map(d => d.silver_rate),
+                borderColor: '#9ca3af',
+                backgroundColor: 'rgba(156, 163, 175, 0.1)',
+                borderWidth: 3,
+                tension: 0.4,
+                yAxisID: 'y'
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        interaction: {
+            mode: 'index',
+            intersect: false
+        },
+        plugins: {
+            legend: {
+                position: 'top',
+                labels: {
+                    usePointStyle: true,
+                    padding: 15,
+                    font: { size: 12, weight: 'bold' }
+                }
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return context.dataset.label + ': रु' + context.parsed.y.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '/tola';
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: false,
+                position: 'left',
+                ticks: {
+                    callback: function(value) {
+                        return 'रु' + value.toLocaleString('en-IN');
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Profit/Loss Chart
+const profitLossCtx = document.getElementById('profitLossChart').getContext('2d');
+new Chart(profitLossCtx, {
+    type: 'bar',
+    data: {
+        labels: profitLossData.map(d => d.date),
+        datasets: [{
+            label: 'Profit/Loss',
+            data: profitLossData.map(d => d.value),
+            backgroundColor: profitLossData.map(d => d.value >= 0 ? 'rgba(16, 185, 129, 0.6)' : 'rgba(239, 68, 68, 0.6)'),
+            borderColor: profitLossData.map(d => d.value >= 0 ? '#10b981' : '#ef4444'),
+            borderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: {
+                display: false
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        const value = context.parsed.y;
+                        const percent = profitLossData[context.dataIndex].percent;
+                        return 'रु' + value.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + 
+                               ' (' + (percent >= 0 ? '+' : '') + percent.toFixed(2) + '%)';
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return 'रु' + value.toLocaleString('en-IN');
+                    }
+                }
+            }
+        }
+    }
+});
+{% endif %}
+</script>
+
+{% endblock %}
