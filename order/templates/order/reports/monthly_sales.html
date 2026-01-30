@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .report-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        text-align: center;
+        transition: all 0.3s;
+        border-left: 4px solid;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+    .stat-card.sales { border-color: #667eea; }
+    .stat-card.gold { border-color: #f59e0b; }
+    .stat-card.silver { border-color: #9ca3af; }
+    .stat-card.amount { border-color: #10b981; }
+    .stat-card.remaining { border-color: #ef4444; }
+    .stat-card.tax { border-color: #3b82f6; }
+    .stat-card.profit { border-color: #f59e0b; }
+    .stat-card.jarti { border-color: #8b5cf6; }
+    .stat-label {
+        font-size: 12px;
+        color: #6b7280;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+    .stat-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1f2937;
+    }
+    .month-row {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        transition: all 0.3s;
+    }
+    .month-row:hover {
+        box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+        transform: translateY(-2px);
+    }
+    .month-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        font-size: 20px;
+        font-weight: 700;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .badge-count {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 14px;
+    }
+</style>
+
+<div class="container-fluid mt-4">
+    <div class="report-header">
+        <h1 class="mb-2">
+            <i class="bi bi-calendar3-range me-2"></i>Monthly Sales Report
+        </h1>
+        <p class="mb-0 opacity-90">Comprehensive monthly breakdown of sales performance and metrics</p>
+    </div>
+
+    {% if monthly_data %}
+        {% for month in monthly_data %}
+        <div class="month-row">
+            <div class="month-header">
+                <span>{{ month.month_name }} {{ month.year }}</span>
+                <span class="badge-count">{{ month.sales_count }} Sales</span>
+            </div>
+
+            <div class="row g-3">
+                <!-- Total Sales Count -->
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <div class="stat-card sales">
+                        <div class="stat-label">Total Sales</div>
+                        <div class="stat-value">{{ month.sales_count }}</div>
+                    </div>
+                </div>
+
+                <!-- 24K Gold Sales -->
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <div class="stat-card gold">
+                        <div class="stat-label">24K Gold (gms)</div>
+                        <div class="stat-value">{{ month.gold_24_weight|floatformat:3 }}</div>
+                    </div>
+                </div>
+
+                <!-- Silver Sales -->
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <div class="stat-card silver">
+                        <div class="stat-label">Silver (gms)</div>
+                        <div class="stat-value">{{ month.silver_weight|floatformat:3 }}</div>
+                    </div>
+                </div>
+
+                <!-- Total Jarti -->
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <div class="stat-card jarti">
+                        <div class="stat-label">Total Jarti</div>
+                        <div class="stat-value">{{ month.total_jarti|floatformat:3 }}</div>
+                    </div>
+                </div>
+
+                <!-- Total Sales Amount -->
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <div class="stat-card amount">
+                        <div class="stat-label">Sales Amount</div>
+                        <div class="stat-value">रु{{ month.total_sales_amount|floatformat:2 }}</div>
+                    </div>
+                </div>
+
+                <!-- Total Remaining -->
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <div class="stat-card remaining">
+                        <div class="stat-label">Remaining</div>
+                        <div class="stat-value">रु{{ month.total_remaining|floatformat:2 }}</div>
+                    </div>
+                </div>
+
+                <!-- Total Tax -->
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <div class="stat-card tax">
+                        <div class="stat-label">Tax Amount</div>
+                        <div class="stat-value">रु{{ month.total_tax|floatformat:2 }}</div>
+                    </div>
+                </div>
+
+                <!-- Total Profit -->
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <div class="stat-card profit">
+                        <div class="stat-label">Profit</div>
+                        <div class="stat-value">रु{{ month.total_profit|floatformat:2 }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="alert alert-info text-center">
+            <i class="bi bi-info-circle me-2"></i>
+            <strong>No sales data available.</strong> Sales will appear here once recorded.
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}

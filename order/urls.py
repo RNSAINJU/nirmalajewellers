@@ -30,6 +30,7 @@ from .reports import (
     MarginByCategoryReport,
     PaymentMixDiscountsReport,
     DebtorAgingReport,
+    MonthlySalesReport,
 )
 
 app_name = 'order'
@@ -64,4 +65,5 @@ urlpatterns = [
     path('reports/margin-by-category/', MarginByCategoryReport.as_view(), name='margin_report'),
     path('reports/payment-mix-discounts/', PaymentMixDiscountsReport.as_view(), name='payment_mix_report'),
     path('reports/debtor-aging/', DebtorAgingReport.as_view(), name='debtor_aging_report'),
+    path('reports/monthly-sales/', MonthlySalesReport.as_view(), name='monthly_sales_report'),
 ]

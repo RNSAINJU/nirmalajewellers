@@ -478,3 +478,116 @@ class DebtorAgingReport(View):
         }
         
         return render(request, 'order/reports/debtor_aging.html', context)
+
+
+class MonthlySalesReport(View):
+    """Monthly sales report showing aggregated sales data by month"""
+    
+    def get(self, request):
+        from sales.models import Sale
+        from ornament.models import Ornament
+        import nepali_datetime as ndt
+        
+        # Get all sales
+        sales = Sale.objects.select_related('order').prefetch_related(
+            'order__order_ornaments__ornament',
+            'sale_metals',
+            'order__payments'
+        ).exclude(sale_date__isnull=True)
+        
+        # Group sales by month/year
+        monthly_data = {}
+        
+        purity_factors = {
+            Ornament.TypeCategory.TWENTYFOURKARAT: Decimal("1.00"),
+            Ornament.TypeCategory.TWENTHREEKARAT: Decimal("0.99"),
+            Ornament.TypeCategory.TWENTYTWOKARAT: Decimal("0.98"),
+            Ornament.TypeCategory.EIGHTEENKARAT: Decimal("0.75"),
+            Ornament.TypeCategory.FOURTEENKARAT: Decimal("0.58"),
+        }
+        
+        for sale in sales:
+            if not sale.sale_date:
+                continue
+            
+            # Get year and month from sale_date
+            try:
+                year = sale.sale_date.year
+                month = sale.sale_date.month
+            except AttributeError:
+                continue
+            
+            month_key = f"{year}-{month:02d}"
+            
+            if month_key not in monthly_data:
+                monthly_data[month_key] = {
+                    'year': year,
+                    'month': month,
+                    'sales_count': 0,
+                    'gold_24_weight': Decimal("0"),
+                    'silver_weight': Decimal("0"),
+                    'total_jarti': Decimal("0"),
+                    'total_sales_amount': Decimal("0"),
+                    'total_remaining': Decimal("0"),
+                    'total_tax': Decimal("0"),
+                    'total_profit': Decimal("0"),
+                }
+            
+            # Update counts
+            monthly_data[month_key]['sales_count'] += 1
+            
+            # Calculate weights, jarti, and profit
+            for line in sale.order.order_ornaments.all():
+                weight = line.ornament.weight or Decimal("0")
+                factor = purity_factors.get(getattr(line.ornament, 'type', None), Decimal("1.00"))
+                
+                if getattr(line.ornament, 'metal_type', None) == getattr(Ornament.MetalTypeCategory, 'GOLD', 'gold'):
+                    monthly_data[month_key]['gold_24_weight'] += weight * factor
+                elif getattr(line.ornament, 'metal_type', None) == getattr(Ornament.MetalTypeCategory, 'SILVER', 'silver'):
+                    monthly_data[month_key]['silver_weight'] += weight
+                
+                # Jarti (customer jarti)
+                monthly_data[month_key]['total_jarti'] += line.jarti or Decimal("0")
+                
+                # Calculate profit
+                customer_jarti = line.jarti or Decimal("0")
+                ornament_jarti = line.ornament.jarti or Decimal("0")
+                rate = line.gold_rate or Decimal("0")
+                jyala = line.jyala or Decimal("0")
+                
+                jarti_difference = customer_jarti - ornament_jarti
+                profit = (jarti_difference / Decimal("11.664") * rate) + jyala
+                monthly_data[month_key]['total_profit'] += profit
+            
+            # Raw metals
+            for metal in sale.sale_metals.all():
+                if metal.metal_type == 'gold':
+                    monthly_data[month_key]['gold_24_weight'] += metal.quantity
+                elif metal.metal_type == 'silver':
+                    monthly_data[month_key]['silver_weight'] += metal.quantity
+                monthly_data[month_key]['total_sales_amount'] += metal.line_amount or Decimal("0")
+            
+            # Add order totals
+            monthly_data[month_key]['total_sales_amount'] += sale.order.total or Decimal("0")
+            monthly_data[month_key]['total_remaining'] += sale.order.remaining_amount or Decimal("0")
+            monthly_data[month_key]['total_tax'] += sale.order.tax or Decimal("0")
+        
+        # Convert to sorted list
+        nepali_months = {
+            1: 'Baishakh', 2: 'Jestha', 3: 'Ashadh', 4: 'Shrawan',
+            5: 'Bhadra', 6: 'Ashwin', 7: 'Kartik', 8: 'Mangsir',
+            9: 'Poush', 10: 'Magh', 11: 'Falgun', 12: 'Chaitra'
+        }
+        
+        monthly_list = []
+        for key in sorted(monthly_data.keys(), reverse=True):
+            data = monthly_data[key]
+            data['month_name'] = nepali_months.get(data['month'], str(data['month']))
+            data['month_key'] = key
+            monthly_list.append(data)
+        
+        context = {
+            'monthly_data': monthly_list,
+        }
+        
+        return render(request, 'order/reports/monthly_sales.html', context)
