@@ -21,6 +21,9 @@ from .views import (
     MotimalaListView, MotimalaCreateView,
     PoteyListView, PoteyCreateView,
     create_kaligar_cash_account, create_kaligar_gold_account,
+    export_stone_excel, import_stone_excel,
+    export_motimala_excel, import_motimala_excel,
+    export_potey_excel, import_potey_excel,
 )
 
 app_name = 'ornament'
@@ -44,10 +47,16 @@ urlpatterns = [
     path('rates-and-stock/', rates_and_stock_view, name='rates_and_stock'),
     path('stones/', StoneListView.as_view(), name='stone_list'),
     path('stones/create/', StoneCreateView.as_view(), name='stone_create'),
+    path('stones/export-excel/', export_stone_excel, name='stone_export_excel'),
+    path('stones/import-excel/', import_stone_excel, name='stone_import_excel'),
     path('motimala/', MotimalaListView.as_view(), name='motimala_list'),
     path('motimala/create/', MotimalaCreateView.as_view(), name='motimala_create'),
+    path('motimala/export-excel/', export_motimala_excel, name='motimala_export_excel'),
+    path('motimala/import-excel/', import_motimala_excel, name='motimala_import_excel'),
     path('potey/', PoteyListView.as_view(), name='potey_list'),
     path('potey/create/', PoteyCreateView.as_view(), name='potey_create'),
+    path('potey/export-excel/', export_potey_excel, name='potey_export_excel'),
+    path('potey/import-excel/', import_potey_excel, name='potey_import_excel'),
     path('kaligar/<int:kaligar_id>/create-cash-account/', create_kaligar_cash_account, name='create_kaligar_cash_account'),
     path('kaligar/<int:kaligar_id>/create-gold-account/', create_kaligar_gold_account, name='create_kaligar_gold_account'),
 ]

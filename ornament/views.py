@@ -664,6 +664,275 @@ def import_excel(request):
             return redirect("ornament:import_excel")
 
     return render(request, "ornament/import_excel.html")
+@login_required
+def export_stone_excel(request):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Stones"
+
+    headers = ["Name", "Cost Per Carat", "Carat", "Sales Per Carat"]
+    ws.append(headers)
+
+    for stone in Stone.objects.all().order_by('-id'):
+        ws.append([
+            stone.name,
+            float(stone.cost_per_carat) if stone.cost_per_carat is not None else '',
+            float(stone.carat) if stone.carat is not None else '',
+            float(stone.sales_per_carat) if stone.sales_per_carat is not None else '',
+        ])
+
+    for col in ws.columns:
+        max_length = 0
+        col_letter = get_column_letter(col[0].column)
+        for cell in col:
+            if cell.value is not None:
+                max_length = max(max_length, len(str(cell.value)))
+        ws.column_dimensions[col_letter].width = max_length + 2
+
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    response = HttpResponse(
+        output.getvalue(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response['Content-Disposition'] = 'attachment; filename="stones.xlsx"'
+    return response
+
+@login_required
+def import_stone_excel(request):
+    if request.method != "POST":
+        return redirect('ornament:stone_list')
+
+    file = request.FILES.get("file")
+    if not file:
+        messages.error(request, "Please upload an Excel file.")
+        return redirect('ornament:stone_list')
+
+    try:
+        wb = openpyxl.load_workbook(file)
+        ws = wb.active
+        imported = 0
+        skipped = 0
+        errors = []
+
+        expected_cols = 4
+        for idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+            if not any(row):
+                continue
+            row_list = list(row) if row else []
+            if len(row_list) > expected_cols:
+                row_list = row_list[:expected_cols]
+            elif len(row_list) < expected_cols:
+                row_list = row_list + [None] * (expected_cols - len(row_list))
+
+            try:
+                name, cost_per_carat, carat, sales_per_carat = row_list
+            except Exception as e:
+                errors.append(f"Row {idx}: {e}")
+                skipped += 1
+                continue
+
+            if not name:
+                skipped += 1
+                continue
+
+            Stone.objects.create(
+                name=str(name).strip(),
+                cost_per_carat=to_decimal(cost_per_carat),
+                carat=to_decimal(carat),
+                sales_per_carat=to_decimal(sales_per_carat),
+            )
+            imported += 1
+
+        messages.success(request, f"Stone import completed. Imported: {imported}, Skipped: {skipped}")
+        if errors:
+            messages.warning(request, f"Some rows had errors: {errors[:5]}")
+    except Exception as e:
+        messages.error(request, f"Failed to import stones: {e}")
+
+    return redirect('ornament:stone_list')
+
+@login_required
+def export_motimala_excel(request):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Motimala"
+
+    headers = ["Name", "Cost Per Mala", "Quantity", "Sales Per Mala"]
+    ws.append(headers)
+
+    for moti in Motimala.objects.all().order_by('-id'):
+        ws.append([
+            moti.name,
+            float(moti.cost_per_mala) if moti.cost_per_mala is not None else '',
+            moti.quantity if moti.quantity is not None else '',
+            float(moti.sales_per_mala) if moti.sales_per_mala is not None else '',
+        ])
+
+    for col in ws.columns:
+        max_length = 0
+        col_letter = get_column_letter(col[0].column)
+        for cell in col:
+            if cell.value is not None:
+                max_length = max(max_length, len(str(cell.value)))
+        ws.column_dimensions[col_letter].width = max_length + 2
+
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    response = HttpResponse(
+        output.getvalue(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response['Content-Disposition'] = 'attachment; filename="motimala.xlsx"'
+    return response
+
+@login_required
+def import_motimala_excel(request):
+    if request.method != "POST":
+        return redirect('ornament:motimala_list')
+
+    file = request.FILES.get("file")
+    if not file:
+        messages.error(request, "Please upload an Excel file.")
+        return redirect('ornament:motimala_list')
+
+    try:
+        wb = openpyxl.load_workbook(file)
+        ws = wb.active
+        imported = 0
+        skipped = 0
+        errors = []
+
+        expected_cols = 4
+        for idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+            if not any(row):
+                continue
+            row_list = list(row) if row else []
+            if len(row_list) > expected_cols:
+                row_list = row_list[:expected_cols]
+            elif len(row_list) < expected_cols:
+                row_list = row_list + [None] * (expected_cols - len(row_list))
+
+            try:
+                name, cost_per_mala, quantity, sales_per_mala = row_list
+            except Exception as e:
+                errors.append(f"Row {idx}: {e}")
+                skipped += 1
+                continue
+
+            if not name:
+                skipped += 1
+                continue
+
+            Motimala.objects.create(
+                name=str(name).strip(),
+                cost_per_mala=to_decimal(cost_per_mala),
+                quantity=int(quantity) if quantity not in (None, '') else 0,
+                sales_per_mala=to_decimal(sales_per_mala),
+            )
+            imported += 1
+
+        messages.success(request, f"Motimala import completed. Imported: {imported}, Skipped: {skipped}")
+        if errors:
+            messages.warning(request, f"Some rows had errors: {errors[:5]}")
+    except Exception as e:
+        messages.error(request, f"Failed to import motimala: {e}")
+
+    return redirect('ornament:motimala_list')
+
+@login_required
+def export_potey_excel(request):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Potey"
+
+    headers = ["Name", "Loon", "Cost Per Loon", "Sales Per Loon"]
+    ws.append(headers)
+
+    for potey in Potey.objects.all().order_by('-id'):
+        ws.append([
+            potey.name,
+            potey.loon if potey.loon is not None else '',
+            float(potey.cost_per_loon) if potey.cost_per_loon is not None else '',
+            float(potey.sales_per_loon) if potey.sales_per_loon is not None else '',
+        ])
+
+    for col in ws.columns:
+        max_length = 0
+        col_letter = get_column_letter(col[0].column)
+        for cell in col:
+            if cell.value is not None:
+                max_length = max(max_length, len(str(cell.value)))
+        ws.column_dimensions[col_letter].width = max_length + 2
+
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    response = HttpResponse(
+        output.getvalue(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response['Content-Disposition'] = 'attachment; filename="potey.xlsx"'
+    return response
+
+@login_required
+def import_potey_excel(request):
+    if request.method != "POST":
+        return redirect('ornament:potey_list')
+
+    file = request.FILES.get("file")
+    if not file:
+        messages.error(request, "Please upload an Excel file.")
+        return redirect('ornament:potey_list')
+
+    try:
+        wb = openpyxl.load_workbook(file)
+        ws = wb.active
+        imported = 0
+        skipped = 0
+        errors = []
+
+        expected_cols = 4
+        for idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+            if not any(row):
+                continue
+            row_list = list(row) if row else []
+            if len(row_list) > expected_cols:
+                row_list = row_list[:expected_cols]
+            elif len(row_list) < expected_cols:
+                row_list = row_list + [None] * (expected_cols - len(row_list))
+
+            try:
+                name, loon, cost_per_loon, sales_per_loon = row_list
+            except Exception as e:
+                errors.append(f"Row {idx}: {e}")
+                skipped += 1
+                continue
+
+            if not name:
+                skipped += 1
+                continue
+
+            Potey.objects.create(
+                name=str(name).strip(),
+                loon=int(loon) if loon not in (None, '') else 0,
+                cost_per_loon=to_decimal(cost_per_loon),
+                sales_per_loon=to_decimal(sales_per_loon),
+            )
+            imported += 1
+
+        messages.success(request, f"Potey import completed. Imported: {imported}, Skipped: {skipped}")
+        if errors:
+            messages.warning(request, f"Some rows had errors: {errors[:5]}")
+    except Exception as e:
+        messages.error(request, f"Failed to import potey: {e}")
+
+    return redirect('ornament:potey_list')
 
 
 def ornament_report(request):
