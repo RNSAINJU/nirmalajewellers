@@ -13,6 +13,10 @@
             </label>
         </form>
     </div>
+    <div class="alert alert-info d-flex flex-wrap gap-3 align-items-center">
+        <div><strong>Total Carat:</strong> {{ total_carat|floatformat:3 }}</div>
+        <div><strong>Total Cost Price:</strong> ₹{{ total_cost_price|floatformat:2 }}</div>
+    </div>
     <table class="table table-bordered">
         <thead>
             <tr>

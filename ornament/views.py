@@ -40,6 +40,18 @@ class StoneListView(ListView):
     ordering = ['-id']
     paginate_by = 10
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from django.db.models import Sum, DecimalField
+        from django.db.models.functions import Coalesce
+        totals = Stone.objects.aggregate(
+            total_carat=Coalesce(Sum('carat'), Decimal('0'), output_field=DecimalField()),
+            total_cost_price=Coalesce(Sum('cost_price'), Decimal('0'), output_field=DecimalField()),
+        )
+        context['total_carat'] = totals.get('total_carat') or Decimal('0')
+        context['total_cost_price'] = totals.get('total_cost_price') or Decimal('0')
+        return context
+
 @method_decorator(login_required, name='dispatch')
 class StoneCreateView(CreateView):
     model = Stone
