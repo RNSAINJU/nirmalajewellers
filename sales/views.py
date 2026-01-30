@@ -1161,11 +1161,19 @@ class SalesByMonthView(ListView):
                 month_int = int(month)
                 year_int = int(year)
                 
-                # Filter sales by Nepali date month and year
-                # Since sale_date is NepaliDateField, we can filter by its components
+                # Create start and end dates for the month
+                start_date = ndt.date(year_int, month_int, 1)
+                
+                # Calculate last day of the month
+                if month_int == 12:
+                    end_date = ndt.date(year_int + 1, 1, 1) - timedelta(days=1)
+                else:
+                    end_date = ndt.date(year_int, month_int + 1, 1) - timedelta(days=1)
+                
+                # Filter sales by date range
                 queryset = queryset.filter(
-                    sale_date__year=year_int,
-                    sale_date__month=month_int
+                    sale_date__gte=start_date,
+                    sale_date__lte=end_date
                 )
             except (ValueError, TypeError):
                 pass
