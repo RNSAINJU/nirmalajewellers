@@ -1288,7 +1288,7 @@ class SalesByMonthView(ListView):
                     if payment_mode in payment_methods:
                         payment_methods[payment_mode] += payment.amount or Decimal("0")
             
-            # Patch each sale with total_weight and display_total
+            # Patch each sale with total_weight, display_total, and profit
             for sale in context["sales"]:
                 ornament_weight = sum([(line.ornament.weight or Decimal("0")) for line in sale.order.order_ornaments.all()])
                 metal_weight = sum([(metal.quantity or Decimal("0")) for metal in sale.sale_metals.all()])
@@ -1299,6 +1299,20 @@ class SalesByMonthView(ListView):
                     sale.display_total = metal_total
                 else:
                     sale.display_total = sale.order.total or Decimal("0")
+                
+                # Calculate profit for this sale
+                sale_profit = Decimal("0")
+                for line in sale.order.order_ornaments.all():
+                    customer_jarti = line.jarti or Decimal("0")
+                    ornament_jarti = line.ornament.jarti or Decimal("0")
+                    rate = line.gold_rate or Decimal("0")
+                    jyala = line.jyala or Decimal("0")
+                    
+                    jarti_difference = customer_jarti - ornament_jarti
+                    profit = (jarti_difference / Decimal("11.664") * rate) + jyala
+                    sale_profit += profit
+                
+                sale.profit = sale_profit
             
             context['gold_24_weight'] = gold_24_weight
             context['silver_weight'] = silver_weight

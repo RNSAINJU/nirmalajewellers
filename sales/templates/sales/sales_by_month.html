@@ -238,6 +238,7 @@
                     <th>Total</th>
                     <th>Paid</th>
                     <th>Remaining</th>
+                    <th>Profit</th>
                     <th>Status</th>
                     <th>Actions</th>
                 </tr>
@@ -302,6 +303,7 @@
                         {% endif %}
                     </td>
                     <td>रु{{ order.remaining_amount|floatformat:2 }}</td>
+                    <td><span class="badge bg-success">रु{{ sale.profit|floatformat:2 }}</span></td>
                     <td><span class="badge bg-info">{{ order.get_status_display }}</span></td>
                     <td class="text-center">
                         <div class="btn-group" role="group">
@@ -316,7 +318,7 @@
                 </tr>
                 {% endwith %}
                 {% empty %}
-                <tr><td colspan="13" class="text-center text-muted">No sales found for the selected month.</td></tr>
+                <tr><td colspan="14" class="text-center text-muted">No sales found for the selected month.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
