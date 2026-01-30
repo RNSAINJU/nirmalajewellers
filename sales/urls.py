@@ -14,12 +14,14 @@ from .views import (
     ImportWizardStepOneView,
     ImportWizardStepTwoView,
     ImportWizardStepThreeView,
+    SalesByMonthView,
 )
 
 app_name = "sales"
 
 urlpatterns = [
     path("", SalesListView.as_view(), name="sales_list"),
+    path("by-month/", SalesByMonthView.as_view(), name="sales_by_month"),
     path("create/", DirectSaleCreateView.as_view(), name="sale_create"),
     path("create-from-order/<int:pk>/", CreateSaleFromOrderView.as_view(), name="create_sale_from_order"),
     path("print/", sales_print_view, name="print_view"),

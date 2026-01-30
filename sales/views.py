@@ -1139,3 +1139,129 @@ class ExcelImportProcessor:
             return 'twentyfourkarat'
 
 
+class SalesByMonthView(ListView):
+    """List sales filtered by a selected month and year."""
+    
+    model = Sale
+    template_name = "sales/sales_by_month.html"
+    context_object_name = "sales"
+    ordering = ["-sale_date", "-created_at"]
+    
+    def get_queryset(self):
+        queryset = super().get_queryset().select_related("order").prefetch_related(
+            "order__order_ornaments__ornament", "sale_metals"
+        )
+        
+        # Get month and year from query params
+        month = self.request.GET.get('month')
+        year = self.request.GET.get('year')
+        
+        if month and year:
+            try:
+                month_int = int(month)
+                year_int = int(year)
+                
+                # Filter sales by Nepali date month and year
+                # Since sale_date is NepaliDateField, we can filter by its components
+                queryset = queryset.filter(
+                    sale_date__year=year_int,
+                    sale_date__month=month_int
+                )
+            except (ValueError, TypeError):
+                pass
+        
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Get current filter values
+        selected_month = self.request.GET.get('month', '')
+        selected_year = self.request.GET.get('year', '')
+        
+        context['selected_month'] = selected_month
+        context['selected_year'] = selected_year
+        
+        # Get current Nepali date for default selection
+        try:
+            current_nepali_date = ndt.date.today()
+            context['current_month'] = current_nepali_date.month
+            context['current_year'] = current_nepali_date.year
+        except Exception:
+            context['current_month'] = 1
+            context['current_year'] = 2081
+        
+        # Nepali month names
+        context['nepali_months'] = [
+            {'value': 1, 'name': 'Baishakh'},
+            {'value': 2, 'name': 'Jestha'},
+            {'value': 3, 'name': 'Ashadh'},
+            {'value': 4, 'name': 'Shrawan'},
+            {'value': 5, 'name': 'Bhadra'},
+            {'value': 6, 'name': 'Ashwin'},
+            {'value': 7, 'name': 'Kartik'},
+            {'value': 8, 'name': 'Mangsir'},
+            {'value': 9, 'name': 'Poush'},
+            {'value': 10, 'name': 'Magh'},
+            {'value': 11, 'name': 'Falgun'},
+            {'value': 12, 'name': 'Chaitra'},
+        ]
+        
+        # Calculate statistics for filtered sales
+        if context['sales']:
+            purity_factors = {
+                Ornament.TypeCategory.TWENTYFOURKARAT: Decimal("1.00"),
+                Ornament.TypeCategory.TWENTHREEKARAT: Decimal("0.99"),
+                Ornament.TypeCategory.TWENTYTWOKARAT: Decimal("0.98"),
+                Ornament.TypeCategory.EIGHTEENKARAT: Decimal("0.75"),
+                Ornament.TypeCategory.FOURTEENKARAT: Decimal("0.58"),
+            }
+            
+            gold_24_weight = Decimal("0")
+            silver_weight = Decimal("0")
+            total_sales_amount = Decimal("0")
+            
+            for sale in context["sales"]:
+                # Ornaments
+                for line in sale.order.order_ornaments.all():
+                    weight = line.ornament.weight or Decimal("0")
+                    factor = purity_factors.get(getattr(line.ornament, 'type', None), Decimal("1.00"))
+                    if getattr(line.ornament, 'metal_type', None) == getattr(Ornament.MetalTypeCategory, 'GOLD', 'gold'):
+                        gold_24_weight += weight * factor
+                    elif getattr(line.ornament, 'metal_type', None) == getattr(Ornament.MetalTypeCategory, 'SILVER', 'silver'):
+                        silver_weight += weight
+                
+                # Raw metals
+                for metal in sale.sale_metals.all():
+                    if metal.metal_type == 'gold':
+                        gold_24_weight += metal.quantity
+                    elif metal.metal_type == 'silver':
+                        silver_weight += metal.quantity
+                    total_sales_amount += metal.line_amount or Decimal("0")
+                
+                # Add order total
+                total_sales_amount += sale.order.total or Decimal("0")
+            
+            # Patch each sale with total_weight and display_total
+            for sale in context["sales"]:
+                ornament_weight = sum([(line.ornament.weight or Decimal("0")) for line in sale.order.order_ornaments.all()])
+                metal_weight = sum([(metal.quantity or Decimal("0")) for metal in sale.sale_metals.all()])
+                sale.total_weight = ornament_weight + metal_weight
+                
+                metal_total = sum([(metal.line_amount or Decimal("0")) for metal in sale.sale_metals.all()])
+                if sale.order.order_ornaments.count() == 0:
+                    sale.display_total = metal_total
+                else:
+                    sale.display_total = sale.order.total or Decimal("0")
+            
+            context['gold_24_weight'] = gold_24_weight
+            context['silver_weight'] = silver_weight
+            context['total_sales_amount'] = total_sales_amount
+            context['sales_count'] = len(context['sales'])
+        else:
+            context['gold_24_weight'] = Decimal("0")
+            context['silver_weight'] = Decimal("0")
+            context['total_sales_amount'] = Decimal("0")
+            context['sales_count'] = 0
+        
+        return context

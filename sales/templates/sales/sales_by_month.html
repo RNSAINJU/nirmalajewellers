@@ -1,0 +1,295 @@
+{% extends 'base.html' %}
+{% load bs_filters %}
+
+{% block content %}
+
+<style>
+    .search-section {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 20px;
+        border: 2px solid #e9ecef;
+    }
+    .month-selector {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        margin-bottom: 30px;
+    }
+    .stats-tabs {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        margin-bottom: 30px;
+    }
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+        padding: 20px;
+        color: white;
+        text-align: center;
+        transition: all 0.3s;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+    }
+    .stat-card.gold { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+    .stat-card.silver { background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%); }
+    .stat-card.amount { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+    .stat-card.count { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); }
+    .stat-label {
+        font-size: 14px;
+        opacity: 0.9;
+        margin-bottom: 8px;
+        font-weight: 500;
+    }
+    .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        margin: 0;
+    }
+    .ornament-link {
+        color: #0d6efd;
+        font-weight: 600;
+        text-decoration: none;
+    }
+    .ornament-link:hover {
+        color: #0a58ca;
+        text-decoration: underline;
+    }
+    .ornament-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        max-width: 260px;
+    }
+    .ornament-chip {
+        background: #eef2ff;
+        color: #4338ca;
+        border: 1px solid #c7d2fe;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+    .ornament-chip-muted {
+        background: #f3f4f6;
+        color: #4b5563;
+        border-color: #e5e7eb;
+    }
+    .btn-filter {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 10px;
+        padding: 12px 36px;
+        font-weight: 600;
+        transition: all 0.3s;
+        color: white;
+    }
+    .btn-filter:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+</style>
+
+<div class="container mt-5">
+    <h1 class="text-center mb-4" style="color: #667eea; font-weight: 700;">
+        <i class="bi bi-calendar3 me-2"></i>Sales by Month
+    </h1>
+
+    <!-- Month Selector -->
+    <div class="month-selector">
+        <form method="get" action="">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label for="month" class="form-label fw-bold">
+                        <i class="bi bi-calendar-month me-1"></i>Select Month
+                    </label>
+                    <select name="month" id="month" class="form-select form-select-lg">
+                        <option value="">-- Choose Month --</option>
+                        {% for month in nepali_months %}
+                        <option value="{{ month.value }}" {% if selected_month == month.value|stringformat:"s" %}selected{% endif %}>
+                            {{ month.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="year" class="form-label fw-bold">
+                        <i class="bi bi-calendar-year me-1"></i>Select Year
+                    </label>
+                    <input type="number" name="year" id="year" class="form-control form-control-lg" 
+                           placeholder="e.g., {{ current_year }}" 
+                           value="{{ selected_year }}"
+                           min="2070" max="2090">
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-filter w-100">
+                        <i class="bi bi-funnel-fill me-2"></i>Filter Sales
+                    </button>
+                </div>
+            </div>
+            {% if selected_month and selected_year %}
+            <div class="mt-3 text-center">
+                <a href="{% url 'sales:sales_by_month' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle me-1"></i>Clear Filter
+                </a>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+
+    {% if selected_month and selected_year %}
+    <!-- Display Selected Month/Year Info -->
+    <div class="alert alert-info text-center">
+        <i class="bi bi-info-circle-fill me-2"></i>
+        <strong>Showing sales for:</strong> 
+        {% for month in nepali_months %}
+            {% if month.value|stringformat:"s" == selected_month %}{{ month.name }}{% endif %}
+        {% endfor %} {{ selected_year }}
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-tabs">
+        <div class="row g-3">
+            <div class="col-md-3 col-sm-6">
+                <div class="stat-card count">
+                    <div class="stat-label">Total Sales</div>
+                    <h3 class="stat-value">{{ sales_count }}</h3>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="stat-card gold">
+                    <div class="stat-label">24K Gold Sold (gms)</div>
+                    <h3 class="stat-value">{{ gold_24_weight|floatformat:3 }}</h3>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="stat-card silver">
+                    <div class="stat-label">Silver Sold (gms)</div>
+                    <h3 class="stat-value">{{ silver_weight|floatformat:3 }}</h3>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="stat-card amount">
+                    <div class="stat-label">Total Sales Amount</div>
+                    <h3 class="stat-value">{{ total_sales_amount|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sales Table -->
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Bill No</th>
+                    <th>Sale Date</th>
+                    <th>Order No</th>
+                    <th>Order Date</th>
+                    <th>Customer</th>
+                    <th>Phone</th>
+                    <th>Ornaments</th>
+                    <th>Weight</th>
+                    <th>Total</th>
+                    <th>Paid</th>
+                    <th>Remaining</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sale in sales %}
+                {% with order=sale.order %}
+                <tr>
+                    <td>
+                        <a href="{% url 'sales:sale_update' sale.pk %}" class="text-decoration-none fw-semibold">{{ sale.bill_no }}</a>
+                    </td>
+                    <td>{{ sale.sale_date|bs_date }}</td>
+                    <td><a href="{% url 'order:update' order.sn %}" class="text-decoration-none ornament-link" target="_blank">{{ order.sn }}</a></td>
+                    <td>{{ order.order_date|bs_date }}</td>
+                    <td>{{ order.customer_name }}</td>
+                    <td>{{ order.phone_number }}</td>
+                    <td>
+                        {% with items=order.order_ornaments.all %}
+                            {% if items and items|length > 0 %}
+                                <div class="ornament-chips" title="{% for line in items %}{{ line.ornament.ornament_name }} ({{ line.ornament.metal_type }}, {{ line.ornament.type }}){% if not forloop.last %}, {% endif %}{% endfor %}">
+                                    {% for line in items|slice:":3" %}
+                                        <a href="{% url 'ornament:update' line.ornament.id %}" class="text-decoration-none ornament-link"><span class="ornament-chip">{{ line.ornament.ornament_name }} • {{ line.ornament.metal_type }}</span></a>
+                                    {% endfor %}
+                                    {% if items|length > 3 %}
+                                        <span class="ornament-chip ornament-chip-muted">+{{ items|length|add:"-3" }} more</span>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        {% endwith %}
+                        {% with metals=sale.sale_metals.all %}
+                            {% if metals and metals|length > 0 %}
+                                <div class="ornament-chips mt-1" title="{% for metal in metals %}{{ metal.get_metal_type_display }} {{ metal.purity }} - {{ metal.quantity|floatformat:3 }}g @ Rs.{{ metal.rate_per_gram|floatformat:2 }}/g{% if not forloop.last %}, {% endif %}{% endfor %}">
+                                    {% for metal in metals|slice:":3" %}
+                                        <span class="ornament-chip"><i class="bi bi-award-fill text-primary me-1"></i><strong>{{ metal.get_metal_type_display }}</strong> {{ metal.purity }} - {{ metal.quantity|floatformat:3 }}g @ Rs.{{ metal.rate_per_gram|floatformat:2 }}/g</span>
+                                    {% endfor %}
+                                    {% if metals|length > 3 %}
+                                        <span class="ornament-chip ornament-chip-muted">+{{ metals|length|add:"-3" }} more</span>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        {% endwith %}
+                        {% if order.order_ornaments.count == 0 and sale.sale_metals.count == 0 %}
+                            <small class="text-muted">No ornaments</small>
+                        {% endif %}
+                    </td>
+                    <td>{{ sale.total_weight|default:0|floatformat:3 }}</td>
+                    <td>रु{{ sale.display_total|default:0|floatformat:2 }}</td>
+                    <td>
+                        {% if order.total_paid > 0 %}
+                            रु{{ order.total_paid|floatformat:2 }}
+                            {% if order.payments.count > 1 %}
+                                <small class="text-muted">(Mixed)</small><br>
+                                {% for payment in order.payments.all %}
+                                    <small>• {{ payment.get_payment_mode_display }}: रु{{ payment.amount|floatformat:2 }}</small><br>
+                                {% endfor %}
+                            {% elif order.payments.count == 1 %}
+                                <small class="text-muted">({{ order.payments.first.get_payment_mode_display }})</small>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-danger">रु0.00</span>
+                            <small class="text-muted">(Unpaid)</small>
+                        {% endif %}
+                    </td>
+                    <td>रु{{ order.remaining_amount|floatformat:2 }}</td>
+                    <td><span class="badge bg-info">{{ order.get_status_display }}</span></td>
+                    <td class="text-center">
+                        <div class="btn-group" role="group">
+                            <a href="{% url 'sales:sale_update' sale.pk %}" class="btn btn-sm btn-outline-warning" title="Edit">
+                                <i class="bi bi-pencil-square"></i>
+                            </a>
+                            <a href="{% url 'sales:sale_delete' sale.pk %}" class="btn btn-sm btn-outline-danger" title="Delete">
+                                <i class="bi bi-trash-fill"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endwith %}
+                {% empty %}
+                <tr><td colspan="13" class="text-center text-muted">No sales found for the selected month.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <!-- Show message when no filter is applied -->
+    <div class="alert alert-warning text-center">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <strong>Please select a month and year to view sales.</strong>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
