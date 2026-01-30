@@ -99,6 +99,10 @@
   <div class="col-lg-6">
     <form method="post" class="card p-4 shadow-sm" novalidate>
       {% csrf_token %}
+      {% if return_month and return_year %}
+        <input type="hidden" name="return_month" value="{{ return_month }}">
+        <input type="hidden" name="return_year" value="{{ return_year }}">
+      {% endif %}
       <div class="mb-3">
         <label for="id_bill_no" class="form-label">Bill No</label>
         {{ form.bill_no }}
@@ -109,7 +113,11 @@
       </div>
       <div class="d-flex justify-content-end gap-2 mt-3">
         <button type="submit" class="btn btn-primary">Save</button>
-        <a href="{% url 'sales:sales_list' %}" class="btn btn-secondary">Cancel</a>
+        {% if return_month and return_year %}
+          <a href="{% url 'sales:sales_by_month' %}?month={{ return_month }}&year={{ return_year }}" class="btn btn-secondary">Cancel</a>
+        {% else %}
+          <a href="{% url 'sales:sales_list' %}" class="btn btn-secondary">Cancel</a>
+        {% endif %}
       </div>
     </form>
   </div>

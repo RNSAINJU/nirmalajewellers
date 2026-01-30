@@ -159,9 +159,18 @@ class SaleUpdateView(UpdateView):
         context['order_ornaments'] = order.order_ornaments.select_related('ornament').all() if order else []
         # Raw metal lines for this sale
         context['sale_metals'] = self.object.sale_metals.select_related('stock_type').all() if self.object else []
+        # Pass through the return URL parameters
+        context['return_month'] = self.request.GET.get('month', '')
+        context['return_year'] = self.request.GET.get('year', '')
         return context
 
     def get_success_url(self):
+        # Check if we should return to sales by month page
+        month = self.request.POST.get('return_month') or self.request.GET.get('month')
+        year = self.request.POST.get('return_year') or self.request.GET.get('year')
+        
+        if month and year:
+            return f"{reverse_lazy('sales:sales_by_month')}?month={month}&year={year}"
         return reverse_lazy("sales:sales_list")
 
 
@@ -1228,6 +1237,18 @@ class SalesByMonthView(ListView):
             gold_24_weight = Decimal("0")
             silver_weight = Decimal("0")
             total_sales_amount = Decimal("0")
+            total_remaining_amount = Decimal("0")
+            total_profit = Decimal("0")
+            
+            # Payment method breakdown
+            payment_methods = {
+                'cash': Decimal("0"),
+                'fonepay': Decimal("0"),
+                'bank': Decimal("0"),
+                'gold': Decimal("0"),
+                'silver': Decimal("0"),
+                'sundry_debtor': Decimal("0"),
+            }
             
             for sale in context["sales"]:
                 # Ornaments
@@ -1238,6 +1259,16 @@ class SalesByMonthView(ListView):
                         gold_24_weight += weight * factor
                     elif getattr(line.ornament, 'metal_type', None) == getattr(Ornament.MetalTypeCategory, 'SILVER', 'silver'):
                         silver_weight += weight
+                    
+                    # Calculate profit: (customer_jarti - ornament_jarti) / 11.664 * rate + jyala
+                    customer_jarti = line.jarti or Decimal("0")
+                    ornament_jarti = line.ornament.jarti or Decimal("0")
+                    rate = line.gold_rate or Decimal("0")
+                    jyala = line.jyala or Decimal("0")
+                    
+                    jarti_difference = customer_jarti - ornament_jarti
+                    profit = (jarti_difference / Decimal("11.664") * rate) + jyala
+                    total_profit += profit
                 
                 # Raw metals
                 for metal in sale.sale_metals.all():
@@ -1247,8 +1278,15 @@ class SalesByMonthView(ListView):
                         silver_weight += metal.quantity
                     total_sales_amount += metal.line_amount or Decimal("0")
                 
-                # Add order total
+                # Add order total and remaining amount
                 total_sales_amount += sale.order.total or Decimal("0")
+                total_remaining_amount += sale.order.remaining_amount or Decimal("0")
+                
+                # Collect payment method totals
+                for payment in sale.order.payments.all():
+                    payment_mode = payment.payment_mode
+                    if payment_mode in payment_methods:
+                        payment_methods[payment_mode] += payment.amount or Decimal("0")
             
             # Patch each sale with total_weight and display_total
             for sale in context["sales"]:
@@ -1265,11 +1303,24 @@ class SalesByMonthView(ListView):
             context['gold_24_weight'] = gold_24_weight
             context['silver_weight'] = silver_weight
             context['total_sales_amount'] = total_sales_amount
+            context['total_remaining_amount'] = total_remaining_amount
+            context['total_profit'] = total_profit
+            context['payment_methods'] = payment_methods
             context['sales_count'] = len(context['sales'])
         else:
             context['gold_24_weight'] = Decimal("0")
             context['silver_weight'] = Decimal("0")
             context['total_sales_amount'] = Decimal("0")
+            context['total_remaining_amount'] = Decimal("0")
+            context['total_profit'] = Decimal("0")
+            context['payment_methods'] = {
+                'cash': Decimal("0"),
+                'fonepay': Decimal("0"),
+                'bank': Decimal("0"),
+                'gold': Decimal("0"),
+                'silver': Decimal("0"),
+                'sundry_debtor': Decimal("0"),
+            }
             context['sales_count'] = 0
         
         return context

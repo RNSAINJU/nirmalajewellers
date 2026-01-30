@@ -178,7 +178,45 @@
             <div class="col-md-3 col-sm-6">
                 <div class="stat-card amount">
                     <div class="stat-label">Total Sales Amount</div>
-                    <h3 class="stat-value">{{ total_sales_amount|floatformat:2 }}</h3>
+                    <h3 class="stat-value">रु{{ total_sales_amount|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Stats Row -->
+    <div class="stats-tabs mt-3">
+        <div class="row g-3">
+            <div class="col-md-3 col-sm-6">
+                <div class="stat-card" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+                    <div class="stat-label">Total Remaining</div>
+                    <h3 class="stat-value">रु{{ total_remaining_amount|floatformat:2 }}</h3>
+                </div>
+            </div>
+            <div class="col-md-6 col-sm-12">
+                <div class="stat-card" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">
+                    <div class="stat-label">Payment Methods</div>
+                    <div class="stat-value" style="font-size: 14px; line-height: 1.4;">
+                        <div class="d-flex flex-wrap justify-content-center gap-2">
+                            <span>Cash: रु{{ payment_methods.cash|floatformat:2 }}</span>
+                            <span>|</span>
+                            <span>Fonepay: रु{{ payment_methods.fonepay|floatformat:2 }}</span>
+                            <span>|</span>
+                            <span>Bank: रु{{ payment_methods.bank|floatformat:2 }}</span>
+                            <span>|</span>
+                            <span>Gold: रु{{ payment_methods.gold|floatformat:2 }}</span>
+                            <span>|</span>
+                            <span>Silver: रु{{ payment_methods.silver|floatformat:2 }}</span>
+                            <span>|</span>
+                            <span>Debtor: रु{{ payment_methods.sundry_debtor|floatformat:2 }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="stat-card" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                    <div class="stat-label">Total Profit</div>
+                    <h3 class="stat-value">रु{{ total_profit|floatformat:2 }}</h3>
                 </div>
             </div>
         </div>
@@ -267,7 +305,7 @@
                     <td><span class="badge bg-info">{{ order.get_status_display }}</span></td>
                     <td class="text-center">
                         <div class="btn-group" role="group">
-                            <a href="{% url 'sales:sale_update' sale.pk %}" class="btn btn-sm btn-outline-warning" title="Edit">
+                            <a href="{% url 'sales:sale_update' sale.pk %}?month={{ selected_month }}&year={{ selected_year }}" class="btn btn-sm btn-outline-warning" title="Edit">
                                 <i class="bi bi-pencil-square"></i>
                             </a>
                             <a href="{% url 'sales:sale_delete' sale.pk %}" class="btn btn-sm btn-outline-danger" title="Delete">
