@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .report-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    .stock-summary {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .summary-table {
+        width: 100%;
+        margin-bottom: 0;
+    }
+    .summary-table th {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px;
+        font-weight: 600;
+        text-align: center;
+        border: 1px solid #667eea;
+    }
+    .summary-table td {
+        padding: 12px 15px;
+        border: 1px solid #e5e7eb;
+        text-align: center;
+    }
+    .summary-table .total-row {
+        background: #f3f4f6;
+        font-weight: 700;
+        font-size: 16px;
+    }
+    .details-table-container {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .details-table {
+        width: 100%;
+        margin: 0;
+    }
+    .details-table thead {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    .details-table th {
+        padding: 15px;
+        font-weight: 600;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border: none;
+        text-align: center;
+    }
+    .details-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #e5e7eb;
+        text-align: center;
+    }
+    .details-table tbody tr:hover {
+        background-color: #f9fafb;
+    }
+    .details-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    .rate-info {
+        background: #eff6ff;
+        border-left: 4px solid #3b82f6;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+    }
+    .rate-info strong {
+        color: #1e40af;
+    }
+    .amount-cell {
+        font-weight: 600;
+        color: #059669;
+    }
+    .table-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 20px;
+        border-bottom: 3px solid #667eea;
+        padding-bottom: 10px;
+    }
+</style>
+
+<div class="container-fluid mt-4">
+    <div class="report-header">
+        <h1 class="mb-2">
+            <i class="bi bi-gem me-2"></i>Gold / Silver Ornament Stock Report
+        </h1>
+        <p class="mb-0 opacity-90">Stock inventory by category with current market valuation ({{ today_date }})</p>
+    </div>
+
+    <!-- Rate Information -->
+    <div class="rate-info">
+        <div class="row">
+            <div class="col-md-6">
+                <i class="bi bi-coin me-2"></i><strong>Gold Rate:</strong> रु{{ gold_rate|floatformat:2 }} per tola (रु{{ gold_rate_per_gram|floatformat:2 }} per gram)
+            </div>
+            <div class="col-md-6">
+                <i class="bi bi-shield-fill-check me-2"></i><strong>Silver Rate:</strong> रु{{ silver_rate|floatformat:2 }} per tola (रु{{ silver_rate_per_gram|floatformat:2 }} per gram)
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Summary -->
+    <div class="stock-summary">
+        <h3 class="table-title">
+            <i class="bi bi-pie-chart-fill me-2"></i>Gold / Silver Stock Summary
+        </h3>
+        <table class="summary-table table table-bordered">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Weight (gms)</th>
+                    <th>Amount (रु)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Gold</strong></td>
+                    <td>{{ total_gold_weight|floatformat:4 }}</td>
+                    <td class="amount-cell">{{ total_gold_amount|floatformat:2 }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Diamond</strong></td>
+                    <td>{{ total_diamond_weight|floatformat:2 }}</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td><strong>Silver</strong></td>
+                    <td>{{ total_silver_weight|floatformat:3 }}</td>
+                    <td class="amount-cell">{{ total_silver_amount|floatformat:2 }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Potey</strong></td>
+                    <td></td>
+                    <td class="amount-cell">{{ total_potey_amount|floatformat:2 }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Stones</strong></td>
+                    <td></td>
+                    <td class="amount-cell">{{ total_stones_amount|floatformat:2 }}</td>
+                </tr>
+                <tr class="total-row">
+                    <td><strong>Total</strong></td>
+                    <td></td>
+                    <td class="amount-cell">{{ grand_total|floatformat:2 }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Category Details -->
+    <div class="details-table-container">
+        <h3 class="table-title">
+            <i class="bi bi-list-ul me-2"></i>Gold Ornament Stock Details
+        </h3>
+        <table class="details-table table table-hover">
+            <thead>
+                <tr>
+                    <th>SN</th>
+                    <th>Particulars</th>
+                    <th>Quantity</th>
+                    <th>Weight (gms)</th>
+                    <th>Diamond (gms)</th>
+                    <th>Rate (per gm)</th>
+                    <th>Total (रु)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for category in gold_category_list %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><strong>{{ category.name }}</strong></td>
+                    <td>{{ category.count }}</td>
+                    <td>{{ category.weight|floatformat:3 }}</td>
+                    <td>{{ category.diamond|floatformat:2 }}</td>
+                    <td>{{ category.rate|floatformat:2 }}</td>
+                    <td class="amount-cell">{{ category.amount|floatformat:2 }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center">
+                        <em>No gold ornaments in stock</em>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Silver Ornament Details -->
+    <div class="details-table-container mt-4">
+        <h3 class="table-title">
+            <i class="bi bi-list-ul me-2"></i>Silver Ornament Stock Details
+        </h3>
+        <table class="details-table table table-hover">
+            <thead>
+                <tr>
+                    <th>SN</th>
+                    <th>Particulars</th>
+                    <th>Quantity</th>
+                    <th>Weight (gms)</th>
+                    <th>Diamond (gms)</th>
+                    <th>Rate (per gm)</th>
+                    <th>Total (रु)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for category in silver_category_list %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><strong>{{ category.name }}</strong></td>
+                    <td>{{ category.count }}</td>
+                    <td>{{ category.weight|floatformat:3 }}</td>
+                    <td>{{ category.diamond|floatformat:2 }}</td>
+                    <td>{{ category.rate|floatformat:2 }}</td>
+                    <td class="amount-cell">{{ category.amount|floatformat:2 }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center">
+                        <em>No silver ornaments in stock</em>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

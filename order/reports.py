@@ -761,3 +761,202 @@ class DailyProfitLossReport(View):
         }
         
         return render(request, 'order/reports/daily_profit_loss.html', context)
+
+
+class OrnamentStockReport(View):
+    """Stock ornament report by category with today's valuation"""
+    
+    def get(self, request):
+        from ornament.models import Ornament, MainCategory, Stone, Potey
+        from main.models import DailyRate
+        
+        # Get today's gold and silver rates
+        today_rate = DailyRate.objects.first()
+        gold_rate = today_rate.gold_rate if today_rate else Decimal("0")
+        silver_rate = today_rate.silver_rate if today_rate else Decimal("0")
+        
+        # Convert per tola to per gram
+        TOLA_CONVERSION = Decimal("11.664")
+        gold_rate_per_gram = gold_rate / TOLA_CONVERSION if gold_rate else Decimal("0")
+        silver_rate_per_gram = silver_rate / TOLA_CONVERSION if silver_rate else Decimal("0")
+        
+        # Get all active stock ornaments
+        ornaments = Ornament.objects.filter(
+            ornament_type=Ornament.OrnamentCategory.STOCK,
+            status=Ornament.StatusCategory.ACTIVE
+        ).select_related('maincategory', 'subcategory')
+        
+        # Purity conversion factors to 24K equivalent
+        purity_factors = {
+            Ornament.TypeCategory.TWENTYFOURKARAT: Decimal("1.00"),
+            Ornament.TypeCategory.TWENTHREEKARAT: Decimal("0.99"),
+            Ornament.TypeCategory.TWENTYTWOKARAT: Decimal("0.98"),
+            Ornament.TypeCategory.EIGHTEENKARAT: Decimal("0.75"),
+            Ornament.TypeCategory.FOURTEENKARAT: Decimal("0.58"),
+        }
+        
+        # Group ornaments by metal type and main category
+        gold_category_data = {}
+        silver_category_data = {}
+        
+        # Summary totals
+        total_gold_weight = Decimal("0")
+        total_gold_amount = Decimal("0")
+        total_diamond_weight = Decimal("0")
+        total_silver_weight = Decimal("0")
+        total_silver_amount = Decimal("0")
+        
+        for ornament in ornaments:
+            category_name = ornament.maincategory.name if ornament.maincategory else "Uncategorized"
+        for ornament in ornaments:
+            category_name = ornament.maincategory.name if ornament.maincategory else "Uncategorized"
+            
+            # Calculate weight and amount based on metal type
+            if ornament.metal_type == Ornament.MetalTypeCategory.GOLD:
+                if category_name not in gold_category_data:
+                    gold_category_data[category_name] = {
+                        'count': 0,
+                        'total_weight': Decimal("0"),
+                        'total_diamond': Decimal("0"),
+                        'total_amount': Decimal("0"),
+                        'metal_type': 'Gold',
+                    }
+                
+                gold_category_data[category_name]['count'] += 1
+                
+                weight = ornament.weight or Decimal("0")
+                factor = purity_factors.get(ornament.type, Decimal("1.00"))
+                weight_24k = weight * factor
+                
+                gold_category_data[category_name]['total_weight'] += weight_24k
+                
+                # Calculate amount: (weight * gold_rate) + jyala + diamond value
+                gold_value = weight_24k * gold_rate_per_gram
+                jyala = ornament.jyala or Decimal("0")
+                diamond_weight = ornament.diamond_weight or Decimal("0")
+                diamond_value = diamond_weight * (ornament.diamond_rate or Decimal("0"))
+                
+                amount = gold_value + jyala + diamond_value
+                gold_category_data[category_name]['total_amount'] += amount
+                gold_category_data[category_name]['total_diamond'] += diamond_weight
+                
+                # Add to summary
+                total_gold_weight += weight_24k
+                total_gold_amount += amount
+                total_diamond_weight += diamond_weight
+                
+            elif ornament.metal_type == Ornament.MetalTypeCategory.SILVER:
+                if category_name not in silver_category_data:
+                    silver_category_data[category_name] = {
+                        'count': 0,
+                        'total_weight': Decimal("0"),
+                        'total_diamond': Decimal("0"),
+                        'total_amount': Decimal("0"),
+                        'metal_type': 'Silver',
+                    }
+                
+                silver_category_data[category_name]['count'] += 1
+                
+                weight = ornament.weight or Decimal("0")
+                silver_category_data[category_name]['total_weight'] += weight
+                
+                # Calculate amount
+                silver_value = weight * silver_rate_per_gram
+                jyala = ornament.jyala or Decimal("0")
+                amount = silver_value + jyala
+                
+                silver_category_data[category_name]['total_amount'] += amount
+                
+                # Add to summary
+                total_silver_weight += weight
+                total_silver_amount += amount
+                
+            elif ornament.metal_type == Ornament.MetalTypeCategory.DIAMOND:
+                if category_name not in gold_category_data:
+                    gold_category_data[category_name] = {
+                        'count': 0,
+                        'total_weight': Decimal("0"),
+                        'total_diamond': Decimal("0"),
+                        'total_amount': Decimal("0"),
+                        'metal_type': 'Diamond',
+                    }
+                
+                gold_category_data[category_name]['count'] += 1
+                
+                weight = ornament.weight or Decimal("0")
+                factor = purity_factors.get(ornament.type, Decimal("1.00"))
+                weight_24k = weight * factor
+                
+                diamond_weight = ornament.diamond_weight or Decimal("0")
+                gold_category_data[category_name]['total_weight'] += weight_24k
+                gold_category_data[category_name]['total_diamond'] += diamond_weight
+                
+                # Calculate amount
+                gold_value = weight_24k * gold_rate_per_gram
+                jyala = ornament.jyala or Decimal("0")
+                diamond_value = diamond_weight * (ornament.diamond_rate or Decimal("0"))
+                
+                amount = gold_value + jyala + diamond_value
+                gold_category_data[category_name]['total_amount'] += amount
+                
+                # Add to summary (Diamond is counted in gold section)
+                total_gold_weight += weight_24k
+                total_diamond_weight += diamond_weight
+                total_gold_amount += amount
+        
+        # Get Potey and Stones stock
+        potey_stock = Potey.objects.all()
+        total_potey_amount = sum(p.sales_price or Decimal("0") for p in potey_stock)
+        
+        stones_stock = Stone.objects.all()
+        total_stones_amount = sum(s.sales_price or Decimal("0") for s in stones_stock)
+        
+        # Calculate grand total
+        grand_total = total_gold_amount + total_silver_amount + total_potey_amount + total_stones_amount
+        
+        # Create separate lists for gold and silver ornaments
+        gold_category_list = [
+            {
+                'name': name,
+                'count': data['count'],
+                'weight': data['total_weight'],
+                'diamond': data['total_diamond'],
+                'rate': gold_rate_per_gram,
+                'amount': data['total_amount'],
+                'metal_type': data['metal_type'],
+            }
+            for name, data in sorted(gold_category_data.items())
+        ]
+        
+        silver_category_list = [
+            {
+                'name': name,
+                'count': data['count'],
+                'weight': data['total_weight'],
+                'diamond': data['total_diamond'],
+                'rate': silver_rate_per_gram,
+                'amount': data['total_amount'],
+                'metal_type': data['metal_type'],
+            }
+            for name, data in sorted(silver_category_data.items())
+        ]
+        
+        context = {
+            'gold_category_list': gold_category_list,
+            'silver_category_list': silver_category_list,
+            'total_gold_weight': total_gold_weight,
+            'total_gold_amount': total_gold_amount,
+            'total_diamond_weight': total_diamond_weight,
+            'total_silver_weight': total_silver_weight,
+            'total_silver_amount': total_silver_amount,
+            'total_potey_amount': total_potey_amount,
+            'total_stones_amount': total_stones_amount,
+            'grand_total': grand_total,
+            'gold_rate': gold_rate,
+            'silver_rate': silver_rate,
+            'gold_rate_per_gram': gold_rate_per_gram,
+            'silver_rate_per_gram': silver_rate_per_gram,
+            'today_date': today_rate.bs_date if today_rate else 'N/A',
+        }
+        
+        return render(request, 'order/reports/ornament_stock.html', context)
