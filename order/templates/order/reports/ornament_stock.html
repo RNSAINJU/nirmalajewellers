@@ -99,10 +99,19 @@
 
 <div class="container-fluid mt-4">
     <div class="report-header">
-        <h1 class="mb-2">
-            <i class="bi bi-gem me-2"></i>Gold / Silver Ornament Stock Report
-        </h1>
-        <p class="mb-0 opacity-90">Stock inventory by category with current market valuation ({{ today_date }})</p>
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="mb-2">
+                    <i class="bi bi-gem me-2"></i>Gold / Silver Ornament Stock Report
+                </h1>
+                <p class="mb-0 opacity-90">Stock inventory by category with current market valuation ({{ today_date }})</p>
+            </div>
+            <div>
+                <a href="{% url 'order:ornament_stock_export' %}" class="btn btn-success btn-lg">
+                    <i class="bi bi-file-earmark-spreadsheet me-2"></i>Export to Excel
+                </a>
+            </div>
+        </div>
     </div>
 
     <!-- Rate Information -->

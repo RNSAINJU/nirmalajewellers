@@ -3,8 +3,11 @@ from django.shortcuts import render
 from django.views import View
 from django.db.models import Sum, Count, Q, F, DecimalField, Case, When, Value, Max, Min
 from django.db.models.functions import Coalesce, TruncMonth, TruncYear
+from django.http import HttpResponse
 from decimal import Decimal
 from datetime import datetime, timedelta
+import openpyxl
+from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from .models import Order, OrderPayment
 
 
@@ -960,3 +963,308 @@ class OrnamentStockReport(View):
         }
         
         return render(request, 'order/reports/ornament_stock.html', context)
+
+
+def ornament_stock_export_excel(request):
+    """Export ornament stock report to Excel."""
+    from ornament.models import Ornament, MainCategory, Stone, Potey
+    from main.models import DailyRate
+    
+    # Get today's gold and silver rates
+    today_rate = DailyRate.objects.first()
+    gold_rate = today_rate.gold_rate if today_rate else Decimal("0")
+    silver_rate = today_rate.silver_rate if today_rate else Decimal("0")
+    
+    # Convert per tola to per gram
+    TOLA_CONVERSION = Decimal("11.664")
+    gold_rate_per_gram = gold_rate / TOLA_CONVERSION if gold_rate else Decimal("0")
+    silver_rate_per_gram = silver_rate / TOLA_CONVERSION if silver_rate else Decimal("0")
+    
+    # Get all active stock ornaments
+    ornaments = Ornament.objects.filter(
+        ornament_type=Ornament.OrnamentCategory.STOCK,
+        status=Ornament.StatusCategory.ACTIVE
+    ).select_related('maincategory', 'subcategory')
+    
+    # Purity conversion factors to 24K equivalent
+    purity_factors = {
+        Ornament.TypeCategory.TWENTYFOURKARAT: Decimal("1.00"),
+        Ornament.TypeCategory.TWENTHREEKARAT: Decimal("0.99"),
+        Ornament.TypeCategory.TWENTYTWOKARAT: Decimal("0.98"),
+        Ornament.TypeCategory.EIGHTEENKARAT: Decimal("0.75"),
+        Ornament.TypeCategory.FOURTEENKARAT: Decimal("0.58"),
+    }
+    
+    # Group ornaments by metal type and main category
+    gold_category_data = {}
+    silver_category_data = {}
+    
+    # Summary totals
+    total_gold_weight = Decimal("0")
+    total_gold_amount = Decimal("0")
+    total_diamond_weight = Decimal("0")
+    total_silver_weight = Decimal("0")
+    total_silver_amount = Decimal("0")
+    
+    for ornament in ornaments:
+        category_name = ornament.maincategory.name if ornament.maincategory else "Uncategorized"
+        
+        # Calculate weight and amount based on metal type
+        if ornament.metal_type == Ornament.MetalTypeCategory.GOLD:
+            if category_name not in gold_category_data:
+                gold_category_data[category_name] = {
+                    'count': 0,
+                    'total_weight': Decimal("0"),
+                    'total_diamond': Decimal("0"),
+                    'total_amount': Decimal("0"),
+                    'metal_type': 'Gold',
+                }
+            
+            gold_category_data[category_name]['count'] += 1
+            
+            weight = ornament.weight or Decimal("0")
+            factor = purity_factors.get(ornament.type, Decimal("1.00"))
+            weight_24k = weight * factor
+            
+            gold_category_data[category_name]['total_weight'] += weight_24k
+            
+            # Calculate amount: (weight * gold_rate) + jyala + diamond value
+            gold_value = weight_24k * gold_rate_per_gram
+            jyala = ornament.jyala or Decimal("0")
+            diamond_weight = ornament.diamond_weight or Decimal("0")
+            diamond_value = diamond_weight * (ornament.diamond_rate or Decimal("0"))
+            
+            amount = gold_value + jyala + diamond_value
+            gold_category_data[category_name]['total_amount'] += amount
+            gold_category_data[category_name]['total_diamond'] += diamond_weight
+            
+            # Add to summary
+            total_gold_weight += weight_24k
+            total_gold_amount += amount
+            total_diamond_weight += diamond_weight
+            
+        elif ornament.metal_type == Ornament.MetalTypeCategory.SILVER:
+            if category_name not in silver_category_data:
+                silver_category_data[category_name] = {
+                    'count': 0,
+                    'total_weight': Decimal("0"),
+                    'total_diamond': Decimal("0"),
+                    'total_amount': Decimal("0"),
+                    'metal_type': 'Silver',
+                }
+            
+            silver_category_data[category_name]['count'] += 1
+            
+            weight = ornament.weight or Decimal("0")
+            silver_category_data[category_name]['total_weight'] += weight
+            
+            # Calculate amount
+            silver_value = weight * silver_rate_per_gram
+            jyala = ornament.jyala or Decimal("0")
+            amount = silver_value + jyala
+            
+            silver_category_data[category_name]['total_amount'] += amount
+            
+            # Add to summary
+            total_silver_weight += weight
+            total_silver_amount += amount
+            
+        elif ornament.metal_type == Ornament.MetalTypeCategory.DIAMOND:
+            if category_name not in gold_category_data:
+                gold_category_data[category_name] = {
+                    'count': 0,
+                    'total_weight': Decimal("0"),
+                    'total_diamond': Decimal("0"),
+                    'total_amount': Decimal("0"),
+                    'metal_type': 'Diamond',
+                }
+            
+            gold_category_data[category_name]['count'] += 1
+            
+            weight = ornament.weight or Decimal("0")
+            factor = purity_factors.get(ornament.type, Decimal("1.00"))
+            weight_24k = weight * factor
+            
+            diamond_weight = ornament.diamond_weight or Decimal("0")
+            gold_category_data[category_name]['total_weight'] += weight_24k
+            gold_category_data[category_name]['total_diamond'] += diamond_weight
+            
+            # Calculate amount
+            gold_value = weight_24k * gold_rate_per_gram
+            jyala = ornament.jyala or Decimal("0")
+            diamond_value = diamond_weight * (ornament.diamond_rate or Decimal("0"))
+            
+            amount = gold_value + jyala + diamond_value
+            gold_category_data[category_name]['total_amount'] += amount
+            
+            # Add to summary (Diamond is counted in gold section)
+            total_gold_weight += weight_24k
+            total_diamond_weight += diamond_weight
+            total_gold_amount += amount
+    
+    # Get Potey and Stones stock
+    potey_stock = Potey.objects.all()
+    total_potey_amount = sum(p.sales_price or Decimal("0") for p in potey_stock)
+    
+    stones_stock = Stone.objects.all()
+    total_stones_amount = sum(s.sales_price or Decimal("0") for s in stones_stock)
+    
+    # Calculate grand total
+    grand_total = total_gold_amount + total_silver_amount + total_potey_amount + total_stones_amount
+    
+    # Create Excel workbook
+    wb = openpyxl.Workbook()
+    
+    # Define styles
+    header_fill = PatternFill(start_color="667eea", end_color="667eea", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF", size=12)
+    summary_fill = PatternFill(start_color="f3f4f6", end_color="f3f4f6", fill_type="solid")
+    summary_font = Font(bold=True, size=11)
+    border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin')
+    )
+    
+    # Summary Sheet
+    ws_summary = wb.active
+    ws_summary.title = "Summary"
+    
+    # Title
+    ws_summary.merge_cells('A1:C1')
+    ws_summary['A1'] = "Gold / Silver Stock Summary"
+    ws_summary['A1'].font = Font(bold=True, size=14)
+    ws_summary['A1'].alignment = Alignment(horizontal='center')
+    
+    # Rate info
+    ws_summary['A3'] = f"Date: {today_rate.bs_date if today_rate else 'N/A'}"
+    ws_summary['A4'] = f"Gold Rate: रु{float(gold_rate):.2f} per tola (रु{float(gold_rate_per_gram):.2f} per gram)"
+    ws_summary['A5'] = f"Silver Rate: रु{float(silver_rate):.2f} per tola (रु{float(silver_rate_per_gram):.2f} per gram)"
+    
+    # Summary table headers
+    ws_summary['A7'] = "Type"
+    ws_summary['B7'] = "Weight (gms)"
+    ws_summary['C7'] = "Amount (रु)"
+    
+    for cell in ['A7', 'B7', 'C7']:
+        ws_summary[cell].fill = header_fill
+        ws_summary[cell].font = header_font
+        ws_summary[cell].alignment = Alignment(horizontal='center')
+        ws_summary[cell].border = border
+    
+    # Summary data
+    summary_data = [
+        ["Gold", float(total_gold_weight), float(total_gold_amount)],
+        ["Diamond", float(total_diamond_weight), ""],
+        ["Silver", float(total_silver_weight), float(total_silver_amount)],
+        ["Potey", "", float(total_potey_amount)],
+        ["Stones", "", float(total_stones_amount)],
+        ["Total", "", float(grand_total)],
+    ]
+    
+    row = 8
+    for data in summary_data:
+        ws_summary[f'A{row}'] = data[0]
+        ws_summary[f'B{row}'] = data[1]
+        ws_summary[f'C{row}'] = data[2]
+        
+        for col in ['A', 'B', 'C']:
+            ws_summary[f'{col}{row}'].border = border
+            if row == 13:  # Total row
+                ws_summary[f'{col}{row}'].fill = summary_fill
+                ws_summary[f'{col}{row}'].font = summary_font
+        
+        row += 1
+    
+    # Gold Ornaments Sheet
+    ws_gold = wb.create_sheet(title="Gold Ornaments")
+    
+    # Title
+    ws_gold.merge_cells('A1:G1')
+    ws_gold['A1'] = "Gold Ornament Stock Details"
+    ws_gold['A1'].font = Font(bold=True, size=14)
+    ws_gold['A1'].alignment = Alignment(horizontal='center')
+    
+    # Headers
+    gold_headers = ["SN", "Particulars", "Quantity", "Weight (gms)", "Diamond (gms)", "Rate (per gm)", "Total (रु)"]
+    for col_num, header in enumerate(gold_headers, 1):
+        cell = ws_gold.cell(row=3, column=col_num)
+        cell.value = header
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal='center')
+        cell.border = border
+    
+    # Gold data
+    row = 4
+    for idx, (name, data) in enumerate(sorted(gold_category_data.items()), 1):
+        ws_gold.cell(row=row, column=1, value=idx)
+        ws_gold.cell(row=row, column=2, value=name)
+        ws_gold.cell(row=row, column=3, value=data['count'])
+        ws_gold.cell(row=row, column=4, value=float(data['total_weight']))
+        ws_gold.cell(row=row, column=5, value=float(data['total_diamond']))
+        ws_gold.cell(row=row, column=6, value=float(gold_rate_per_gram))
+        ws_gold.cell(row=row, column=7, value=float(data['total_amount']))
+        
+        for col in range(1, 8):
+            ws_gold.cell(row=row, column=col).border = border
+        
+        row += 1
+    
+    # Adjust column widths
+    for col in range(1, 8):
+        ws_gold.column_dimensions[openpyxl.utils.get_column_letter(col)].width = 15
+    
+    # Silver Ornaments Sheet
+    ws_silver = wb.create_sheet(title="Silver Ornaments")
+    
+    # Title
+    ws_silver.merge_cells('A1:G1')
+    ws_silver['A1'] = "Silver Ornament Stock Details"
+    ws_silver['A1'].font = Font(bold=True, size=14)
+    ws_silver['A1'].alignment = Alignment(horizontal='center')
+    
+    # Headers
+    silver_headers = ["SN", "Particulars", "Quantity", "Weight (gms)", "Diamond (gms)", "Rate (per gm)", "Total (रु)"]
+    for col_num, header in enumerate(silver_headers, 1):
+        cell = ws_silver.cell(row=3, column=col_num)
+        cell.value = header
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal='center')
+        cell.border = border
+    
+    # Silver data
+    row = 4
+    for idx, (name, data) in enumerate(sorted(silver_category_data.items()), 1):
+        ws_silver.cell(row=row, column=1, value=idx)
+        ws_silver.cell(row=row, column=2, value=name)
+        ws_silver.cell(row=row, column=3, value=data['count'])
+        ws_silver.cell(row=row, column=4, value=float(data['total_weight']))
+        ws_silver.cell(row=row, column=5, value=float(data['total_diamond']))
+        ws_silver.cell(row=row, column=6, value=float(silver_rate_per_gram))
+        ws_silver.cell(row=row, column=7, value=float(data['total_amount']))
+        
+        for col in range(1, 8):
+            ws_silver.cell(row=row, column=col).border = border
+        
+        row += 1
+    
+    # Adjust column widths
+    for col in range(1, 8):
+        ws_silver.column_dimensions[openpyxl.utils.get_column_letter(col)].width = 15
+    
+    # Adjust column widths for summary sheet
+    ws_summary.column_dimensions['A'].width = 20
+    ws_summary.column_dimensions['B'].width = 20
+    ws_summary.column_dimensions['C'].width = 20
+    
+    # Prepare response
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename="ornament_stock_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx"'
+    
+    wb.save(response)
+    return response
