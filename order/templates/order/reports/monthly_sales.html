@@ -73,6 +73,47 @@
         border-radius: 20px;
         font-size: 14px;
     }
+    .sales-table {
+        margin-top: 30px;
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .sales-table table {
+        width: 100%;
+        margin: 0;
+    }
+    .sales-table thead {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    .sales-table th {
+        padding: 15px;
+        font-weight: 600;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border: none;
+    }
+    .sales-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #e5e7eb;
+        font-size: 14px;
+    }
+    .sales-table tbody tr:hover {
+        background-color: #f9fafb;
+    }
+    .sales-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    .table-section-title {
+        background: #f3f4f6;
+        padding: 12px 20px;
+        font-weight: 600;
+        color: #1f2937;
+        border-top: 2px solid #667eea;
+    }
 </style>
 
 <div class="container-fluid mt-4">
@@ -156,6 +197,49 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Sales Detail Table -->
+            {% if month.sales_list %}
+            <div class="sales-table">
+                <div class="table-section-title">
+                    <i class="bi bi-list-ul me-2"></i>Sales Details
+                </div>
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>S.N.</th>
+                            <th>Bill No.</th>
+                            <th>Date</th>
+                            <th>Customer</th>
+                            <th>Gold (gms)</th>
+                            <th>Silver (gms)</th>
+                            <th>Jarti</th>
+                            <th>Amount (रु)</th>
+                            <th>Remaining (रु)</th>
+                            <th>Tax (रु)</th>
+                            <th>Profit (रु)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sale in month.sales_list %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td><strong>{{ sale.bill_no }}</strong></td>
+                            <td>{{ sale.sale_date }}</td>
+                            <td>{{ sale.customer_name }}</td>
+                            <td>{{ sale.gold_weight|floatformat:3 }}</td>
+                            <td>{{ sale.silver_weight|floatformat:3 }}</td>
+                            <td>{{ sale.jarti|floatformat:3 }}</td>
+                            <td>{{ sale.amount|floatformat:2 }}</td>
+                            <td>{{ sale.remaining|floatformat:2 }}</td>
+                            <td>{{ sale.tax|floatformat:2 }}</td>
+                            <td>{{ sale.profit|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
         </div>
         {% endfor %}
     {% else %}
