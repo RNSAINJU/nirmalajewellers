@@ -293,6 +293,9 @@
         {% url 'order:daily_profit_loss_report' as order_report_daily_pl_url %}
         {% url 'order:ornament_stock_report' as order_report_ornament_stock_url %}
 
+        {% url 'sales:sale_create' as sales_create_url %}
+        {% url 'sales:sales_by_month' as sales_by_month_url %}
+
         {% url 'finance:finance_dashboard' as finance_dashboard_url %}
         {% url 'finance:balance_sheet' as balance_sheet_url %}
         {% url 'finance:loan_list' as loan_list_url %}
@@ -324,11 +327,28 @@
                 <a href="{{ ornament_subcategory_url }}" class="nav-link">Sub Category</a>
                 <a href="{{ ornament_report_url }}" class="nav-link">Category Report</a>
                 <a href="{{ ornament_weight_report_url }}" class="nav-link">Weight Report</a>
-                <a href="{{ rates_and_stock_url }}" class="nav-link">Rates & Stock</a>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <a class="nav-link" data-bs-toggle="collapse" href="#ratesStockMenu" role="button" aria-expanded="false">
+                <span><i class="bi bi-graph-up"></i> Rates &amp; Stock</span>
+                <i class="bi bi-chevron-down"></i>
+            </a>
+            <div class="collapse" id="ratesStockMenu">
+                <a href="{{ rates_and_stock_url }}" class="nav-link">Rates &amp; Stock</a>
+                <a href="{{ daily_rates_url }}" class="nav-link">Daily Rates</a>
+                <a href="{{ add_stock_url }}" class="nav-link">Add Stock</a>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <a class="nav-link" data-bs-toggle="collapse" href="#kaligarMenu" role="button" aria-expanded="false">
+                <span><i class="bi bi-people"></i> Kaligar</span>
+                <i class="bi bi-chevron-down"></i>
+            </a>
+            <div class="collapse" id="kaligarMenu">
                 <a href="{{ kaligar_list_url }}" class="nav-link">Kaligar List</a>
-                <a href="{{ stone_list_url }}" class="nav-link">Stones</a>
-                <a href="{{ motimala_list_url }}" class="nav-link">Moti Mala</a>
-                <a href="{{ potey_list_url }}" class="nav-link">Potey</a>
             </div>
         </div>
 
@@ -341,24 +361,9 @@
                 <a href="{{ gsp_purchase_list_url }}" class="nav-link">Purchase List</a>
                 <a href="{{ gsp_create_purchase_url }}" class="nav-link">Create Purchase</a>
                 <a href="{{ gsp_create_party_url }}" class="nav-link">Create Party</a>
-                <a href="{{ gsp_print_url }}" class="nav-link">Print</a>
-                <a href="{{ gsp_export_excel_url }}" class="nav-link">Export Excel</a>
-                <a href="{{ gsp_import_excel_url }}" class="nav-link">Import Excel</a>
                 <hr class="dropdown-divider">
                 <a href="{{ customer_purchase_url }}" class="nav-link">Customer Purchases</a>
                 <a href="{{ customer_purchase_create_url }}" class="nav-link">Add Customer Purchase</a>
-                <a href="{{ customer_export_excel_url }}" class="nav-link">Customer Export</a>
-                <a href="{{ customer_import_excel_url }}" class="nav-link">Customer Import</a>
-                <hr class="dropdown-divider">
-                <a href="{{ metal_stock_list_url }}" class="nav-link">Metal Stock</a>
-                <a href="{{ metal_stock_create_url }}" class="nav-link">Create Metal Stock</a>
-                <a href="{{ metal_stock_export_url }}" class="nav-link">Metal Stock Export</a>
-                <a href="{{ metal_stock_import_url }}" class="nav-link">Metal Stock Import</a>
-                <hr class="dropdown-divider">
-                <a href="{{ data_settings_url }}" class="nav-link">Data Settings</a>
-                <a href="{{ import_wizard_url }}" class="nav-link">Import Wizard</a>
-                <a href="{{ export_all_data_json_url }}" class="nav-link">Export Data (JSON)</a>
-                <a href="{{ import_all_data_json_url }}" class="nav-link">Import Data (JSON)</a>
             </div>
         </div>
 
@@ -370,11 +375,8 @@
             <div class="collapse" id="ordersMenu">
                 <a href="{{ order_list_url }}" class="nav-link">Order List</a>
                 <a href="{{ order_create_url }}" class="nav-link">Create Order</a>
-                <a href="{{ order_sales_list_url }}" class="nav-link">Sales</a>
                 <hr class="dropdown-divider">
                 <a href="{{ order_report_dashboard_url }}" class="nav-link">Report Dashboard</a>
-                <a href="{{ order_report_sales_url }}" class="nav-link">Sales Analysis</a>
-                <a href="{{ order_report_payment_url }}" class="nav-link">Payment Analysis</a>
                 <a href="{{ order_report_metal_url }}" class="nav-link">Metal Analysis</a>
                 <a href="{{ order_report_customer_url }}" class="nav-link">Customer Analysis</a>
                 <a href="{{ order_report_fast_slow_url }}" class="nav-link">Fast/Slow Movers</a>
@@ -382,9 +384,23 @@
                 <a href="{{ order_report_margin_url }}" class="nav-link">Margin by Category</a>
                 <a href="{{ order_report_payment_mix_url }}" class="nav-link">Payment Mix</a>
                 <a href="{{ order_report_debtor_aging_url }}" class="nav-link">Debtor Aging</a>
-                <a href="{{ order_report_monthly_sales_url }}" class="nav-link">Monthly Sales</a>
                 <a href="{{ order_report_daily_pl_url }}" class="nav-link">Daily Profit/Loss</a>
                 <a href="{{ order_report_ornament_stock_url }}" class="nav-link">Ornament Stock</a>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <a class="nav-link" data-bs-toggle="collapse" href="#salesMenu" role="button" aria-expanded="false">
+                <span><i class="bi bi-cash-coin"></i> Sales</span>
+                <i class="bi bi-chevron-down"></i>
+            </a>
+            <div class="collapse" id="salesMenu">
+                <a href="{{ order_sales_list_url }}" class="nav-link">Sales</a>
+                <a href="{{ sales_create_url }}" class="nav-link">Create Sales</a>
+                <a href="{{ order_report_sales_url }}" class="nav-link">Sales Analysis</a>
+                <a href="{{ order_report_payment_url }}" class="nav-link">Payment Analysis</a>
+                <a href="{{ order_report_monthly_sales_url }}" class="nav-link">Monthly Sales</a>
+                <a href="{{ sales_by_month_url }}" class="nav-link">Sales by Month</a>
             </div>
         </div>
 
@@ -403,26 +419,36 @@
                 <a href="{{ debtor_list_url }}" class="nav-link">Sundry Debtors</a>
                 <a href="{{ creditor_list_url }}" class="nav-link">Sundry Creditors</a>
                 <a href="{{ cashbank_list_url }}" class="nav-link">Cash & Bank</a>
-                <hr class="dropdown-divider">
-                <a href="{{ finance_export_all_url }}" class="nav-link">Bulk Export</a>
-                <a href="{{ finance_import_all_url }}" class="nav-link">Bulk Import</a>
             </div>
         </div>
 
         <div class="mb-3">
             <a class="nav-link" data-bs-toggle="collapse" href="#settingsMenu" role="button" aria-expanded="false">
-                <span><i class="bi bi-gear"></i> Settings & Reports</span>
+                <span><i class="bi bi-gear"></i> Settings</span>
                 <i class="bi bi-chevron-down"></i>
             </a>
             <div class="collapse" id="settingsMenu">
-                <a href="{{ stock_report_url }}" class="nav-link">Stock Report</a>
-                <a href="{{ monthly_stock_report_url }}" class="nav-link">Monthly Stock Report</a>
-                <a href="{{ daily_rates_url }}" class="nav-link">Daily Rates</a>
-                <a href="{{ add_stock_url }}" class="nav-link">Add Stock</a>
-                <a href="{{ total_assets_url }}" class="nav-link">Total Assets</a>
+                <a href="{{ data_settings_url }}" class="nav-link">Data Settings</a>
                 <a href="{{ account_settings_url }}" class="nav-link">Account Settings</a>
                 <a href="{{ role_list_url }}" class="nav-link">Roles</a>
             </div>
+        </div>
+
+        <div class="mb-3">
+            <a class="nav-link" data-bs-toggle="collapse" href="#reportsMenu" role="button" aria-expanded="false">
+                <span><i class="bi bi-clipboard-data"></i> Reports</span>
+                <i class="bi bi-chevron-down"></i>
+            </a>
+            <div class="collapse" id="reportsMenu">
+                <a href="{{ stock_report_url }}" class="nav-link">Stock Report</a>
+                <a href="{{ monthly_stock_report_url }}" class="nav-link">Monthly Stock Report</a>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <a href="{{ total_assets_url }}" class="nav-link">
+                <span><i class="bi bi-wallet2"></i> Total Assets</span>
+            </a>
         </div>
 
         <div class="mb-3">
@@ -461,11 +487,16 @@ function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     const content = document.getElementById('content');
     const overlay = document.getElementById('sidebarOverlay');
+    const isMobile = window.innerWidth <= 768;
     
     sidebar.classList.toggle('hide');
     sidebar.classList.toggle('show');
     content.classList.toggle('full');
-    overlay.classList.toggle('show');
+    if (isMobile) {
+        overlay.classList.toggle('show');
+    } else {
+        overlay.classList.remove('show');
+    }
 }
 
 function toggleTheme() {
