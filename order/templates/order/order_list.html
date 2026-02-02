@@ -5,136 +5,50 @@
 {% block content %}
 
 <style>
-    .search-section {
-        background: #f8f9fa;
-        border-radius: 12px;
-        padding: 20px;
-        border: 2px solid #e9ecef;
-    }
-    .action-buttons {
-        background: white;
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-    }
-    .btn-create {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border: none;
-        border-radius: 10px;
-        padding: 12px 24px;
-        font-weight: 600;
-        transition: all 0.3s;
-        color: white;
-    }
-    .btn-create:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-        color: white;
-    }
-    .btn-action {
-        border-radius: 10px;
-        padding: 10px 20px;
-        font-weight: 600;
-        transition: all 0.3s;
-        border: 2px solid;
-    }
-    .btn-action:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    }
-    .btn-import {
-        background: #10b981;
-        border-color: #10b981;
-        color: white;
-    }
-    .btn-import:hover {
-        .stats-card {
-            border-radius: 12px;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .stats-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.15) !important;
-        }
-        background: #059669;
-        border-color: #059669;
-        color: white;
-    }
-    .btn-export {
-        background: #0ea5e9;
-        border-color: #0ea5e9;
-        color: white;
-    }
-    .btn-export:hover {
-        background: #0284c7;
-        border-color: #0284c7;
-        color: white;
-    }
-    .btn-print {
-        background: #1f2937;
-        border-color: #1f2937;
-        color: white;
-    }
-    .btn-print:hover {
-        background: #111827;
-        border-color: #111827;
-        color: white;
-    }
-    .stats-tabs {
-        background: white;
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        margin-bottom: 30px;
-    }
-    .stat-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 10px;
-        padding: 20px;
-        color: white;
-        text-align: center;
-        transition: all 0.3s;
-    }
-    .stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
-    }
+    /* Order-specific styles */
     .stat-card.profit {
         background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     }
+    
     .stat-card.remaining {
         background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
     }
+    
     .stat-card.count {
         background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
     }
+    
     .stat-label {
         font-size: 14px;
         opacity: 0.9;
         margin-bottom: 8px;
         font-weight: 500;
     }
+    
     .stat-value {
         font-size: 28px;
         font-weight: 700;
         margin: 0;
     }
+    
     .ornament-link {
         color: #0d6efd;
         font-weight: 600;
         text-decoration: none;
     }
+    
     .ornament-link:hover {
         color: #0a58ca;
         text-decoration: underline;
     }
-    /* Compact ornament chips */
+    
     .ornament-chips {
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
         max-width: 260px;
     }
+    
     .ornament-chip {
         background: #eef2ff;
         color: #4338ca;
@@ -145,6 +59,7 @@
         line-height: 1.2;
         white-space: nowrap;
     }
+    
     .ornament-chip-muted {
         background: #f3f4f6;
         color: #4b5563;
