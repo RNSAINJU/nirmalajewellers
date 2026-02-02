@@ -1,5 +1,4 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse
 from django.db.models import Sum, Q, F, DecimalField
 from decimal import Decimal
 from django.utils import timezone
@@ -210,7 +209,7 @@ def calculate_daily_ornament_totals(target_date, gold_rate=None, silver_rate=Non
 
 def index(request):
     """Home page."""
-    return HttpResponse("Hello, Django on Ubuntu!")
+    return redirect('main:dashboard')
 
 
 def dashboard(request):

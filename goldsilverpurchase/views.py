@@ -1436,513 +1436,76 @@ def export_all_data_json(request):
             return str(obj)
         if hasattr(obj, 'strftime'):  # Handles both datetime and nepali_datetime.date
             return str(obj)
-        raise TypeError(f"Type {type(obj)} not serializable")
+        return str(obj)
 
     try:
         data = {}
 
+        def serialize_queryset(queryset):
+            rows = []
+            for obj in queryset:
+                row = {}
+                for field in obj._meta.fields:
+                    row[field.name] = field.value_from_object(obj)
+                rows.append(row)
+            return rows
+
         # --- Finance Models ---
         from finance.models import EmployeeSalary, SundryCreditor, SundryDebtor, Loan, CreditorTransaction, DebtorTransaction, Expense, Employee
-        
-        data['Employee'] = [
-            {
-                'id': e.id,
-                'first_name': e.first_name,
-                'last_name': e.last_name,
-                'email': e.email,
-                'phone': e.phone,
-                'position': e.position,
-                'base_salary': str(e.base_salary),
-                'hire_date': str(e.hire_date) if e.hire_date else None,
-                'is_active': e.is_active,
-                'created_at': str(e.created_at),
-                'updated_at': str(e.updated_at),
-            }
-            for e in Employee.objects.all()
-        ]
-
-        data['EmployeeSalary'] = [
-            {
-                'id': s.id,
-                'employee_name': s.employee.first_name + ' ' + s.employee.last_name if s.employee else "",
-                'month': str(s.month),
-                'total_salary': str(s.total_salary),
-                'amount_paid': str(s.amount_paid),
-                'status': s.status,
-                'created_at': str(s.created_at),
-                'updated_at': str(s.updated_at),
-            }
-            for s in EmployeeSalary.objects.select_related('employee').all()
-        ]
-
-        data['Expense'] = [
-            {
-                'id': ex.id,
-                'category': ex.category,
-                'description': ex.description,
-                'amount': str(ex.amount),
-                'expense_date': str(ex.expense_date),
-                'notes': ex.notes,
-                'created_at': str(ex.created_at),
-                'updated_at': str(ex.updated_at),
-            }
-            for ex in Expense.objects.all()
-        ]
-
-        data['SundryCreditor'] = [
-            {
-                'id': c.id,
-                'name': c.name,
-                'bs_date': str(c.bs_date) if c.bs_date else None,
-                'opening_balance': str(c.opening_balance),
-                'current_balance': str(c.current_balance),
-                'is_paid': c.is_paid,
-                'created_at': str(c.created_at),
-                'updated_at': str(c.updated_at),
-            }
-            for c in SundryCreditor.objects.all()
-        ]
-
-        data['SundryDebtor'] = [
-            {
-                'id': d.id,
-                'name': d.name,
-                'bs_date': str(d.bs_date) if d.bs_date else None,
-                'opening_balance': str(d.opening_balance),
-                'current_balance': str(d.current_balance),
-                'is_paid': d.is_paid,
-                'created_at': str(d.created_at),
-                'updated_at': str(d.updated_at),
-            }
-            for d in SundryDebtor.objects.all()
-        ]
-
-        data['Loan'] = [
-            {
-                'id': l.id,
-                'bank_name': l.bank_name,
-                'amount': str(l.amount),
-                'interest_rate': str(l.interest_rate),
-                'start_date': str(l.start_date),
-                'notes': l.notes,
-                'created_at': str(l.created_at),
-                'updated_at': str(l.updated_at),
-            }
-            for l in Loan.objects.all()
-        ]
-
-        data['CreditorTransaction'] = [
-            {
-                'id': tx.id,
-                'creditor_name': tx.creditor.name if tx.creditor else "",
-                'transaction_type': tx.transaction_type,
-                'reference_no': tx.reference_no,
-                'amount': str(tx.amount),
-                'transaction_date': str(tx.transaction_date),
-                'due_date': str(tx.due_date) if tx.due_date else None,
-                'created_at': str(tx.created_at),
-            }
-            for tx in CreditorTransaction.objects.select_related('creditor').all()
-        ]
-
-        data['DebtorTransaction'] = [
-            {
-                'id': tx.id,
-                'debtor_name': tx.debtor.name if tx.debtor else "",
-                'transaction_type': tx.transaction_type,
-                'reference_no': tx.reference_no,
-                'amount': str(tx.amount),
-                'transaction_date': str(tx.transaction_date),
-                'due_date': str(tx.due_date) if tx.due_date else None,
-                'created_at': str(tx.created_at),
-            }
-            for tx in DebtorTransaction.objects.select_related('debtor').all()
-        ]
 
         # --- GoldSilverPurchase Models ---
         from goldsilverpurchase.models import GoldSilverPurchase, CustomerPurchase, MetalStock, MetalStockMovement, Party, MetalStockType
-        
-        data['Party'] = [
-            {
-                'id': p.id,
-                'party_name': p.party_name,
-                'panno': p.panno,
-            }
-            for p in Party.objects.all()
-        ]
-
-        data['MetalStockType'] = [
-            {
-                'id': mt.id,
-                'name': mt.name,
-                'description': mt.description,
-            }
-            for mt in MetalStockType.objects.all()
-        ]
-
-        data['GoldSilverPurchase'] = [
-            {
-                'bill_no': p.bill_no,
-                'bill_date': str(p.bill_date),
-                'party_name': p.party.party_name if p.party else "",
-                'particular': p.particular,
-                'metal_type': p.metal_type,
-                'purity': p.purity,
-                'quantity': str(p.quantity),
-                'rate': str(p.rate),
-                'rate_unit': p.rate_unit,
-                'wages': str(p.wages),
-                'discount': str(p.discount),
-                'amount': str(p.amount),
-                'payment_mode': p.payment_mode,
-                'is_paid': p.is_paid,
-                'remarks': p.remarks,
-                'created_at': str(p.created_at),
-                'updated_at': str(p.updated_at),
-            }
-            for p in GoldSilverPurchase.objects.select_related("party").all()
-        ]
-
-        data['CustomerPurchase'] = [
-            {
-                'sn': cp.sn,
-                'purchase_date': str(cp.purchase_date) if cp.purchase_date else None,
-                'customer_name': cp.customer_name,
-                'location': cp.location,
-                'phone_no': cp.phone_no,
-                'metal_type': cp.metal_type,
-                'ornament_name': cp.ornament_name,
-                'weight': str(cp.weight),
-                'refined_weight': str(cp.refined_weight),
-                'rate': str(cp.rate),
-                'amount': str(cp.amount),
-                'created_at': str(cp.created_at),
-                'updated_at': str(cp.updated_at),
-            }
-            for cp in CustomerPurchase.objects.all()
-        ]
-
-        data['MetalStock'] = [
-            {
-                'id': ms.id,
-                'metal_type': ms.metal_type,
-                'stock_type': ms.stock_type.name if ms.stock_type else "",
-                'purity': ms.purity,
-                'quantity': str(ms.quantity),
-                'unit_cost': str(ms.unit_cost),
-                'rate_unit': ms.rate_unit,
-                'total_cost': str(ms.total_cost),
-                'location': ms.location,
-                'remarks': ms.remarks,
-                'created_at': str(ms.created_at),
-                'updated_at': str(ms.updated_at),
-            }
-            for ms in MetalStock.objects.select_related("stock_type").all()
-        ]
-
-        data['MetalStockMovement'] = [
-            {
-                'id': msm.id,
-                'metal_stock_id': msm.metal_stock_id,
-                'movement_type': msm.movement_type,
-                'quantity': str(msm.quantity),
-                'rate': str(msm.rate),
-                'reference_type': msm.reference_type,
-                'reference_id': msm.reference_id,
-                'notes': msm.notes,
-                'movement_date': str(msm.movement_date) if msm.movement_date else None,
-                'created_at': str(msm.created_at),
-                'updated_at': str(msm.updated_at),
-            }
-            for msm in MetalStockMovement.objects.all()
-        ]
 
         # --- Main Models ---
         from main.models import Stock, DailyRate
-        
-        data['Stock'] = [
-            {
-                'id': s.id,
-                'year': s.year,
-                'diamond': str(s.diamond),
-                'gold': str(s.gold),
-                'silver': str(s.silver),
-                'jardi': str(s.jardi),
-                'wages': str(s.wages),
-                'gold_silver_rate_unit': s.gold_silver_rate_unit,
-                'diamond_rate': str(s.diamond_rate),
-                'gold_rate': str(s.gold_rate),
-                'silver_rate': str(s.silver_rate),
-                'created_at': str(s.created_at),
-                'updated_at': str(s.updated_at),
-            }
-            for s in Stock.objects.all()
-        ]
-
-        data['DailyRate'] = [
-            {
-                'id': dr.id,
-                'bs_date': dr.bs_date,
-                'gold_rate': str(dr.gold_rate),
-                'silver_rate': str(dr.silver_rate),
-                'gold_rate_10g': str(dr.gold_rate_10g),
-                'silver_rate_10g': str(dr.silver_rate_10g),
-                'created_at': str(dr.created_at),
-                'updated_at': str(dr.updated_at),
-            }
-            for dr in DailyRate.objects.all()
-        ]
 
         # --- Ornament Models ---
         from ornament.models import Stone, Motimala, Potey, MainCategory, SubCategory, Kaligar, Kaligar_Ornaments, Kaligar_CashAccount, Kaligar_GoldAccount, Ornament
-        
-        data['Stone'] = [
-            {
-                'id': st.id,
-                'name': st.name,
-                'cost_per_carat': str(st.cost_per_carat),
-                'carat': str(st.carat),
-                'cost_price': str(st.cost_price),
-                'sales_per_carat': str(st.sales_per_carat),
-                'sales_price': str(st.sales_price),
-                'profit': str(st.profit),
-                'created_at': str(st.created_at),
-                'updated_at': str(st.updated_at),
-            }
-            for st in Stone.objects.all()
-        ]
-
-        data['Motimala'] = [
-            {
-                'id': m.id,
-                'name': m.name,
-                'cost_per_mala': str(m.cost_per_mala),
-                'quantity': m.quantity,
-                'cost_price': str(m.cost_price),
-                'sales_per_mala': str(m.sales_per_mala),
-                'sales_price': str(m.sales_price),
-                'profit': str(m.profit),
-                'created_at': str(m.created_at),
-                'updated_at': str(m.updated_at),
-            }
-            for m in Motimala.objects.all()
-        ]
-
-        data['Potey'] = [
-            {
-                'id': p.id,
-                'name': p.name,
-                'loon': p.loon,
-                'cost_per_loon': str(p.cost_per_loon),
-                'cost_price': str(p.cost_price),
-                'sales_per_loon': str(p.sales_per_loon),
-                'sales_price': str(p.sales_price),
-                'profit': str(p.profit),
-                'created_at': str(p.created_at),
-                'updated_at': str(p.updated_at),
-            }
-            for p in Potey.objects.all()
-        ]
-
-        data['MainCategory'] = [
-            {
-                'id': mc.id,
-                'name': mc.name,
-            }
-            for mc in MainCategory.objects.all()
-        ]
-
-        data['SubCategory'] = [
-            {
-                'id': sc.id,
-                'name': sc.name,
-            }
-            for sc in SubCategory.objects.all()
-        ]
-
-        data['Ornament'] = [
-            {
-                'id': o.id,
-                'code': o.code,
-                'ornament_name': o.ornament_name,
-                'type': o.type,
-                'ornament_type': o.ornament_type,
-                'metal_type': o.metal_type,
-                'weight': str(o.weight),
-                'status': o.status,
-                'created_at': str(o.created_at),
-                'updated_at': str(o.updated_at),
-            }
-            for o in Ornament.objects.all()
-        ]
-
-        data['Kaligar'] = [
-            {
-                'id': k.id,
-                'name': k.name,
-                'address': k.address,
-                'phone_no': k.phone_no,
-            }
-            for k in Kaligar.objects.all()
-        ]
-
-        data['Kaligar_Ornaments'] = [
-            {
-                'id': ko.id,
-                'kaligar': ko.kaligar.name if ko.kaligar else "",
-                'date': str(ko.date) if ko.date else None,
-                'gold_given': str(ko.gold_given) if ko.gold_given else None,
-                'ornament_weight': str(ko.ornament_weight) if ko.ornament_weight else None,
-                'jarti': str(ko.jarti) if ko.jarti else None,
-                'gold_return': str(ko.gold_return) if ko.gold_return else None,
-                'gold_loss': str(ko.gold_loss) if ko.gold_loss else None,
-                'gold_purity': ko.gold_purity,
-            }
-            for ko in Kaligar_Ornaments.objects.select_related("kaligar").all()
-        ]
-
-        data['Kaligar_CashAccount'] = [
-            {
-                'id': kc.id,
-                'kaligar': kc.kaligar.name if kc.kaligar else "",
-                'date': str(kc.date) if kc.date else None,
-                'particular': kc.particular,
-                'amount_taken': str(kc.amount_taken) if kc.amount_taken else None,
-                'to_pay': str(kc.to_pay) if kc.to_pay else None,
-                'provided_by': kc.provided_by,
-            }
-            for kc in Kaligar_CashAccount.objects.select_related("kaligar").all()
-        ]
-
-        data['Kaligar_GoldAccount'] = [
-            {
-                'id': kg.id,
-                'kaligar': kg.kaligar.name if kg.kaligar else "",
-                'date': str(kg.date) if kg.date else None,
-                'gold_deposit': str(kg.gold_deposit) if kg.gold_deposit else None,
-                'gold_loss': str(kg.gold_loss) if kg.gold_loss else None,
-                'gold_remaining': str(kg.gold_remaining) if kg.gold_remaining else None,
-            }
-            for kg in Kaligar_GoldAccount.objects.select_related("kaligar").all()
-        ]
 
         # --- Order Models ---
         from order.models import Order, OrderMetalStock, OrderPayment, OrderOrnament, DebtorPayment
-        
-        data['Order'] = [
-            {
-                'sn': o.sn,
-                'order_date': str(o.order_date) if o.order_date else None,
-                'deliver_date': str(o.deliver_date) if o.deliver_date else None,
-                'customer_name': o.customer_name,
-                'phone_number': o.phone_number,
-                'status': o.status,
-                'order_type': o.order_type,
-                'description': o.description,
-                'discount': str(o.discount),
-                'amount': str(o.amount),
-                'subtotal': str(o.subtotal),
-                'tax': str(o.tax),
-                'total': str(o.total),
-                'remaining_amount': str(o.remaining_amount),
-                'created_at': str(o.created_at),
-                'updated_at': str(o.updated_at),
-            }
-            for o in Order.objects.all()
-        ]
-
-        data['OrderMetalStock'] = [
-            {
-                'id': oms.id,
-                'order_id': oms.order_id,
-                'stock_type': oms.stock_type.name if oms.stock_type else "",
-                'metal_type': oms.metal_type,
-                'purity': oms.purity,
-                'quantity': str(oms.quantity),
-                'rate_per_gram': str(oms.rate_per_gram),
-                'rate_unit': oms.rate_unit,
-                'line_amount': str(oms.line_amount),
-                'remarks': oms.remarks,
-                'created_at': str(oms.created_at),
-                'updated_at': str(oms.updated_at),
-            }
-            for oms in OrderMetalStock.objects.select_related("stock_type").all()
-        ]
-
-        data['OrderPayment'] = [
-            {
-                'id': op.id,
-                'order_id': op.order_id,
-                'payment_mode': op.payment_mode,
-                'amount': str(op.amount),
-                'created_at': str(op.created_at),
-                'updated_at': str(op.updated_at),
-            }
-            for op in OrderPayment.objects.all()
-        ]
-
-        data['OrderOrnament'] = [
-            {
-                'id': oo.id,
-                'order_id': oo.order_id,
-                'ornament_id': oo.ornament_id,
-                'gold_rate': str(oo.gold_rate),
-                'diamond_rate': str(oo.diamond_rate),
-                'zircon_rate': str(oo.zircon_rate),
-                'stone_rate': str(oo.stone_rate),
-                'jarti': str(oo.jarti),
-                'jyala': str(oo.jyala),
-                'line_amount': str(oo.line_amount),
-                'created_at': str(oo.created_at),
-                'updated_at': str(oo.updated_at),
-            }
-            for oo in OrderOrnament.objects.all()
-        ]
-
-        data['DebtorPayment'] = [
-            {
-                'id': dp.id,
-                'order_id': dp.order_payment.order_id,
-                'debtor_name': dp.debtor.name if dp.debtor else "",
-                'transaction_type': dp.transaction_type,
-                'created_at': str(dp.created_at),
-                'updated_at': str(dp.updated_at),
-            }
-            for dp in DebtorPayment.objects.select_related("order_payment__order", "debtor").all()
-        ]
 
         # --- Sales Models ---
         from sales.models import Sale, SalesMetalStock
-        
-        data['Sale'] = [
-            {
-                'id': s.id,
-                'order_id': s.order_id,
-                'bill_no': s.bill_no,
-                'sale_date': str(s.sale_date) if s.sale_date else None,
-                'created_at': str(s.created_at),
-                'updated_at': str(s.updated_at),
-            }
-            for s in Sale.objects.all()
+
+        model_map = [
+            ("Employee", Employee),
+            ("EmployeeSalary", EmployeeSalary),
+            ("Expense", Expense),
+            ("SundryCreditor", SundryCreditor),
+            ("SundryDebtor", SundryDebtor),
+            ("Loan", Loan),
+            ("CreditorTransaction", CreditorTransaction),
+            ("DebtorTransaction", DebtorTransaction),
+            ("Party", Party),
+            ("MetalStockType", MetalStockType),
+            ("GoldSilverPurchase", GoldSilverPurchase),
+            ("CustomerPurchase", CustomerPurchase),
+            ("MetalStock", MetalStock),
+            ("MetalStockMovement", MetalStockMovement),
+            ("Stock", Stock),
+            ("DailyRate", DailyRate),
+            ("Stone", Stone),
+            ("Motimala", Motimala),
+            ("Potey", Potey),
+            ("MainCategory", MainCategory),
+            ("SubCategory", SubCategory),
+            ("Kaligar", Kaligar),
+            ("Kaligar_Ornaments", Kaligar_Ornaments),
+            ("Kaligar_CashAccount", Kaligar_CashAccount),
+            ("Kaligar_GoldAccount", Kaligar_GoldAccount),
+            ("Ornament", Ornament),
+            ("Order", Order),
+            ("OrderMetalStock", OrderMetalStock),
+            ("OrderPayment", OrderPayment),
+            ("OrderOrnament", OrderOrnament),
+            ("DebtorPayment", DebtorPayment),
+            ("Sale", Sale),
+            ("SalesMetalStock", SalesMetalStock),
         ]
 
-        data['SalesMetalStock'] = [
-            {
-                'id': sms.id,
-                'sale_id': sms.sale_id,
-                'stock_type': sms.stock_type.name if sms.stock_type else "",
-                'metal_type': sms.metal_type,
-                'purity': sms.purity,
-                'quantity': str(sms.quantity),
-                'rate_per_gram': str(sms.rate_per_gram),
-                'rate_unit': sms.rate_unit,
-                'line_amount': str(sms.line_amount),
-                'remarks': sms.remarks,
-                'created_at': str(sms.created_at),
-                'updated_at': str(sms.updated_at),
-            }
-            for sms in SalesMetalStock.objects.select_related("stock_type").all()
-        ]
+        for key, model in model_map:
+            data[key] = serialize_queryset(model.objects.all())
 
         # Create JSON response
         json_str = json.dumps(data, default=json_serializer, indent=2)
@@ -1951,13 +1514,17 @@ def export_all_data_json(request):
         return response
 
     except Exception as e:
-        messages.error(None, f"Error exporting JSON: {str(e)}")
+        messages.error(request, f"Error exporting JSON: {str(e)}")
         return HttpResponse(f"Export failed: {str(e)}", status=500)
 
 
 def import_all_data_json(request):
     """Import all data from a JSON file for faster restoration."""
     import json
+    from datetime import date, datetime
+    from django.db import models as dj_models, transaction
+    from django.utils.dateparse import parse_date, parse_datetime
+    from nepali_datetime_field.models import NepaliDateField
     
     if request.method != "POST" or "import_file" not in request.FILES:
         return redirect("gsp:data_settings")
@@ -1972,142 +1539,252 @@ def import_all_data_json(request):
         file_content = file.read().decode('utf-8')
         data = json.loads(file_content)
         imported_count = {}
+        errors = []
 
-        # --- Import GoldSilverPurchase ---
-        if "GoldSilverPurchase" in data:
-            count = 0
-            for row in data["GoldSilverPurchase"]:
+        def parse_nepali_date(value):
+            if not value:
+                return None
+            if hasattr(value, "strftime"):
+                return value
+            try:
+                y, m, d = map(int, str(value).split("-"))
+                return ndt.date(y, m, d) if ndt else None
+            except Exception:
+                return None
+
+        def is_int_like(value):
+            try:
+                int(str(value))
+                return True
+            except Exception:
+                return False
+
+        def parse_field_value(field, value):
+            if value in (None, ""):
+                return None
+            if isinstance(field, dj_models.DecimalField):
+                return to_decimal(value)
+            if isinstance(field, NepaliDateField):
+                return parse_nepali_date(value)
+            if isinstance(field, dj_models.DateTimeField):
+                return parse_datetime(str(value)) or None
+            if isinstance(field, dj_models.DateField):
+                return parse_date(str(value)) or None
+            if isinstance(field, dj_models.BooleanField):
+                if isinstance(value, bool):
+                    return value
+                return str(value).lower() in {"1", "true", "yes", "y"}
+            if isinstance(field, (dj_models.IntegerField, dj_models.AutoField, dj_models.BigIntegerField, dj_models.PositiveIntegerField)):
                 try:
-                    if GoldSilverPurchase.objects.filter(bill_no=str(row['bill_no'])).exists():
+                    return int(str(value))
+                except Exception:
+                    return None
+            return value
+
+        def resolve_fk_id(model_key, field, row):
+            raw = row.get(field.name)
+            if raw in (None, ""):
+                raw = row.get(f"{field.name}_id")
+
+            if raw in (None, ""):
+                if field.name == "employee":
+                    raw = row.get("employee_name")
+                    if raw:
+                        parts = str(raw).strip().split()
+                        first = parts[0] if parts else ""
+                        last = " ".join(parts[1:]) if len(parts) > 1 else ""
+                        employee = Employee.objects.filter(first_name=first, last_name=last).first()
+                        return employee.pk if employee else None
+                if field.name == "creditor":
+                    raw = row.get("creditor_name")
+                if field.name == "debtor":
+                    raw = row.get("debtor_name")
+                if field.name == "party":
+                    raw = row.get("party_name")
+                if field.name == "kaligar":
+                    raw = row.get("kaligar") or row.get("kaligar_name")
+                if field.name == "stock_type":
+                    raw = row.get("stock_type")
+                if field.name == "order_payment":
+                    raw = row.get("order_payment_id")
+                    if raw in (None, ""):
+                        order_id = row.get("order_id") or row.get("order")
+                        if order_id:
+                            payment = OrderPayment.objects.filter(order_id=order_id).order_by("id").first()
+                            return payment.pk if payment else None
+                if field.name == "order":
+                    raw = row.get("order_id")
+                if field.name == "ornament":
+                    raw = row.get("ornament_id") or row.get("ornament_code")
+
+            if raw in (None, ""):
+                return None
+
+            if is_int_like(raw):
+                return int(str(raw))
+
+            related_model = field.remote_field.model
+            if hasattr(related_model, "party_name"):
+                obj = related_model.objects.filter(party_name=raw).first()
+                return obj.pk if obj else None
+            if hasattr(related_model, "name"):
+                obj = related_model.objects.filter(name=raw).first()
+                return obj.pk if obj else None
+            if hasattr(related_model, "code"):
+                obj = related_model.objects.filter(code=raw).first()
+                return obj.pk if obj else None
+            return None
+
+        lookup_fields = {
+            "Employee": [("email",), ("first_name", "last_name", "position")],
+            "EmployeeSalary": [("employee", "month")],
+            "Expense": [("category", "description", "expense_date", "amount")],
+            "SundryCreditor": [("name",)],
+            "SundryDebtor": [("name",)],
+            "Loan": [("bank_name", "start_date", "amount", "interest_rate")],
+            "CreditorTransaction": [("creditor", "transaction_type", "reference_no", "amount", "transaction_date")],
+            "DebtorTransaction": [("debtor", "transaction_type", "reference_no", "amount", "transaction_date")],
+            "Party": [("party_name", "panno")],
+            "MetalStockType": [("name",)],
+            "MetalStock": [("metal_type", "stock_type", "purity", "location")],
+            "GoldSilverPurchase": [("bill_no",)],
+            "CustomerPurchase": [("sn",)],
+            "MetalStockMovement": [("metal_stock", "movement_type", "quantity", "rate", "reference_type", "reference_id", "movement_date")],
+            "Stock": [("year",)],
+            "DailyRate": [("bs_date",)],
+            "Stone": [("name",)],
+            "Motimala": [("name",)],
+            "Potey": [("name",)],
+            "MainCategory": [("name",)],
+            "SubCategory": [("name",)],
+            "Kaligar": [("name", "panno")],
+            "Kaligar_Ornaments": [("kaligar", "date", "ornament_weight", "gold_given")],
+            "Kaligar_CashAccount": [("kaligar", "date", "particular", "amount_taken", "to_pay")],
+            "Kaligar_GoldAccount": [("kaligar", "date", "gold_deposit")],
+            "Ornament": [("code",)],
+            "Order": [("sn",)],
+            "OrderMetalStock": [("order", "stock_type", "metal_type", "purity", "quantity", "rate_per_gram")],
+            "OrderPayment": [("order", "payment_mode", "amount")],
+            "OrderOrnament": [("order", "ornament", "line_amount")],
+            "DebtorPayment": [("order_payment",)],
+            "Sale": [("order",)],
+            "SalesMetalStock": [("sale", "stock_type", "metal_type", "purity", "quantity", "rate_per_gram")],
+        }
+
+        def build_lookup(model_key, model, row):
+            pk_field = model._meta.pk
+            pk_name = pk_field.name
+            if pk_name in row and row.get(pk_name) not in (None, ""):
+                return {pk_name: parse_field_value(pk_field, row.get(pk_name))}
+            for fields in lookup_fields.get(model_key, []):
+                values = {}
+                ok = True
+                for field_name in fields:
+                    field = model._meta.get_field(field_name)
+                    if isinstance(field, dj_models.ForeignKey):
+                        value = resolve_fk_id(model_key, field, row)
+                    else:
+                        value = parse_field_value(field, row.get(field_name))
+                    if value in (None, ""):
+                        ok = False
+                        break
+                    values[field_name] = value
+                if ok:
+                    return values
+            return None
+
+        def upsert_rows(model_key, model, rows):
+            count = 0
+            for row in rows:
+                try:
+                    lookup = build_lookup(model_key, model, row)
+                    if not lookup:
+                        errors.append(f"{model_key}: missing lookup for row")
                         continue
 
-                    party = None
-                    if row.get('party_name'):
-                        party = Party.objects.filter(party_name=row['party_name']).first()
-                        if not party:
-                            party = Party.objects.create(
-                                party_name=row['party_name'],
-                                panno="000000000",
-                            )
+                    defaults = {}
+                    for field in model._meta.fields:
+                        if field.primary_key:
+                            continue
+                        if getattr(field, "auto_now", False) or getattr(field, "auto_now_add", False):
+                            continue
+                        if isinstance(field, dj_models.ForeignKey):
+                            fk_id = resolve_fk_id(model_key, field, row)
+                            if fk_id is not None:
+                                defaults[f"{field.name}_id"] = fk_id
+                            else:
+                                defaults[field.name] = None
+                        else:
+                            if field.name in row:
+                                defaults[field.name] = parse_field_value(field, row.get(field.name))
 
-                    GoldSilverPurchase.objects.create(
-                        bill_no=str(row['bill_no']),
-                        bill_date=ndt.date(*map(int, str(row['bill_date']).split('-'))) if ndt and row.get('bill_date') else None,
-                        party=party,
-                        particular=row.get('particular'),
-                        metal_type=row.get('metal_type', 'gold'),
-                        purity=row.get('purity', '22K'),
-                        quantity=to_decimal(row.get('quantity', 0)),
-                        rate=to_decimal(row.get('rate', 0)),
-                        rate_unit=row.get('rate_unit', 'tola'),
-                        wages=to_decimal(row.get('wages', 0)),
-                        discount=to_decimal(row.get('discount', 0)),
-                        amount=to_decimal(row.get('amount', 0)),
-                        payment_mode=row.get('payment_mode', 'cash'),
-                        is_paid=row.get('is_paid', False),
-                        remarks=row.get('remarks', ''),
-                    )
+                    model.objects.update_or_create(defaults=defaults, **lookup)
                     count += 1
-                except Exception as e:
-                    messages.warning(request, f"Skipped GoldSilverPurchase {row.get('bill_no')}: {e}")
-            imported_count['GoldSilverPurchase'] = count
+                except Exception as exc:
+                    errors.append(f"{model_key}: {exc}")
+            imported_count[model_key] = count
 
-        # --- Import CustomerPurchase ---
-        if "CustomerPurchase" in data:
-            count = 0
-            for row in data["CustomerPurchase"]:
-                try:
-                    if CustomerPurchase.objects.filter(sn=str(row['sn'])).exists():
-                        continue
+        # --- Import models in dependency order ---
+        from finance.models import EmployeeSalary, SundryCreditor, SundryDebtor, Loan, CreditorTransaction, DebtorTransaction, Expense, Employee
+        from goldsilverpurchase.models import GoldSilverPurchase, CustomerPurchase, MetalStock, MetalStockMovement, Party, MetalStockType
+        from main.models import Stock, DailyRate
+        from ornament.models import Stone, Motimala, Potey, MainCategory, SubCategory, Kaligar, Kaligar_Ornaments, Kaligar_CashAccount, Kaligar_GoldAccount, Ornament
+        from order.models import Order, OrderMetalStock, OrderPayment, OrderOrnament, DebtorPayment
+        from sales.models import Sale, SalesMetalStock
 
-                    CustomerPurchase.objects.create(
-                        sn=str(row['sn']),
-                        purchase_date=ndt.date(*map(int, str(row['purchase_date']).split('-'))) if ndt and row.get('purchase_date') else None,
-                        customer_name=row.get('customer_name', ''),
-                        location=row.get('location', ''),
-                        phone_no=row.get('phone_no', ''),
-                        metal_type=row.get('metal_type', 'gold'),
-                        ornament_name=row.get('ornament_name', ''),
-                        weight=to_decimal(row.get('weight', 0)),
-                        refined_weight=to_decimal(row.get('refined_weight', 0)),
-                        rate=to_decimal(row.get('rate', 0)),
-                        amount=to_decimal(row.get('amount', 0)),
-                    )
-                    count += 1
-                except Exception as e:
-                    messages.warning(request, f"Skipped CustomerPurchase {row.get('sn')}: {e}")
-            imported_count['CustomerPurchase'] = count
+        model_order = [
+            ("Employee", Employee),
+            ("SundryCreditor", SundryCreditor),
+            ("SundryDebtor", SundryDebtor),
+            ("Loan", Loan),
+            ("Expense", Expense),
+            ("EmployeeSalary", EmployeeSalary),
+            ("CreditorTransaction", CreditorTransaction),
+            ("DebtorTransaction", DebtorTransaction),
+            ("Party", Party),
+            ("MetalStockType", MetalStockType),
+            ("MetalStock", MetalStock),
+            ("GoldSilverPurchase", GoldSilverPurchase),
+            ("CustomerPurchase", CustomerPurchase),
+            ("Kaligar", Kaligar),
+            ("MetalStockMovement", MetalStockMovement),
+            ("Stock", Stock),
+            ("DailyRate", DailyRate),
+            ("MainCategory", MainCategory),
+            ("SubCategory", SubCategory),
+            ("Stone", Stone),
+            ("Motimala", Motimala),
+            ("Potey", Potey),
+            ("Kaligar_Ornaments", Kaligar_Ornaments),
+            ("Kaligar_CashAccount", Kaligar_CashAccount),
+            ("Kaligar_GoldAccount", Kaligar_GoldAccount),
+            ("Order", Order),
+            ("Ornament", Ornament),
+            ("OrderMetalStock", OrderMetalStock),
+            ("OrderPayment", OrderPayment),
+            ("OrderOrnament", OrderOrnament),
+            ("DebtorPayment", DebtorPayment),
+            ("Sale", Sale),
+            ("SalesMetalStock", SalesMetalStock),
+        ]
 
-        # --- Import Orders ---
-        if "Order" in data:
-            count = 0
-            for row in data["Order"]:
-                try:
-                    if Order.objects.filter(sn=row['sn']).exists():
-                        continue
-
-                    Order.objects.create(
-                        sn=row['sn'],
-                        order_date=ndt.date(*map(int, str(row['order_date']).split('-'))) if ndt and row.get('order_date') else None,
-                        deliver_date=ndt.date(*map(int, str(row['deliver_date']).split('-'))) if ndt and row.get('deliver_date') else None,
-                        customer_name=row.get('customer_name', ''),
-                        phone_number=row.get('phone_number', ''),
-                        status=row.get('status', 'order'),
-                        order_type=row.get('order_type', 'custom'),
-                        description=row.get('description', ''),
-                        discount=to_decimal(row.get('discount', 0)),
-                        amount=to_decimal(row.get('amount', 0)),
-                        subtotal=to_decimal(row.get('subtotal', 0)),
-                        tax=to_decimal(row.get('tax', 0)),
-                        total=to_decimal(row.get('total', 0)),
-                        remaining_amount=to_decimal(row.get('remaining_amount', 0)),
-                    )
-                    count += 1
-                except Exception as e:
-                    messages.warning(request, f"Skipped Order {row.get('sn')}: {e}")
-            imported_count['Order'] = count
-
-        # --- Import OrderPayments ---
-        if "OrderPayment" in data:
-            count = 0
-            for row in data["OrderPayment"]:
-                try:
-                    try:
-                        order = Order.objects.get(sn=row['order_id'])
-                        OrderPayment.objects.create(
-                            order=order,
-                            payment_mode=row.get('payment_mode', 'cash'),
-                            amount=to_decimal(row.get('amount', 0)),
-                        )
-                        count += 1
-                    except Order.DoesNotExist:
-                        pass
-                except Exception as e:
-                    messages.warning(request, f"Skipped OrderPayment: {e}")
-            imported_count['OrderPayment'] = count
-
-        # --- Import Sales ---
-        if "Sale" in data:
-            count = 0
-            for row in data["Sale"]:
-                try:
-                    try:
-                        order = Order.objects.get(sn=row['order_id'])
-                        if not Sale.objects.filter(order=order).exists():
-                            Sale.objects.create(
-                                order=order,
-                                bill_no=row.get('bill_no'),
-                                sale_date=ndt.date(*map(int, str(row['sale_date']).split('-'))) if ndt and row.get('sale_date') else None,
-                            )
-                            count += 1
-                    except Order.DoesNotExist:
-                        pass
-                except Exception as e:
-                    messages.warning(request, f"Skipped Sale: {e}")
-            imported_count['Sale'] = count
+        with transaction.atomic():
+            for key, model in model_order:
+                rows = data.get(key, [])
+                if rows:
+                    upsert_rows(key, model, rows)
 
         summary = " | ".join([f"{k}: {v}" for k, v in imported_count.items() if v > 0])
-        messages.success(request, f"JSON import completed: {summary}")
+        if summary:
+            messages.success(request, f"JSON import completed: {summary}")
+        else:
+            messages.success(request, "JSON import completed.")
+
+        if errors:
+            error_preview = "; ".join(errors[:5])
+            extra = f" ... and {len(errors) - 5} more" if len(errors) > 5 else ""
+            messages.warning(request, f"Some rows were skipped: {error_preview}{extra}")
+
         return redirect("gsp:data_settings")
 
     except json.JSONDecodeError:
