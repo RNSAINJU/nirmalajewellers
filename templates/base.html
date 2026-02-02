@@ -234,71 +234,203 @@
 <!-- SIDEBAR -->
 <nav class="sidebar" id="sidebar">
     {% block sidebar %}
-    <div class="mb-3">
-        <a href="{% url 'main:dashboard' %}" class="nav-link">
-            <span><i class="bi bi-house-door"></i> Dashboard</span>
-        </a>
-    </div>
+    {% if user.is_authenticated %}
+        {% url 'main:dashboard' as dashboard_url %}
+        {% url 'main:stock_report' as stock_report_url %}
+        {% url 'main:monthly_stock_report' as monthly_stock_report_url %}
+        {% url 'main:daily_rates' as daily_rates_url %}
+        {% url 'main:add_stock' as add_stock_url %}
+        {% url 'main:total_assets' as total_assets_url %}
+        {% url 'main:account_settings' as account_settings_url %}
+        {% url 'main:role_list' as role_list_url %}
 
-    <div class="mb-3">
-        <a href="{% url 'ornament:list' %}" class="nav-link">
-            <span><i class="bi bi-gem"></i> Ornaments</span>
-        </a>
-        <a href="{% url 'gsp:list' %}" class="nav-link">
-            <span><i class="bi bi-cart-check"></i> Gold/Silver Purchase</span>
-        </a>
-        <a href="{% url 'gsp:customer_purchase_list' %}" class="nav-link">
-            <span><i class="bi bi-people"></i> Customer Purchase</span>
-        </a>
-    </div>
+        {% url 'ornament:list' as ornament_list_url %}
+        {% url 'ornament:create' as ornament_create_url %}
+        {% url 'ornament:create_multiple' as ornament_create_multiple_url %}
+        {% url 'ornament:createmaincategory' as ornament_maincategory_url %}
+        {% url 'ornament:createsubcategory' as ornament_subcategory_url %}
+        {% url 'ornament:report' as ornament_report_url %}
+        {% url 'ornament:weight_report' as ornament_weight_report_url %}
+        {% url 'ornament:rates_and_stock' as rates_and_stock_url %}
+        {% url 'ornament:kaligar_list' as kaligar_list_url %}
+        {% url 'ornament:stone_list' as stone_list_url %}
+        {% url 'ornament:motimala_list' as motimala_list_url %}
+        {% url 'ornament:potey_list' as potey_list_url %}
 
-    <div class="mb-3">
-        <a class="nav-link" data-bs-toggle="collapse" href="#ordersMenu" role="button" aria-expanded="false">
-            <span><i class="bi bi-box-seam"></i> Orders</span>
-            <i class="bi bi-chevron-down"></i>
-        </a>
-        <div class="collapse" id="ordersMenu">
-            <a href="{% url 'order:list' %}" class="nav-link">Order List</a>
-            <a href="{% url 'order:create' %}" class="nav-link">Create Order</a>
+        {% url 'gsp:purchaselist' as gsp_purchase_list_url %}
+        {% url 'gsp:createpurchase' as gsp_create_purchase_url %}
+        {% url 'gsp:createparty' as gsp_create_party_url %}
+        {% url 'gsp:print_view' as gsp_print_url %}
+        {% url 'gsp:export_excel' as gsp_export_excel_url %}
+        {% url 'gsp:gsp_import_excel' as gsp_import_excel_url %}
+        {% url 'gsp:customer_purchase_list' as customer_purchase_url %}
+        {% url 'gsp:customer_purchase_create' as customer_purchase_create_url %}
+        {% url 'gsp:customer_export_excel' as customer_export_excel_url %}
+        {% url 'gsp:customer_import_excel' as customer_import_excel_url %}
+        {% url 'gsp:metal_stock_list' as metal_stock_list_url %}
+        {% url 'gsp:metal_stock_create' as metal_stock_create_url %}
+        {% url 'gsp:metal_stock_export_xlsx' as metal_stock_export_url %}
+        {% url 'gsp:metal_stock_import_xlsx' as metal_stock_import_url %}
+        {% url 'gsp:data_settings' as data_settings_url %}
+        {% url 'gsp:import_wizard' as import_wizard_url %}
+        {% url 'gsp:export_all_data_json' as export_all_data_json_url %}
+        {% url 'gsp:import_all_data_json' as import_all_data_json_url %}
+
+        {% url 'order:list' as order_list_url %}
+        {% url 'order:create' as order_create_url %}
+        {% url 'order:sales_list' as order_sales_list_url %}
+        {% url 'order:dashboard_report' as order_report_dashboard_url %}
+        {% url 'order:sales_report' as order_report_sales_url %}
+        {% url 'order:payment_report' as order_report_payment_url %}
+        {% url 'order:metal_report' as order_report_metal_url %}
+        {% url 'order:customer_report' as order_report_customer_url %}
+        {% url 'order:fast_slow_movers_report' as order_report_fast_slow_url %}
+        {% url 'order:stock_aging_report' as order_report_stock_aging_url %}
+        {% url 'order:margin_report' as order_report_margin_url %}
+        {% url 'order:payment_mix_report' as order_report_payment_mix_url %}
+        {% url 'order:debtor_aging_report' as order_report_debtor_aging_url %}
+        {% url 'order:monthly_sales_report' as order_report_monthly_sales_url %}
+        {% url 'order:daily_profit_loss_report' as order_report_daily_pl_url %}
+        {% url 'order:ornament_stock_report' as order_report_ornament_stock_url %}
+
+        {% url 'finance:finance_dashboard' as finance_dashboard_url %}
+        {% url 'finance:balance_sheet' as balance_sheet_url %}
+        {% url 'finance:loan_list' as loan_list_url %}
+        {% url 'finance:expense_list' as expense_list_url %}
+        {% url 'finance:employee_list' as employee_list_url %}
+        {% url 'finance:salary_list' as salary_list_url %}
+        {% url 'finance:debtor_list' as debtor_list_url %}
+        {% url 'finance:creditor_list' as creditor_list_url %}
+        {% url 'finance:cashbank_list' as cashbank_list_url %}
+        {% url 'finance:finance_export_all' as finance_export_all_url %}
+        {% url 'finance:finance_import_all' as finance_import_all_url %}
+
+        <div class="mb-3">
+            <a href="{{ dashboard_url }}" class="nav-link">
+                <span><i class="bi bi-house-door"></i> Dashboard</span>
+            </a>
         </div>
-    </div>
 
-    <div class="mb-3">
-        <a class="nav-link" data-bs-toggle="collapse" href="#financeMenu" role="button" aria-expanded="false">
-            <span><i class="bi bi-cash-stack"></i> Finance</span>
-            <i class="bi bi-chevron-down"></i>
-        </a>
-        <div class="collapse" id="financeMenu">
-            <a href="{% url 'finance:finance_dashboard' %}" class="nav-link">Dashboard</a>
-            <a href="{% url 'finance:expense_list' %}" class="nav-link">Expenses</a>
-            <a href="{% url 'finance:employee_list' %}" class="nav-link">Employees</a>
-            <a href="{% url 'finance:salary_list' %}" class="nav-link">Salaries</a>
+        <div class="mb-3">
+            <a class="nav-link" data-bs-toggle="collapse" href="#ornamentMenu" role="button" aria-expanded="false">
+                <span><i class="bi bi-gem"></i> Ornaments</span>
+                <i class="bi bi-chevron-down"></i>
+            </a>
+            <div class="collapse" id="ornamentMenu">
+                <a href="{{ ornament_list_url }}" class="nav-link">Ornament List</a>
+                <a href="{{ ornament_create_url }}" class="nav-link">Create Ornament</a>
+                <a href="{{ ornament_create_multiple_url }}" class="nav-link">Create Multiple</a>
+                <a href="{{ ornament_maincategory_url }}" class="nav-link">Main Category</a>
+                <a href="{{ ornament_subcategory_url }}" class="nav-link">Sub Category</a>
+                <a href="{{ ornament_report_url }}" class="nav-link">Category Report</a>
+                <a href="{{ ornament_weight_report_url }}" class="nav-link">Weight Report</a>
+                <a href="{{ rates_and_stock_url }}" class="nav-link">Rates & Stock</a>
+                <a href="{{ kaligar_list_url }}" class="nav-link">Kaligar List</a>
+                <a href="{{ stone_list_url }}" class="nav-link">Stones</a>
+                <a href="{{ motimala_list_url }}" class="nav-link">Moti Mala</a>
+                <a href="{{ potey_list_url }}" class="nav-link">Potey</a>
+            </div>
         </div>
-    </div>
 
-    <div class="mb-3">
-        <a href="{% url 'main:stock_report' %}" class="nav-link">
-            <span><i class="bi bi-bar-chart"></i> Stock Report</span>
-        </a>
-        <a href="{% url 'main:total_assets' %}" class="nav-link">
-            <span><i class="bi bi-wallet2"></i> Total Assets</span>
-        </a>
-    </div>
+        <div class="mb-3">
+            <a class="nav-link" data-bs-toggle="collapse" href="#purchaseMenu" role="button" aria-expanded="false">
+                <span><i class="bi bi-cart-check"></i> Gold/Silver Purchase</span>
+                <i class="bi bi-chevron-down"></i>
+            </a>
+            <div class="collapse" id="purchaseMenu">
+                <a href="{{ gsp_purchase_list_url }}" class="nav-link">Purchase List</a>
+                <a href="{{ gsp_create_purchase_url }}" class="nav-link">Create Purchase</a>
+                <a href="{{ gsp_create_party_url }}" class="nav-link">Create Party</a>
+                <a href="{{ gsp_print_url }}" class="nav-link">Print</a>
+                <a href="{{ gsp_export_excel_url }}" class="nav-link">Export Excel</a>
+                <a href="{{ gsp_import_excel_url }}" class="nav-link">Import Excel</a>
+                <hr class="dropdown-divider">
+                <a href="{{ customer_purchase_url }}" class="nav-link">Customer Purchases</a>
+                <a href="{{ customer_purchase_create_url }}" class="nav-link">Add Customer Purchase</a>
+                <a href="{{ customer_export_excel_url }}" class="nav-link">Customer Export</a>
+                <a href="{{ customer_import_excel_url }}" class="nav-link">Customer Import</a>
+                <hr class="dropdown-divider">
+                <a href="{{ metal_stock_list_url }}" class="nav-link">Metal Stock</a>
+                <a href="{{ metal_stock_create_url }}" class="nav-link">Create Metal Stock</a>
+                <a href="{{ metal_stock_export_url }}" class="nav-link">Metal Stock Export</a>
+                <a href="{{ metal_stock_import_url }}" class="nav-link">Metal Stock Import</a>
+                <hr class="dropdown-divider">
+                <a href="{{ data_settings_url }}" class="nav-link">Data Settings</a>
+                <a href="{{ import_wizard_url }}" class="nav-link">Import Wizard</a>
+                <a href="{{ export_all_data_json_url }}" class="nav-link">Export Data (JSON)</a>
+                <a href="{{ import_all_data_json_url }}" class="nav-link">Import Data (JSON)</a>
+            </div>
+        </div>
 
-    <div class="mb-3">
-        <a href="{% url 'gsp:data_settings' %}" class="nav-link">
-            <span><i class="bi bi-gear"></i> Data Settings</span>
-        </a>
-        <a href="{% url 'main:account_settings' %}" class="nav-link">
-            <span><i class="bi bi-person-circle"></i> Account Settings</span>
-        </a>
-    </div>
+        <div class="mb-3">
+            <a class="nav-link" data-bs-toggle="collapse" href="#ordersMenu" role="button" aria-expanded="false">
+                <span><i class="bi bi-box-seam"></i> Orders</span>
+                <i class="bi bi-chevron-down"></i>
+            </a>
+            <div class="collapse" id="ordersMenu">
+                <a href="{{ order_list_url }}" class="nav-link">Order List</a>
+                <a href="{{ order_create_url }}" class="nav-link">Create Order</a>
+                <a href="{{ order_sales_list_url }}" class="nav-link">Sales</a>
+                <hr class="dropdown-divider">
+                <a href="{{ order_report_dashboard_url }}" class="nav-link">Report Dashboard</a>
+                <a href="{{ order_report_sales_url }}" class="nav-link">Sales Analysis</a>
+                <a href="{{ order_report_payment_url }}" class="nav-link">Payment Analysis</a>
+                <a href="{{ order_report_metal_url }}" class="nav-link">Metal Analysis</a>
+                <a href="{{ order_report_customer_url }}" class="nav-link">Customer Analysis</a>
+                <a href="{{ order_report_fast_slow_url }}" class="nav-link">Fast/Slow Movers</a>
+                <a href="{{ order_report_stock_aging_url }}" class="nav-link">Stock Aging</a>
+                <a href="{{ order_report_margin_url }}" class="nav-link">Margin by Category</a>
+                <a href="{{ order_report_payment_mix_url }}" class="nav-link">Payment Mix</a>
+                <a href="{{ order_report_debtor_aging_url }}" class="nav-link">Debtor Aging</a>
+                <a href="{{ order_report_monthly_sales_url }}" class="nav-link">Monthly Sales</a>
+                <a href="{{ order_report_daily_pl_url }}" class="nav-link">Daily Profit/Loss</a>
+                <a href="{{ order_report_ornament_stock_url }}" class="nav-link">Ornament Stock</a>
+            </div>
+        </div>
 
-    <div class="mb-3">
-        <a href="/admin/" class="nav-link">
-            <span><i class="bi bi-shield-lock"></i> Admin Panel</span>
-        </a>
-    </div>
+        <div class="mb-3">
+            <a class="nav-link" data-bs-toggle="collapse" href="#financeMenu" role="button" aria-expanded="false">
+                <span><i class="bi bi-cash-stack"></i> Finance</span>
+                <i class="bi bi-chevron-down"></i>
+            </a>
+            <div class="collapse" id="financeMenu">
+                <a href="{{ finance_dashboard_url }}" class="nav-link">Dashboard</a>
+                <a href="{{ balance_sheet_url }}" class="nav-link">Balance Sheet</a>
+                <a href="{{ loan_list_url }}" class="nav-link">Loans</a>
+                <a href="{{ expense_list_url }}" class="nav-link">Expenses</a>
+                <a href="{{ employee_list_url }}" class="nav-link">Employees</a>
+                <a href="{{ salary_list_url }}" class="nav-link">Salaries</a>
+                <a href="{{ debtor_list_url }}" class="nav-link">Sundry Debtors</a>
+                <a href="{{ creditor_list_url }}" class="nav-link">Sundry Creditors</a>
+                <a href="{{ cashbank_list_url }}" class="nav-link">Cash & Bank</a>
+                <hr class="dropdown-divider">
+                <a href="{{ finance_export_all_url }}" class="nav-link">Bulk Export</a>
+                <a href="{{ finance_import_all_url }}" class="nav-link">Bulk Import</a>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <a class="nav-link" data-bs-toggle="collapse" href="#settingsMenu" role="button" aria-expanded="false">
+                <span><i class="bi bi-gear"></i> Settings & Reports</span>
+                <i class="bi bi-chevron-down"></i>
+            </a>
+            <div class="collapse" id="settingsMenu">
+                <a href="{{ stock_report_url }}" class="nav-link">Stock Report</a>
+                <a href="{{ monthly_stock_report_url }}" class="nav-link">Monthly Stock Report</a>
+                <a href="{{ daily_rates_url }}" class="nav-link">Daily Rates</a>
+                <a href="{{ add_stock_url }}" class="nav-link">Add Stock</a>
+                <a href="{{ total_assets_url }}" class="nav-link">Total Assets</a>
+                <a href="{{ account_settings_url }}" class="nav-link">Account Settings</a>
+                <a href="{{ role_list_url }}" class="nav-link">Roles</a>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <a href="/admin/" class="nav-link">
+                <span><i class="bi bi-shield-lock"></i> Admin Panel</span>
+            </a>
+        </div>
+    {% endif %}
     {% endblock %}
 </nav>
 
