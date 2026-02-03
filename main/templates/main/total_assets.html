@@ -199,20 +199,6 @@
         </div>
 
         <div class="col-md-4">
-            <div class="card border-secondary">
-                <div class="card-header bg-secondary text-white">
-                    <h5 class="mb-0">📋 Order Receivables</h5>
-                </div>
-                <div class="card-body">
-                    <div class="text-center py-4">
-                        <h3>₹ {{ order_receivable|floatformat:2 }}</h3>
-                        <small class="text-muted">Amount Customers Owe</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4">
             <div class="card border-info">
                 <div class="card-header bg-info text-white">
                     <h5 class="mb-0">💰 Cash & Bank</h5>
@@ -226,6 +212,10 @@
                         <tr>
                             <td>Bank Balances:</td>
                             <td class="text-end">₹ {{ total_bank|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td>Gold Loan:</td>
+                            <td class="text-end">₹ {{ total_gold_loan|floatformat:2 }}</td>
                         </tr>
                         <tr class="table-info">
                             <td><strong>Subtotal:</strong></td>
@@ -325,6 +315,16 @@
                                         {% widthratio cash_bank_total total_assets 100 %}%
                                     </td>
                                 </tr>
+                                <tr>
+                                    <td>➖ Sundry Creditors (Deduction)</td>
+                                    <td class="text-end">-{{ sundry_creditor_total|floatformat:2 }}</td>
+                                    <td class="text-end">-</td>
+                                </tr>
+                                <tr>
+                                    <td>➖ Loans (Deduction)</td>
+                                    <td class="text-end">-{{ loan_total|floatformat:2 }}</td>
+                                    <td class="text-end">-</td>
+                                </tr>
                                 <tr class="table-success border-top-2">
                                     <td><strong>TOTAL ASSETS</strong></td>
                                     <td class="text-end"><strong>₹ {{ total_assets|floatformat:2 }}</strong></td>
@@ -350,6 +350,8 @@
                     <li>Pending order amounts that customers owe</li>
                     <li>Sundry debtors (parties that owe money)</li>
                     <li>Cash in hand and bank account balances</li>
+                    <li>Gold loan balances (included in liquid assets)</li>
+                    <li>Sundry creditors and loans are deducted from total assets</li>
                 </ul>
             </div>
         </div>

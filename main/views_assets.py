@@ -9,7 +9,7 @@ from goldsilverpurchase.models import MetalStock
 from order.models import Order, OrderOrnament, OrderMetalStock
 from sales.models import Sale
 from main.models import DailyRate, Stock
-from finance.models import SundryDebtor, CashBank
+from finance.models import SundryDebtor, SundryCreditor, CashBank, Loan
 
 
 @login_required
@@ -257,7 +257,25 @@ def total_assets(request):
     total_bank = cash_bank_accounts.filter(account_type='bank').aggregate(
         total=Coalesce(Sum('balance'), Decimal('0'))
     )['total'] or Decimal('0')
-    cash_bank_total = total_cash + total_bank
+    total_gold_loan = cash_bank_accounts.filter(account_type='gold_loan').aggregate(
+        total=Coalesce(Sum('balance'), Decimal('0'))
+    )['total'] or Decimal('0')
+    cash_bank_total = total_cash + total_bank + total_gold_loan
+
+    # ============================================================
+    # 9. SUNDRY CREDITORS (Liabilities)
+    # ============================================================
+    sundry_creditors = SundryCreditor.objects.filter(is_active=True, is_paid=False)
+    sundry_creditor_total = Decimal('0')
+    for creditor in sundry_creditors:
+        sundry_creditor_total += creditor.get_calculated_balance()
+
+    # ============================================================
+    # 10. LOANS (Liabilities)
+    # ============================================================
+    loan_total = Loan.objects.aggregate(
+        total=Coalesce(Sum('amount'), Decimal('0'))
+    )['total'] or Decimal('0')
     
     # ============================================================
     # TOTAL ASSETS
@@ -272,6 +290,8 @@ def total_assets(request):
         order_receivable +
         sundry_debtor_total +
         cash_bank_total
+        - sundry_creditor_total
+        - loan_total
     )
     
     context = {
@@ -318,7 +338,12 @@ def total_assets(request):
         # Cash and Bank
         'total_cash': total_cash,
         'total_bank': total_bank,
+        'total_gold_loan': total_gold_loan,
         'cash_bank_total': cash_bank_total,
+
+        # Liabilities
+        'sundry_creditor_total': sundry_creditor_total,
+        'loan_total': loan_total,
         
         # Totals
         'total_assets': total_assets_amount,

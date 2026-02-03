@@ -7,6 +7,7 @@ class CashBank(models.Model):
     ACCOUNT_TYPE_CHOICES = [
         ('cash', 'Cash in Hand'),
         ('bank', 'Bank Account'),
+        ('gold_loan', 'Gold Loan'),
     ]
     
     account_type = models.CharField(

@@ -44,6 +44,17 @@
         </div>
     </div>
 
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <h5 class="card-title">🪙 Gold Loan</h5>
+                    <h2 class="text-warning">₹ {{ total_gold_loan|floatformat:2 }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Cash Accounts Section -->
     <div class="row mb-4">
         <div class="col-md-12">
@@ -175,6 +186,75 @@
                     {% else %}
                         <div class="alert alert-info" role="alert">
                             <i class="bi bi-info-circle"></i> No bank accounts yet. <a href="{% url 'finance:cashbank_create' %}" class="alert-link">Create one</a>.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gold Loan Accounts Section -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">🪙 Gold Loan Accounts</h5>
+                </div>
+                <div class="card-body">
+                    {% if gold_loan_accounts %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Account Name</th>
+                                        <th class="text-end">Balance</th>
+                                        <th>Status</th>
+                                        <th>Notes</th>
+                                        <th class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for account in gold_loan_accounts %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ account.account_name }}</strong>
+                                            </td>
+                                            <td class="text-end">
+                                                <span class="badge bg-warning text-dark">₹ {{ account.balance|floatformat:2 }}</span>
+                                            </td>
+                                            <td>
+                                                {% if account.is_active %}
+                                                    <span class="badge bg-success">Active</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Inactive</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">{{ account.notes|truncatewords:5 }}</small>
+                                            </td>
+                                            <td class="text-end">
+                                                <a href="{% url 'finance:cashbank_update' account.pk %}" class="btn btn-sm btn-warning">
+                                                    <i class="bi bi-pencil"></i> Edit
+                                                </a>
+                                                <button class="btn btn-sm btn-secondary" onclick="toggleStatus({{ account.pk }})">
+                                                    {% if account.is_active %}
+                                                        <i class="bi bi-x"></i> Deactivate
+                                                    {% else %}
+                                                        <i class="bi bi-check"></i> Activate
+                                                    {% endif %}
+                                                </button>
+                                                <a href="{% url 'finance:cashbank_delete' account.pk %}" class="btn btn-sm btn-danger">
+                                                    <i class="bi bi-trash"></i> Delete
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info" role="alert">
+                            <i class="bi bi-info-circle"></i> No gold loan accounts yet. <a href="{% url 'finance:cashbank_create' %}" class="alert-link">Create one</a>.
                         </div>
                     {% endif %}
                 </div>
