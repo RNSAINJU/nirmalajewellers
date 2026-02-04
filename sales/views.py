@@ -1154,7 +1154,7 @@ class SalesByMonthView(ListView):
     model = Sale
     template_name = "sales/sales_by_month.html"
     context_object_name = "sales"
-    ordering = ["-sale_date", "-created_at"]
+    ordering = ["bill_no"]
     
     def get_queryset(self):
         queryset = super().get_queryset().select_related("order").prefetch_related(
@@ -1187,7 +1187,7 @@ class SalesByMonthView(ListView):
             except (ValueError, TypeError):
                 pass
         
-        return queryset
+        return queryset.order_by("bill_no")
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
