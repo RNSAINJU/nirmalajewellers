@@ -260,7 +260,10 @@ def total_assets(request):
     total_gold_loan = cash_bank_accounts.filter(account_type='gold_loan').aggregate(
         total=Coalesce(Sum('balance'), Decimal('0'))
     )['total'] or Decimal('0')
-    cash_bank_total = total_cash + total_bank + total_gold_loan
+    total_other_investment = cash_bank_accounts.filter(account_type='other_investment').aggregate(
+        total=Coalesce(Sum('balance'), Decimal('0'))
+    )['total'] or Decimal('0')
+    cash_bank_total = total_cash + total_bank + total_gold_loan + total_other_investment
 
     # ============================================================
     # 9. SUNDRY CREDITORS (Liabilities)
@@ -339,6 +342,7 @@ def total_assets(request):
         'total_cash': total_cash,
         'total_bank': total_bank,
         'total_gold_loan': total_gold_loan,
+        'total_other_investment': total_other_investment,
         'cash_bank_total': cash_bank_total,
 
         # Liabilities

@@ -288,6 +288,7 @@ class CashBank(models.Model):
         ('cash', 'Cash in Hand'),
         ('bank', 'Bank Account'),
         ('gold_loan', 'Gold Loan'),
+        ('other_investment', 'Other Investments'),
     ]
     
     account_type = models.CharField(

@@ -14,6 +14,7 @@ def cashbank_list(request):
     cash_accounts = CashBank.objects.filter(account_type='cash').order_by('account_name')
     bank_accounts = CashBank.objects.filter(account_type='bank').order_by('bank_name', 'account_name')
     gold_loan_accounts = CashBank.objects.filter(account_type='gold_loan').order_by('account_name')
+    other_investment_accounts = CashBank.objects.filter(account_type='other_investment').order_by('account_name')
     
     total_cash = cash_accounts.aggregate(
         total=Coalesce(Sum('balance'), Decimal('0'))
@@ -26,16 +27,17 @@ def cashbank_list(request):
     total_gold_loan = gold_loan_accounts.aggregate(
         total=Coalesce(Sum('balance'), Decimal('0'))
     )['total']
-    
-    total_all = total_cash + total_bank + total_gold_loan
-    
-    context = {
-        'cash_accounts': cash_accounts,
-        'bank_accounts': bank_accounts,
-        'gold_loan_accounts': gold_loan_accounts,
+
+    total_other_investment = other_investment_accounts.aggregate(
+        total=Coalesce(Sum('balance'), Decimal('0'))
+    )['total']
+
+    total_all = total_cash + total_bank + total_gold_loan + total_other_investment
+        'other_investment_accounts': other_investment_accounts,
         'total_cash': total_cash,
         'total_bank': total_bank,
         'total_gold_loan': total_gold_loan,
+        'total_other_investment': total_other_investment,
         'total_all': total_all,
     }
     return render(request, 'finance/cashbank_list.html', context)

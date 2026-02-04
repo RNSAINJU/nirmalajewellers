@@ -217,6 +217,10 @@
                             <td>Gold Loan:</td>
                             <td class="text-end">₹ {{ total_gold_loan|floatformat:2 }}</td>
                         </tr>
+                        <tr>
+                            <td>Other Investments:</td>
+                            <td class="text-end">₹ {{ total_other_investment|floatformat:2 }}</td>
+                        </tr>
                         <tr class="table-info">
                             <td><strong>Subtotal:</strong></td>
                             <td class="text-end"><strong>₹ {{ cash_bank_total|floatformat:2 }}</strong></td>
@@ -351,6 +355,7 @@
                     <li>Sundry debtors (parties that owe money)</li>
                     <li>Cash in hand and bank account balances</li>
                     <li>Gold loan balances (included in liquid assets)</li>
+                    <li>Other investments (included in liquid assets)</li>
                     <li>Sundry creditors and loans are deducted from total assets</li>
                 </ul>
             </div>
