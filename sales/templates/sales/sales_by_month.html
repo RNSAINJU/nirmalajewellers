@@ -237,6 +237,7 @@
                     <th>Ornaments</th>
                     <th>Weight</th>
                     <th>Total</th>
+                    <th>Tax</th>
                     <th>Paid</th>
                     <th>Remaining</th>
                     <th>Profit</th>
@@ -287,6 +288,7 @@
                     </td>
                     <td>{{ sale.total_weight|default:0|floatformat:3 }}</td>
                     <td>रु{{ sale.display_total|default:0|floatformat:2 }}</td>
+                    <td><span class="badge bg-warning">रु{{ order.tax|default:0|floatformat:2 }}</span></td>
                     <td>
                         {% if order.total_paid > 0 %}
                             रु{{ order.total_paid|floatformat:2 }}
@@ -319,7 +321,7 @@
                 </tr>
                 {% endwith %}
                 {% empty %}
-                <tr><td colspan="14" class="text-center text-muted">No sales found for the selected month.</td></tr>
+                <tr><td colspan="15" class="text-center text-muted">No sales found for the selected month.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
