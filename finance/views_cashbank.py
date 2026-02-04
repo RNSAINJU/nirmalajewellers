@@ -33,6 +33,11 @@ def cashbank_list(request):
     )['total']
 
     total_all = total_cash + total_bank + total_gold_loan + total_other_investment
+    
+    context = {
+        'cash_accounts': cash_accounts,
+        'bank_accounts': bank_accounts,
+        'gold_loan_accounts': gold_loan_accounts,
         'other_investment_accounts': other_investment_accounts,
         'total_cash': total_cash,
         'total_bank': total_bank,
