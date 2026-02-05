@@ -141,19 +141,35 @@
                     </div>
                 </div>
 
-                <!-- 24K Gold Sales -->
+                <!-- Ornament Gold Sales -->
                 <div class="col-lg-3 col-md-4 col-sm-6">
                     <div class="stat-card gold">
-                        <div class="stat-label">24K Gold (gms)</div>
-                        <div class="stat-value">{{ month.gold_24_weight|floatformat:3 }}</div>
+                        <div class="stat-label">Ornament Gold (24K gms)</div>
+                        <div class="stat-value">{{ month.ornament_gold_weight|floatformat:3 }}</div>
                     </div>
                 </div>
 
-                <!-- Silver Sales -->
+                <!-- Ornament Silver Sales -->
                 <div class="col-lg-3 col-md-4 col-sm-6">
                     <div class="stat-card silver">
-                        <div class="stat-label">Silver (gms)</div>
-                        <div class="stat-value">{{ month.silver_weight|floatformat:3 }}</div>
+                        <div class="stat-label">Ornament Silver (gms)</div>
+                        <div class="stat-value">{{ month.ornament_silver_weight|floatformat:3 }}</div>
+                    </div>
+                </div>
+
+                <!-- Raw Gold Sales -->
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <div class="stat-card gold">
+                        <div class="stat-label">Raw Gold (gms)</div>
+                        <div class="stat-value">{{ month.raw_gold_weight|floatformat:3 }}</div>
+                    </div>
+                </div>
+
+                <!-- Raw Silver Sales -->
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <div class="stat-card silver">
+                        <div class="stat-label">Raw Silver (gms)</div>
+                        <div class="stat-value">{{ month.raw_silver_weight|floatformat:3 }}</div>
                     </div>
                 </div>
 
@@ -198,48 +214,6 @@
                 </div>
             </div>
 
-            <!-- Sales Detail Table -->
-            {% if month.sales_list %}
-            <div class="sales-table">
-                <div class="table-section-title">
-                    <i class="bi bi-list-ul me-2"></i>Sales Details
-                </div>
-                <table class="table table-hover mb-0">
-                    <thead>
-                        <tr>
-                            <th>S.N.</th>
-                            <th>Bill No.</th>
-                            <th>Date</th>
-                            <th>Customer</th>
-                            <th>Gold (gms)</th>
-                            <th>Silver (gms)</th>
-                            <th>Jarti</th>
-                            <th>Amount (रु)</th>
-                            <th>Remaining (रु)</th>
-                            <th>Tax (रु)</th>
-                            <th>Profit (रु)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for sale in month.sales_list %}
-                        <tr>
-                            <td>{{ forloop.counter }}</td>
-                            <td><strong>{{ sale.bill_no }}</strong></td>
-                            <td>{{ sale.sale_date }}</td>
-                            <td>{{ sale.customer_name }}</td>
-                            <td>{{ sale.gold_weight|floatformat:3 }}</td>
-                            <td>{{ sale.silver_weight|floatformat:3 }}</td>
-                            <td>{{ sale.jarti|floatformat:3 }}</td>
-                            <td>{{ sale.amount|floatformat:2 }}</td>
-                            <td>{{ sale.remaining|floatformat:2 }}</td>
-                            <td>{{ sale.tax|floatformat:2 }}</td>
-                            <td>{{ sale.profit|floatformat:2 }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% endif %}
         </div>
         {% endfor %}
     {% else %}

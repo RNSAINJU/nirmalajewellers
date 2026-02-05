@@ -527,21 +527,16 @@ class MonthlySalesReport(View):
                     'year': year,
                     'month': month,
                     'sales_count': 0,
-                    'gold_24_weight': Decimal("0"),
-                    'silver_weight': Decimal("0"),
+                    'ornament_gold_weight': Decimal("0"),
+                    'ornament_silver_weight': Decimal("0"),
+                    'raw_gold_weight': Decimal("0"),
+                    'raw_silver_weight': Decimal("0"),
                     'total_jarti': Decimal("0"),
                     'total_sales_amount': Decimal("0"),
                     'total_remaining': Decimal("0"),
                     'total_tax': Decimal("0"),
                     'total_profit': Decimal("0"),
-                    'sales_list': [],
                 }
-            
-            # Calculate sale details
-            sale_gold_weight = Decimal("0")
-            sale_silver_weight = Decimal("0")
-            sale_jarti = Decimal("0")
-            sale_profit = Decimal("0")
             
             # Update counts
             monthly_data[month_key]['sales_count'] += 1
@@ -553,16 +548,13 @@ class MonthlySalesReport(View):
                 
                 if getattr(line.ornament, 'metal_type', None) == getattr(Ornament.MetalTypeCategory, 'GOLD', 'gold'):
                     gold_weight_24k = weight * factor
-                    monthly_data[month_key]['gold_24_weight'] += gold_weight_24k
-                    sale_gold_weight += gold_weight_24k
+                    monthly_data[month_key]['ornament_gold_weight'] += gold_weight_24k
                 elif getattr(line.ornament, 'metal_type', None) == getattr(Ornament.MetalTypeCategory, 'SILVER', 'silver'):
-                    monthly_data[month_key]['silver_weight'] += weight
-                    sale_silver_weight += weight
+                    monthly_data[month_key]['ornament_silver_weight'] += weight
                 
                 # Jarti (customer jarti)
                 jarti_amount = line.jarti or Decimal("0")
                 monthly_data[month_key]['total_jarti'] += jarti_amount
-                sale_jarti += jarti_amount
                 
                 # Calculate profit
                 customer_jarti = line.jarti or Decimal("0")
@@ -573,16 +565,13 @@ class MonthlySalesReport(View):
                 jarti_difference = customer_jarti - ornament_jarti
                 profit = (jarti_difference / Decimal("11.664") * rate) + jyala
                 monthly_data[month_key]['total_profit'] += profit
-                sale_profit += profit
             
             # Raw metals
             for metal in sale.sale_metals.all():
                 if metal.metal_type == 'gold':
-                    monthly_data[month_key]['gold_24_weight'] += metal.quantity
-                    sale_gold_weight += metal.quantity
+                    monthly_data[month_key]['raw_gold_weight'] += metal.quantity
                 elif metal.metal_type == 'silver':
-                    monthly_data[month_key]['silver_weight'] += metal.quantity
-                    sale_silver_weight += metal.quantity
+                    monthly_data[month_key]['raw_silver_weight'] += metal.quantity
                 monthly_data[month_key]['total_sales_amount'] += metal.line_amount or Decimal("0")
             
             # Add order totals
@@ -590,21 +579,6 @@ class MonthlySalesReport(View):
             monthly_data[month_key]['total_remaining'] += sale.order.remaining_amount or Decimal("0")
             monthly_data[month_key]['total_tax'] += sale.order.tax or Decimal("0")
             
-            # Add sale details to list
-            monthly_data[month_key]['sales_list'].append({
-                'bill_no': sale.bill_no or f"ORD-{sale.order.sn}",
-                'order_sn': sale.order.sn,
-                'sale_date': sale.sale_date,
-                'customer_name': sale.order.customer_name,
-                'gold_weight': sale_gold_weight,
-                'silver_weight': sale_silver_weight,
-                'jarti': sale_jarti,
-                'amount': sale.order.total,
-                'remaining': sale.order.remaining_amount,
-                'tax': sale.order.tax,
-                'profit': sale_profit,
-            })
-        
         # Convert to sorted list
         nepali_months = {
             1: 'Baishakh', 2: 'Jestha', 3: 'Ashadh', 4: 'Shrawan',
