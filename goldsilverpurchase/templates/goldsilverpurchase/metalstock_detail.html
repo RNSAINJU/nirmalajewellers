@@ -122,6 +122,41 @@
         color: white;
         text-decoration: none;
     }
+    .action-buttons {
+        display: flex;
+        gap: 5px;
+        flex-wrap: nowrap;
+        min-width: 180px;
+    }
+    .btn-edit, .btn-delete {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        text-decoration: none;
+        color: white;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+    .btn-edit {
+        background: #28a745;
+    }
+    .btn-edit:hover {
+        background: #218838;
+        color: white;
+        text-decoration: none;
+    }
+    .btn-delete {
+        background: #dc3545;
+    }
+    .btn-delete:hover {
+        background: #c82333;
+        color: white;
+        text-decoration: none;
+    }
     @media (max-width: 768px) {
         .detail-info {
             grid-template-columns: 1fr 1fr;
@@ -220,7 +255,7 @@
                         <th>Reference ID</th>
                         <th>Notes</th>
                         <th>Date</th>
-                        <th>Actions</th>
+                        <th style="min-width: 180px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -275,11 +310,11 @@
                             <small>{{ movement.movement_date|date:"Y-m-d" }}</small>
                         </td>
                         <td>
-                            <div style="display: flex; gap: 8px;">
-                                <a href="{% url 'gsp:metal_stock_movement_edit' movement.pk %}" class="btn-view" style="background: #28a745;">
+                            <div class="action-buttons">
+                                <a href="{% url 'gsp:metal_stock_movement_edit' movement.pk %}" class="btn-edit">
                                     <i class="fas fa-edit"></i> Edit
                                 </a>
-                                <a href="{% url 'gsp:metal_stock_movement_delete' movement.pk %}" class="btn-view" style="background: #dc3545;" onclick="return confirm('Are you sure you want to delete this movement?');">
+                                <a href="{% url 'gsp:metal_stock_movement_delete' movement.pk %}" class="btn-delete" onclick="return confirm('Are you sure you want to delete this movement?');">
                                     <i class="fas fa-trash"></i> Delete
                                 </a>
                             </div>
