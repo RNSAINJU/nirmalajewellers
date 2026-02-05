@@ -529,10 +529,16 @@ class MonthlySalesReport(View):
                     'sales_count': 0,
                     'ornament_gold_weight': Decimal("0"),
                     'ornament_silver_weight': Decimal("0"),
+                    'ornament_diamond_weight': Decimal("0"),
                     'raw_gold_weight': Decimal("0"),
                     'raw_silver_weight': Decimal("0"),
                     'total_jarti': Decimal("0"),
+                    'ornament_gold_amount': Decimal("0"),
+                    'ornament_silver_amount': Decimal("0"),
+                    'ornament_diamond_amount': Decimal("0"),
                     'ornament_sales_amount': Decimal("0"),
+                    'raw_gold_amount': Decimal("0"),
+                    'raw_silver_amount': Decimal("0"),
                     'raw_sales_amount': Decimal("0"),
                     'total_sales_amount': Decimal("0"),
                     'total_remaining': Decimal("0"),
@@ -544,6 +550,10 @@ class MonthlySalesReport(View):
             monthly_data[month_key]['sales_count'] += 1
             
             # Calculate weights, jarti, and profit
+            ornament_gold_count = 0
+            ornament_silver_count = 0
+            ornament_diamond_count = 0
+            
             for line in sale.order.order_ornaments.all():
                 weight = line.ornament.weight or Decimal("0")
                 factor = purity_factors.get(getattr(line.ornament, 'type', None), Decimal("1.00"))
@@ -551,8 +561,13 @@ class MonthlySalesReport(View):
                 if getattr(line.ornament, 'metal_type', None) == getattr(Ornament.MetalTypeCategory, 'GOLD', 'gold'):
                     gold_weight_24k = weight * factor
                     monthly_data[month_key]['ornament_gold_weight'] += gold_weight_24k
+                    ornament_gold_count += 1
                 elif getattr(line.ornament, 'metal_type', None) == getattr(Ornament.MetalTypeCategory, 'SILVER', 'silver'):
                     monthly_data[month_key]['ornament_silver_weight'] += weight
+                    ornament_silver_count += 1
+                elif getattr(line.ornament, 'metal_type', None) == getattr(Ornament.MetalTypeCategory, 'DIAMOND', 'diamond'):
+                    monthly_data[month_key]['ornament_diamond_weight'] += weight
+                    ornament_diamond_count += 1
                 
                 # Jarti (customer jarti)
                 jarti_amount = line.jarti or Decimal("0")
@@ -568,20 +583,29 @@ class MonthlySalesReport(View):
                 profit = (jarti_difference / Decimal("11.664") * rate) + jyala
                 monthly_data[month_key]['total_profit'] += profit
             
-            # Raw metals
-            raw_metal_amount = Decimal("0")
+            # Raw metals with amounts
             for metal in sale.sale_metals.all():
+                metal_amount = metal.line_amount or Decimal("0")
                 if metal.metal_type == 'gold':
                     monthly_data[month_key]['raw_gold_weight'] += metal.quantity
+                    monthly_data[month_key]['raw_gold_amount'] += metal_amount
                 elif metal.metal_type == 'silver':
                     monthly_data[month_key]['raw_silver_weight'] += metal.quantity
-                metal_amount = metal.line_amount or Decimal("0")
-                raw_metal_amount += metal_amount
+                    monthly_data[month_key]['raw_silver_amount'] += metal_amount
             
+            raw_metal_amount = monthly_data[month_key]['raw_gold_amount'] + monthly_data[month_key]['raw_silver_amount']
             monthly_data[month_key]['raw_sales_amount'] += raw_metal_amount
             
-            # Ornament sales amount (order total - raw metals)
+            # Calculate ornament sales amount by metal type (proportional split)
             ornament_amount = (sale.order.total or Decimal("0")) - raw_metal_amount
+            total_ornament_count = ornament_gold_count + ornament_silver_count + ornament_diamond_count
+            
+            if total_ornament_count > 0 and ornament_amount > 0:
+                amount_per_item = ornament_amount / total_ornament_count
+                monthly_data[month_key]['ornament_gold_amount'] += amount_per_item * ornament_gold_count
+                monthly_data[month_key]['ornament_silver_amount'] += amount_per_item * ornament_silver_count
+                monthly_data[month_key]['ornament_diamond_amount'] += amount_per_item * ornament_diamond_count
+            
             monthly_data[month_key]['ornament_sales_amount'] += ornament_amount
             
             # Add order totals
