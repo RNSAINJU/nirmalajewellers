@@ -532,6 +532,8 @@ class MonthlySalesReport(View):
                     'raw_gold_weight': Decimal("0"),
                     'raw_silver_weight': Decimal("0"),
                     'total_jarti': Decimal("0"),
+                    'ornament_sales_amount': Decimal("0"),
+                    'raw_sales_amount': Decimal("0"),
                     'total_sales_amount': Decimal("0"),
                     'total_remaining': Decimal("0"),
                     'total_tax': Decimal("0"),
@@ -567,12 +569,20 @@ class MonthlySalesReport(View):
                 monthly_data[month_key]['total_profit'] += profit
             
             # Raw metals
+            raw_metal_amount = Decimal("0")
             for metal in sale.sale_metals.all():
                 if metal.metal_type == 'gold':
                     monthly_data[month_key]['raw_gold_weight'] += metal.quantity
                 elif metal.metal_type == 'silver':
                     monthly_data[month_key]['raw_silver_weight'] += metal.quantity
-                monthly_data[month_key]['total_sales_amount'] += metal.line_amount or Decimal("0")
+                metal_amount = metal.line_amount or Decimal("0")
+                raw_metal_amount += metal_amount
+            
+            monthly_data[month_key]['raw_sales_amount'] += raw_metal_amount
+            
+            # Ornament sales amount (order total - raw metals)
+            ornament_amount = (sale.order.total or Decimal("0")) - raw_metal_amount
+            monthly_data[month_key]['ornament_sales_amount'] += ornament_amount
             
             # Add order totals
             monthly_data[month_key]['total_sales_amount'] += sale.order.total or Decimal("0")

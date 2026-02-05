@@ -181,10 +181,26 @@
                     </div>
                 </div>
 
-                <!-- Total Sales Amount -->
+                <!-- Ornament Sales Amount -->
                 <div class="col-lg-3 col-md-4 col-sm-6">
                     <div class="stat-card amount">
-                        <div class="stat-label">Sales Amount</div>
+                        <div class="stat-label">Ornament Sales Amount</div>
+                        <div class="stat-value">रु{{ month.ornament_sales_amount|floatformat:2 }}</div>
+                    </div>
+                </div>
+
+                <!-- Raw Metal Sales Amount -->
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <div class="stat-card amount">
+                        <div class="stat-label">Raw Metal Sales Amount</div>
+                        <div class="stat-value">रु{{ month.raw_sales_amount|floatformat:2 }}</div>
+                    </div>
+                </div>
+
+                <!-- Total Sales Amount -->
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <div class="stat-card" style="background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);">
+                        <div class="stat-label">Total Sales Amount</div>
                         <div class="stat-value">रु{{ month.total_sales_amount|floatformat:2 }}</div>
                     </div>
                 </div>
