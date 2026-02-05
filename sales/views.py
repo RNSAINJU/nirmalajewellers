@@ -1277,7 +1277,6 @@ class SalesByMonthView(ListView):
                         gold_24_weight += metal.quantity
                     elif metal.metal_type == 'silver':
                         silver_weight += metal.quantity
-                    total_sales_amount += metal.line_amount or Decimal("0")
                 
                 # Add order total, remaining amount, and tax
                 total_sales_amount += sale.order.total or Decimal("0")

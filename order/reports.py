@@ -584,16 +584,20 @@ class MonthlySalesReport(View):
                 monthly_data[month_key]['total_profit'] += profit
             
             # Raw metals with amounts
+            sale_raw_gold_amount = Decimal("0")
+            sale_raw_silver_amount = Decimal("0")
             for metal in sale.sale_metals.all():
                 metal_amount = metal.line_amount or Decimal("0")
                 if metal.metal_type == 'gold':
                     monthly_data[month_key]['raw_gold_weight'] += metal.quantity
                     monthly_data[month_key]['raw_gold_amount'] += metal_amount
+                    sale_raw_gold_amount += metal_amount
                 elif metal.metal_type == 'silver':
                     monthly_data[month_key]['raw_silver_weight'] += metal.quantity
                     monthly_data[month_key]['raw_silver_amount'] += metal_amount
+                    sale_raw_silver_amount += metal_amount
             
-            raw_metal_amount = monthly_data[month_key]['raw_gold_amount'] + monthly_data[month_key]['raw_silver_amount']
+            raw_metal_amount = sale_raw_gold_amount + sale_raw_silver_amount
             monthly_data[month_key]['raw_sales_amount'] += raw_metal_amount
             
             # Calculate ornament sales amount by metal type (proportional split)
