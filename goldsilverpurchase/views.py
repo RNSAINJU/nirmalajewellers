@@ -357,6 +357,62 @@ class CustomerPurchaseCreateView(CreateView):
         ctx['form_title'] = 'Create Customer Purchase'
         return ctx
 
+    def form_valid(self, form):
+        """Handle form submission and create metal stock entries"""
+        response = super().form_valid(form)
+        purchase = self.object
+        
+        # Determine stock type based on refined_status
+        if purchase.refined_status == 'yes':
+            stock_type_name = 'refined'
+            weight_to_use = purchase.refined_weight
+        elif purchase.refined_status == 'no':
+            stock_type_name = 'raw'
+            weight_to_use = purchase.final_weight
+        else:
+            return response
+        
+        try:
+            # Get or create stock type
+            stock_type = MetalStockType.objects.filter(name=stock_type_name).first()
+            if not stock_type:
+                stock_type = MetalStockType.objects.create(name=stock_type_name)
+            
+            # Get or create metal stock
+            metal_stock, created = MetalStock.objects.get_or_create(
+                metal_type=purchase.metal_type,
+                purity=purchase.purity or '24K',
+                stock_type=stock_type,
+                defaults={
+                    'quantity': 0,
+                    'unit_cost': 0,
+                    'rate_unit': purchase.rate_unit or 'tola',
+                }
+            )
+            
+            # Ensure rate_unit is set
+            if not created and not metal_stock.rate_unit:
+                metal_stock.rate_unit = purchase.rate_unit or 'tola'
+                metal_stock.save()
+            
+            # Create movement entry
+            MetalStockMovement.objects.create(
+                metal_stock=metal_stock,
+                movement_type='in',
+                quantity=weight_to_use or Decimal('0'),
+                rate=purchase.rate or Decimal('0'),
+                reference_type='CustomerPurchase',
+                reference_id=purchase.sn,
+                notes=f"{purchase.ornament_name} from {purchase.customer_name}",
+                movement_date=purchase.purchase_date
+            )
+            
+            messages.success(self.request, f"Metal stock updated: {weight_to_use}g of {stock_type_name} {purchase.metal_type} added.")
+        except Exception as e:
+            messages.error(self.request, f"Error updating metal stock: {str(e)}")
+        
+        return response
+
 
 class CustomerPurchaseUpdateView(UpdateView):
     model = CustomerPurchase
@@ -368,6 +424,70 @@ class CustomerPurchaseUpdateView(UpdateView):
         ctx = super().get_context_data(**kwargs)
         ctx['form_title'] = 'Update Customer Purchase'
         return ctx
+
+    def form_valid(self, form):
+        """Handle form submission and update metal stock entries"""
+        old_purchase = self.object
+        response = super().form_valid(form)
+        purchase = self.object
+        
+        # Delete old metal stock movements for this purchase
+        old_movements = MetalStockMovement.objects.filter(
+            reference_type='CustomerPurchase',
+            reference_id=purchase.sn
+        )
+        old_movements.delete()
+        
+        # Determine stock type based on refined_status
+        if purchase.refined_status == 'yes':
+            stock_type_name = 'refined'
+            weight_to_use = purchase.refined_weight
+        elif purchase.refined_status == 'no':
+            stock_type_name = 'raw'
+            weight_to_use = purchase.final_weight
+        else:
+            return response
+        
+        try:
+            # Get or create stock type
+            stock_type = MetalStockType.objects.filter(name=stock_type_name).first()
+            if not stock_type:
+                stock_type = MetalStockType.objects.create(name=stock_type_name)
+            
+            # Get or create metal stock
+            metal_stock, created = MetalStock.objects.get_or_create(
+                metal_type=purchase.metal_type,
+                purity=purchase.purity or '24K',
+                stock_type=stock_type,
+                defaults={
+                    'quantity': 0,
+                    'unit_cost': 0,
+                    'rate_unit': purchase.rate_unit or 'tola',
+                }
+            )
+            
+            # Ensure rate_unit is set
+            if not created and not metal_stock.rate_unit:
+                metal_stock.rate_unit = purchase.rate_unit or 'tola'
+                metal_stock.save()
+            
+            # Create movement entry
+            MetalStockMovement.objects.create(
+                metal_stock=metal_stock,
+                movement_type='in',
+                quantity=weight_to_use or Decimal('0'),
+                rate=purchase.rate or Decimal('0'),
+                reference_type='CustomerPurchase',
+                reference_id=purchase.sn,
+                notes=f"{purchase.ornament_name} from {purchase.customer_name}",
+                movement_date=purchase.purchase_date
+            )
+            
+            messages.success(self.request, f"Metal stock updated: {weight_to_use}g of {stock_type_name} {purchase.metal_type} added.")
+        except Exception as e:
+            messages.error(self.request, f"Error updating metal stock: {str(e)}")
+        
+        return response
 
 
 class CustomerPurchaseDeleteView(DeleteView):
