@@ -114,6 +114,24 @@
         color: #1f2937;
         border-top: 2px solid #667eea;
     }
+    .view-toggle {
+        margin-bottom: 20px;
+        display: flex;
+        gap: 10px;
+    }
+    .view-toggle .btn {
+        padding: 8px 20px;
+        font-weight: 500;
+    }
+    .view-toggle .btn.active {
+        background-color: #667eea;
+        color: white;
+        border-color: #667eea;
+    }
+    .cards-view { display: block; }
+    .cards-view.hidden { display: none; }
+    .table-view { display: none; }
+    .table-view.show { display: block; }
 </style>
 
 <div class="container-fluid mt-4">
@@ -124,154 +142,220 @@
         <p class="mb-0 opacity-90">Comprehensive monthly breakdown of sales performance and metrics</p>
     </div>
 
+    <!-- View Toggle -->
+    <div class="view-toggle">
+        <button class="btn btn-outline-primary active" id="cardsBtn" onclick="toggleView('cards')">
+            <i class="bi bi-grid-3x2-gap me-1"></i>Card View
+        </button>
+        <button class="btn btn-outline-secondary" id="tableBtn" onclick="toggleView('table')">
+            <i class="bi bi-table me-1"></i>Table View
+        </button>
+    </div>
+
     {% if monthly_data %}
-        {% for month in monthly_data %}
-        <div class="month-row">
-            <div class="month-header">
-                <span>{{ month.month_name }} {{ month.year }}</span>
-                <span class="badge-count">{{ month.sales_count }} Sales</span>
+        <!-- CARDS VIEW -->
+        <div class="cards-view" id="cardsView">
+            {% for month in monthly_data %}
+            <div class="month-row">
+                <div class="month-header">
+                    <span>{{ month.month_name }} {{ month.year }}</span>
+                    <span class="badge-count">{{ month.sales_count }} Sales</span>
+                </div>
+
+                <div class="row g-3">
+                    <!-- Total Sales Count -->
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="stat-card sales">
+                            <div class="stat-label">Total Sales</div>
+                            <div class="stat-value">{{ month.sales_count }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Ornament Gold Sales -->
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="stat-card gold">
+                            <div class="stat-label">Ornament Gold (24K gms)</div>
+                            <div class="stat-value">{{ month.ornament_gold_weight|floatformat:3 }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Ornament Silver Sales -->
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="stat-card silver">
+                            <div class="stat-label">Ornament Silver (gms)</div>
+                            <div class="stat-value">{{ month.ornament_silver_weight|floatformat:3 }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Raw Gold Sales -->
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="stat-card gold">
+                            <div class="stat-label">Raw Gold (gms)</div>
+                            <div class="stat-value">{{ month.raw_gold_weight|floatformat:3 }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Raw Silver Sales -->
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="stat-card silver">
+                            <div class="stat-label">Raw Silver (gms)</div>
+                            <div class="stat-value">{{ month.raw_silver_weight|floatformat:3 }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Total Jarti -->
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="stat-card jarti">
+                            <div class="stat-label">Total Jarti</div>
+                            <div class="stat-value">{{ month.total_jarti|floatformat:3 }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Ornament Gold Sales Amount -->
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="stat-card gold">
+                            <div class="stat-label">Ornament Gold Sales</div>
+                            <div class="stat-value">रु{{ month.ornament_gold_amount|floatformat:2 }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Ornament Silver Sales Amount -->
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="stat-card silver">
+                            <div class="stat-label">Ornament Silver Sales</div>
+                            <div class="stat-value">रु{{ month.ornament_silver_amount|floatformat:2 }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Ornament Diamond Sales Amount -->
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="stat-card" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); border-left-color: #8b5cf6;">
+                            <div class="stat-label">Ornament Diamond Sales</div>
+                            <div class="stat-value">रु{{ month.ornament_diamond_amount|floatformat:2 }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Raw Gold Sales Amount -->
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="stat-card" style="background: linear-gradient(135deg, #d97706 0%, #b45309 100%); border-left-color: #d97706;">
+                            <div class="stat-label">Raw Gold Sales</div>
+                            <div class="stat-value">रु{{ month.raw_gold_amount|floatformat:2 }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Raw Silver Sales Amount -->
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="stat-card" style="background: linear-gradient(135deg, #64748b 0%, #475569 100%); border-left-color: #64748b;">
+                            <div class="stat-label">Raw Silver Sales</div>
+                            <div class="stat-value">रु{{ month.raw_silver_amount|floatformat:2 }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Ornament Sales Amount -->
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="stat-card amount">
+                            <div class="stat-label">Total Ornament Sales</div>
+                            <div class="stat-value">रु{{ month.ornament_sales_amount|floatformat:2 }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Raw Metal Sales Amount -->
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="stat-card amount">
+                            <div class="stat-label">Total Raw Metal Sales</div>
+                            <div class="stat-value">रु{{ month.raw_sales_amount|floatformat:2 }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Total Sales Amount -->
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="stat-card" style="background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); border: 3px solid #0ea5e9;">
+                            <div class="stat-label">Total Sales Amount</div>
+                            <div class="stat-value">रु{{ month.total_sales_amount|floatformat:2 }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Total Remaining -->
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="stat-card remaining">
+                            <div class="stat-label">Remaining</div>
+                            <div class="stat-value">रु{{ month.total_remaining|floatformat:2 }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Total Tax -->
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="stat-card tax">
+                            <div class="stat-label">Tax Amount</div>
+                            <div class="stat-value">रु{{ month.total_tax|floatformat:2 }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Total Profit -->
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="stat-card profit">
+                            <div class="stat-label">Profit</div>
+                            <div class="stat-value">रु{{ month.total_profit|floatformat:2 }}</div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
-
-            <div class="row g-3">
-                <!-- Total Sales Count -->
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <div class="stat-card sales">
-                        <div class="stat-label">Total Sales</div>
-                        <div class="stat-value">{{ month.sales_count }}</div>
-                    </div>
-                </div>
-
-                <!-- Ornament Gold Sales -->
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <div class="stat-card gold">
-                        <div class="stat-label">Ornament Gold (24K gms)</div>
-                        <div class="stat-value">{{ month.ornament_gold_weight|floatformat:3 }}</div>
-                    </div>
-                </div>
-
-                <!-- Ornament Silver Sales -->
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <div class="stat-card silver">
-                        <div class="stat-label">Ornament Silver (gms)</div>
-                        <div class="stat-value">{{ month.ornament_silver_weight|floatformat:3 }}</div>
-                    </div>
-                </div>
-
-                <!-- Raw Gold Sales -->
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <div class="stat-card gold">
-                        <div class="stat-label">Raw Gold (gms)</div>
-                        <div class="stat-value">{{ month.raw_gold_weight|floatformat:3 }}</div>
-                    </div>
-                </div>
-
-                <!-- Raw Silver Sales -->
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <div class="stat-card silver">
-                        <div class="stat-label">Raw Silver (gms)</div>
-                        <div class="stat-value">{{ month.raw_silver_weight|floatformat:3 }}</div>
-                    </div>
-                </div>
-
-                <!-- Total Jarti -->
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <div class="stat-card jarti">
-                        <div class="stat-label">Total Jarti</div>
-                        <div class="stat-value">{{ month.total_jarti|floatformat:3 }}</div>
-                    </div>
-                </div>
-
-                <!-- Ornament Gold Sales Amount -->
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <div class="stat-card gold">
-                        <div class="stat-label">Ornament Gold Sales</div>
-                        <div class="stat-value">रु{{ month.ornament_gold_amount|floatformat:2 }}</div>
-                    </div>
-                </div>
-
-                <!-- Ornament Silver Sales Amount -->
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <div class="stat-card silver">
-                        <div class="stat-label">Ornament Silver Sales</div>
-                        <div class="stat-value">रु{{ month.ornament_silver_amount|floatformat:2 }}</div>
-                    </div>
-                </div>
-
-                <!-- Ornament Diamond Sales Amount -->
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <div class="stat-card" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">
-                        <div class="stat-label">Ornament Diamond Sales</div>
-                        <div class="stat-value">रु{{ month.ornament_diamond_amount|floatformat:2 }}</div>
-                    </div>
-                </div>
-
-                <!-- Raw Gold Sales Amount -->
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <div class="stat-card" style="background: linear-gradient(135deg, #d97706 0%, #b45309 100%);">
-                        <div class="stat-label">Raw Gold Sales</div>
-                        <div class="stat-value">रु{{ month.raw_gold_amount|floatformat:2 }}</div>
-                    </div>
-                </div>
-
-                <!-- Raw Silver Sales Amount -->
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <div class="stat-card" style="background: linear-gradient(135deg, #64748b 0%, #475569 100%);">
-                        <div class="stat-label">Raw Silver Sales</div>
-                        <div class="stat-value">रु{{ month.raw_silver_amount|floatformat:2 }}</div>
-                    </div>
-                </div>
-
-                <!-- Ornament Sales Amount -->
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <div class="stat-card amount">
-                        <div class="stat-label">Total Ornament Sales</div>
-                        <div class="stat-value">रु{{ month.ornament_sales_amount|floatformat:2 }}</div>
-                    </div>
-                </div>
-
-                <!-- Raw Metal Sales Amount -->
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <div class="stat-card amount">
-                        <div class="stat-label">Total Raw Metal Sales</div>
-                        <div class="stat-value">रु{{ month.raw_sales_amount|floatformat:2 }}</div>
-                    </div>
-                </div>
-
-                <!-- Total Sales Amount -->
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <div class="stat-card" style="background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); border: 3px solid #0ea5e9;">
-                        <div class="stat-label">Total Sales Amount</div>
-                        <div class="stat-value">रु{{ month.total_sales_amount|floatformat:2 }}</div>
-                    </div>
-                </div>
-
-                <!-- Total Remaining -->
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <div class="stat-card remaining">
-                        <div class="stat-label">Remaining</div>
-                        <div class="stat-value">रु{{ month.total_remaining|floatformat:2 }}</div>
-                    </div>
-                </div>
-
-                <!-- Total Tax -->
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <div class="stat-card tax">
-                        <div class="stat-label">Tax Amount</div>
-                        <div class="stat-value">रु{{ month.total_tax|floatformat:2 }}</div>
-                    </div>
-                </div>
-
-                <!-- Total Profit -->
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <div class="stat-card profit">
-                        <div class="stat-label">Profit</div>
-                        <div class="stat-value">रु{{ month.total_profit|floatformat:2 }}</div>
-                    </div>
-                </div>
-            </div>
-
+            {% endfor %}
         </div>
-        {% endfor %}
+
+        <!-- TABLE VIEW -->
+        <div class="table-view" id="tableView">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                        <tr>
+                            <th>Month/Year</th>
+                            <th class="text-end">Sales Count</th>
+                            <th class="text-end">Ornament Gold (gms)</th>
+                            <th class="text-end">Ornament Silver (gms)</th>
+                            <th class="text-end">Raw Gold (gms)</th>
+                            <th class="text-end">Raw Silver (gms)</th>
+                            <th class="text-end">Ornament Gold Sales (रु)</th>
+                            <th class="text-end">Ornament Silver Sales (रु)</th>
+                            <th class="text-end">Ornament Diamond Sales (रु)</th>
+                            <th class="text-end">Raw Gold Sales (रु)</th>
+                            <th class="text-end">Raw Silver Sales (रु)</th>
+                            <th class="text-end">Total Ornament (रु)</th>
+                            <th class="text-end">Total Raw Metal (रु)</th>
+                            <th class="text-end">Total Sales (रु)</th>
+                            <th class="text-end">Tax (रु)</th>
+                            <th class="text-end">Remaining (रु)</th>
+                            <th class="text-end">Profit (रु)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for month in monthly_data %}
+                        <tr>
+                            <td><strong>{{ month.month_name }} {{ month.year }}</strong></td>
+                            <td class="text-end">{{ month.sales_count }}</td>
+                            <td class="text-end">{{ month.ornament_gold_weight|floatformat:3 }}</td>
+                            <td class="text-end">{{ month.ornament_silver_weight|floatformat:3 }}</td>
+                            <td class="text-end">{{ month.raw_gold_weight|floatformat:3 }}</td>
+                            <td class="text-end">{{ month.raw_silver_weight|floatformat:3 }}</td>
+                            <td class="text-end">{{ month.ornament_gold_amount|floatformat:2 }}</td>
+                            <td class="text-end">{{ month.ornament_silver_amount|floatformat:2 }}</td>
+                            <td class="text-end">{{ month.ornament_diamond_amount|floatformat:2 }}</td>
+                            <td class="text-end">{{ month.raw_gold_amount|floatformat:2 }}</td>
+                            <td class="text-end">{{ month.raw_silver_amount|floatformat:2 }}</td>
+                            <td class="text-end"><strong>{{ month.ornament_sales_amount|floatformat:2 }}</strong></td>
+                            <td class="text-end"><strong>{{ month.raw_sales_amount|floatformat:2 }}</strong></td>
+                            <td class="text-end"><strong style="color: #0891b2;">{{ month.total_sales_amount|floatformat:2 }}</strong></td>
+                            <td class="text-end">{{ month.total_tax|floatformat:2 }}</td>
+                            <td class="text-end">{{ month.total_remaining|floatformat:2 }}</td>
+                            <td class="text-end"><span class="badge bg-success">{{ month.total_profit|floatformat:2 }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
     {% else %}
         <div class="alert alert-info text-center">
             <i class="bi bi-info-circle me-2"></i>
@@ -279,5 +363,26 @@
         </div>
     {% endif %}
 </div>
+
+<script>
+function toggleView(view) {
+    const cardsView = document.getElementById('cardsView');
+    const tableView = document.getElementById('tableView');
+    const cardsBtn = document.getElementById('cardsBtn');
+    const tableBtn = document.getElementById('tableBtn');
+
+    if (view === 'cards') {
+        cardsView.classList.remove('hidden');
+        tableView.classList.remove('show');
+        cardsBtn.classList.add('active');
+        tableBtn.classList.remove('active');
+    } else {
+        cardsView.classList.add('hidden');
+        tableView.classList.add('show');
+        cardsBtn.classList.remove('active');
+        tableBtn.classList.add('active');
+    }
+}
+</script>
 
 {% endblock %}
