@@ -250,6 +250,9 @@ class DirectSaleCreateView(CreateView):
             except Exception:
                 pass
 
+        # Set status to "delivered" for sales create
+        initial["status"] = "delivered"
+
         return initial
 
     def get_context_data(self, **kwargs):

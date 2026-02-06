@@ -47,7 +47,53 @@
                         <div class="card-body py-2">
                             <!-- Right Section Layout -->
                             <div class="row g-2 small">
-                                <!-- Row 1: Order Date only -->
+                                {% if is_sale_create %}
+                                <!-- Row 1: Bill No (left) and Sale Date (right) - Sales create only -->
+                                <div class="col-12">
+                                    <div class="row g-2">
+                                        <div class="col-md-3">
+                                            <label class="form-label mb-1" for="id_bill_no">Bill No</label>
+                                            <input
+                                                type="text"
+                                                id="id_bill_no"
+                                                name="bill_no"
+                                                class="form-control form-control-sm"
+                                                placeholder="Bill number"
+                                                value="{{ bill_no|default:'' }}"
+                                            />
+                                        </div>
+                                        <div class="col-md-3 ms-auto">
+                                            <label class="form-label mb-1" for="id_sale_date">Sale Date (BS)</label>
+                                            <input
+                                                type="text"
+                                                id="id_sale_date"
+                                                name="sale_date"
+                                                class="form-control form-control-sm"
+                                                placeholder="Sale Date (BS)"
+                                                value="{{ sale_date|default:'' }}"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Row 2: Order Date (right) - Sales create only -->
+                                <div class="col-12">
+                                    <div class="row g-2 justify-content-end">
+                                        <div class="col-md-3">
+                                            <label class="form-label mb-1" for="id_order_date">{{ form.order_date.label }}</label>
+                                            <input
+                                                type="text"
+                                                id="id_order_date"
+                                                name="order_date"
+                                                class="form-control form-control-sm"
+                                                placeholder="Order Date (BS)"
+                                                value="{{ form.order_date.value|default:'' }}"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <!-- Row 1: Order Date only (right) - Orders only -->
                                 <div class="col-12">
                                     <div class="row g-2 justify-content-end">
                                         <div class="col-md-3">
@@ -64,8 +110,7 @@
                                     </div>
                                 </div>
 
-                                {% if not is_sale_create %}
-                                <!-- Row 2: Deliver Date -->
+                                <!-- Row 2: Deliver Date (right) - Orders only -->
                                 <div class="col-12">
                                     <div class="row g-2 justify-content-end">
                                         <div class="col-md-3">
@@ -77,41 +122,6 @@
                                                 class="form-control form-control-sm"
                                                 placeholder="Deliver Date (BS)"
                                                 value="{{ form.deliver_date.value|default:'' }}"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                                {% endif %}
-
-                                {% if is_sale_create %}
-                                <!-- Row 2: Bill No (Sales create only) -->
-                                <div class="col-12">
-                                    <div class="row g-2">
-                                        <div class="col-md-3">
-                                            <label class="form-label mb-1" for="id_bill_no">Bill No</label>
-                                            <input
-                                                type="text"
-                                                id="id_bill_no"
-                                                name="bill_no"
-                                                class="form-control form-control-sm"
-                                                placeholder="Bill number"
-                                                value="{{ bill_no|default:'' }}"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- Row 3: Sale Date (Sales create only) -->
-                                <div class="col-12">
-                                    <div class="row g-2">
-                                        <div class="col-md-3">
-                                            <label class="form-label mb-1" for="id_sale_date">Sale Date (BS)</label>
-                                            <input
-                                                type="text"
-                                                id="id_sale_date"
-                                                name="sale_date"
-                                                class="form-control form-control-sm"
-                                                placeholder="Sale Date (BS)"
-                                                value="{{ sale_date|default:'' }}"
                                             />
                                         </div>
                                     </div>
