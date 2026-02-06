@@ -154,6 +154,12 @@
         {% endfor %} {{ selected_year }}
     </div>
 
+    <div class="text-center mb-3">
+        <a class="btn btn-success" href="{% url 'sales:monthly_tax_report' %}?month={{ selected_month }}&year={{ selected_year }}">
+            <i class="bi bi-file-earmark-spreadsheet me-2"></i>Generate Monthly Tax Report
+        </a>
+    </div>
+
     <!-- Stats -->
     <div class="stats-tabs">
         <div class="row g-3">

@@ -488,6 +488,80 @@ def sales_export_excel(request):
     return response
 
 
+def sales_monthly_tax_report(request):
+    """Export monthly sales tax report to Excel."""
+
+    month = request.GET.get("month")
+    year = request.GET.get("year")
+
+    if not month or not year:
+        messages.error(request, "Please select a month and year to generate the tax report.")
+        return redirect("sales:sales_by_month")
+
+    try:
+        month_int = int(month)
+        year_int = int(year)
+
+        start_date = ndt.date(year_int, month_int, 1)
+        if month_int == 12:
+            end_date = ndt.date(year_int + 1, 1, 1) - timedelta(days=1)
+        else:
+            end_date = ndt.date(year_int, month_int + 1, 1) - timedelta(days=1)
+    except (ValueError, TypeError):
+        messages.error(request, "Invalid month or year provided for the tax report.")
+        return redirect("sales:sales_by_month")
+
+    sales = (
+        Sale.objects.select_related("order")
+        .filter(
+            sale_date__gte=start_date,
+            sale_date__lte=end_date,
+            order__tax__gt=0,
+        )
+        .order_by("bill_no")
+    )
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Monthly Tax Report"
+
+    headers = ["Bill No", "Customer Name", "PAN", "Address", "Total Amount", "Tax"]
+    ws.append(headers)
+
+    for sale in sales:
+        order = sale.order
+        ws.append([
+            sale.bill_no,
+            order.customer_name,
+            "",
+            "",
+            order.total,
+            order.tax,
+        ])
+
+    for col in ws.columns:
+        max_length = 0
+        col_letter = get_column_letter(col[0].column)
+        for cell in col:
+            if cell.value is not None:
+                max_length = max(max_length, len(str(cell.value)))
+        ws.column_dimensions[col_letter].width = max_length + 2
+
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    response = HttpResponse(
+        output.getvalue(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    response["Content-Disposition"] = (
+        f'attachment; filename="monthly_tax_report_{year_int}_{month_int:02d}.xlsx"'
+    )
+
+    return response
+
+
 def sales_import_excel(request):
     """Import sales from Excel.
 
