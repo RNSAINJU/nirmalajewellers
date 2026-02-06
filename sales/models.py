@@ -24,6 +24,18 @@ class Sale(models.Model):
     # Optional separate bill number for the sale
     bill_no = models.CharField(max_length=20, null=True, blank=True)
 
+    pan_number = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        help_text='PAN number (optional)'
+    )
+    address = models.TextField(
+        blank=True,
+        null=True,
+        help_text='Customer address (optional)'
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

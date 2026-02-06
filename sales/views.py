@@ -51,7 +51,13 @@ class CreateSaleFromOrderView(View):
         bill_no = str(order.sn)
 
         # Create the Sale record
-        Sale.objects.create(order=order, sale_date=sale_date, bill_no=bill_no)
+        Sale.objects.create(
+            order=order,
+            sale_date=sale_date,
+            bill_no=bill_no,
+            pan_number=order.pan_number,
+            address=order.address,
+        )
 
         # Mark ornaments on this order as sales items
         Ornament.objects.filter(order=order).update(
@@ -147,7 +153,7 @@ class SaleUpdateView(UpdateView):
     """Edit a Sale (bill number and sale date)."""
 
     model = Sale
-    fields = ["bill_no", "sale_date"]
+    fields = ["bill_no", "sale_date", "pan_number", "address"]
     template_name = "sales/sale_form.html"
 
     def get_context_data(self, **kwargs):
@@ -306,7 +312,13 @@ class DirectSaleCreateView(CreateView):
                 except Exception:
                     sale_date = None
 
-        sale_obj = Sale.objects.create(order=self.object, sale_date=sale_date, bill_no=bill_no)
+        sale_obj = Sale.objects.create(
+            order=self.object,
+            sale_date=sale_date,
+            bill_no=bill_no,
+            pan_number=self.object.pan_number,
+            address=self.object.address,
+        )
 
         # --- Save SalesMetalStockFormSet (raw metal details) and update MetalStock ---
         from .forms import SalesMetalStockFormSet
@@ -533,8 +545,8 @@ def sales_monthly_tax_report(request):
         ws.append([
             sale.bill_no,
             order.customer_name,
-            "",
-            "",
+            order.pan_number or "",
+            order.address or "",
             order.total,
             order.tax,
         ])

@@ -48,7 +48,7 @@ class OrderForm(forms.ModelForm):
     class Meta:
         model = Order
         fields = [
-            'order_date', 'deliver_date', 'customer_name', 'phone_number', 'status',
+            'order_date', 'deliver_date', 'customer_name', 'pan_number', 'address', 'phone_number', 'status',
             'order_type', 'description', 'amount', 'subtotal', 'discount', 'tax', 'total',
         ]
         widgets = {

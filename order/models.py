@@ -33,6 +33,17 @@ class Order(models.Model):
     order_date = NepaliDateField(null=True, blank=True)
     deliver_date = NepaliDateField(null=True, blank=True)
     customer_name = models.CharField(max_length=255)
+    pan_number = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        help_text='PAN number (optional)'
+    )
+    address = models.TextField(
+        blank=True,
+        null=True,
+        help_text='Customer address (optional)'
+    )
     phone_number = models.CharField(
         max_length=15,
         validators=[RegexValidator(
