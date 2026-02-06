@@ -368,7 +368,7 @@ class CustomerPurchaseCreateView(CreateView):
             weight_to_use = purchase.refined_weight
         elif purchase.refined_status == 'no':
             stock_type_name = 'raw'
-            weight_to_use = purchase.final_weight
+            weight_to_use = purchase.weight
         else:
             return response
         
@@ -407,7 +407,7 @@ class CustomerPurchaseCreateView(CreateView):
                 movement_date=purchase.purchase_date
             )
             
-            messages.success(self.request, f"Metal stock updated: {weight_to_use}g of {stock_type_name} {purchase.metal_type} added.")
+            messages.success(self.request, f"Metal stock updated: {weight_to_use}g of {stock_type_name} {purchase.metal_type} ({purchase.purity}) added.")
         except Exception as e:
             messages.error(self.request, f"Error updating metal stock: {str(e)}")
         
@@ -444,7 +444,7 @@ class CustomerPurchaseUpdateView(UpdateView):
             weight_to_use = purchase.refined_weight
         elif purchase.refined_status == 'no':
             stock_type_name = 'raw'
-            weight_to_use = purchase.final_weight
+            weight_to_use = purchase.weight
         else:
             return response
         
@@ -483,7 +483,7 @@ class CustomerPurchaseUpdateView(UpdateView):
                 movement_date=purchase.purchase_date
             )
             
-            messages.success(self.request, f"Metal stock updated: {weight_to_use}g of {stock_type_name} {purchase.metal_type} added.")
+            messages.success(self.request, f"Metal stock updated: {weight_to_use}g of {stock_type_name} {purchase.metal_type} ({purchase.purity}) added.")
         except Exception as e:
             messages.error(self.request, f"Error updating metal stock: {str(e)}")
         
