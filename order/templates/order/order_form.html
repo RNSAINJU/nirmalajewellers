@@ -1018,10 +1018,15 @@ function updateDerivedFields(amount) {
             }
         });
         
-        // Include raw metal stock line amounts
+        // Include raw metal stock line amounts (exclude silver from tax)
         let metalAmount = 0;
-        document.querySelectorAll('.metal-stock-row:not([data-deleted]) .line-amount').forEach(field => {
-            metalAmount += parseFloat(field.value) || 0;
+        document.querySelectorAll('.metal-stock-row:not([data-deleted])').forEach(row => {
+            const metalType = row.querySelector('.metal-type')?.value;
+            if (metalType && metalType.toLowerCase() === 'silver') {
+                return;
+            }
+            const lineAmountField = row.querySelector('.line-amount');
+            metalAmount += parseFloat(lineAmountField?.value) || 0;
         });
         
         // Total amount taxable = Gold/Diamond ornaments + Raw Metals
