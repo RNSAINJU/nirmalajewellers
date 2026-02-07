@@ -1254,52 +1254,64 @@ class SalesByMonthView(ListView):
             "order__order_ornaments__ornament", "sale_metals"
         )
         
-        # Get month and year from query params
+        # Get month and year from query params, default to current month/year
         month = self.request.GET.get('month')
         year = self.request.GET.get('year')
         
-        if month and year:
+        # If no params provided, use current Nepali date
+        if not month or not year:
             try:
-                month_int = int(month)
-                year_int = int(year)
-                
-                # Create start and end dates for the month
-                start_date = ndt.date(year_int, month_int, 1)
-                
-                # Calculate last day of the month
-                if month_int == 12:
-                    end_date = ndt.date(year_int + 1, 1, 1) - timedelta(days=1)
-                else:
-                    end_date = ndt.date(year_int, month_int + 1, 1) - timedelta(days=1)
-                
-                # Filter sales by date range
-                queryset = queryset.filter(
-                    sale_date__gte=start_date,
-                    sale_date__lte=end_date
-                )
-            except (ValueError, TypeError):
-                pass
+                current_nepali_date = ndt.date.today()
+                month = month or str(current_nepali_date.month)
+                year = year or str(current_nepali_date.year)
+            except Exception:
+                month = month or '1'
+                year = year or '2081'
+        
+        try:
+            month_int = int(month)
+            year_int = int(year)
+            
+            # Create start and end dates for the month
+            start_date = ndt.date(year_int, month_int, 1)
+            
+            # Calculate last day of the month
+            if month_int == 12:
+                end_date = ndt.date(year_int + 1, 1, 1) - timedelta(days=1)
+            else:
+                end_date = ndt.date(year_int, month_int + 1, 1) - timedelta(days=1)
+            
+            # Filter sales by date range
+            queryset = queryset.filter(
+                sale_date__gte=start_date,
+                sale_date__lte=end_date
+            )
+        except (ValueError, TypeError):
+            pass
         
         return queryset.order_by("bill_no")
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Get current filter values
-        selected_month = self.request.GET.get('month', '')
-        selected_year = self.request.GET.get('year', '')
-        
-        context['selected_month'] = selected_month
-        context['selected_year'] = selected_year
-        
         # Get current Nepali date for default selection
         try:
             current_nepali_date = ndt.date.today()
-            context['current_month'] = current_nepali_date.month
-            context['current_year'] = current_nepali_date.year
+            current_month = current_nepali_date.month
+            current_year = current_nepali_date.year
         except Exception:
-            context['current_month'] = 1
-            context['current_year'] = 2081
+            current_month = 1
+            current_year = 2081
+        
+        context['current_month'] = current_month
+        context['current_year'] = current_year
+        
+        # Get current filter values, default to current month/year
+        selected_month = self.request.GET.get('month', str(current_month))
+        selected_year = self.request.GET.get('year', str(current_year))
+        
+        context['selected_month'] = selected_month
+        context['selected_year'] = selected_year
         
         # Nepali month names
         context['nepali_months'] = [
