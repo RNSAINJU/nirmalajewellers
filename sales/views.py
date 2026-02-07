@@ -269,18 +269,22 @@ class DirectSaleCreateView(CreateView):
             default_sale_date = ""
         context.setdefault("sale_date", default_sale_date)
 
-        # Auto-generate the next available bill_no (as string)
+        # Auto-generate the next bill_no based on the latest bill number
         from .models import Sale
-        import re
-        existing_bill_nos = set(Sale.objects.exclude(bill_no__isnull=True).exclude(bill_no__exact='').values_list('bill_no', flat=True))
-        # Find the next integer bill_no not in use (skip any that exist)
-        max_bill = 1
-        bill_no_candidate = None
-        while True:
-            bill_no_candidate = str(max_bill)
-            if bill_no_candidate not in existing_bill_nos:
-                break
-            max_bill += 1
+        latest_sale = Sale.objects.exclude(bill_no__isnull=True).exclude(bill_no__exact='').order_by('-id').first()
+        
+        if latest_sale and latest_sale.bill_no:
+            try:
+                latest_bill_num = int(latest_sale.bill_no)
+                next_bill_num = latest_bill_num + 1
+                bill_no_candidate = str(next_bill_num)
+            except (ValueError, TypeError):
+                # If bill_no is not a number, default to 1
+                bill_no_candidate = "1"
+        else:
+            # No sales exist, start from 1
+            bill_no_candidate = "1"
+        
         context.setdefault("bill_no", bill_no_candidate)
 
         # Add metal stock formset for adding raw metals (same as order)
