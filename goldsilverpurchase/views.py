@@ -345,8 +345,8 @@ class CustomerPurchaseListView(ListView):
         ctx['metal_type'] = self.request.GET.get('metal_type', '')
         
         # Separate gold and silver for tabs
-        ctx['gold_purchases'] = qs.filter(metal_type='Gold')
-        ctx['silver_purchases'] = qs.filter(metal_type='Silver')
+        ctx['gold_purchases'] = qs.filter(metal_type='gold')
+        ctx['silver_purchases'] = qs.filter(metal_type='silver')
         
         # Calculate stats for each metal type
         ctx['gold_total_weight'] = ctx['gold_purchases'].aggregate(total=Sum('weight'))['total'] or Decimal('0')
