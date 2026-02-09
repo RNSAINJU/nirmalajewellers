@@ -582,10 +582,12 @@ def sales_monthly_tax_report(request):
 
 
 def sales_import_excel(request):
-    """Import sales from Excel.
+    """Import sales from Excel in detailed format.
 
     Expected columns (in order):
-    Bill No, Sale Date (BS), Order No
+    SN, Order Date, Purchase Date, Customer name, PAN, Address, Taxable sales, Phone no,
+    Ornament, Metal Type, Type, Weight, Jarti, Total weight, Own gold, Rate, Jyala, Stones,
+    Total, Discount, Tax, All total, Payment, Status, Kaligar
     """
 
     if request.method == "POST":
@@ -601,40 +603,140 @@ def sales_import_excel(request):
 
             imported = 0
             skipped = 0
+            errors = []
 
-            for row in ws.iter_rows(min_row=2, values_only=True):
+            for row_num, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
                 if not any(row):
                     continue
 
                 try:
-                    bill_no, sale_date_bs, order_no = row[:3]
-                except Exception:
-                    messages.error(request, "Excel format is incorrect. Columns mismatch.")
-                    return redirect("sales:import_excel")
+                    # Parse columns based on the format: SN, Order Date, Purchase Date, Customer name, PAN, Address, Taxable sales, Phone no, Ornament, Metal Type, Type, Weight, Jarti, Total weight, Own gold, Rate, Jyala, Stones, Total, Discount, Tax, All total, Payment, Status, Kaligar
+                    sn = row[0] if len(row) > 0 else None
+                    order_date = row[1] if len(row) > 1 else None
+                    purchase_date = row[2] if len(row) > 2 else None  # This is actually sale_date/deliver_date
+                    customer_name = row[3] if len(row) > 3 else None
+                    pan = row[4] if len(row) > 4 else None
+                    address = row[5] if len(row) > 5 else None
+                    taxable_sales = row[6] if len(row) > 6 else None
+                    phone_no = row[7] if len(row) > 7 else None
+                    ornament_name = row[8] if len(row) > 8 else None
+                    metal_type = row[9] if len(row) > 9 else None
+                    purity_type = row[10] if len(row) > 10 else None
+                    weight = row[11] if len(row) > 11 else None
+                    jarti = row[12] if len(row) > 12 else None
+                    total_weight = row[13] if len(row) > 13 else None
+                    own_gold = row[14] if len(row) > 14 else None
+                    rate = row[15] if len(row) > 15 else None
+                    jyala = row[16] if len(row) > 16 else None
+                    stones = row[17] if len(row) > 17 else None
+                    ornament_total = row[18] if len(row) > 18 else None
+                    discount = row[19] if len(row) > 19 else None
+                    tax = row[20] if len(row) > 20 else None
+                    all_total = row[21] if len(row) > 21 else None
+                    payment_mode = row[22] if len(row) > 22 else None
+                    status = row[23] if len(row) > 23 else None
+                    kaligar_name = row[24] if len(row) > 24 else None
 
-                if not order_no:
+                    if not customer_name or not ornament_name:
+                        skipped += 1
+                        continue
+
+                    # Create or get customer
+                    from goldsilverpurchase.models import Customer
+                    customer, _ = Customer.objects.get_or_create(
+                        name=str(customer_name).strip(),
+                        defaults={
+                            'phone_number': str(phone_no or '').strip(),
+                            'address': str(address or '').strip(),
+                            'pan_no': str(pan or '').strip(),
+                        }
+                    )
+
+                    # Create or get ornament
+                    from ornament.models import Ornament, Kaligar
+                    
+                    # Get or create Kaligar
+                    kaligar = None
+                    if kaligar_name:
+                        kaligar, _ = Kaligar.objects.get_or_create(
+                            name=str(kaligar_name).strip()
+                        )
+
+                    # Parse metal type and purity
+                    metal_type_str = str(metal_type or 'Gold').strip()
+                    purity_str = str(purity_type or '24K').strip()
+                    
+                    ornament, _ = Ornament.objects.get_or_create(
+                        name=str(ornament_name).strip(),
+                        metal_type=metal_type_str,
+                        defaults={
+                            'purity_type': purity_str,
+                            'weight': Decimal(str(weight or 0)),
+                            'kaligar': kaligar,
+                        }
+                    )
+
+                    # Create Order
+                    from order.models import Order, OrderOrnament
+                    
+                    order = Order.objects.create(
+                        customer=customer,
+                        order_date=str(order_date or '').strip() if order_date else None,
+                        deliver_date=str(purchase_date or '').strip() if purchase_date else None,
+                        total=Decimal(str(all_total or 0)),
+                        discount=Decimal(str(discount or 0)),
+                        taxable_amount=Decimal(str(taxable_sales or 0)),
+                        tax=Decimal(str(tax or 0)),
+                        status=str(status or 'pending').strip().lower(),
+                    )
+
+                    # Create OrderOrnament
+                    OrderOrnament.objects.create(
+                        order=order,
+                        ornament=ornament,
+                        quantity=1,
+                        customer_jarti=Decimal(str(jarti or 0)),
+                        ornament_jarti=Decimal(str(weight or 0)),
+                        jyala=Decimal(str(jyala or 0)),
+                        stone_amount=Decimal(str(stones or 0)),
+                        rate=Decimal(str(rate or 0)),
+                        own_gold=Decimal(str(own_gold or 0)),
+                        own_silver=Decimal('0'),
+                    )
+
+                    # Create Payment if payment mode is specified
+                    if payment_mode and str(payment_mode).strip().lower() != 'none':
+                        from order.models import OrderPayment
+                        payment_method = str(payment_mode).strip().lower()
+                        if payment_method in ['cash', 'fonepay', 'bank', 'gold', 'silver', 'sundry_debtor']:
+                            OrderPayment.objects.create(
+                                order=order,
+                                amount=Decimal(str(all_total or 0)),
+                                payment_method=payment_method,
+                                payment_date=str(purchase_date or '').strip() if purchase_date else None,
+                            )
+
+                    # Create Sale
+                    Sale.objects.create(
+                        order=order,
+                        bill_no=str(sn or '').strip(),
+                        sale_date=str(purchase_date or '').strip() if purchase_date else None,
+                    )
+
+                    imported += 1
+
+                except Exception as exc:
+                    errors.append(f"Row {row_num}: {str(exc)}")
                     skipped += 1
                     continue
 
-                order = Order.objects.filter(sn=int(order_no)).first()
-                if not order:
-                    skipped += 1
-                    continue
-
-                if hasattr(order, "sale") and order.sale is not None:
-                    skipped += 1
-                    continue
-
-                sale = Sale(order=order)
-                sale.bill_no = str(bill_no or "")
-                if sale_date_bs:
-                    sale.sale_date = str(sale_date_bs)
-                sale.save()
-                imported += 1
+            if errors and len(errors) <= 10:
+                for error in errors:
+                    messages.warning(request, error)
 
             messages.success(
                 request,
-                f"Imported {imported} sales, skipped {skipped} duplicate/invalid rows.",
+                f"Imported {imported} sales, skipped {skipped} rows. {len(errors)} errors.",
             )
             return redirect("sales:sales_list")
 
@@ -652,26 +754,32 @@ def download_import_template(request):
     ws = wb.active
     ws.title = "Sales Import"
     
-    # Define columns
+    # Define columns matching the user's format
     columns = [
-        'Bill no',
+        'SN',
         'Order Date',
-        'Deliver Date',
-        'Customer Name',
-        'Phone No',
-        'Ornament name',
+        'Purchase Date',
+        'Customer name',
+        'PAN',
+        'ठेगाना',
+        'Taxable sales',
+        'Phone no',
+        'Ornament',
         'Metal Type',
-        'Purity Type',
+        'Type',
         'Weight',
         'Jarti',
+        'Total weight',
+        'Own gold (tola)',
+        'Rate (tola)',
         'Jyala',
         'Stones',
-        'Rate per Tola',
+        'Total',
         'Discount',
         'Tax',
-        'Total',
-        'Payment Mode',
-        'Order Status',
+        'All total',
+        'Payment',
+        'Status',
         'Kaligar'
     ]
     
@@ -689,9 +797,9 @@ def download_import_template(request):
     
     # Add sample data rows
     sample_data = [
-        ['001', '2080-01-01', '2080-01-08', 'John Doe', '9841234567', 'Ring', 'Gold', '24K', '5', '500', '1000', '2000', '60000', '5000', '2000', '50000', 'cash', 'delivered', 'Ramesh'],
-        ['001', '2080-01-01', '2080-01-08', 'John Doe', '9841234567', 'Necklace', 'Gold', '24K', '15', '1500', '3000', '5000', '60000', '', '', '105000', 'cash', 'delivered', 'Ramesh'],
-        ['002', '2080-01-02', '2080-01-09', 'Jane Smith', '9845678901', 'Bracelet', 'Silver', '92.5', '20', '0', '0', '0', '900', '0', '1000', '16000', 'sundry_debtor', 'delivered', 'Ashok'],
+        ['207', '2082-09-01', '2082-09-01', 'Sandhya Nagarkoti', 'Gundu', 'Kathmandu', '4710', '9841234567', 'Diamond Nosepin', 'Diamond', '14KARAT', '0.08', '0', '0.08', '0', '15230', '702', '2960', '4710', '0', '94.2', '4807.2', 'Fonepay', 'Complete', 'Ritu Gems'],
+        ['208', '2082-09-02', '2082-09-02', 'Ram Prasad', '', 'Pokhara', '8500', '9845678901', 'Gold Ring', 'Gold', '22K', '5.5', '500', '6', '0', '60000', '1500', '5000', '8500', '1000', '170', '8670', 'cash', 'delivered', 'Ramesh'],
+        ['209', '2082-09-03', '2082-09-03', 'Sita Devi', 'PAN12345', 'Lalitpur', '12000', '9801234567', 'Silver Necklace', 'Silver', '92.5', '25', '0', '25', '0', '900', '0', '0', '12000', '500', '240', '12240', 'bank', 'pending', 'Ashok'],
     ]
     
     for row_data in sample_data:
@@ -704,7 +812,7 @@ def download_import_template(request):
         for cell in column:
             if cell.value:
                 max_length = max(max_length, len(str(cell.value)))
-        ws.column_dimensions[col_letter].width = max_length + 2
+        ws.column_dimensions[col_letter].width = min(max_length + 2, 20)
     
     # Create response
     output = BytesIO()

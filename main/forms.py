@@ -113,3 +113,19 @@ class DailyRateForm(forms.ModelForm):
             'gold_rate': 'Gold Rate (per Tola)',
             'silver_rate': 'Silver Rate (per Tola)',
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Auto-populate bs_date with today's Nepali date if not editing
+        if not self.instance.pk:
+            try:
+                import nepali_datetime as ndt
+                today_bs = ndt.date.today()
+                # Format as "DD Month YYYY" (e.g., "29 Poush 2082")
+                nepali_months = ['', 'Baisakh', 'Jestha', 'Ashadh', 'Shrawan', 'Bhadra', 
+                               'Ashwin', 'Kartik', 'Mangsir', 'Poush', 'Magh', 'Falgun', 'Chaitra']
+                month_name = nepali_months[today_bs.month]
+                self.initial['bs_date'] = f"{today_bs.day} {month_name} {today_bs.year}"
+            except Exception:
+                # Fallback if nepali_datetime is not available
+                pass

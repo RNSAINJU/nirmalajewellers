@@ -249,19 +249,37 @@ def dashboard(request):
     total_purchase_amount = GoldSilverPurchase.objects.aggregate(total=Sum('amount'))['total'] or 0
     total_order_amount = Order.objects.aggregate(total=Sum('total'))['total'] or 0
 
-    # Sales by month for chart
-    from django.db.models.functions import TruncMonth
-    sales_by_month_qs = (
-        Order.objects
-        .filter(created_at__isnull=False)
-        .annotate(month=TruncMonth('created_at'))
-        .values('month')
-        .annotate(total=Sum('total'))
-        .order_by('month')
-    )
+    # Sales by month for chart - using Sale model with NepaliDateField
     import json
-    sales_month_labels = [x['month'].strftime('%b %Y') if x['month'] else '' for x in sales_by_month_qs]
-    sales_month_totals = [float(x['total'] or 0) for x in sales_by_month_qs]
+    from sales.models import Sale
+    from collections import defaultdict
+    
+    # Get all sales with their Nepali dates and order totals
+    sales = Sale.objects.select_related('order').filter(sale_date__isnull=False).order_by('sale_date')
+    
+    # Group sales by Nepali year-month
+    monthly_sales = defaultdict(Decimal)
+    for sale in sales:
+        if sale.sale_date:
+            # Create a month key like "2081-01" from Nepali date
+            month_key = f"{sale.sale_date.year}-{sale.sale_date.month:02d}"
+            monthly_sales[month_key] += sale.order.total or Decimal('0')
+    
+    # Sort by month key and create labels/totals
+    sorted_months = sorted(monthly_sales.keys())
+    sales_month_labels = []
+    sales_month_totals = []
+    
+    # Nepali month names
+    nepali_months = ['', 'Baisakh', 'Jestha', 'Ashadh', 'Shrawan', 'Bhadra', 'Ashwin', 
+                     'Kartik', 'Mangsir', 'Poush', 'Magh', 'Falgun', 'Chaitra']
+    
+    for month_key in sorted_months:
+        year, month = month_key.split('-')
+        month_name = nepali_months[int(month)]
+        sales_month_labels.append(f"{month_name} {year}")
+        sales_month_totals.append(float(monthly_sales[month_key]))
+    
     # For Chart.js, serialize as JSON for safe JS rendering
     sales_month_labels_json = json.dumps(sales_month_labels)
     sales_month_totals_json = json.dumps(sales_month_totals)
