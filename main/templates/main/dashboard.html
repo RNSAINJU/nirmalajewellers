@@ -45,39 +45,18 @@
     background: rgba(255, 255, 255, 0.95);
     border: 2px solid rgba(255, 255, 255, 0.3);
     padding: 10px 12px;
-          <canvas id="salesByMonthChart" height="80"></canvas>
-          <script>
-            document.addEventListener('DOMContentLoaded', function() {
-              var ctx = document.getElementById('salesByMonthChart').getContext('2d');
-              var salesByMonthChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                  labels: {{ sales_month_labels|safe }},
-                  datasets: [{
-                    label: 'Sales (₹)',
-                    data: {{ sales_month_totals|safe }},
-                    backgroundColor: 'rgba(250, 112, 154, 0.7)',
-                    borderColor: 'rgba(250, 112, 154, 1)',
-                    borderWidth: 2,
-                    borderRadius: 6,
-                  }]
-                },
-                options: {
-                  responsive: true,
-                  plugins: {
-                    legend: { display: false },
-                    title: { display: false }
-                  },
-                  scales: {
-                    x: { grid: { display: false } },
-                    y: {
-                      beginAtZero: true,
-                      ticks: { callback: function(value) { return '₹' + value; } }
-                    }
-                  }
-                }
-              });
-            });
+    border-radius: 8px;
+    transition: all 0.2s;
+  }
+
+  .rate-input-form input:focus {
+    outline: none;
+    border-color: white;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+  }
+
+  :root {
+    --text-main: #1e293b;
     --text-muted: #6b7280;
   }
 
