@@ -716,12 +716,32 @@ const inlineError = document.getElementById('inline-ornament-error');
 function closeInlineOrnamentModal() {
     const modalEl = document.getElementById('inlineOrnamentModal');
     if (!modalEl) return;
-    const instance = bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl);
-    instance.hide();
-    // Fallback cleanup if backdrop/body classes linger
-    modalEl.classList.remove('show');
-    document.body.classList.remove('modal-open');
-    document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+    
+    // Get or create Bootstrap modal instance
+    const instance = bootstrap.Modal.getInstance(modalEl);
+    if (instance) {
+        instance.hide();
+    }
+    
+    // Force cleanup after a short delay to ensure modal is fully closed
+    setTimeout(() => {
+        // Remove modal classes
+        modalEl.classList.remove('show');
+        modalEl.style.display = 'none';
+        modalEl.setAttribute('aria-hidden', 'true');
+        modalEl.removeAttribute('aria-modal');
+        modalEl.removeAttribute('role');
+        
+        // Remove body classes and styles
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+        
+        // Remove all backdrops
+        document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+            backdrop.remove();
+        });
+    }, 150);
 }
 
 function inlineOrnamentPayload() {
@@ -757,6 +777,11 @@ inlineSaveBtn?.addEventListener('click', function() {
         return;
     }
 
+    // Disable button and show loading state
+    inlineSaveBtn.disabled = true;
+    const originalText = inlineSaveBtn.textContent;
+    inlineSaveBtn.textContent = 'Creating...';
+
     const formData = new FormData();
     Object.entries(payload).forEach(([k, v]) => formData.append(k, v));
 
@@ -769,14 +794,16 @@ inlineSaveBtn?.addEventListener('click', function() {
     })
     .then(res => res.json())
     .then(data => {
+        // Re-enable button
+        inlineSaveBtn.disabled = false;
+        inlineSaveBtn.textContent = originalText;
+        
         if (!data.ok) {
             inlineError.textContent = data.error || 'Unable to create ornament.';
             inlineError.classList.remove('d-none');
             return;
         }
-        // Close modal (with cleanup for lingering backdrop)
-        closeInlineOrnamentModal();
-
+        
         // Add to selection immediately
         if (data.ornament) {
             selectOrnament(data.ornament);
@@ -786,9 +813,16 @@ inlineSaveBtn?.addEventListener('click', function() {
         ['inline-ornament-name','inline-ornament-code','inline-ornament-weight','inline-ornament-diamond','inline-ornament-zircon','inline-ornament-stone','inline-ornament-jarti','inline-ornament-jyala'].forEach(id => {
             const el = document.getElementById(id); if (el) el.value = '';
         });
+        
+        // Close modal (with cleanup for lingering backdrop)
+        closeInlineOrnamentModal();
     })
     .catch(err => {
-        inlineError.textContent = err.message;
+        // Re-enable button on error
+        inlineSaveBtn.disabled = false;
+        inlineSaveBtn.textContent = originalText;
+        
+        inlineError.textContent = err.message || 'An error occurred';
         inlineError.classList.remove('d-none');
     });
 });
