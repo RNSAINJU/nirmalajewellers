@@ -5,7 +5,23 @@
 {% block content %}
 
 <style>
-    /* Order-specific styles */
+    /* Base stat card styles */
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        text-align: center;
+        transition: all 0.3s;
+        color: white;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
     .stat-card.profit {
         background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     }
@@ -23,6 +39,8 @@
         opacity: 0.9;
         margin-bottom: 8px;
         font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
     
     .stat-value {
@@ -31,6 +49,92 @@
         margin: 0;
     }
     
+    /* Stats tabs container */
+    .stats-tabs {
+        margin-bottom: 25px;
+    }
+    
+    /* Button styles */
+    .btn-create {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn-create:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+    
+    .btn-import {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border: none;
+        transition: all 0.3s;
+    }
+    
+    .btn-import:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        color: white;
+    }
+    
+    .btn-export {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        border: none;
+        transition: all 0.3s;
+    }
+    
+    .btn-export:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        color: white;
+    }
+    
+    .btn-print {
+        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        color: white;
+        border: none;
+        transition: all 0.3s;
+    }
+    
+    .btn-print:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        color: white;
+    }
+    
+    .btn-action {
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+    
+    /* Action buttons section */
+    .action-buttons {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 12px;
+        border: 2px solid #e9ecef;
+    }
+    
+    /* Search section */
+    .search-section {
+        background: white;
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+    /* Ornament link styles */
     .ornament-link {
         color: #0d6efd;
         font-weight: 600;
@@ -64,6 +168,53 @@
         background: #f3f4f6;
         color: #4b5563;
         border-color: #e5e7eb;
+    }
+    
+    /* Table improvements */
+    .table-responsive {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .table {
+        margin-bottom: 0;
+    }
+    
+    .table thead th {
+        font-weight: 600;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    /* Tab improvements */
+    .nav-tabs {
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .nav-tabs .nav-link {
+        border: none;
+        color: #6b7280;
+        font-weight: 600;
+        padding: 12px 20px;
+        transition: all 0.3s;
+    }
+    
+    .nav-tabs .nav-link:hover {
+        color: #374151;
+        background: #f3f4f6;
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: #667eea;
+        background: white;
+        border-bottom: 3px solid #667eea;
+    }
+    
+    .nav-tabs .badge {
+        font-size: 12px;
+        padding: 4px 8px;
     }
 </style>
 
