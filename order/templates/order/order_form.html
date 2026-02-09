@@ -570,11 +570,39 @@
                         </select>
                     </div>
                     <div class="col-md-6">
+                        <label class="form-label mb-1">Type / Purity</label>
+                        <select id="inline-ornament-type" class="form-select form-select-sm">
+                            <option value="24KARAT">24 Karat</option>
+                            <option value="23KARAT">23 Karat</option>
+                            <option value="22KARAT">22 Karat</option>
+                            <option value="18KARAT">18 Karat</option>
+                            <option value="14KARAT">14 Karat</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
                         <label class="form-label mb-1">Kaligar</label>
                         <select id="inline-ornament-kaligar" class="form-select form-select-sm">
                             <option value="">Select Kaligar</option>
                             {% for kaligar in kaligars %}
                             <option value="{{ kaligar.id }}">{{ kaligar.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label mb-1">Main Category</label>
+                        <select id="inline-ornament-maincategory" class="form-select form-select-sm">
+                            <option value="">Select Main Category</option>
+                            {% for category in main_categories %}
+                            <option value="{{ category.id }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label mb-1">Sub Category</label>
+                        <select id="inline-ornament-subcategory" class="form-select form-select-sm">
+                            <option value="">Select Sub Category</option>
+                            {% for category in sub_categories %}
+                            <option value="{{ category.id }}">{{ category.name }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -701,6 +729,7 @@ function inlineOrnamentPayload() {
         ornament_name: document.getElementById('inline-ornament-name').value.trim(),
         code: document.getElementById('inline-ornament-code').value.trim(),
         metal_type: document.getElementById('inline-ornament-metal').value,
+        type: document.getElementById('inline-ornament-type').value,
         weight: document.getElementById('inline-ornament-weight').value,
         diamond_weight: document.getElementById('inline-ornament-diamond').value,
         zircon_weight: document.getElementById('inline-ornament-zircon').value,
@@ -708,6 +737,8 @@ function inlineOrnamentPayload() {
         jarti: document.getElementById('inline-ornament-jarti').value,
         jyala: document.getElementById('inline-ornament-jyala').value,
         kaligar: document.getElementById('inline-ornament-kaligar').value,
+        maincategory: document.getElementById('inline-ornament-maincategory').value,
+        subcategory: document.getElementById('inline-ornament-subcategory').value,
     };
 }
 

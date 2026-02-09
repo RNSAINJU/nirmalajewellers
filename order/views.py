@@ -17,7 +17,7 @@ from openpyxl.utils import get_column_letter
 from .models import Order, OrderOrnament, OrderPayment, OrderMetalStock
 from sales.models import Sale
 from .forms import OrderForm, OrnamentFormSet, MetalStockFormSet
-from ornament.models import Ornament, Kaligar
+from ornament.models import Ornament, Kaligar, MainCategory, SubCategory
 from goldsilverpurchase.models import MetalStock, MetalStockMovement
 
 app_name = 'order'
@@ -87,11 +87,29 @@ class CreateOrnamentInlineView(View):
         except Kaligar.DoesNotExist:
             return JsonResponse({"ok": False, "error": "Kaligar is required."}, status=400)
 
+        # Get maincategory and subcategory if provided
+        maincategory = None
+        maincategory_id = data.get("maincategory")
+        if maincategory_id:
+            try:
+                maincategory = MainCategory.objects.get(pk=maincategory_id)
+            except MainCategory.DoesNotExist:
+                pass
+        
+        subcategory = None
+        subcategory_id = data.get("subcategory")
+        if subcategory_id:
+            try:
+                subcategory = SubCategory.objects.get(pk=subcategory_id)
+            except SubCategory.DoesNotExist:
+                pass
+
         ornament = Ornament.objects.create(
             ornament_date=ndt.date.today(),
             code=data.get("code") or None,
             ornament_name=data.get("ornament_name") or "",
             metal_type=data.get("metal_type") or Ornament.MetalTypeCategory.GOLD,
+            type=data.get("type") or Ornament.TypeCategory.TWENTYFOURKARAT,
             ornament_type=Ornament.OrnamentCategory.ORDER,
             weight=D(data.get("weight")),
             diamond_weight=D(data.get("diamond_weight")),
@@ -100,6 +118,8 @@ class CreateOrnamentInlineView(View):
             jarti=D(data.get("jarti")),
             jyala=D(data.get("jyala")),
             kaligar=kaligar,
+            maincategory=maincategory,
+            subcategory=subcategory,
         )
 
         return JsonResponse(
@@ -245,6 +265,8 @@ class OrderCreateView(CreateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx['kaligars'] = Kaligar.objects.all()
+        ctx['main_categories'] = MainCategory.objects.all()
+        ctx['sub_categories'] = SubCategory.objects.all()
         ctx['payment_choices'] = Order.PAYMENT_CHOICES
         ctx['initial_payments_json'] = json.dumps([])
         
@@ -530,6 +552,8 @@ class OrderUpdateView(UpdateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx['kaligars'] = Kaligar.objects.all()
+        ctx['main_categories'] = MainCategory.objects.all()
+        ctx['sub_categories'] = SubCategory.objects.all()
         ctx['payment_choices'] = Order.PAYMENT_CHOICES
         payments = list(self.object.payments.values('payment_mode', 'amount')) if self.object.pk else []
         for payment in payments:
