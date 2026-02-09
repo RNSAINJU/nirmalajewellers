@@ -717,31 +717,40 @@ function closeInlineOrnamentModal() {
     const modalEl = document.getElementById('inlineOrnamentModal');
     if (!modalEl) return;
     
-    // Get or create Bootstrap modal instance
+    // Get Bootstrap modal instance
     const instance = bootstrap.Modal.getInstance(modalEl);
     if (instance) {
         instance.hide();
     }
     
-    // Force cleanup after a short delay to ensure modal is fully closed
+    // Immediate cleanup - don't wait
+    modalEl.classList.remove('show', 'fade');
+    modalEl.style.display = 'none';
+    modalEl.setAttribute('aria-hidden', 'true');
+    modalEl.removeAttribute('aria-modal');
+    modalEl.removeAttribute('role');
+    
+    // Completely restore body scrolling
+    document.body.classList.remove('modal-open');
+    document.body.style.removeProperty('overflow');
+    document.body.style.removeProperty('padding-right');
+    document.body.style.overflow = 'auto';
+    
+    // Remove all modal backdrops immediately
+    const backdrops = document.querySelectorAll('.modal-backdrop');
+    backdrops.forEach(backdrop => backdrop.remove());
+    
+    // Double check after animation completes
     setTimeout(() => {
-        // Remove modal classes
-        modalEl.classList.remove('show');
-        modalEl.style.display = 'none';
-        modalEl.setAttribute('aria-hidden', 'true');
-        modalEl.removeAttribute('aria-modal');
-        modalEl.removeAttribute('role');
-        
-        // Remove body classes and styles
         document.body.classList.remove('modal-open');
-        document.body.style.overflow = '';
-        document.body.style.paddingRight = '';
+        document.body.style.overflow = 'auto';
+        document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
         
-        // Remove all backdrops
-        document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
-            backdrop.remove();
-        });
-    }, 150);
+        // Force restore fade class for next opening
+        if (!modalEl.classList.contains('fade')) {
+            modalEl.classList.add('fade');
+        }
+    }, 200);
 }
 
 function inlineOrnamentPayload() {
