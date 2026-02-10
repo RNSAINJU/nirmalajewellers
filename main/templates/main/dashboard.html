@@ -1,6 +1,5 @@
 
 {% extends 'base.html' %}
-{% include 'main/_chartjs_head.html' %}
 
 {% block content %}
 <style>
@@ -841,4 +840,8 @@
   </div>
 </div>
 
+{% endblock %}
+
+{% block extra_js %}
+  {% include 'main/_chartjs_head.html' %}
 {% endblock %}
