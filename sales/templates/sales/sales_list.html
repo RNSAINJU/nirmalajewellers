@@ -171,6 +171,34 @@
         </div>
     </div>
 
+    <!-- Tabs Navigation (like customer purchase page) -->
+    <ul class="nav nav-tabs mb-4" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all-content" type="button" role="tab" aria-controls="all-content" aria-selected="true">
+                <span style="font-weight: 600;">🧾 All Sales</span>
+                <small class="ms-2" style="color: #666;">({{ all_sales_count }})</small>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="gold-tab" data-bs-toggle="tab" data-bs-target="#gold-content" type="button" role="tab" aria-controls="gold-content" aria-selected="false">
+                <span style="color: #fbbf24; font-weight: 600;">🥇 Gold</span>
+                <small class="ms-2" style="color: #666;">({{ gold_sales_count }})</small>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="silver-tab" data-bs-toggle="tab" data-bs-target="#silver-content" type="button" role="tab" aria-controls="silver-content" aria-selected="false">
+                <span style="color: #94a3b8; font-weight: 600;">🥈 Silver</span>
+                <small class="ms-2" style="color: #666;">({{ silver_sales_count }})</small>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="diamond-tab" data-bs-toggle="tab" data-bs-target="#diamond-content" type="button" role="tab" aria-controls="diamond-content" aria-selected="false">
+                <span style="color: #a855f7; font-weight: 600;">💎 Diamond</span>
+                <small class="ms-2" style="color: #666;">({{ diamond_sales_count }})</small>
+            </button>
+        </li>
+    </ul>
+
     <!-- Create button -->
     <div class="d-flex justify-content-center mb-4">
         <a href="{% url 'sales:sale_create' %}" class="btn btn-create">
@@ -223,103 +251,419 @@
         </div>
     </div>
 
-    <div class="table-responsive">
-        <table class="table table-bordered table-striped table-hover align-middle">
-            <thead class="table-dark">
-                <tr>
-                    <th>Bill No</th>
-                    <th>Sale Date</th>
-                    <th>Order No</th>
-                    <th>Order Date</th>
-                    <th>Customer</th>
-                    <th>Phone</th>
-                    <th>Ornaments</th>
-                    <th>Weight</th>
-                    <th>Total</th>
-                    <th>Paid</th>
-                    <th>Remaining</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for sale in sales %}
-                {% with order=sale.order %}
-                <tr>
-                    <td>
-                        <a href="{% url 'sales:sale_update' sale.pk %}" class="text-decoration-none fw-semibold">{{ sale.bill_no }}</a>
-                    </td>
-                    <td>{{ sale.sale_date|bs_date }}</td>
-                    <td><a href="{% url 'order:update' order.sn %}" class="text-decoration-none ornament-link" target="_blank">{{ order.sn }}</a></td>
-                    <td>{{ order.order_date|bs_date }}</td>
-                    <td>{{ order.customer_name }}</td>
-                    <td>{{ order.phone_number }}</td>
-                    <td>
-                        {% with items=order.order_ornaments.all %}
-                            {% if items and items|length > 0 %}
-                                <div class="ornament-chips" title="{% for line in items %}{{ line.ornament.ornament_name }} ({{ line.ornament.metal_type }}, {{ line.ornament.type }}){% if not forloop.last %}, {% endif %}{% endfor %}">
-                                    {% for line in items|slice:":3" %}
-                                        <a href="{% url 'ornament:update' line.ornament.id %}" class="text-decoration-none ornament-link"><span class="ornament-chip">{{ line.ornament.ornament_name }} • {{ line.ornament.metal_type }}</span></a>
-                                    {% endfor %}
-                                    {% if items|length > 3 %}
-                                        <span class="ornament-chip ornament-chip-muted">+{{ items|length|add:"-3" }} more</span>
-                                    {% endif %}
-                                </div>
-                            {% endif %}
-                        {% endwith %}
-                        {% with metals=sale.sale_metals.all %}
-                            {% if metals and metals|length > 0 %}
-                                <div class="ornament-chips mt-1" title="{% for metal in metals %}{{ metal.get_metal_type_display }} {{ metal.purity }} - {{ metal.quantity|floatformat:3 }}g @ Rs.{{ metal.rate_per_gram|floatformat:2 }}/g{% if not forloop.last %}, {% endif %}{% endfor %}">
-                                    {% for metal in metals|slice:":3" %}
-                                        <span class="ornament-chip"><i class="bi bi-award-fill text-primary me-1"></i><strong>{{ metal.get_metal_type_display }}</strong> {{ metal.purity }} - {{ metal.quantity|floatformat:3 }}g @ Rs.{{ metal.rate_per_gram|floatformat:2 }}/g</span>
-                                    {% endfor %}
-                                    {% if metals|length > 3 %}
-                                        <span class="ornament-chip ornament-chip-muted">+{{ metals|length|add:"-3" }} more</span>
-                                    {% endif %}
-                                </div>
-                            {% endif %}
-                        {% endwith %}
-                        {% if order.order_ornaments.count == 0 and sale.sale_metals.count == 0 %}
-                            <small class="text-muted">No ornaments</small>
-                        {% endif %}
-                    </td>
-                    <td>{{ sale.total_weight|default:0|floatformat:3 }}</td>
-                    <td>रु{{ sale.display_total|default:0|floatformat:2 }}</td>
-                    <td>
-                        {% if order.total_paid > 0 %}
-                            रु{{ order.total_paid|floatformat:2 }}
-                            {% if order.payments.count > 1 %}
-                                <small class="text-muted">(Mixed)</small><br>
-                                {% for payment in order.payments.all %}
-                                    <small>• {{ payment.get_payment_mode_display }}: रु{{ payment.amount|floatformat:2 }}</small><br>
-                                {% endfor %}
-                            {% elif order.payments.count == 1 %}
-                                <small class="text-muted">({{ order.payments.first.get_payment_mode_display }})</small>
-                            {% endif %}
-                        {% else %}
-                            <span class="text-danger">रु0.00</span>
-                            <small class="text-muted">(Unpaid)</small>
-                        {% endif %}
-                    </td>
-                    <td>रु{{ order.remaining_amount|floatformat:2 }}</td>
-                    <td><span class="badge bg-info">{{ order.get_status_display }}</span></td>
-                    <td class="text-center">
-                        <div class="btn-group" role="group">
-                            <a href="{% url 'sales:sale_update' sale.pk %}" class="btn btn-sm btn-outline-warning" title="Edit">
-                                <i class="bi bi-pencil-square"></i>
-                            </a>
-                            <a href="{% url 'sales:sale_delete' sale.pk %}" class="btn btn-sm btn-outline-danger" title="Delete">
-                                <i class="bi bi-trash-fill"></i>
-                            </a>
+    <div class="tab-content">
+                        <!-- All Sales Tab -->
+                        <div class="tab-pane fade show active" id="all-content" role="tabpanel" aria-labelledby="all-tab">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped table-hover align-middle">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Bill No</th>
+                                            <th>Sale Date</th>
+                                            <th>Order No</th>
+                                            <th>Order Date</th>
+                                            <th>Customer</th>
+                                            <th>Phone</th>
+                                            <th>Ornaments</th>
+                                            <th>Weight</th>
+                                            <th>Total</th>
+                                            <th>Paid</th>
+                                            <th>Remaining</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for sale in sales %}
+                                        {% with order=sale.order %}
+                                        <tr>
+                                            <td>
+                                                <a href="{% url 'sales:sale_update' sale.pk %}" class="text-decoration-none fw-semibold">{{ sale.bill_no }}</a>
+                                            </td>
+                                            <td>{{ sale.sale_date|bs_date }}</td>
+                                            <td><a href="{% url 'order:update' order.sn %}" class="text-decoration-none ornament-link" target="_blank">{{ order.sn }}</a></td>
+                                            <td>{{ order.order_date|bs_date }}</td>
+                                            <td>{{ order.customer_name }}</td>
+                                            <td>{{ order.phone_number }}</td>
+                                            <td>
+                                                {% with items=order.order_ornaments.all %}
+                                                    {% if items and items|length > 0 %}
+                                                        <div class="ornament-chips" title="{% for line in items %}{{ line.ornament.ornament_name }} ({{ line.ornament.metal_type }}, {{ line.ornament.type }}){% if not forloop.last %}, {% endif %}{% endfor %}">
+                                                            {% for line in items|slice:':3' %}
+                                                                <span class="ornament-chip">{{ line.ornament.ornament_name }}</span>
+                                                            {% endfor %}
+                                                            {% if items|length > 3 %}
+                                                                <span class="ornament-chip ornament-chip-muted">+{{ items|length|add:"-3" }}</span>
+                                                            {% endif %}
+                                                        </div>
+                                                    {% else %}
+                                                        <span class="text-muted">No ornaments</span>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </td>
+                                            <td>
+                                                {{ sale.total_weight|floatformat:3 }}
+                                                <div class="text-muted" style="font-size: 12px;">24K G: {{ sale.gold_24_weight|floatformat:3 }}</div>
+                                                <div class="text-muted" style="font-size: 12px;">24K S: {{ sale.silver_24_weight|floatformat:3 }}</div>
+                                            </td>
+                                            <td>{{ sale.display_total|floatformat:2 }}</td>
+                                            <td>{{ order.total_paid|floatformat:2 }}</td>
+                                            <td>{{ order.remaining_amount|floatformat:2 }}</td>
+                                            <td>
+                                                {% if order.remaining_amount <= 0 %}
+                                                    <span class="badge bg-success">Paid</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning text-dark">Due</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'sales:sale_update' sale.pk %}" class="btn btn-sm btn-primary">Edit</a>
+                                                <a href="{% url 'sales:sale_delete_with_order' sale.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                                            </td>
+                                        </tr>
+                                        {% endwith %}
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="13" class="text-center text-muted">No sales found.</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="table-light fw-semibold">
+                                            <td colspan="7" class="text-end">Totals</td>
+                                            <td class="text-end">{{ all_totals.weight|floatformat:3 }}</td>
+                                            <td class="text-end">{{ all_totals.total|floatformat:2 }}</td>
+                                            <td class="text-end">{{ all_totals.paid|floatformat:2 }}</td>
+                                            <td class="text-end">{{ all_totals.remaining|floatformat:2 }}</td>
+                                            <td colspan="2"></td>
+                                        </tr>
+                                        <tr class="table-light">
+                                            <td colspan="7" class="text-end">24K Gold Weight</td>
+                                            <td class="text-end">{{ all_totals.gold_24_weight|floatformat:3 }}</td>
+                                            <td colspan="5"></td>
+                                        </tr>
+                                        <tr class="table-light">
+                                            <td colspan="7" class="text-end">24K Silver Weight</td>
+                                            <td class="text-end">{{ all_totals.silver_24_weight|floatformat:3 }}</td>
+                                            <td colspan="5"></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
                         </div>
-                    </td>
-                </tr>
-                {% endwith %}
-                {% empty %}
-                <tr><td colspan="16" class="text-center">No sales yet.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+
+                        <!-- Gold Tab -->
+                        <div class="tab-pane fade" id="gold-content" role="tabpanel" aria-labelledby="gold-tab">
+                            {% if gold_sales %}
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped table-hover align-middle">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Bill No</th>
+                                            <th>Sale Date</th>
+                                            <th>Order No</th>
+                                            <th>Order Date</th>
+                                            <th>Customer</th>
+                                            <th>Phone</th>
+                                            <th>Ornaments</th>
+                                            <th>Weight</th>
+                                            <th>Total</th>
+                                            <th>Paid</th>
+                                            <th>Remaining</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for sale in gold_sales %}
+                                        {% with order=sale.order %}
+                                        <tr>
+                                            <td>
+                                                <a href="{% url 'sales:sale_update' sale.pk %}" class="text-decoration-none fw-semibold">{{ sale.bill_no }}</a>
+                                            </td>
+                                            <td>{{ sale.sale_date|bs_date }}</td>
+                                            <td><a href="{% url 'order:update' order.sn %}" class="text-decoration-none ornament-link" target="_blank">{{ order.sn }}</a></td>
+                                            <td>{{ order.order_date|bs_date }}</td>
+                                            <td>{{ order.customer_name }}</td>
+                                            <td>{{ order.phone_number }}</td>
+                                            <td>
+                                                {% with items=order.order_ornaments.all %}
+                                                    {% if items and items|length > 0 %}
+                                                        <div class="ornament-chips" title="{% for line in items %}{{ line.ornament.ornament_name }} ({{ line.ornament.metal_type }}, {{ line.ornament.type }}){% if not forloop.last %}, {% endif %}{% endfor %}">
+                                                            {% for line in items|slice:':3' %}
+                                                                <span class="ornament-chip">{{ line.ornament.ornament_name }}</span>
+                                                            {% endfor %}
+                                                            {% if items|length > 3 %}
+                                                                <span class="ornament-chip ornament-chip-muted">+{{ items|length|add:"-3" }}</span>
+                                                            {% endif %}
+                                                        </div>
+                                                    {% else %}
+                                                        <span class="text-muted">No ornaments</span>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </td>
+                                            <td>
+                                                {{ sale.total_weight|floatformat:3 }}
+                                                <div class="text-muted" style="font-size: 12px;">24K G: {{ sale.gold_24_weight|floatformat:3 }}</div>
+                                                <div class="text-muted" style="font-size: 12px;">24K S: {{ sale.silver_24_weight|floatformat:3 }}</div>
+                                            </td>
+                                            <td>{{ sale.display_total|floatformat:2 }}</td>
+                                            <td>{{ order.total_paid|floatformat:2 }}</td>
+                                            <td>{{ order.remaining_amount|floatformat:2 }}</td>
+                                            <td>
+                                                {% if order.remaining_amount <= 0 %}
+                                                    <span class="badge bg-success">Paid</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning text-dark">Due</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'sales:sale_update' sale.pk %}" class="btn btn-sm btn-primary">Edit</a>
+                                                <a href="{% url 'sales:sale_delete_with_order' sale.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                                            </td>
+                                        </tr>
+                                        {% endwith %}
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="13" class="text-center text-muted">No gold sales found.</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="table-light fw-semibold">
+                                            <td colspan="7" class="text-end">Totals</td>
+                                            <td class="text-end">{{ gold_totals.weight|floatformat:3 }}</td>
+                                            <td class="text-end">{{ gold_totals.total|floatformat:2 }}</td>
+                                            <td class="text-end">{{ gold_totals.paid|floatformat:2 }}</td>
+                                            <td class="text-end">{{ gold_totals.remaining|floatformat:2 }}</td>
+                                            <td colspan="2"></td>
+                                        </tr>
+                                        <tr class="table-light">
+                                            <td colspan="7" class="text-end">24K Gold Weight</td>
+                                            <td class="text-end">{{ gold_totals.gold_24_weight|floatformat:3 }}</td>
+                                            <td colspan="5"></td>
+                                        </tr>
+                                        <tr class="table-light">
+                                            <td colspan="7" class="text-end">24K Silver Weight</td>
+                                            <td class="text-end">{{ gold_totals.silver_24_weight|floatformat:3 }}</td>
+                                            <td colspan="5"></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-info text-center py-3">No gold sales found.</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Silver Tab -->
+                        <div class="tab-pane fade" id="silver-content" role="tabpanel" aria-labelledby="silver-tab">
+                            {% if silver_sales %}
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped table-hover align-middle">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Bill No</th>
+                                            <th>Sale Date</th>
+                                            <th>Order No</th>
+                                            <th>Order Date</th>
+                                            <th>Customer</th>
+                                            <th>Phone</th>
+                                            <th>Ornaments</th>
+                                            <th>Weight</th>
+                                            <th>Total</th>
+                                            <th>Paid</th>
+                                            <th>Remaining</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for sale in silver_sales %}
+                                        {% with order=sale.order %}
+                                        <tr>
+                                            <td>
+                                                <a href="{% url 'sales:sale_update' sale.pk %}" class="text-decoration-none fw-semibold">{{ sale.bill_no }}</a>
+                                            </td>
+                                            <td>{{ sale.sale_date|bs_date }}</td>
+                                            <td><a href="{% url 'order:update' order.sn %}" class="text-decoration-none ornament-link" target="_blank">{{ order.sn }}</a></td>
+                                            <td>{{ order.order_date|bs_date }}</td>
+                                            <td>{{ order.customer_name }}</td>
+                                            <td>{{ order.phone_number }}</td>
+                                            <td>
+                                                {% with items=order.order_ornaments.all %}
+                                                    {% if items and items|length > 0 %}
+                                                        <div class="ornament-chips" title="{% for line in items %}{{ line.ornament.ornament_name }} ({{ line.ornament.metal_type }}, {{ line.ornament.type }}){% if not forloop.last %}, {% endif %}{% endfor %}">
+                                                            {% for line in items|slice:':3' %}
+                                                                <span class="ornament-chip">{{ line.ornament.ornament_name }}</span>
+                                                            {% endfor %}
+                                                            {% if items|length > 3 %}
+                                                                <span class="ornament-chip ornament-chip-muted">+{{ items|length|add:"-3" }}</span>
+                                                            {% endif %}
+                                                        </div>
+                                                    {% else %}
+                                                        <span class="text-muted">No ornaments</span>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </td>
+                                            <td>
+                                                {{ sale.total_weight|floatformat:3 }}
+                                                <div class="text-muted" style="font-size: 12px;">24K G: {{ sale.gold_24_weight|floatformat:3 }}</div>
+                                                <div class="text-muted" style="font-size: 12px;">24K S: {{ sale.silver_24_weight|floatformat:3 }}</div>
+                                            </td>
+                                            <td>{{ sale.display_total|floatformat:2 }}</td>
+                                            <td>{{ order.total_paid|floatformat:2 }}</td>
+                                            <td>{{ order.remaining_amount|floatformat:2 }}</td>
+                                            <td>
+                                                {% if order.remaining_amount <= 0 %}
+                                                    <span class="badge bg-success">Paid</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning text-dark">Due</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'sales:sale_update' sale.pk %}" class="btn btn-sm btn-primary">Edit</a>
+                                                <a href="{% url 'sales:sale_delete_with_order' sale.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                                            </td>
+                                        </tr>
+                                        {% endwith %}
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="13" class="text-center text-muted">No silver sales found.</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="table-light fw-semibold">
+                                            <td colspan="7" class="text-end">Totals</td>
+                                            <td class="text-end">{{ silver_totals.weight|floatformat:3 }}</td>
+                                            <td class="text-end">{{ silver_totals.total|floatformat:2 }}</td>
+                                            <td class="text-end">{{ silver_totals.paid|floatformat:2 }}</td>
+                                            <td class="text-end">{{ silver_totals.remaining|floatformat:2 }}</td>
+                                            <td colspan="2"></td>
+                                        </tr>
+                                        <tr class="table-light">
+                                            <td colspan="7" class="text-end">24K Gold Weight</td>
+                                            <td class="text-end">{{ silver_totals.gold_24_weight|floatformat:3 }}</td>
+                                            <td colspan="5"></td>
+                                        </tr>
+                                        <tr class="table-light">
+                                            <td colspan="7" class="text-end">24K Silver Weight</td>
+                                            <td class="text-end">{{ silver_totals.silver_24_weight|floatformat:3 }}</td>
+                                            <td colspan="5"></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-info text-center py-3">No silver sales found.</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Diamond Tab -->
+                        <div class="tab-pane fade" id="diamond-content" role="tabpanel" aria-labelledby="diamond-tab">
+                            {% if diamond_sales %}
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped table-hover align-middle">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Bill No</th>
+                                            <th>Sale Date</th>
+                                            <th>Order No</th>
+                                            <th>Order Date</th>
+                                            <th>Customer</th>
+                                            <th>Phone</th>
+                                            <th>Ornaments</th>
+                                            <th>Weight</th>
+                                            <th>Total</th>
+                                            <th>Paid</th>
+                                            <th>Remaining</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for sale in diamond_sales %}
+                                        {% with order=sale.order %}
+                                        <tr>
+                                            <td>
+                                                <a href="{% url 'sales:sale_update' sale.pk %}" class="text-decoration-none fw-semibold">{{ sale.bill_no }}</a>
+                                            </td>
+                                            <td>{{ sale.sale_date|bs_date }}</td>
+                                            <td><a href="{% url 'order:update' order.sn %}" class="text-decoration-none ornament-link" target="_blank">{{ order.sn }}</a></td>
+                                            <td>{{ order.order_date|bs_date }}</td>
+                                            <td>{{ order.customer_name }}</td>
+                                            <td>{{ order.phone_number }}</td>
+                                            <td>
+                                                {% with items=order.order_ornaments.all %}
+                                                    {% if items and items|length > 0 %}
+                                                        <div class="ornament-chips" title="{% for line in items %}{{ line.ornament.ornament_name }} ({{ line.ornament.metal_type }}, {{ line.ornament.type }}){% if not forloop.last %}, {% endif %}{% endfor %}">
+                                                            {% for line in items|slice:':3' %}
+                                                                <span class="ornament-chip">{{ line.ornament.ornament_name }}</span>
+                                                            {% endfor %}
+                                                            {% if items|length > 3 %}
+                                                                <span class="ornament-chip ornament-chip-muted">+{{ items|length|add:"-3" }}</span>
+                                                            {% endif %}
+                                                        </div>
+                                                    {% else %}
+                                                        <span class="text-muted">No ornaments</span>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </td>
+                                            <td>
+                                                {{ sale.total_weight|floatformat:3 }}
+                                                <div class="text-muted" style="font-size: 12px;">24K G: {{ sale.gold_24_weight|floatformat:3 }}</div>
+                                                <div class="text-muted" style="font-size: 12px;">24K S: {{ sale.silver_24_weight|floatformat:3 }}</div>
+                                            </td>
+                                            <td>{{ sale.display_total|floatformat:2 }}</td>
+                                            <td>{{ order.total_paid|floatformat:2 }}</td>
+                                            <td>{{ order.remaining_amount|floatformat:2 }}</td>
+                                            <td>
+                                                {% if order.remaining_amount <= 0 %}
+                                                    <span class="badge bg-success">Paid</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning text-dark">Due</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'sales:sale_update' sale.pk %}" class="btn btn-sm btn-primary">Edit</a>
+                                                <a href="{% url 'sales:sale_delete_with_order' sale.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                                            </td>
+                                        </tr>
+                                        {% endwith %}
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="13" class="text-center text-muted">No diamond sales found.</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="table-light fw-semibold">
+                                            <td colspan="7" class="text-end">Totals</td>
+                                            <td class="text-end">{{ diamond_totals.weight|floatformat:3 }}</td>
+                                            <td class="text-end">{{ diamond_totals.total|floatformat:2 }}</td>
+                                            <td class="text-end">{{ diamond_totals.paid|floatformat:2 }}</td>
+                                            <td class="text-end">{{ diamond_totals.remaining|floatformat:2 }}</td>
+                                            <td colspan="2"></td>
+                                        </tr>
+                                        <tr class="table-light">
+                                            <td colspan="7" class="text-end">24K Gold Weight</td>
+                                            <td class="text-end">{{ diamond_totals.gold_24_weight|floatformat:3 }}</td>
+                                            <td colspan="5"></td>
+                                        </tr>
+                                        <tr class="table-light">
+                                            <td colspan="7" class="text-end">24K Silver Weight</td>
+                                            <td class="text-end">{{ diamond_totals.silver_24_weight|floatformat:3 }}</td>
+                                            <td colspan="5"></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-info text-center py-3">No diamond sales found.</div>
+                            {% endif %}
+                        </div>
+                    </div>
     </div>
 </div>
 

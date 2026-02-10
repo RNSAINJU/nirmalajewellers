@@ -12,7 +12,7 @@ from django.contrib import messages
 import openpyxl
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font, PatternFill, Alignment
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from django.core.files.storage import default_storage
 from django.conf import settings
 
@@ -81,24 +81,55 @@ class SalesListView(ListView):
 
     def get_queryset(self):
         # We'll add total_weight and total_amount in get_context_data for both ornaments and raw metals
-        return (
+        queryset = (
             super()
             .get_queryset()
             .select_related("order")
             .prefetch_related("order__order_ornaments__ornament", "sale_metals")
         )
+        search = self.request.GET.get("search")
+        if search:
+            queryset = queryset.filter(
+                Q(bill_no__icontains=search)
+                | Q(order__sn__icontains=search)
+                | Q(order__customer_name__icontains=search)
+                | Q(order__phone_number__icontains=search)
+            )
+
+        return queryset.distinct()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["sales_count"] = Sale.objects.count()
+        sales_qs = context["sales"]
+        context["sales_count"] = sales_qs.count() if hasattr(sales_qs, "count") else len(sales_qs)
+
+        gold_metal = Ornament.MetalTypeCategory.GOLD
+        silver_metal = Ornament.MetalTypeCategory.SILVER
+        diamond_metal = Ornament.MetalTypeCategory.DIAMOND
+
+        context["gold_sales"] = sales_qs.filter(
+            Q(order__order_ornaments__ornament__metal_type__iexact=gold_metal)
+            | Q(sale_metals__metal_type="gold")
+        ).distinct()
+        context["silver_sales"] = sales_qs.filter(
+            Q(order__order_ornaments__ornament__metal_type__iexact=silver_metal)
+            | Q(sale_metals__metal_type="silver")
+        ).distinct()
+        context["diamond_sales"] = sales_qs.filter(
+            Q(order__order_ornaments__ornament__metal_type__iexact=diamond_metal)
+        ).distinct()
+        context["all_sales_count"] = context["sales_count"]
+        context["gold_sales_count"] = context["gold_sales"].count()
+        context["silver_sales_count"] = context["silver_sales"].count()
+        context["diamond_sales_count"] = context["diamond_sales"].count()
 
         # Calculate gold/silver weights and total sales amount (including raw metals)
         purity_factors = {
-            Ornament.TypeCategory.TWENTYFOURKARAT: Decimal("1.00"),
-            Ornament.TypeCategory.TWENTHREEKARAT: Decimal("0.99"),
-            Ornament.TypeCategory.TWENTYTWOKARAT: Decimal("0.98"),
-            Ornament.TypeCategory.EIGHTEENKARAT: Decimal("0.75"),
-            Ornament.TypeCategory.FOURTEENKARAT: Decimal("0.58"),
+            Ornament.TypeCategory.TWENTYFOURKARAT: Decimal("1"),
+            Ornament.TypeCategory.TWENTHREEKARAT: Decimal("23") / Decimal("24"),
+            Ornament.TypeCategory.TWENTYTWOKARAT: Decimal("22") / Decimal("24"),
+            Ornament.TypeCategory.EIGHTEENKARAT: Decimal("18") / Decimal("24"),
+            Ornament.TypeCategory.FOURTEENKARAT: Decimal("14") / Decimal("24"),
         }
 
         gold_24_weight = Decimal("0")
@@ -127,23 +158,89 @@ class SalesListView(ListView):
 
         # Patch each sale with a total_weight that includes both ornaments and raw metals
 
-        # Patch each sale with a total_weight and total_amount that includes both ornaments and raw metals
-        for sale in context["sales"]:
-            ornament_weight = sum([(line.ornament.weight or Decimal("0")) for line in sale.order.order_ornaments.all()])
-            metal_weight = sum([(metal.quantity or Decimal("0")) for metal in sale.sale_metals.all()])
-            sale.total_weight = ornament_weight + metal_weight
-            # Calculate total: order total + sum of all sale_metals line_amounts (to avoid double-counting, only add sale_metals if order has no ornaments)
-            metal_total = sum([(metal.line_amount or Decimal("0")) for metal in sale.sale_metals.all()])
-            if sale.order.order_ornaments.count() == 0:
-                sale.display_total = metal_total
-            else:
-                sale.display_total = sale.order.total or Decimal("0")
+        def apply_sale_totals(queryset):
+            # Patch each sale with total_weight and display_total (ornaments + raw metals)
+            for sale in queryset:
+                ornament_weight = sum(
+                    [(line.ornament.weight or Decimal("0")) for line in sale.order.order_ornaments.all()]
+                )
+                metal_weight = sum(
+                    [(metal.quantity or Decimal("0")) for metal in sale.sale_metals.all()]
+                )
+                sale.total_weight = ornament_weight + metal_weight
+                sale.gold_24_weight = Decimal("0")
+                sale.silver_24_weight = Decimal("0")
+                for line in sale.order.order_ornaments.all():
+                    metal_type = str(getattr(line.ornament, "metal_type", "")).lower()
+                    if metal_type == str(gold_metal).lower():
+                        weight = line.ornament.weight or Decimal("0")
+                        factor = purity_factors.get(getattr(line.ornament, "type", None), Decimal("1.00"))
+                        sale.gold_24_weight += weight * factor
+                    elif metal_type == str(silver_metal).lower():
+                        weight = line.ornament.weight or Decimal("0")
+                        factor = purity_factors.get(getattr(line.ornament, "type", None), Decimal("1.00"))
+                        sale.silver_24_weight += weight * factor
+                metal_total = sum([(metal.line_amount or Decimal("0")) for metal in sale.sale_metals.all()])
+                if sale.order.order_ornaments.count() == 0:
+                    sale.display_total = metal_total
+                else:
+                    sale.display_total = sale.order.total or Decimal("0")
+
+        apply_sale_totals(context["sales"])
+        apply_sale_totals(context["gold_sales"])
+        apply_sale_totals(context["silver_sales"])
+        apply_sale_totals(context["diamond_sales"])
+
+        def calculate_totals(queryset):
+            totals = {
+                "weight": Decimal("0"),
+                "total": Decimal("0"),
+                "paid": Decimal("0"),
+                "remaining": Decimal("0"),
+                "gold_24_weight": Decimal("0"),
+                "silver_24_weight": Decimal("0"),
+            }
+            for sale in queryset:
+                ornament_weight = sum(
+                    [(line.ornament.weight or Decimal("0")) for line in sale.order.order_ornaments.all()]
+                )
+                metal_weight = sum(
+                    [(metal.quantity or Decimal("0")) for metal in sale.sale_metals.all()]
+                )
+                total_weight = ornament_weight + metal_weight
+                metal_total = sum([(metal.line_amount or Decimal("0")) for metal in sale.sale_metals.all()])
+                if sale.order.order_ornaments.count() == 0:
+                    display_total = metal_total
+                else:
+                    display_total = sale.order.total or Decimal("0")
+
+                for line in sale.order.order_ornaments.all():
+                    metal_type = str(getattr(line.ornament, "metal_type", "")).lower()
+                    if metal_type == str(gold_metal).lower():
+                        weight = line.ornament.weight or Decimal("0")
+                        factor = purity_factors.get(getattr(line.ornament, "type", None), Decimal("1.00"))
+                        totals["gold_24_weight"] += weight * factor
+                    elif metal_type == str(silver_metal).lower():
+                        weight = line.ornament.weight or Decimal("0")
+                        factor = purity_factors.get(getattr(line.ornament, "type", None), Decimal("1.00"))
+                        totals["silver_24_weight"] += weight * factor
+
+                totals["weight"] += total_weight
+                totals["total"] += display_total
+                totals["paid"] += sale.order.total_paid or Decimal("0")
+                totals["remaining"] += sale.order.remaining_amount or Decimal("0")
+
+            return totals
 
         context.update(
             {
                 "gold_24_weight": gold_24_weight,
                 "silver_weight": silver_weight,
                 "total_sales_amount": total_sales_amount,
+                "all_totals": calculate_totals(sales_qs),
+                "gold_totals": calculate_totals(context["gold_sales"]),
+                "silver_totals": calculate_totals(context["silver_sales"]),
+                "diamond_totals": calculate_totals(context["diamond_sales"]),
             }
         )
         return context

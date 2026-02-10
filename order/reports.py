@@ -502,11 +502,11 @@ class MonthlySalesReport(View):
         monthly_data = {}
         
         purity_factors = {
-            Ornament.TypeCategory.TWENTYFOURKARAT: Decimal("1.00"),
-            Ornament.TypeCategory.TWENTHREEKARAT: Decimal("0.99"),
-            Ornament.TypeCategory.TWENTYTWOKARAT: Decimal("0.98"),
-            Ornament.TypeCategory.EIGHTEENKARAT: Decimal("0.75"),
-            Ornament.TypeCategory.FOURTEENKARAT: Decimal("0.58"),
+            Ornament.TypeCategory.TWENTYFOURKARAT: Decimal("1"),
+            Ornament.TypeCategory.TWENTHREEKARAT: Decimal("23") / Decimal("24"),
+            Ornament.TypeCategory.TWENTYTWOKARAT: Decimal("22") / Decimal("24"),
+            Ornament.TypeCategory.EIGHTEENKARAT: Decimal("18") / Decimal("24"),
+            Ornament.TypeCategory.FOURTEENKARAT: Decimal("14") / Decimal("24"),
         }
         
         for sale in sales:
@@ -528,8 +528,16 @@ class MonthlySalesReport(View):
                     'month': month,
                     'sales_count': 0,
                     'ornament_gold_weight': Decimal("0"),
+                    'ornament_gold_weight_24k': Decimal("0"),
                     'ornament_silver_weight': Decimal("0"),
+                    'ornament_silver_weight_24k': Decimal("0"),
                     'ornament_diamond_weight': Decimal("0"),
+                    'ornament_diamond_weight_24k': Decimal("0"),
+                    'ornament_total_weight_24k': Decimal("0"),
+                    'ornament_diamond_carat': Decimal("0"),
+                    'total_gold_weight': Decimal("0"),
+                    'total_silver_weight': Decimal("0"),
+                    'total_diamond_weight': Decimal("0"),
                     'raw_gold_weight': Decimal("0"),
                     'raw_silver_weight': Decimal("0"),
                     'total_jarti': Decimal("0"),
@@ -558,15 +566,22 @@ class MonthlySalesReport(View):
                 weight = line.ornament.weight or Decimal("0")
                 factor = purity_factors.get(getattr(line.ornament, 'type', None), Decimal("1.00"))
                 
-                if getattr(line.ornament, 'metal_type', None) == getattr(Ornament.MetalTypeCategory, 'GOLD', 'gold'):
+                metal_type = str(getattr(line.ornament, 'metal_type', '')).lower()
+                if metal_type == str(getattr(Ornament.MetalTypeCategory, 'GOLD', 'gold')).lower():
                     gold_weight_24k = weight * factor
-                    monthly_data[month_key]['ornament_gold_weight'] += gold_weight_24k
+                    monthly_data[month_key]['ornament_gold_weight'] += weight
+                    monthly_data[month_key]['ornament_gold_weight_24k'] += gold_weight_24k
+                    monthly_data[month_key]['ornament_total_weight_24k'] += gold_weight_24k
                     ornament_gold_count += 1
-                elif getattr(line.ornament, 'metal_type', None) == getattr(Ornament.MetalTypeCategory, 'SILVER', 'silver'):
+                elif metal_type == str(getattr(Ornament.MetalTypeCategory, 'SILVER', 'silver')).lower():
                     monthly_data[month_key]['ornament_silver_weight'] += weight
+                    monthly_data[month_key]['ornament_silver_weight_24k'] += weight * factor
                     ornament_silver_count += 1
-                elif getattr(line.ornament, 'metal_type', None) == getattr(Ornament.MetalTypeCategory, 'DIAMOND', 'diamond'):
+                elif metal_type == str(getattr(Ornament.MetalTypeCategory, 'DIAMOND', 'diamond')).lower():
                     monthly_data[month_key]['ornament_diamond_weight'] += weight
+                    monthly_data[month_key]['ornament_diamond_weight_24k'] += weight * factor
+                    monthly_data[month_key]['ornament_total_weight_24k'] += weight * factor
+                    monthly_data[month_key]['ornament_diamond_carat'] += line.ornament.diamond_weight or Decimal("0")
                     ornament_diamond_count += 1
                 
                 # Jarti (customer jarti)
@@ -599,6 +614,18 @@ class MonthlySalesReport(View):
             
             raw_metal_amount = sale_raw_gold_amount + sale_raw_silver_amount
             monthly_data[month_key]['raw_sales_amount'] += raw_metal_amount
+
+            monthly_data[month_key]['total_gold_weight'] = (
+                monthly_data[month_key]['ornament_total_weight_24k']
+                + monthly_data[month_key]['raw_gold_weight']
+            )
+            monthly_data[month_key]['total_silver_weight'] = (
+                monthly_data[month_key]['ornament_silver_weight_24k']
+                + monthly_data[month_key]['raw_silver_weight']
+            )
+            monthly_data[month_key]['total_diamond_weight'] = (
+                monthly_data[month_key]['ornament_diamond_weight_24k']
+            )
             
             # Calculate ornament sales amount by metal type (proportional split)
             ornament_amount = (sale.order.total or Decimal("0")) - raw_metal_amount
@@ -630,9 +657,65 @@ class MonthlySalesReport(View):
             data['month_name'] = nepali_months.get(data['month'], str(data['month']))
             data['month_key'] = key
             monthly_list.append(data)
+
+        totals = {
+            'sales_count': Decimal("0"),
+            'ornament_gold_weight': Decimal("0"),
+            'ornament_gold_weight_24k': Decimal("0"),
+            'ornament_silver_weight': Decimal("0"),
+            'ornament_silver_weight_24k': Decimal("0"),
+            'ornament_diamond_weight': Decimal("0"),
+            'ornament_diamond_weight_24k': Decimal("0"),
+            'ornament_total_weight_24k': Decimal("0"),
+            'ornament_diamond_carat': Decimal("0"),
+            'total_gold_weight': Decimal("0"),
+            'total_silver_weight': Decimal("0"),
+            'total_diamond_weight': Decimal("0"),
+            'raw_gold_weight': Decimal("0"),
+            'raw_silver_weight': Decimal("0"),
+            'ornament_gold_amount': Decimal("0"),
+            'ornament_silver_amount': Decimal("0"),
+            'ornament_diamond_amount': Decimal("0"),
+            'raw_gold_amount': Decimal("0"),
+            'raw_silver_amount': Decimal("0"),
+            'ornament_sales_amount': Decimal("0"),
+            'raw_sales_amount': Decimal("0"),
+            'total_sales_amount': Decimal("0"),
+            'total_tax': Decimal("0"),
+            'total_remaining': Decimal("0"),
+            'total_profit': Decimal("0"),
+        }
+
+        for data in monthly_list:
+            totals['sales_count'] += Decimal(str(data.get('sales_count', 0)))
+            totals['ornament_gold_weight'] += data.get('ornament_gold_weight', Decimal("0"))
+            totals['ornament_gold_weight_24k'] += data.get('ornament_gold_weight_24k', Decimal("0"))
+            totals['ornament_silver_weight'] += data.get('ornament_silver_weight', Decimal("0"))
+            totals['ornament_silver_weight_24k'] += data.get('ornament_silver_weight_24k', Decimal("0"))
+            totals['ornament_diamond_weight'] += data.get('ornament_diamond_weight', Decimal("0"))
+            totals['ornament_diamond_weight_24k'] += data.get('ornament_diamond_weight_24k', Decimal("0"))
+            totals['ornament_total_weight_24k'] += data.get('ornament_total_weight_24k', Decimal("0"))
+            totals['ornament_diamond_carat'] += data.get('ornament_diamond_carat', Decimal("0"))
+            totals['total_gold_weight'] += data.get('total_gold_weight', Decimal("0"))
+            totals['total_silver_weight'] += data.get('total_silver_weight', Decimal("0"))
+            totals['total_diamond_weight'] += data.get('total_diamond_weight', Decimal("0"))
+            totals['raw_gold_weight'] += data.get('raw_gold_weight', Decimal("0"))
+            totals['raw_silver_weight'] += data.get('raw_silver_weight', Decimal("0"))
+            totals['ornament_gold_amount'] += data.get('ornament_gold_amount', Decimal("0"))
+            totals['ornament_silver_amount'] += data.get('ornament_silver_amount', Decimal("0"))
+            totals['ornament_diamond_amount'] += data.get('ornament_diamond_amount', Decimal("0"))
+            totals['raw_gold_amount'] += data.get('raw_gold_amount', Decimal("0"))
+            totals['raw_silver_amount'] += data.get('raw_silver_amount', Decimal("0"))
+            totals['ornament_sales_amount'] += data.get('ornament_sales_amount', Decimal("0"))
+            totals['raw_sales_amount'] += data.get('raw_sales_amount', Decimal("0"))
+            totals['total_sales_amount'] += data.get('total_sales_amount', Decimal("0"))
+            totals['total_tax'] += data.get('total_tax', Decimal("0"))
+            totals['total_remaining'] += data.get('total_remaining', Decimal("0"))
+            totals['total_profit'] += data.get('total_profit', Decimal("0"))
         
         context = {
             'monthly_data': monthly_list,
+            'monthly_totals': totals,
         }
         
         return render(request, 'order/reports/monthly_sales.html', context)

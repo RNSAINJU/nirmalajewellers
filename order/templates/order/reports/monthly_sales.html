@@ -144,17 +144,17 @@
 
     <!-- View Toggle -->
     <div class="view-toggle">
-        <button class="btn btn-outline-primary active" id="cardsBtn" onclick="toggleView('cards')">
+        <button class="btn btn-outline-primary" id="cardsBtn" onclick="toggleView('cards')">
             <i class="bi bi-grid-3x2-gap me-1"></i>Card View
         </button>
-        <button class="btn btn-outline-secondary" id="tableBtn" onclick="toggleView('table')">
+        <button class="btn btn-outline-secondary active" id="tableBtn" onclick="toggleView('table')">
             <i class="bi bi-table me-1"></i>Table View
         </button>
     </div>
 
     {% if monthly_data %}
         <!-- CARDS VIEW -->
-        <div class="cards-view" id="cardsView">
+        <div class="cards-view hidden" id="cardsView">
             {% for month in monthly_data %}
             <div class="month-row">
                 <div class="month-header">
@@ -305,7 +305,8 @@
         </div>
 
         <!-- TABLE VIEW -->
-        <div class="table-view" id="tableView">
+        <div class="table-view show" id="tableView">
+            <div class="table-section-title">Ornament Weights</div>
             <div class="table-responsive">
                 <table class="table table-striped table-hover">
                     <thead style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
@@ -313,9 +314,115 @@
                             <th>Month/Year</th>
                             <th class="text-end">Sales Count</th>
                             <th class="text-end">Ornament Gold (gms)</th>
+                            <th class="text-end">Ornament Gold (24K gms)</th>
+                            <th class="text-end">Ornament Diamond (gms)</th>
+                            <th class="text-end">Ornament Diamond (24k) gms</th>
+                            <th class="text-end">Total Ornament Weight</th>
+                            <th class="text-end">Ornament Diamond (carat)</th>
                             <th class="text-end">Ornament Silver (gms)</th>
+                            <th class="text-end">Ornament Silver (24K gms)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for month in monthly_data %}
+                        <tr>
+                            <td><strong>{{ month.month_name }} {{ month.year }}</strong></td>
+                            <td class="text-end">{{ month.sales_count }}</td>
+                            <td class="text-end">{{ month.ornament_gold_weight|floatformat:3 }}</td>
+                            <td class="text-end">{{ month.ornament_gold_weight_24k|floatformat:3 }}</td>
+                            <td class="text-end">{{ month.ornament_diamond_weight|floatformat:3 }}</td>
+                            <td class="text-end">{{ month.ornament_diamond_weight_24k|floatformat:3 }}</td>
+                            <td class="text-end">{{ month.ornament_total_weight_24k|floatformat:3 }}</td>
+                            <td class="text-end">{{ month.ornament_diamond_carat|floatformat:3 }}</td>
+                            <td class="text-end">{{ month.ornament_silver_weight|floatformat:3 }}</td>
+                            <td class="text-end">{{ month.ornament_silver_weight_24k|floatformat:3 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-light fw-semibold">
+                            <td>Total</td>
+                            <td class="text-end">{{ monthly_totals.sales_count }}</td>
+                            <td class="text-end">{{ monthly_totals.ornament_gold_weight|floatformat:3 }}</td>
+                            <td class="text-end">{{ monthly_totals.ornament_gold_weight_24k|floatformat:3 }}</td>
+                            <td class="text-end">{{ monthly_totals.ornament_diamond_weight|floatformat:3 }}</td>
+                            <td class="text-end">{{ monthly_totals.ornament_diamond_weight_24k|floatformat:3 }}</td>
+                            <td class="text-end">{{ monthly_totals.ornament_total_weight_24k|floatformat:3 }}</td>
+                            <td class="text-end">{{ monthly_totals.ornament_diamond_carat|floatformat:3 }}</td>
+                            <td class="text-end">{{ monthly_totals.ornament_silver_weight|floatformat:3 }}</td>
+                            <td class="text-end">{{ monthly_totals.ornament_silver_weight_24k|floatformat:3 }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <div class="table-section-title mt-4">Raw Metal Weights</div>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                        <tr>
+                            <th>Month/Year</th>
                             <th class="text-end">Raw Gold (gms)</th>
                             <th class="text-end">Raw Silver (gms)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for month in monthly_data %}
+                        <tr>
+                            <td><strong>{{ month.month_name }} {{ month.year }}</strong></td>
+                            <td class="text-end">{{ month.raw_gold_weight|floatformat:3 }}</td>
+                            <td class="text-end">{{ month.raw_silver_weight|floatformat:3 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-light fw-semibold">
+                            <td>Total</td>
+                            <td class="text-end">{{ monthly_totals.raw_gold_weight|floatformat:3 }}</td>
+                            <td class="text-end">{{ monthly_totals.raw_silver_weight|floatformat:3 }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <div class="table-section-title mt-4">Total Metal Weights</div>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                        <tr>
+                            <th>Month/Year</th>
+                            <th class="text-end">Total Gold Weight (gms)</th>
+                            <th class="text-end">Total Silver Weight (gms)</th>
+                            <th class="text-end">Total Diamond Weight (gms)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for month in monthly_data %}
+                        <tr>
+                            <td><strong>{{ month.month_name }} {{ month.year }}</strong></td>
+                            <td class="text-end">{{ month.total_gold_weight|floatformat:3 }}</td>
+                            <td class="text-end">{{ month.total_silver_weight|floatformat:3 }}</td>
+                            <td class="text-end">{{ month.total_diamond_weight|floatformat:3 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-light fw-semibold">
+                            <td>Total</td>
+                            <td class="text-end">{{ monthly_totals.total_gold_weight|floatformat:3 }}</td>
+                            <td class="text-end">{{ monthly_totals.total_silver_weight|floatformat:3 }}</td>
+                            <td class="text-end">{{ monthly_totals.total_diamond_weight|floatformat:3 }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <div class="table-section-title mt-4">Sales Amounts</div>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                        <tr>
+                            <th>Month/Year</th>
                             <th class="text-end">Ornament Gold Sales (रु)</th>
                             <th class="text-end">Ornament Silver Sales (रु)</th>
                             <th class="text-end">Ornament Diamond Sales (रु)</th>
@@ -333,11 +440,6 @@
                         {% for month in monthly_data %}
                         <tr>
                             <td><strong>{{ month.month_name }} {{ month.year }}</strong></td>
-                            <td class="text-end">{{ month.sales_count }}</td>
-                            <td class="text-end">{{ month.ornament_gold_weight|floatformat:3 }}</td>
-                            <td class="text-end">{{ month.ornament_silver_weight|floatformat:3 }}</td>
-                            <td class="text-end">{{ month.raw_gold_weight|floatformat:3 }}</td>
-                            <td class="text-end">{{ month.raw_silver_weight|floatformat:3 }}</td>
                             <td class="text-end">{{ month.ornament_gold_amount|floatformat:2 }}</td>
                             <td class="text-end">{{ month.ornament_silver_amount|floatformat:2 }}</td>
                             <td class="text-end">{{ month.ornament_diamond_amount|floatformat:2 }}</td>
@@ -352,6 +454,22 @@
                         </tr>
                         {% endfor %}
                     </tbody>
+                    <tfoot>
+                        <tr class="table-light fw-semibold">
+                            <td>Total</td>
+                            <td class="text-end">{{ monthly_totals.ornament_gold_amount|floatformat:2 }}</td>
+                            <td class="text-end">{{ monthly_totals.ornament_silver_amount|floatformat:2 }}</td>
+                            <td class="text-end">{{ monthly_totals.ornament_diamond_amount|floatformat:2 }}</td>
+                            <td class="text-end">{{ monthly_totals.raw_gold_amount|floatformat:2 }}</td>
+                            <td class="text-end">{{ monthly_totals.raw_silver_amount|floatformat:2 }}</td>
+                            <td class="text-end"><strong>{{ monthly_totals.ornament_sales_amount|floatformat:2 }}</strong></td>
+                            <td class="text-end"><strong>{{ monthly_totals.raw_sales_amount|floatformat:2 }}</strong></td>
+                            <td class="text-end"><strong style="color: #0891b2;">{{ monthly_totals.total_sales_amount|floatformat:2 }}</strong></td>
+                            <td class="text-end">{{ monthly_totals.total_tax|floatformat:2 }}</td>
+                            <td class="text-end">{{ monthly_totals.total_remaining|floatformat:2 }}</td>
+                            <td class="text-end"><span class="badge bg-success">{{ monthly_totals.total_profit|floatformat:2 }}</span></td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
         </div>
