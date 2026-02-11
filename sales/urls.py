@@ -16,6 +16,11 @@ from .views import (
     ImportWizardStepTwoView,
     ImportWizardStepThreeView,
     SalesByMonthView,
+    SalesForecastView,
+    CustomerSegmentationView,
+    ProductPerformanceView,
+    MarginAnalysisView,
+    TrendAnalysisView,
 )
 
 app_name = "sales"
@@ -23,6 +28,11 @@ app_name = "sales"
 urlpatterns = [
     path("", SalesListView.as_view(), name="sales_list"),
     path("by-month/", SalesByMonthView.as_view(), name="sales_by_month"),
+    path("forecast/", SalesForecastView.as_view(), name="sales_forecast"),
+    path("segmentation/", CustomerSegmentationView.as_view(), name="customer_segmentation"),
+    path("product-performance/", ProductPerformanceView.as_view(), name="product_performance"),
+    path("margin-analysis/", MarginAnalysisView.as_view(), name="margin_analysis"),
+    path("trend-analysis/", TrendAnalysisView.as_view(), name="trend_analysis"),
     path("create/", DirectSaleCreateView.as_view(), name="sale_create"),
     path("create-from-order/<int:pk>/", CreateSaleFromOrderView.as_view(), name="create_sale_from_order"),
     path("print/", sales_print_view, name="print_view"),

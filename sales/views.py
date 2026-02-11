@@ -6,13 +6,14 @@ from decimal import Decimal
 from datetime import timedelta
 from io import BytesIO
 import json
+import math
 import nepali_datetime as ndt
 from django.http import HttpResponse
 from django.contrib import messages
 import openpyxl
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font, PatternFill, Alignment
-from django.db.models import Sum, Q
+from django.db.models import Sum, Q, Count
 from django.core.files.storage import default_storage
 from django.conf import settings
 
@@ -1650,4 +1651,468 @@ class SalesByMonthView(ListView):
             }
             context['sales_count'] = 0
         
+        return context
+
+
+class SalesForecastView(TemplateView):
+    """Sales forecasting based on historical monthly totals."""
+
+    template_name = "sales/sales_forecast.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from sales.models import Sale
+
+        nepali_months = {
+            1: "Baishakh",
+            2: "Jestha",
+            3: "Ashadh",
+            4: "Shrawan",
+            5: "Bhadra",
+            6: "Ashwin",
+            7: "Kartik",
+            8: "Mangsir",
+            9: "Poush",
+            10: "Magh",
+            11: "Falgun",
+            12: "Chaitra",
+        }
+
+        sales = (
+            Sale.objects.select_related("order")
+            .exclude(sale_date__isnull=True)
+            .order_by("sale_date")
+        )
+
+        monthly_totals = {}
+        for sale in sales:
+            try:
+                year = sale.sale_date.year
+                month = sale.sale_date.month
+            except AttributeError:
+                continue
+            key = (year, month)
+            monthly_totals.setdefault(key, Decimal("0"))
+            monthly_totals[key] += sale.order.total or Decimal("0")
+
+        keys_sorted = sorted(monthly_totals.keys())
+        actual_points = [
+            {
+                "year": y,
+                "month": m,
+                "label": f"{nepali_months.get(m, m)} {y}",
+                "total": float(monthly_totals[(y, m)]),
+            }
+            for (y, m) in keys_sorted
+        ]
+
+        actual_points = actual_points[-12:]
+        actual_values = [p["total"] for p in actual_points]
+
+        if actual_values:
+            recent_window = actual_values[-3:] if len(actual_values) >= 3 else actual_values
+            prev_window = actual_values[-6:-3] if len(actual_values) >= 6 else []
+            recent_avg = sum(recent_window) / len(recent_window)
+            prev_avg = sum(prev_window) / len(prev_window) if prev_window else recent_avg
+            trend = (recent_avg - prev_avg) / prev_avg if prev_avg > 0 else 0.0
+            last_total = actual_values[-1]
+        else:
+            recent_avg = 0.0
+            prev_avg = 0.0
+            trend = 0.0
+            last_total = 0.0
+
+        def next_month(year, month):
+            return (year + 1, 1) if month == 12 else (year, month + 1)
+
+        forecast_count = 12
+        chart_forecast_count = 6
+        forecast_points = []
+
+        if actual_points:
+            last_year = actual_points[-1]["year"]
+            last_month = actual_points[-1]["month"]
+        else:
+            try:
+                today = ndt.date.today()
+                last_year = today.year
+                last_month = today.month
+            except Exception:
+                last_year = 2081
+                last_month = 1
+
+        for i in range(1, forecast_count + 1):
+            last_year, last_month = next_month(last_year, last_month)
+            projected = recent_avg * math.pow(1 + trend, i)
+            projected = max(projected, 0.0)
+            forecast_points.append(
+                {
+                    "year": last_year,
+                    "month": last_month,
+                    "label": f"{nepali_months.get(last_month, last_month)} {last_year}",
+                    "total": projected,
+                }
+            )
+
+        chart_labels = [p["label"] for p in actual_points] + [
+            p["label"] for p in forecast_points[:chart_forecast_count]
+        ]
+        chart_actual = actual_values + [None] * chart_forecast_count
+        chart_forecast = [None] * len(actual_points) + [
+            p["total"] for p in forecast_points[:chart_forecast_count]
+        ]
+
+        context.update(
+            {
+                "actual_points": actual_points,
+                "forecast_points": forecast_points,
+                "last_total": last_total,
+                "recent_avg": recent_avg,
+                "trend_percent": trend * 100,
+                "chart_labels_json": json.dumps(chart_labels),
+                "chart_actual_json": json.dumps(chart_actual),
+                "chart_forecast_json": json.dumps(chart_forecast),
+            }
+        )
+
+        return context
+
+
+class CustomerSegmentationView(TemplateView):
+    """Segment customers by buying behavior for targeted insights."""
+
+    template_name = "sales/customer_segmentation.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from order.models import Order
+
+        customers = (
+            Order.objects.exclude(customer_name__isnull=True)
+            .exclude(customer_name__exact="")
+            .values("customer_name")
+            .annotate(total_spend=Sum("total"), order_count=Count("sn"))
+        )
+
+        customer_rows = []
+        for row in customers:
+            total_spend = row["total_spend"] or Decimal("0")
+            order_count = row["order_count"] or 0
+            avg_order = total_spend / order_count if order_count else Decimal("0")
+            customer_rows.append(
+                {
+                    "customer_name": row["customer_name"],
+                    "total_spend": total_spend,
+                    "order_count": order_count,
+                    "avg_order": avg_order,
+                }
+            )
+
+        customer_rows.sort(key=lambda x: x["total_spend"], reverse=True)
+        top_cutoff = max(1, int(len(customer_rows) * 0.2)) if customer_rows else 0
+        top_customers = {row["customer_name"] for row in customer_rows[:top_cutoff]}
+
+        segments = {
+            "high_value": [],
+            "loyal": [],
+            "new": [],
+            "others": [],
+        }
+
+        for row in customer_rows:
+            if row["customer_name"] in top_customers:
+                segments["high_value"].append(row)
+            elif row["order_count"] >= 3:
+                segments["loyal"].append(row)
+            elif row["order_count"] == 1:
+                segments["new"].append(row)
+            else:
+                segments["others"].append(row)
+
+        context.update(
+            {
+                "segments": segments,
+                "total_customers": len(customer_rows),
+                "high_value_count": len(segments["high_value"]),
+                "loyal_count": len(segments["loyal"]),
+                "new_count": len(segments["new"]),
+                "other_count": len(segments["others"]),
+            }
+        )
+
+        return context
+
+
+class ProductPerformanceView(TemplateView):
+    """Evaluate product and product-line performance from sales."""
+
+    template_name = "sales/product_performance.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from order.models import OrderOrnament
+
+        product_rows = (
+            OrderOrnament.objects.filter(order__sale__isnull=False)
+            .values(
+                "ornament__ornament_name",
+                "ornament__metal_type",
+                "ornament__type",
+            )
+            .annotate(
+                units=Count("id"),
+                total_weight=Sum("ornament__weight"),
+                total_revenue=Sum("line_amount"),
+            )
+            .order_by("-total_revenue")
+        )
+
+        category_rows = (
+            OrderOrnament.objects.filter(order__sale__isnull=False)
+            .values("ornament__maincategory__name")
+            .annotate(
+                units=Count("id"),
+                total_weight=Sum("ornament__weight"),
+                total_revenue=Sum("line_amount"),
+            )
+            .order_by("-total_revenue")
+        )
+
+        product_list = []
+        for row in product_rows:
+            product_list.append(
+                {
+                    "name": row.get("ornament__ornament_name") or "Unknown",
+                    "metal": row.get("ornament__metal_type") or "",
+                    "purity": row.get("ornament__type") or "",
+                    "units": row.get("units") or 0,
+                    "weight": row.get("total_weight") or Decimal("0"),
+                    "revenue": row.get("total_revenue") or Decimal("0"),
+                }
+            )
+
+        category_list = []
+        for row in category_rows:
+            category_list.append(
+                {
+                    "name": row.get("ornament__maincategory__name") or "Uncategorized",
+                    "units": row.get("units") or 0,
+                    "weight": row.get("total_weight") or Decimal("0"),
+                    "revenue": row.get("total_revenue") or Decimal("0"),
+                }
+            )
+
+        top_products = product_list[:10]
+        underperforming_products = list(reversed(product_list[-10:])) if product_list else []
+
+        total_revenue = sum((p["revenue"] for p in product_list), Decimal("0"))
+        total_units = sum((p["units"] for p in product_list), 0)
+
+        context.update(
+            {
+                "products": product_list,
+                "categories": category_list,
+                "top_products": top_products,
+                "underperforming_products": underperforming_products,
+                "total_revenue": total_revenue,
+                "total_units": total_units,
+            }
+        )
+
+        return context
+
+
+class MarginAnalysisView(TemplateView):
+    """Analyze profit margins by product and product line."""
+
+    template_name = "sales/margin_analysis.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from order.models import OrderOrnament
+
+        lines = (
+            OrderOrnament.objects.select_related("ornament", "order")
+            .filter(order__sale__isnull=False)
+        )
+
+        product_map = {}
+        category_map = {}
+        total_revenue = Decimal("0")
+        total_profit = Decimal("0")
+
+        for line in lines:
+            ornament = line.ornament
+            line_amount = line.line_amount or Decimal("0")
+
+            customer_jarti = line.jarti or Decimal("0")
+            ornament_jarti = ornament.jarti or Decimal("0")
+            rate = line.gold_rate or Decimal("0")
+            jyala = line.jyala or Decimal("0")
+            jarti_difference = customer_jarti - ornament_jarti
+            profit = (jarti_difference / Decimal("11.664") * rate) + jyala
+
+            total_revenue += line_amount
+            total_profit += profit
+
+            product_key = (
+                ornament.ornament_name or "Unknown",
+                ornament.metal_type or "",
+                ornament.type or "",
+            )
+            product_row = product_map.setdefault(
+                product_key,
+                {
+                    "name": product_key[0],
+                    "metal": product_key[1],
+                    "purity": product_key[2],
+                    "units": 0,
+                    "revenue": Decimal("0"),
+                    "profit": Decimal("0"),
+                },
+            )
+            product_row["units"] += 1
+            product_row["revenue"] += line_amount
+            product_row["profit"] += profit
+
+            category_name = ornament.maincategory.name if ornament.maincategory else "Uncategorized"
+            category_row = category_map.setdefault(
+                category_name,
+                {
+                    "name": category_name,
+                    "units": 0,
+                    "revenue": Decimal("0"),
+                    "profit": Decimal("0"),
+                },
+            )
+            category_row["units"] += 1
+            category_row["revenue"] += line_amount
+            category_row["profit"] += profit
+
+        def with_margin(rows):
+            output = []
+            for row in rows:
+                revenue = row["revenue"]
+                margin = (row["profit"] / revenue * 100) if revenue else Decimal("0")
+                row["margin"] = margin
+                output.append(row)
+            return output
+
+        product_list = with_margin(list(product_map.values()))
+        category_list = with_margin(list(category_map.values()))
+
+        product_list.sort(key=lambda x: x["margin"], reverse=True)
+        category_list.sort(key=lambda x: x["margin"], reverse=True)
+
+        overall_margin = (total_profit / total_revenue * 100) if total_revenue else Decimal("0")
+
+        context.update(
+            {
+                "products": product_list,
+                "categories": category_list,
+                "total_revenue": total_revenue,
+                "total_profit": total_profit,
+                "overall_margin": overall_margin,
+            }
+        )
+
+        return context
+
+
+class TrendAnalysisView(TemplateView):
+    """Identify trends in customer preferences and seasonal demand."""
+
+    template_name = "sales/trend_analysis.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from sales.models import Sale
+        from order.models import OrderOrnament
+
+        nepali_months = {
+            1: "Baishakh",
+            2: "Jestha",
+            3: "Ashadh",
+            4: "Shrawan",
+            5: "Bhadra",
+            6: "Ashwin",
+            7: "Kartik",
+            8: "Mangsir",
+            9: "Poush",
+            10: "Magh",
+            11: "Falgun",
+            12: "Chaitra",
+        }
+
+        sales = (
+            Sale.objects.select_related("order")
+            .exclude(sale_date__isnull=True)
+            .order_by("sale_date")
+        )
+
+        monthly_totals = {}
+        for sale in sales:
+            try:
+                year = sale.sale_date.year
+                month = sale.sale_date.month
+            except AttributeError:
+                continue
+            key = (year, month)
+            monthly_totals.setdefault(key, Decimal("0"))
+            monthly_totals[key] += sale.order.total or Decimal("0")
+
+        keys_sorted = sorted(monthly_totals.keys())
+        monthly_points = [
+            {
+                "label": f"{nepali_months.get(m, m)} {y}",
+                "total": float(monthly_totals[(y, m)]),
+            }
+            for (y, m) in keys_sorted
+        ]
+        monthly_points = monthly_points[-12:]
+
+        metal_breakdown = (
+            OrderOrnament.objects.filter(order__sale__isnull=False)
+            .values("ornament__metal_type")
+            .annotate(
+                units=Count("id"),
+                total_weight=Sum("ornament__weight"),
+                total_revenue=Sum("line_amount"),
+            )
+            .order_by("-units")
+        )
+
+        category_breakdown = (
+            OrderOrnament.objects.filter(order__sale__isnull=False)
+            .values("ornament__maincategory__name")
+            .annotate(
+                units=Count("id"),
+                total_weight=Sum("ornament__weight"),
+                total_revenue=Sum("line_amount"),
+            )
+            .order_by("-units")
+        )
+
+        top_products = (
+            OrderOrnament.objects.filter(order__sale__isnull=False)
+            .values("ornament__ornament_name", "ornament__metal_type")
+            .annotate(
+                units=Count("id"),
+                total_weight=Sum("ornament__weight"),
+                total_revenue=Sum("line_amount"),
+            )
+            .order_by("-units")
+        )[:10]
+
+        context.update(
+            {
+                "monthly_points": monthly_points,
+                "chart_labels_json": json.dumps([p["label"] for p in monthly_points]),
+                "chart_totals_json": json.dumps([p["total"] for p in monthly_points]),
+                "metal_breakdown": metal_breakdown,
+                "category_breakdown": category_breakdown,
+                "top_products": top_products,
+            }
+        )
+
         return context

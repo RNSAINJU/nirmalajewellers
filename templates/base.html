@@ -295,6 +295,11 @@
 
         {% url 'sales:sale_create' as sales_create_url %}
         {% url 'sales:sales_by_month' as sales_by_month_url %}
+        {% url 'sales:sales_forecast' as sales_forecast_url %}
+        {% url 'sales:customer_segmentation' as customer_segmentation_url %}
+        {% url 'sales:product_performance' as product_performance_url %}
+        {% url 'sales:margin_analysis' as margin_analysis_url %}
+        {% url 'sales:trend_analysis' as trend_analysis_url %}
 
         {% url 'finance:finance_dashboard' as finance_dashboard_url %}
         {% url 'finance:balance_sheet' as balance_sheet_url %}
@@ -418,6 +423,20 @@
                 <a href="{{ order_report_payment_url }}" class="nav-link">Payment Analysis</a>
                 <a href="{{ order_report_monthly_sales_url }}" class="nav-link">Monthly Sales</a>
                 <a href="{{ sales_by_month_url }}" class="nav-link">Sales by Month</a>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <a class="nav-link" data-bs-toggle="collapse" href="#analyticsMenu" role="button" aria-expanded="false">
+                <span><i class="bi bi-bar-chart-line"></i> Data Analytics</span>
+                <i class="bi bi-chevron-down"></i>
+            </a>
+            <div class="collapse" id="analyticsMenu">
+                <a href="{{ sales_forecast_url }}" class="nav-link">Sales Forecasting</a>
+                <a href="{{ customer_segmentation_url }}" class="nav-link">Customer Segmentation</a>
+                <a href="{{ product_performance_url }}" class="nav-link">Product Performance</a>
+                <a href="{{ margin_analysis_url }}" class="nav-link">Margin Analysis</a>
+                <a href="{{ trend_analysis_url }}" class="nav-link">Trend Analysis</a>
             </div>
         </div>
 
