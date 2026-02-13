@@ -409,6 +409,28 @@
     h5, .h5 {
         font-size: clamp(1rem, 2vw, 1.25rem);
     }
+
+    /* IMPROVED TABLE MOBILE SUPPORT */
+    .table-responsive {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* MOBILE TOUCH-FRIENDLY INPUTS */
+    @media (max-width: 768px) {
+        input[type="text"],
+        input[type="email"],
+        input[type="tel"],
+        input[type="number"],
+        input[type="password"],
+        input[type="date"],
+        select,
+        textarea {
+            font-size: 16px !important; /* Prevents zoom on iOS */
+        }
+    }
 </style>
 </head>
 
