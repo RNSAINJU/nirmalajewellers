@@ -95,6 +95,50 @@
         border-color: #111827;
         color: white;
     }
+
+    /* MOBILE RESPONSIVE IMPROVEMENTS */
+    @media (max-width: 768px) {
+        .filter-section,
+        .search-section,
+        .action-buttons {
+            padding: 15px;
+        }
+
+        .btn-create,
+        .btn-action {
+            width: 100%;
+            margin-bottom: 8px;
+            padding: 10px 16px;
+        }
+
+        .stats-card {
+            margin-bottom: 1rem;
+        }
+
+        /* Make action button groups stack vertically */
+        .d-flex.gap-2 {
+            flex-direction: column;
+            gap: 0.5rem !important;
+        }
+
+        .d-flex.gap-2 .btn {
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .filter-section,
+        .search-section,
+        .action-buttons {
+            padding: 12px;
+        }
+
+        .btn-create,
+        .btn-action {
+            padding: 8px 12px;
+            font-size: 0.9rem;
+        }
+    }
 </style>
 
 <div class="container mt-5">
