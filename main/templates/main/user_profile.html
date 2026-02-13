@@ -34,7 +34,7 @@
                 {% endif %}
 
                 <div class="mb-3">
-                    <label class="form-label">Email <span class="text-danger">*</span></label>
+                    <label class="form-label" for="id_email">Email <span class="text-danger">*</span></label>
                     {{ form.email }}
                     {% if form.email.errors %}
                         <div class="text-danger small mt-1">{{ form.email.errors }}</div>
@@ -43,14 +43,14 @@
 
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <label class="form-label">First Name</label>
+                        <label class="form-label" for="id_first_name">First Name</label>
                         {{ form.first_name }}
                         {% if form.first_name.errors %}
                             <div class="text-danger small mt-1">{{ form.first_name.errors }}</div>
                         {% endif %}
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Last Name</label>
+                        <label class="form-label" for="id_last_name">Last Name</label>
                         {{ form.last_name }}
                         {% if form.last_name.errors %}
                             <div class="text-danger small mt-1">{{ form.last_name.errors }}</div>
