@@ -109,6 +109,28 @@ class UserPasswordChangeForm(SetPasswordForm):
         self.fields['new_password2'].widget.attrs.update({'class': 'form-control'})
 
 
+class UserProfileForm(forms.ModelForm):
+    """Form for users to update their own profile."""
+    email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={'class': 'form-control'})
+    )
+    first_name = forms.CharField(
+        max_length=150,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    last_name = forms.CharField(
+        max_length=150,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+
+    class Meta:
+        model = User
+        fields = ('email', 'first_name', 'last_name')
+
+
 class GroupForm(forms.ModelForm):
     """Form for creating and editing roles/groups."""
     name = forms.CharField(
