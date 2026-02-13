@@ -216,6 +216,77 @@
         font-size: 12px;
         padding: 4px 8px;
     }
+
+    /* MOBILE RESPONSIVE IMPROVEMENTS */
+    @media (max-width: 768px) {
+        .stat-card {
+            padding: 15px;
+            margin-bottom: 1rem;
+        }
+
+        .stat-value {
+            font-size: 22px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+        }
+
+        .action-buttons {
+            padding: 15px;
+        }
+
+        .btn-create,
+        .btn-import,
+        .btn-export,
+        .btn-print {
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        .ornament-chips {
+            flex-wrap: wrap;
+        }
+
+        .nav-tabs {
+            overflow-x: auto;
+            flex-wrap: nowrap;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .nav-tabs .nav-link {
+            padding: 10px 15px;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .stat-card {
+            padding: 12px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+        }
+
+        .btn-action {
+            padding: 6px 12px;
+            font-size: 13px;
+        }
+
+        .action-buttons {
+            padding: 12px;
+        }
+
+        .search-section {
+            padding: 12px;
+        }
+    }
 </style>
 
 <div class="container mt-5">

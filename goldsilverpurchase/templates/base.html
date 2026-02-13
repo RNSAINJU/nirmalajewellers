@@ -120,8 +120,89 @@
 
     /* MOBILE */
     @media (max-width: 768px) {
+        .sidebar {
+            transform: translateX(-100%);
+        }
+
+        .sidebar.show {
+            transform: translateX(0);
+        }
+
         .content {
             margin-left: 0;
+            padding: 1rem;
+        }
+
+        /* Improve navbar on mobile */
+        .navbar-brand {
+            font-size: 0.95rem;
+        }
+
+        /* Stack buttons and forms */
+        .btn-group {
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .btn-group .btn {
+            width: 100%;
+            margin: 0.25rem 0;
+        }
+
+        /* Better table responsiveness */
+        .table-responsive {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+        }
+
+        table {
+            font-size: 0.85rem;
+        }
+
+        table th,
+        table td {
+            padding: 0.5rem !important;
+            white-space: nowrap;
+        }
+
+        /* Forms on mobile */
+        .form-control,
+        .form-select {
+            font-size: 1rem;
+            min-height: 44px;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .content {
+            padding: 0.75rem;
+        }
+
+        .card-body {
+            padding: 1rem;
+        }
+
+        /* Smaller text on very small screens */
+        body {
+            font-size: 14px;
+        }
+
+        h1, .h1 {
+            font-size: 1.5rem;
+        }
+
+        h2, .h2 {
+            font-size: 1.3rem;
+        }
+
+        h3, .h3 {
+            font-size: 1.15rem;
+        }
+
+        /* Better button sizing */
+        .btn {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.9rem;
         }
     }
 

@@ -158,13 +158,87 @@
         text-decoration: none;
     }
     @media (max-width: 768px) {
+        .detail-card {
+            padding: 20px;
+        }
+
         .detail-info {
             grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .info-item {
+            padding: 15px;
+        }
+
+        .info-value {
+            font-size: 16px;
+        }
+
+        .movement-table {
+            font-size: 0.85rem;
+        }
+
+        .table thead th,
+        .table tbody td {
+            padding: 10px 8px;
+            font-size: 0.85rem;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+            min-width: auto;
+            width: 100%;
+        }
+
+        .btn-edit,
+        .btn-delete {
+            width: 100%;
+            justify-content: center;
         }
     }
+
     @media (max-width: 480px) {
+        .detail-card {
+            padding: 15px;
+        }
+
         .detail-info {
             grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .detail-header h2 {
+            font-size: 1.5rem;
+        }
+
+        .info-item {
+            padding: 12px;
+        }
+
+        .info-label {
+            font-size: 11px;
+        }
+
+        .info-value {
+            font-size: 15px;
+        }
+
+        .table {
+            font-size: 0.8rem;
+        }
+
+        .table thead th,
+        .table tbody td {
+            padding: 8px 6px;
+            font-size: 0.8rem;
+        }
+
+        .movement-in,
+        .movement-out,
+        .movement-adjustment {
+            font-size: 11px;
+            padding: 4px 8px;
         }
     }
 </style>
