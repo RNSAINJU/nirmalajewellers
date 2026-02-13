@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User, Group
 from django.core.paginator import Paginator
 from django.db.models import Q
-from .forms_accounts import UserCreateForm, UserUpdateForm, UserPasswordChangeForm, GroupForm
+from .forms_accounts import UserCreateForm, UserUpdateForm, UserPasswordChangeForm, GroupForm, UserProfileForm
 
 
 def is_staff_or_superuser(user):
@@ -256,3 +256,42 @@ def role_delete(request, role_id):
         'user_count': group.user_set.count(),
     }
     return render(request, 'main/role_confirm_delete.html', context)
+
+
+@login_required
+def user_profile(request):
+    """View and update current user's profile."""
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Your profile has been updated successfully.')
+            return redirect('main:user_profile')
+    else:
+        form = UserProfileForm(instance=request.user)
+    
+    context = {
+        'form': form,
+    }
+    return render(request, 'main/user_profile.html', context)
+
+
+@login_required
+def user_profile_change_password(request):
+    """Allow current user to change their own password."""
+    if request.method == 'POST':
+        form = UserPasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Your password has been changed successfully.')
+            # Important: Update session to prevent logout after password change
+            from django.contrib.auth import update_session_auth_hash
+            update_session_auth_hash(request, form.user)
+            return redirect('main:user_profile')
+    else:
+        form = UserPasswordChangeForm(request.user)
+    
+    context = {
+        'form': form,
+    }
+    return render(request, 'main/user_profile_change_password.html', context)

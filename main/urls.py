@@ -24,6 +24,10 @@ urlpatterns = [
     path('users/<int:user_id>/delete/', views_accounts.user_delete, name='user_delete'),
     path('users/<int:user_id>/change-password/', views_accounts.user_change_password, name='user_change_password'),
     
+    # User Profile URLs (for logged-in user to edit their own profile)
+    path('profile/', views_accounts.user_profile, name='user_profile'),
+    path('profile/change-password/', views_accounts.user_profile_change_password, name='user_profile_change_password'),
+    
     # Role Management URLs
     path('roles/', views_accounts.role_list, name='role_list'),
     path('roles/create/', views_accounts.role_create, name='role_create'),
