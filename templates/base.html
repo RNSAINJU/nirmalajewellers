@@ -170,11 +170,6 @@
             font-size: 0.95rem;
         }
 
-        /* Hide secondary info on small screens */
-        .d-none.d-md-block {
-            display: none !important;
-        }
-
         /* Better button sizing on mobile */
         .btn {
             padding: 0.5rem 0.75rem;
@@ -337,6 +332,8 @@
 
     /* RESPONSIVE TABLE IMPROVEMENTS */
     .table-responsive {
+        display: block;
+        width: 100%;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
     }
@@ -408,14 +405,6 @@
 
     h5, .h5 {
         font-size: clamp(1rem, 2vw, 1.25rem);
-    }
-
-    /* IMPROVED TABLE MOBILE SUPPORT */
-    .table-responsive {
-        display: block;
-        width: 100%;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
     }
 
     /* MOBILE TOUCH-FRIENDLY INPUTS */
