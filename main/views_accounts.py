@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User, Group
 from django.core.paginator import Paginator
@@ -285,7 +286,6 @@ def user_profile_change_password(request):
             form.save()
             messages.success(request, 'Your password has been changed successfully.')
             # Important: Update session to prevent logout after password change
-            from django.contrib.auth import update_session_auth_hash
             update_session_auth_hash(request, form.user)
             return redirect('main:user_profile')
     else:
