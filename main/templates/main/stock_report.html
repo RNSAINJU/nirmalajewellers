@@ -33,6 +33,75 @@
     .content { margin: 0; padding: 0; }
     body { background: #fff; }
   }
+
+  /* MOBILE RESPONSIVE IMPROVEMENTS */
+  @media (max-width: 768px) {
+    .sheet {
+      padding: 16px;
+      border-radius: 8px;
+    }
+
+    .sheet-header .title {
+      font-size: 1.2rem;
+    }
+
+    .sheet-header .subtitle {
+      font-size: 0.85rem;
+    }
+
+    .note-table {
+      font-size: 0.85rem;
+      display: block;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .note-table th,
+    .note-table td {
+      padding: 6px 8px;
+      font-size: 0.85rem;
+    }
+
+    .actions {
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .actions a,
+    .actions button {
+      width: 100%;
+      text-align: center;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .sheet {
+      padding: 12px;
+    }
+
+    .sheet-header .title {
+      font-size: 1.1rem;
+    }
+
+    .sheet-header .subtitle {
+      font-size: 0.8rem;
+    }
+
+    .note-table {
+      font-size: 0.8rem;
+    }
+
+    .note-table th,
+    .note-table td {
+      padding: 5px 6px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+    }
+
+    .note-title {
+      font-size: 0.95rem;
+    }
+  }
 </style>
 
 {% load bs_filters %}
