@@ -1,6 +1,11 @@
 
 
 from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -16,6 +21,10 @@ SECRET_KEY = 'django-insecure-nk_sd$(^2bzq3^9p3@e12d+=(==h7%$q)on$1732_n8dpude#2
 DEBUG = True
 
 ALLOWED_HOSTS = ['nirmalajewellers.pythonanywhere.com','127.0.0.1:8000','127.0.0.1', 'localhost', 'testserver']
+
+# API Tokens loaded from .env file (see .env file in project root)
+# REPLICATE_API_TOKEN - for free-tier image generation
+# STABILITY_API_KEY - for premium image generation
 
 # Security hardening (applies in production only)
 if not DEBUG:
