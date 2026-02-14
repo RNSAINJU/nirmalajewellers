@@ -19,6 +19,9 @@
                 <a href="{% url 'gsp:export_all_data_json' %}" class="btn btn-success">
                     <i class="bi bi-download me-1"></i> Export All Data (JSON)
                 </a>
+                <a href="{% url 'gsp:export_full_db_dump' %}" class="btn btn-outline-dark">
+                    <i class="bi bi-download me-1"></i> Full DB Dump (JSON)
+                </a>
                 
                 <hr class="my-3">
                 <h6 class="mb-2">Export Finance Data</h6>
@@ -59,6 +62,11 @@
                         </button>
                     </div>
                 </form>
+
+                <p class="text-muted small">Or restore from a full DB JSON dump (this wipes existing data):</p>
+                <button type="button" class="btn btn-outline-danger mb-2" data-bs-toggle="modal" data-bs-target="#fullDbRestoreModal">
+                    <i class="bi bi-upload me-1"></i> Restore Full DB (JSON)
+                </button>
                 
                 <hr class="my-3">
                 <h6 class="mb-2">Import Finance Data</h6>
@@ -95,6 +103,41 @@
                 <p class="text-muted small">Permanently delete all data from Gold/Silver Purchases, Customer Purchases, Ornaments, Orders, and Sales. <strong>This action cannot be undone.</strong></p>
                 <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteConfirmModal">
                     <i class="bi bi-trash me-1"></i> Delete All Data
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Full DB Restore Modal -->
+<div class="modal fade" id="fullDbRestoreModal" tabindex="-1" aria-labelledby="fullDbRestoreLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content border-danger">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="fullDbRestoreLabel">
+                    <i class="bi bi-exclamation-circle me-2"></i> Confirm Full DB Restore
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3"><strong>Warning:</strong> This will wipe ALL existing data and restore from the uploaded dump.</p>
+                <p class="text-danger mt-3"><strong>This action cannot be undone!</strong></p>
+
+                <form method="post" action="{% url 'gsp:import_full_db_dump' %}" enctype="multipart/form-data" id="fullDbRestoreForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Select JSON dump file</label>
+                        <input type="file" name="import_file" accept=".json" class="form-control" required>
+                    </div>
+                    <p class="small text-muted">Type <code>RESTORE_FULL_DB</code> to confirm:</p>
+                    <input type="text" id="confirmFullRestoreInput" class="form-control" placeholder="Enter confirmation text">
+                    <input type="hidden" name="confirm_full_restore" id="confirmFullRestoreToken" value="">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="confirmFullRestore()">
+                    <i class="bi bi-upload me-1"></i> Restore Full DB
                 </button>
             </div>
         </div>
@@ -206,6 +249,16 @@
         document.getElementById("passwordInput").value = password;
         document.getElementById("confirmCustomerToken").value = confirmText;
         document.getElementById("deleteCustomerPurchasesForm").submit();
+    }
+
+    function confirmFullRestore() {
+        const input = document.getElementById("confirmFullRestoreInput").value;
+        if (input === "RESTORE_FULL_DB") {
+            document.getElementById("confirmFullRestoreToken").value = input;
+            document.getElementById("fullDbRestoreForm").submit();
+        } else {
+            alert("Confirmation text does not match. Restore cancelled.");
+        }
     }
 </script>
 {% endblock %}

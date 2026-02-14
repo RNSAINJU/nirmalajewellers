@@ -23,8 +23,6 @@ DEBUG = True
 ALLOWED_HOSTS = ['nirmalajewellers.pythonanywhere.com','127.0.0.1:8000','127.0.0.1', 'localhost', 'testserver']
 
 # API Tokens loaded from .env file (see .env file in project root)
-# REPLICATE_API_TOKEN - for free-tier image generation
-# STABILITY_API_KEY - for premium image generation
 
 # Security hardening (applies in production only)
 if not DEBUG:

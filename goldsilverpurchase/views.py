@@ -790,6 +790,60 @@ def data_settings(request):
     return render(request, "goldsilverpurchase/data_settings.html")
 
 
+def export_full_db_dump(request):
+    """Export a full database dump as JSON (Django dumpdata)."""
+    from django.core.management import call_command
+    import io
+
+    out = io.StringIO()
+    call_command("dumpdata", stdout=out)
+
+    response = HttpResponse(out.getvalue(), content_type="application/json")
+    response["Content-Disposition"] = "attachment; filename=full_db_dump.json"
+    return response
+
+
+def import_full_db_dump(request):
+    """Import a full database dump from JSON (wipe then restore)."""
+    if request.method != "POST" or "import_file" not in request.FILES:
+        return redirect("gsp:data_settings")
+
+    confirm_text = request.POST.get("confirm_full_restore", "")
+    if confirm_text != "RESTORE_FULL_DB":
+        messages.error(request, "Confirmation text does not match. Full restore cancelled.")
+        return redirect("gsp:data_settings")
+
+    file = request.FILES.get("import_file")
+    if not file:
+        messages.error(request, "Please upload a JSON dump file.")
+        return redirect("gsp:data_settings")
+
+    from django.core.management import call_command
+    from django.db import transaction
+    import tempfile
+    import os
+
+    tmp_path = None
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as tmp:
+            for chunk in file.chunks():
+                tmp.write(chunk)
+            tmp_path = tmp.name
+
+        with transaction.atomic():
+            call_command("flush", "--noinput")
+            call_command("loaddata", tmp_path)
+
+        messages.success(request, "Full database restore completed.")
+        return redirect("gsp:data_settings")
+    except Exception as e:
+        messages.error(request, f"Full restore failed: {str(e)}")
+        return redirect("gsp:data_settings")
+    finally:
+        if tmp_path and os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+
+
 def export_all_data(request):
     from openpyxl import Workbook
     from django.http import HttpResponse
