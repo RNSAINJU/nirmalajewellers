@@ -794,6 +794,18 @@ def export_full_db_dump(request):
     """Export a full database dump as JSON (Django dumpdata)."""
     from django.core.management import call_command
     import io
+    from django.conf import settings
+    import os
+
+    default_db = settings.DATABASES.get("default", {})
+    engine = default_db.get("ENGINE", "")
+    if engine.endswith("sqlite3"):
+        db_path = default_db.get("NAME")
+        if db_path and os.path.exists(db_path):
+            with open(db_path, "rb") as db_file:
+                response = HttpResponse(db_file.read(), content_type="application/x-sqlite3")
+            response["Content-Disposition"] = "attachment; filename=db_backup.sqlite3"
+            return response
 
     out = io.StringIO()
     call_command(
@@ -1098,7 +1110,6 @@ def import_all_data(request):
         imported_count = {}
         errors = []
         ornament_id_map = {}
-
         def to_date(val):
             if not val:
                 return None
