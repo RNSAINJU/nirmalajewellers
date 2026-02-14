@@ -796,7 +796,14 @@ def export_full_db_dump(request):
     import io
 
     out = io.StringIO()
-    call_command("dumpdata", stdout=out)
+    call_command(
+        "dumpdata",
+        "--exclude",
+        "contenttypes",
+        "--exclude",
+        "auth.permission",
+        stdout=out,
+    )
 
     response = HttpResponse(out.getvalue(), content_type="application/json")
     response["Content-Disposition"] = "attachment; filename=full_db_dump.json"
