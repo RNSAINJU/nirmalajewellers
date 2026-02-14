@@ -278,16 +278,41 @@ class Command(BaseCommand):
                     )
                 )
             else:
-                # In dry-run, show a snippet of the page to aid debugging patterns
-                if options.get('dry_run'):
-                    snippet = page_text[:800]
-                    self.stdout.write(self.style.WARNING(
-                        f'Could not extract rates. Gold tola: {gold_tola_str}, Silver tola: {silver_tola_str}\nSnippet:\n{snippet}'
-                    ))
+                # If today's rates not found, try to use yesterday's rates as fallback
+                from datetime import timedelta
+                yesterday = date.today() - timedelta(days=1)
+                yesterday_rate = DailyRate.objects.filter(date=yesterday).first()
+                
+                if yesterday_rate:
+                    today = date.today()
+                    rate, created = DailyRate.objects.update_or_create(
+                        date=today,
+                        defaults={
+                            'bs_date': yesterday_rate.bs_date,
+                            'gold_rate': yesterday_rate.gold_rate,
+                            'silver_rate': yesterday_rate.silver_rate,
+                            'gold_rate_10g': yesterday_rate.gold_rate_10g,
+                            'silver_rate_10g': yesterday_rate.silver_rate_10g,
+                        }
+                    )
+                    
+                    action = "Created" if created else "Updated"
+                    self.stdout.write(
+                        self.style.SUCCESS(
+                            f'{action} today\'s rates using yesterday\'s data: Gold (tola) रु{yesterday_rate.gold_rate}, Silver (tola) रु{yesterday_rate.silver_rate}'
+                        )
+                    )
                 else:
-                    self.stdout.write(self.style.WARNING(
-                        f'Could not extract rates. Gold tola: {gold_tola_str}, Silver tola: {silver_tola_str}'
-                    ))
+                    # In dry-run, show a snippet of the page to aid debugging patterns
+                    if options.get('dry_run'):
+                        snippet = page_text[:800]
+                        self.stdout.write(self.style.WARNING(
+                            f'Could not extract rates. Gold tola: {gold_tola_str}, Silver tola: {silver_tola_str}\nSnippet:\n{snippet}'
+                        ))
+                    else:
+                        self.stdout.write(self.style.WARNING(
+                            f'Could not extract rates and no yesterday\'s rate found. Gold tola: {gold_tola_str}, Silver tola: {silver_tola_str}'
+                        ))
             
         except urllib.error.URLError as e:
             self.stdout.write(

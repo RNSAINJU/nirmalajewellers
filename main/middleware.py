@@ -13,6 +13,10 @@ class LoginRequiredMiddleware:
             '/admin',
             '/order/api/search-ornaments',
             '/order/api/create-ornament-inline',
+            '/',  # Customer home page
+            '/shop',  # Shop pages
+            '/products',  # Product detail pages
+            '/api',  # API endpoints
         }
         self.static_prefix = getattr(settings, 'STATIC_URL', '/static/') or '/static/'
         self.media_prefix = getattr(settings, 'MEDIA_URL', '/media/') or '/media/'

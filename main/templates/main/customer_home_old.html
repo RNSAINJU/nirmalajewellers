@@ -1,0 +1,793 @@
+{% extends 'customer_base.html' %}
+{% load static %}
+
+{% block title %}Nirmala Jewellers - Premium Jewelry Collections{% endblock %}
+
+{% block content %}
+<style>
+    /* Customer Home Specific Styles */
+    :root {
+        --primary-color: #FFD700;
+        --dark-bg: #1a1a1a;
+        --text-light: #e0e0e0;
+        --card-bg: #2a2a2a;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        background-color: var(--dark-bg);
+        color: var(--text-light);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+
+    /* Navigation Bar */
+    .customer-navbar {
+        background-color: var(--dark-bg);
+        padding: 1rem 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #333;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+
+    .nav-left {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+    }
+
+    .hamburger-menu {
+        background: none;
+        border: none;
+        color: var(--text-light);
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .brand-logo {
+        font-size: 1.8rem;
+        font-weight: 700;
+        letter-spacing: 3px;
+        color: var(--primary-color);
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .search-bar {
+        flex: 1;
+        max-width: 400px;
+        display: flex;
+        align-items: center;
+        background-color: #333;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+    }
+
+    .search-bar input {
+        background: none;
+        border: none;
+        color: var(--text-light);
+        width: 100%;
+        outline: none;
+        font-size: 0.95rem;
+    }
+
+    .search-bar input::placeholder {
+        color: #999;
+    }
+
+    .search-bar-icon {
+        color: #999;
+        margin-right: 0.5rem;
+        font-size: 1.1rem;
+    }
+
+    .nav-right {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .cart-icon {
+        background: none;
+        border: none;
+        color: var(--text-light);
+        font-size: 1.5rem;
+        cursor: pointer;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .cart-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background-color: #ff4444;
+        color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: bold;
+    }
+
+    /* Hero Section */
+    .hero-section {
+        background: linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 100%), 
+                    url('https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=1200&h=600&fit=crop');
+        background-size: cover;
+        background-position: center;
+        padding: 4rem 1.5rem;
+        text-align: center;
+        color: white;
+        min-height: 500px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .hero-section::before {
+        content: 'THE ETERNAL SPARKLE';
+        position: absolute;
+        top: 20px;
+        font-size: 0.8rem;
+        letter-spacing: 2px;
+        color: rgba(255, 215, 0, 0.6);
+        font-weight: 300;
+    }
+
+    .hero-content {
+        z-index: 10;
+        max-width: 600px;
+    }
+
+    .hero-title {
+        font-size: clamp(2rem, 8vw, 3.5rem);
+        font-weight: 700;
+        margin-bottom: 1rem;
+        line-height: 1.2;
+        letter-spacing: 1px;
+    }
+
+    .hero-subtitle {
+        font-size: 1rem;
+        font-weight: 300;
+        margin-bottom: 2rem;
+        color: #ccc;
+        letter-spacing: 1px;
+    }
+
+    .shop-button {
+        background-color: var(--primary-color);
+        color: #000;
+        border: none;
+        padding: 1rem 3rem;
+        border-radius: 50px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        display: inline-block;
+    }
+
+    .shop-button:hover {
+        background-color: #ffc700;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(255, 215, 0, 0.3);
+    }
+
+    /* Categories Section */
+    .categories-section {
+        padding: 4rem 1.5rem;
+        background-color: var(--dark-bg);
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 3rem;
+    }
+
+    .section-title {
+        font-size: clamp(1.5rem, 4vw, 2.5rem);
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+
+    .view-all-btn {
+        color: var(--primary-color);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    .view-all-btn:hover {
+        color: #ffc700;
+    }
+
+    .categories-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .category-card {
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .category-icon {
+        width: 120px;
+        height: 120px;
+        margin: 0 auto 1rem;
+        background: linear-gradient(135deg, #333 0%, #222 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        transition: all 0.3s ease;
+        overflow: hidden;
+        border: 2px solid #444;
+    }
+
+    .category-card:hover .category-icon {
+        transform: scale(1.1);
+        background: linear-gradient(135deg, #444 0%, #333 100%);
+        border-color: var(--primary-color);
+    }
+
+    .category-name {
+        font-size: 1rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-top: 0.5rem;
+    }
+
+    /* Product Grid */
+    .products-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .product-card {
+        background-color: var(--card-bg);
+        border-radius: 8px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+        group: 'card';
+    }
+
+    .product-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .product-image-container {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 1;
+        background-color: #222;
+        overflow: hidden;
+    }
+
+    .product-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+
+    .product-card:hover .product-image {
+        transform: scale(1.05);
+    }
+
+    .wishlist-icon {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 40px;
+        height: 40px;
+        background-color: rgba(100, 100, 100, 0.7);
+        border: none;
+        border-radius: 50%;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        transition: all 0.3s ease;
+    }
+
+    .wishlist-icon:hover {
+        background-color: rgba(255, 215, 0, 0.9);
+        color: #000;
+    }
+
+    .product-info {
+        padding: 1rem;
+    }
+
+    .product-category {
+        font-size: 0.75rem;
+        color: var(--primary-color);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .product-name {
+        font-size: 0.95rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        line-height: 1.3;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .product-price {
+        font-size: 1.1rem;
+        color: var(--primary-color);
+        font-weight: 700;
+    }
+
+    .product-specs {
+        font-size: 0.8rem;
+        color: #aaa;
+        margin-top: 0.5rem;
+    }
+
+    /* New Arrivals Section */
+    .new-arrivals-section {
+        padding: 4rem 1.5rem;
+        background-color: var(--dark-bg);
+    }
+
+    .arrivals-count {
+        color: var(--primary-color);
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .customer-navbar {
+            padding: 0.75rem 1rem;
+        }
+
+        .search-bar {
+            max-width: 200px;
+        }
+
+        .nav-left {
+            gap: 1rem;
+        }
+
+        .brand-logo {
+            font-size: 1.3rem;
+            letter-spacing: 2px;
+        }
+
+        .hero-section {
+            padding: 2rem 1rem;
+            min-height: 350px;
+        }
+
+        .hero-title {
+            font-size: 1.8rem;
+        }
+
+        .categories-grid {
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 1rem;
+        }
+
+        .category-icon {
+            width: 100px;
+            height: 100px;
+            font-size: 2rem;
+        }
+
+        .products-grid {
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        .categories-section,
+        .new-arrivals-section {
+            padding: 2rem 1rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .search-bar input {
+            font-size: 0.85rem;
+        }
+
+        .brand-logo {
+            font-size: 1.1rem;
+            letter-spacing: 1.5px;
+        }
+
+        .hero-title {
+            font-size: 1.5rem;
+        }
+
+        .hero-subtitle {
+            font-size: 0.85rem;
+        }
+
+        .shop-button {
+            padding: 0.75rem 1.5rem;
+            font-size: 0.85rem;
+        }
+
+        .products-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .category-icon {
+            width: 80px;
+            height: 80px;
+            font-size: 1.5rem;
+        }
+
+        .category-name {
+            font-size: 0.8rem;
+        }
+    }
+
+    /* Mobile Sidebar */
+    .mobile-sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 280px;
+        height: 100vh;
+        background-color: var(--card-bg);
+        border-right: 1px solid #333;
+        z-index: 999;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        overflow-y: auto;
+        padding: 1rem;
+    }
+
+    .mobile-sidebar.active {
+        transform: translateX(0);
+    }
+
+    .sidebar-close {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: none;
+        border: none;
+        color: var(--text-light);
+        font-size: 1.5rem;
+        cursor: pointer;
+    }
+
+    .sidebar-header {
+        margin-top: 2.5rem;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #333;
+    }
+
+    .sidebar-header h3 {
+        color: var(--primary-color);
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin: 0;
+    }
+
+    .sidebar-menu {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .sidebar-menu li {
+        margin-bottom: 0.5rem;
+    }
+
+    .sidebar-menu a {
+        display: block;
+        padding: 0.75rem 1rem;
+        color: var(--text-light);
+        text-decoration: none;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+        font-size: 0.95rem;
+    }
+
+    .sidebar-menu a:hover {
+        background-color: rgba(255, 215, 0, 0.1);
+        color: var(--primary-color);
+        padding-left: 1.25rem;
+    }
+
+    .sidebar-overlay {
+        position: fixed;
+        inset: 0;
+        background-color: rgba(0, 0, 0, 0.7);
+        z-index: 998;
+        display: none;
+    }
+
+    .sidebar-overlay.active {
+        display: block;
+    }
+
+    @media (max-width: 768px) {
+        .mobile-sidebar {
+            width: 250px;
+        }
+    }
+</style>
+
+<!-- Mobile Sidebar Overlay -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeMenu()"></div>
+
+<!-- Mobile Sidebar -->
+<aside class="mobile-sidebar" id="mobileSidebar">
+    <button class="sidebar-close" onclick="closeMenu()">
+        <i class="bi bi-x"></i>
+    </button>
+    <div class="sidebar-header">
+        <h3>Menu</h3>
+    </div>
+    <ul class="sidebar-menu">
+        <li><a href="{% url 'main:customer_home' %}" onclick="closeMenu()">Home</a></li>
+        <li><a href="{% url 'main:shop' %}" onclick="closeMenu()">Shop All</a></li>
+        <li><hr style="margin: 0.5rem 0; border: none; border-top: 1px solid #333;"></li>
+        <li><a href="{% url 'main:customer_home' %}#categories" onclick="closeMenu()">Necklaces</a></li>
+        <li><a href="{% url 'main:customer_home' %}#categories" onclick="closeMenu()">Earrings</a></li>
+        <li><a href="{% url 'main:customer_home' %}#categories" onclick="closeMenu()">Rings</a></li>
+        <li><a href="{% url 'main:customer_home' %}#categories" onclick="closeMenu()">Bangles</a></li>
+        <li><hr style="margin: 0.5rem 0; border: none; border-top: 1px solid #333;"></li>
+        <li><a href="{% url 'main:customer_home' %}#arrivals" onclick="closeMenu()">New Arrivals</a></li>
+        <li><a href="{% url 'main:shop' %}" onclick="closeMenu()">Featured</a></li>
+    </ul>
+</aside>
+
+<!-- Customer Navigation Bar -->
+<nav class="customer-navbar">
+    <div class="nav-left">
+        <button class="hamburger-menu" onclick="toggleMenu()">
+            <i class="bi bi-list"></i>
+        </button>
+        <a href="{% url 'main:customer_home' %}" class="brand-logo">NIRMALA</a>
+        <div class="search-bar">
+            <i class="bi bi-search search-bar-icon"></i>
+            <input type="text" placeholder="Search gold, diamonds, collections..." id="searchInput">
+        </div>
+    </div>
+    <div class="nav-right">
+        {% if latest_rate %}
+        <div style="display: flex; align-items: center; gap: 1.5rem; margin-right: 1rem; padding-right: 1rem; border-right: 1px solid #333;">
+            <div style="font-size: 0.85rem; color: #999;">
+                <div style="margin-bottom: 0.25rem;">
+                    <span style="color: var(--primary-color); font-weight: 600;">Gold: </span>
+                    <span>रु{{ latest_rate.gold_rate|floatformat:0 }}</span>
+                </div>
+                <div>
+                    <span style="color: var(--primary-color); font-weight: 600;">Silver: </span>
+                    <span>रु{{ latest_rate.silver_rate|floatformat:0 }}</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        <button class="cart-icon" onclick="toggleCart()">
+            <i class="bi bi-handbag"></i>
+            <span class="cart-badge" id="cartCount">0</span>
+        </button>
+    </div>
+</nav>
+
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="hero-content">
+        <h1 class="hero-title">Antique Gold Collections</h1>
+        <p class="hero-subtitle">Timeless Elegance Meets Modern Craftsmanship</p>
+        <button class="shop-button" onclick="scrollToProducts()">SHOP COLLECTION</button>
+    </div>
+</section>
+
+<!-- Categories Section -->
+<section class="categories-section" id="categories">
+    <div class="section-header">
+        <h2 class="section-title">CATEGORIES</h2>
+        <a href="{% url 'main:shop' %}" class="view-all-btn">View All</a>
+    </div>
+    
+    <div class="categories-grid">
+        <!-- Necklaces -->
+        <a href="{% url 'main:shop' %}" class="category-card" data-category="necklaces">
+            <div class="category-icon">
+                <i class="bi bi-gem"></i>
+            </div>
+            <div class="category-name">NECKLACES</div>
+        </a>
+
+        <!-- Earrings -->
+        <a href="{% url 'main:shop' %}" class="category-card" data-category="earrings">
+            <div class="category-icon">
+                <i class="bi bi-brightness-high"></i>
+            </div>
+            <div class="category-name">EARRINGS</div>
+        </a>
+
+        <!-- Rings -->
+        <a href="{% url 'main:shop' %}" class="category-card" data-category="rings">
+            <div class="category-icon">
+                <i class="bi bi-circle-fill"></i>
+            </div>
+            <div class="category-name">RINGS</div>
+        </a>
+
+        <!-- Bangles -->
+        <a href="{% url 'main:shop' %}" class="category-card" data-category="bangles">
+            <div class="category-icon">
+                <i class="bi bi-infinity"></i>
+            </div>
+            <div class="category-name">BANGLES</div>
+        </a>
+    </div>
+</section>
+
+<!-- New Arrivals Section -->
+<section class="new-arrivals-section" id="arrivals">
+    <div class="section-header">
+        <h2 class="section-title">NEW ARRIVALS</h2>
+        <span class="arrivals-count">{{ new_arrivals.count }} Items</span>
+    </div>
+
+    {% if new_arrivals %}
+    <div class="products-grid">
+        {% for product in new_arrivals %}
+        <a href="{% url 'main:product_detail' product.id %}" style="text-decoration: none; color: inherit;">
+            <div class="product-card">
+                <div class="product-image-container">
+                    {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.ornament_name }}" class="product-image">
+                    {% else %}
+                    <div style="width: 100%; height: 100%; background: #333; display: flex; align-items: center; justify-content: center; color: #666;">
+                        <i class="bi bi-image" style="font-size: 3rem;"></i>
+                    </div>
+                    {% endif %}
+                    <button class="wishlist-icon" onclick="toggleWishlist(event)">
+                        <i class="bi bi-heart"></i>
+                    </button>
+                </div>
+                <div class="product-info">
+                    <div class="product-category">
+                        {% if product.maincategory %}{{ product.maincategory.name }}{% else %}JEWELRY{% endif %}
+                    </div>
+                    <div class="product-name">{{ product.ornament_name }}</div>
+                    <div class="product-specs">
+                        {% if product.type %}{{ product.type }}{% endif %}
+                        {% if product.weight %} | {{ product.weight }}g{% endif %}
+                    </div>
+                    <div class="product-price">VIEW</div>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 3rem 1rem; color: #999;">
+        <i class="bi bi-inbox" style="font-size: 3rem; display: block; margin-bottom: 1rem;"></i>
+        <p>No products available yet</p>
+    </div>
+    {% endif %}
+</section>
+
+<script>
+function toggleMenu() {
+    const sidebar = document.getElementById('mobileSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    sidebar.classList.toggle('active');
+    overlay.classList.toggle('active');
+}
+
+function closeMenu() {
+    const sidebar = document.getElementById('mobileSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    sidebar.classList.remove('active');
+    overlay.classList.remove('active');
+}
+
+function toggleCart() {
+    // Navigate to cart page
+    window.location.href = '{% url "main:cart" %}';
+}
+
+function toggleWishlist(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    const button = event.currentTarget;
+    button.classList.toggle('active');
+    
+    // Visual feedback
+    if (button.classList.contains('active')) {
+        button.style.background = 'rgba(255, 215, 0, 0.9)';
+        button.style.color = '#000';
+    } else {
+        button.style.background = 'rgba(100, 100, 100, 0.7)';
+        button.style.color = 'white';
+    }
+}
+
+function scrollToProducts() {
+    document.getElementById('arrivals').scrollIntoView({ behavior: 'smooth' });
+}
+
+// Search functionality
+document.getElementById('searchInput').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const productCards = document.querySelectorAll('.product-card');
+    
+    productCards.forEach(card => {
+        const productName = card.querySelector('.product-name')?.textContent.toLowerCase() || '';
+        const category = card.querySelector('.product-category')?.textContent.toLowerCase() || '';
+        
+        if (productName.includes(searchTerm) || category.includes(searchTerm)) {
+            card.style.display = '';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+});
+
+// Initialize cart count from localStorage
+window.addEventListener('load', function() {
+    const cartCount = localStorage.getItem('cartCount') || '0';
+    document.getElementById('cartCount').textContent = cartCount;
+});
+</script>
+
+{% endblock %}

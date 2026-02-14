@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Nirmala Jewellers Home</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "primary": "#f4c025",
+                "background-light": "#f8f8f5",
+                "background-dark": "#221e10",
+              },
+              fontFamily: {
+                "display": ["Manrope", "sans-serif"]
+              },
+              borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+            },
+          },
+        }
+    </script>
+<style>
+        body { font-family: 'Manrope', sans-serif; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-stone-800 dark:text-stone-200 min-h-screen pb-20">
+<!-- Sticky Header -->
+<header class="sticky top-0 z-50 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-primary/10">
+<div class="px-4 py-3 flex flex-col gap-3">
+<div class="flex justify-between items-center">
+<button class="p-2 -ml-2">
+<span class="material-icons-outlined">menu</span>
+</button>
+<h1 class="text-2xl font-light tracking-[0.2em] text-primary uppercase">Nirmala</h1>
+<div class="flex items-center gap-1">
+<button class="p-2">
+<span class="material-icons-outlined">shopping_bag</span>
+</button>
+</div>
+</div>
+<!-- Search Bar -->
+<div class="relative group">
+<span class="material-icons-outlined absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 group-focus-within:text-primary transition-colors">search</span>
+<input class="w-full bg-stone-100 dark:bg-white/5 border-none rounded-xl py-3 pl-10 pr-4 focus:ring-1 focus:ring-primary text-sm placeholder:text-stone-500" placeholder="Search gold, diamonds, collections..." type="text"/>
+</div>
+</div>
+</header>
+<main class="flex flex-col gap-8">
+<!-- Hero Carousel Section -->
+<section class="relative px-4 mt-2">
+<div class="relative overflow-hidden rounded-xl aspect-[4/5] md:aspect-[16/9] group">
+<img class="w-full h-full object-cover brightness-75 scale-105 group-hover:scale-100 transition-transform duration-1000" data-alt="Luxurious gold and diamond necklace on dark display" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCx0oStYUWI7eGCVIQVLzVRuLJi-7lVXzGDnJ9f1Yg1ZuiRJMIyp5GR8x5togcbcgReoKj7ONkAsVR8LiMovN5kdRfeYke6T7r1biv7DTxWQZUOXRsaf0AfTzu9yLoFiYr7NY5P5bLMr0z5LajK_eOg4A6eHX80Cewdisx7RHF71gzUGfqWMSdzHXzJN_1Dw2nGzQeKONvy1cTlRocqYU8kbKWoGyS5k0DSTAT2vxZ417f7btO27vZZ_LuOkoA2a2eWo9XHfHEpnHL_"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background-dark via-transparent to-transparent"></div>
+<div class="absolute bottom-8 left-8 right-8 text-center flex flex-col items-center gap-4">
+<p class="text-xs uppercase tracking-[0.3em] text-primary/80 font-medium">The Eternal Sparkle</p>
+<h2 class="text-3xl font-light tracking-tight text-white">Antique Gold Collections</h2>
+<button class="bg-primary text-background-dark font-bold px-8 py-3 rounded-full text-sm uppercase tracking-widest hover:bg-white transition-colors">
+                        Shop Collection
+                    </button>
+</div>
+</div>
+</section>
+<!-- Category Rail -->
+<section class="flex flex-col gap-4">
+<div class="px-4 flex justify-between items-end">
+<h3 class="text-lg font-light tracking-widest uppercase">Categories</h3>
+<a class="text-xs text-primary underline underline-offset-4" href="#">View All</a>
+</div>
+<div class="flex overflow-x-auto gap-6 px-4 pb-2 hide-scrollbar">
+<!-- Category Item -->
+<div class="flex flex-col items-center gap-2 flex-shrink-0">
+<div class="w-20 h-20 rounded-full border border-primary/20 p-1 bg-gradient-to-tr from-primary/10 to-transparent">
+<div class="w-full h-full rounded-full overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Close up of a luxury necklace" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAcZhytGUrNjXDMQbaPIy62KFsRtNEqwAHBlraTRJJm7NqDF-SIoIkU5twnjvoKQpmDBVwwymipLaSn_4X0CzeEnlkEb3ixMXCBgenWICfUMfIvWbmD23ZXmGuihskvKdbvNFZtgHxiVGRVLmN-MR1S_kcGz6ETYYJzWBrl8eNZuv5h3Yq0JJ1eqjI9iVqIQ6uH8u50XRCYyM2Gr6Qx-5VAEwQnFJwI1o-omD524U8x5C9i2uUTgPOyEX0u6Vq2HlZId5dh72gnTaPm"/>
+</div>
+</div>
+<span class="text-[10px] uppercase tracking-widest font-medium">Necklaces</span>
+</div>
+<!-- Category Item -->
+<div class="flex flex-col items-center gap-2 flex-shrink-0">
+<div class="w-20 h-20 rounded-full border border-primary/20 p-1 bg-gradient-to-tr from-primary/10 to-transparent">
+<div class="w-full h-full rounded-full overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Elegant gold earrings set" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDvJlCmRtmNaJLVK6PCYTOyVtdGentfA6n7D0yROPqYKyoGAO00ZTRLY28MPFDHjDg6xSLkjGggA8cu4be1kxQn41DtuzFislEmMKKITsiJAqIiZNvnloLhRzmymJvQV96PFN5hnpvqIoy6yPKi6Ng6MiWELfHVFPpizad8l3dyCkKp3flmzUW6WLGZjiaWGjPBnDcDzFDWWjUnKdlOiE8QO3c_BSp-rAdinFVmSyIWYNPN6F4NbZOGHBM9Pnq4R9r7rYwoEbqsHP8c"/>
+</div>
+</div>
+<span class="text-[10px] uppercase tracking-widest font-medium">Earrings</span>
+</div>
+<!-- Category Item -->
+<div class="flex flex-col items-center gap-2 flex-shrink-0">
+<div class="w-20 h-20 rounded-full border border-primary/20 p-1 bg-gradient-to-tr from-primary/10 to-transparent">
+<div class="w-full h-full rounded-full overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Diamond engagement ring on dark velvet" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDUTw1mcX-nRDmXPXLfZtgiozJ6Y0OeS1bTV-NT-MH0wPQLi3Y4dtB2Ts9TFS6DyNBVZ50Z-iuIdqGVWL-l8GVNQbIrMXUMMElyFXi1EWtXKm3DUMBKG_Meu_n4GI7oXOBiBJZBb-a2DZjK2j1Bg5C1u3ABg3V2zHn8MHLMpCqBxw8KPjSzdh5gB_vWEsQfzk7LQRJArknic7uYizGBUG78KPnHvLenW4hJxPi-uyJsOS3rYZoNCR3l67CJ9mnT7iB9wZL4cmEbyf8w"/>
+</div>
+</div>
+<span class="text-[10px] uppercase tracking-widest font-medium">Rings</span>
+</div>
+<!-- Category Item -->
+<div class="flex flex-col items-center gap-2 flex-shrink-0">
+<div class="w-20 h-20 rounded-full border border-primary/20 p-1 bg-gradient-to-tr from-primary/10 to-transparent">
+<div class="w-full h-full rounded-full overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Traditional gold bangles" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDihQax3xMMlvakwB-5Auj07IGBbZHuMvc5ucs7tHUaJC5-M9h96_6aE1NNf7h7jCtIeZ5QalVYyjKJg1x6saBC-qbtI8ftf0ZROVvSj-VB4s21Ev8UbtzPeyGIkeBg6OthbAB_MGXpXp4PogN06dqJACnhduGfWyKjhdj06kF85S8ODMdCURo_5T0YNeldnR72Of2oMW83xgfwWSlpL-3z6uWiFCnBTVoWPVeRTTEPGG9UPSo9swueuId4ShDRW33W12VN_YpKKq1t"/>
+</div>
+</div>
+<span class="text-[10px] uppercase tracking-widest font-medium">Bangles</span>
+</div>
+<!-- Category Item -->
+<div class="flex flex-col items-center gap-2 flex-shrink-0">
+<div class="w-20 h-20 rounded-full border border-primary/20 p-1 bg-gradient-to-tr from-primary/10 to-transparent">
+<div class="w-full h-full rounded-full overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Luxury wrist accessories" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDozDS2OpiCa__iPdQxiHYM5rrFxjU8aQ_2t4y6omhGqoic0xylOHTUvH70N8_Z29zBOP9rb9Ny8qq9v-uaUASZTPqqi3IuF3T4Y3S6IO0qBi73wxrlGCdB0-DPasAUCVm063PCUJEvs3aK5kQ61nPhxMCDmMeam6J6GruDO93T3x2mZpcrdC5DO7PPxs8xSXvOQf0Atr6WLJ0mRV00TvKsc5jmJLcogsKXO4EM2h3FYbQMRXIpxdLNsVTtdr1IXTmNafdWpOZ2kymD"/>
+</div>
+</div>
+<span class="text-[10px] uppercase tracking-widest font-medium">Bracelets</span>
+</div>
+</div>
+</section>
+<!-- New Arrivals Grid -->
+<section class="flex flex-col gap-4 px-4">
+<div class="flex justify-between items-end">
+<h3 class="text-lg font-light tracking-widest uppercase">New Arrivals</h3>
+<span class="text-xs text-stone-500">12 Items</span>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<!-- Product Card -->
+<div class="flex flex-col gap-3 group">
+<div class="relative bg-white/5 rounded-xl aspect-[3/4] overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="22k Gold Filigree Necklace detail" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBQkCPbH-9MFx7rqWn5gMPTD6kIs7gtHKKunyPFEySR4w2yol_OFZocOZ_iIJ0jZE5oOSFE8d0WzrgiCssQXb9NvOQRnWf0M7G4iFOCKraBSz9VHI0M0-5PhFGauUiScV3XVBFkVrRa1SquINGeOp_MEbNw_K9aK50ssHmAAhyvdeGD2QQ_8VhgsJ_w4hnXZT26uJBhBhRVqwj63dDgOa2j1aBrUOxuNgjRzbbknpQKMSAa5Ro0wpeoZhS2GRKVcAy7FXZ9b314gEuE"/>
+<button class="absolute top-3 right-3 w-8 h-8 rounded-full bg-background-dark/40 backdrop-blur-sm flex items-center justify-center text-white/80 hover:text-primary">
+<span class="material-icons-outlined text-lg">favorite_border</span>
+</button>
+</div>
+<div class="flex flex-col gap-1">
+<h4 class="text-xs text-stone-400 font-medium uppercase tracking-wider">Necklace</h4>
+<p class="text-sm font-semibold truncate">22K Filigree Gold Set</p>
+<p class="text-primary font-bold text-base">$2,450.00</p>
+</div>
+</div>
+<!-- Product Card -->
+<div class="flex flex-col gap-3 group">
+<div class="relative bg-white/5 rounded-xl aspect-[3/4] overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="1ct Solitaire Diamond Ring" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAuX1eInNaNUsYBFnjAm8Uo6xoI9M46lvjb8jbXAvmaINif-6A22FUCnGfeLU9o7OZ2SaWQ8GkMZgLpOuoD_fb8Yi9VNaaVUe61IZ_qN6XAvxTc7LOreBEw0r805yERVyaN0DX520Qvgy98P0Spo60UeFJMm-qN_JzPFtL1j2WQeOsDGYZka3_V21anaKtAVOtx6tJZCvsHl9K2lg_TZUHbU4CRX604QnfME3EastrKKqXyT0d9D5HoBsohRbDN2u-qDQf6Dld__bVk"/>
+<button class="absolute top-3 right-3 w-8 h-8 rounded-full bg-background-dark/40 backdrop-blur-sm flex items-center justify-center text-white/80 hover:text-primary">
+<span class="material-icons-outlined text-lg">favorite</span>
+</button>
+</div>
+<div class="flex flex-col gap-1">
+<h4 class="text-xs text-stone-400 font-medium uppercase tracking-wider">Diamond</h4>
+<p class="text-sm font-semibold truncate">Solitaire Engagement Ring</p>
+<p class="text-primary font-bold text-base">$4,890.00</p>
+</div>
+</div>
+<!-- Product Card -->
+<div class="flex flex-col gap-3 group">
+<div class="relative bg-white/5 rounded-xl aspect-[3/4] overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="Modern geometric gold earrings" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCEU7P4lATnlls_jmypxkn8LP811L5Gd-1PnNYus4BJ76wOGUtEPgX_LRS_oEUg7F0zQjSmdMzbw7TKoZnEgiH8_AHWD0SaJA4Uwuvw5ALbKTNiAVgyfddSrIZ5t3fW_-azx1G-5PZYiSSjj6MHpz86---EJ78UwVksmK72CSpc4dth3RcTNFzfqGdqVrvlXsWOipMT60U6yz1hdb_EqeZ2oA8GmG1pWR1p_2a3sau1LXZcF2Yii3npHYWuAMKQcfGbwHMSrK5n5-9r"/>
+<button class="absolute top-3 right-3 w-8 h-8 rounded-full bg-background-dark/40 backdrop-blur-sm flex items-center justify-center text-white/80 hover:text-primary">
+<span class="material-icons-outlined text-lg">favorite_border</span>
+</button>
+</div>
+<div class="flex flex-col gap-1">
+<h4 class="text-xs text-stone-400 font-medium uppercase tracking-wider">Earrings</h4>
+<p class="text-sm font-semibold truncate">Geometric Droplet Studs</p>
+<p class="text-primary font-bold text-base">$820.00</p>
+</div>
+</div>
+<!-- Product Card -->
+<div class="flex flex-col gap-3 group">
+<div class="relative bg-white/5 rounded-xl aspect-[3/4] overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="Gold and pearl bangles" src="https://lh3.googleusercontent.com/aida-public/AB6AXuApEbFzIpNUW4CdRF1iFoK1iC-hi7Hhu9fwPu08XFy-SgVPmO62p3MTesBoOOsQquEyGN_JZJerg1tbQBVHrJeaYKJp1QfMIemWyBCOXIsALZ7gezoA8Bw5SmWB9PUV53Yq_YSGqpuYd8iC_k2xpQh5m1bPB3uiICI4F4kL209Y0MvmK-jCWbMkwbrY4voGX_QuTyeCMpi8HCH1KwfkEhgIH7gkCAnVAVOmCXi9-VxCFGqIKvYvapFfKnq6EgX0lIUhQJPI396Ky1ZE"/>
+<button class="absolute top-3 right-3 w-8 h-8 rounded-full bg-background-dark/40 backdrop-blur-sm flex items-center justify-center text-white/80 hover:text-primary">
+<span class="material-icons-outlined text-lg">favorite_border</span>
+</button>
+</div>
+<div class="flex flex-col gap-1">
+<h4 class="text-xs text-stone-400 font-medium uppercase tracking-wider">Bangles</h4>
+<p class="text-sm font-semibold truncate">Pearl-Inlaid Gold Bangle</p>
+<p class="text-primary font-bold text-base">$1,150.00</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Newsletter / Promo Banner -->
+<section class="mx-4 mb-4">
+<div class="bg-primary/10 border border-primary/20 rounded-xl p-6 flex flex-col gap-4 items-center text-center">
+<span class="material-icons-outlined text-primary text-4xl">loyalty</span>
+<div class="flex flex-col gap-1">
+<h4 class="text-lg font-bold">Exclusive Perks</h4>
+<p class="text-xs text-stone-400">Join our Nirmala Circle for early access to new collections and special member pricing.</p>
+</div>
+<button class="bg-primary text-background-dark px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest">Join Now</button>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 right-0 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-lg border-t border-primary/10 safe-area-inset-bottom">
+<div class="flex justify-around items-center py-3 px-2">
+<button class="flex flex-col items-center gap-1 text-primary">
+<span class="material-icons-outlined">home</span>
+<span class="text-[10px] font-medium uppercase tracking-tighter">Home</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-stone-500">
+<span class="material-icons-outlined">search</span>
+<span class="text-[10px] font-medium uppercase tracking-tighter">Search</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-stone-500">
+<span class="material-icons-outlined">favorite_border</span>
+<span class="text-[10px] font-medium uppercase tracking-tighter">Wishlist</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-stone-500">
+<span class="material-icons-outlined">person_outline</span>
+<span class="text-[10px] font-medium uppercase tracking-tighter">Profile</span>
+</button>
+</div>
+</nav>
+</body></html>

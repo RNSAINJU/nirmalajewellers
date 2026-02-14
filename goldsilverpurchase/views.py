@@ -823,7 +823,7 @@ def export_full_db_dump(request):
 
 
 def import_full_db_dump(request):
-    """Import a full database dump from JSON (wipe then restore)."""
+    """Import a full database dump from SQLite or JSON (wipe then restore)."""
     if request.method != "POST" or "import_file" not in request.FILES:
         return redirect("gsp:data_settings")
 
@@ -834,26 +834,62 @@ def import_full_db_dump(request):
 
     file = request.FILES.get("import_file")
     if not file:
-        messages.error(request, "Please upload a JSON dump file.")
+        messages.error(request, "Please upload a SQLite or JSON dump file.")
         return redirect("gsp:data_settings")
 
     from django.core.management import call_command
-    from django.db import transaction
+    from django.db import transaction, connections
+    from django.conf import settings
     import tempfile
+    import shutil
     import os
 
     tmp_path = None
     try:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as tmp:
-            for chunk in file.chunks():
-                tmp.write(chunk)
-            tmp_path = tmp.name
+        # Detect file type by extension
+        filename = file.name.lower()
+        is_sqlite = filename.endswith(('.sqlite3', '.db', '.sqlite'))
+        
+        if is_sqlite:
+            # Handle SQLite database file
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".sqlite3") as tmp:
+                for chunk in file.chunks():
+                    tmp.write(chunk)
+                tmp_path = tmp.name
+            
+            # Close all database connections
+            connections.close_all()
+            
+            # Get current database path
+            default_db = settings.DATABASES.get("default", {})
+            db_path = default_db.get("NAME")
+            
+            if db_path and os.path.exists(db_path):
+                # Backup current database
+                backup_path = f"{db_path}.bak"
+                shutil.copy2(str(db_path), backup_path)
+                
+                # Replace database with uploaded file
+                shutil.copy2(tmp_path, db_path)
+                
+                # Reconnect to database
+                connections.close_all()
+                connections['default'].ensure_connection()
+            
+            messages.success(request, "Full database restore completed from SQLite file.")
+        else:
+            # Handle JSON dump file
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as tmp:
+                for chunk in file.chunks():
+                    tmp.write(chunk)
+                tmp_path = tmp.name
 
-        with transaction.atomic():
-            call_command("flush", "--noinput")
-            call_command("loaddata", tmp_path)
+            with transaction.atomic():
+                call_command("flush", "--noinput")
+                call_command("loaddata", tmp_path)
 
-        messages.success(request, "Full database restore completed.")
+            messages.success(request, "Full database restore completed from JSON file.")
+        
         return redirect("gsp:data_settings")
     except Exception as e:
         messages.error(request, f"Full restore failed: {str(e)}")
