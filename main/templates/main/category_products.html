@@ -1,0 +1,501 @@
+{% extends 'customer_base.html' %}
+{% load static %}
+
+{% block title %}{{ category.name }} | Nirmala Jewellers{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --primary-color: #FFD700;
+        --dark-bg: #1a1a1a;
+        --text-light: #e0e0e0;
+        --card-bg: #2a2a2a;
+    }
+
+    body {
+        background-color: var(--dark-bg);
+        color: var(--text-light);
+    }
+
+    .category-header {
+        background: linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 100%);
+        padding: 3rem 1.5rem;
+        text-align: center;
+        border-bottom: 2px solid var(--primary-color);
+    }
+
+    .category-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+    }
+
+    .category-header p {
+        color: #aaa;
+        font-size: 1rem;
+    }
+
+    .filters-and-products {
+        display: grid;
+        grid-template-columns: 250px 1fr;
+        gap: 2rem;
+        padding: 2rem 1.5rem;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .filter-panel {
+        position: sticky;
+        top: 80px;
+        height: fit-content;
+    }
+
+    .filter-group {
+        background-color: var(--card-bg);
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+    }
+
+    .filter-group h3 {
+        font-size: 1rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 1rem;
+        color: var(--primary-color);
+    }
+
+    .filter-option {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem 0;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .filter-option input[type="checkbox"] {
+        cursor: pointer;
+    }
+
+    .filter-option:hover {
+        color: var(--primary-color);
+    }
+
+    .products-section {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .products-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .products-count {
+        font-size: 0.95rem;
+        color: #999;
+    }
+
+    .sort-dropdown {
+        background-color: var(--card-bg);
+        color: var(--text-light);
+        border: 1px solid #444;
+        padding: 0.75rem 1rem;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    .products-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .product-card {
+        background-color: var(--card-bg);
+        border-radius: 8px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+    }
+
+    .product-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .product-image-container {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 1;
+        background-color: #222;
+        overflow: hidden;
+    }
+
+    .product-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+
+    .product-card:hover .product-image {
+        transform: scale(1.05);
+    }
+
+    .wishlist-icon {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 40px;
+        height: 40px;
+        background-color: rgba(100, 100, 100, 0.7);
+        border: none;
+        border-radius: 50%;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        transition: all 0.3s ease;
+    }
+
+    .wishlist-icon:hover {
+        background-color: rgba(255, 215, 0, 0.9);
+        color: #000;
+    }
+
+    .product-info {
+        padding: 1rem;
+    }
+
+    .product-name {
+        font-size: 0.95rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        line-height: 1.3;
+    }
+
+    .product-specs {
+        font-size: 0.8rem;
+        color: #aaa;
+        margin-bottom: 0.5rem;
+    }
+
+    .product-code {
+        font-size: 0.75rem;
+        color: var(--primary-color);
+        font-weight: 600;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #999;
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        display: block;
+        margin-bottom: 1rem;
+    }
+
+    .breadcrumb {
+        padding: 1rem 1.5rem;
+        background-color: var(--card-bg);
+        font-size: 0.9rem;
+        color: #999;
+    }
+
+    .breadcrumb a {
+        color: var(--primary-color);
+        text-decoration: none;
+    }
+
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+        .filters-and-products {
+            grid-template-columns: 1fr;
+            padding: 1rem;
+        }
+
+        .filter-panel {
+            position: static;
+        }
+
+        .products-grid {
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        .category-header h1 {
+            font-size: 1.8rem;
+        }
+    }
+</style>
+
+<!-- Navigation Bar -->
+<nav style="background-color: var(--dark-bg); padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 100;">
+    <a href="{% url 'main:customer_home' %}" style="font-size: 1.5rem; font-weight: 700; letter-spacing: 2px; color: var(--primary-color); text-decoration: none;">NIRMALA</a>
+    <div style="display: flex; align-items: center; gap: 1.5rem;">
+        {% if latest_rate %}
+        <div style="font-size: 0.85rem; color: #999; display: flex; gap: 1rem; padding-right: 1rem; border-right: 1px solid #333;">
+            <div>
+                <span style="color: var(--primary-color); font-weight: 600;">Gold: </span>
+                <span>रु{{ latest_rate.gold_rate|floatformat:0 }}</span>
+            </div>
+            <div>
+                <span style="color: var(--primary-color); font-weight: 600;">Silver: </span>
+                <span>रु{{ latest_rate.silver_rate|floatformat:0 }}</span>
+            </div>
+        </div>
+        {% endif %}
+        <button onclick="window.location.href='{% url 'main:cart' %}'" style="background: none; border: none; color: var(--text-light); font-size: 1.5rem; cursor: pointer; position: relative;">
+            <i class="bi bi-handbag"></i>
+            <span id="cartCount" style="position: absolute; top: -8px; right: -8px; background-color: #ff4444; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">0</span>
+        </button>
+    </div>
+</nav>
+
+<!-- Breadcrumb -->
+<div class="breadcrumb">
+    <a href="{% url 'main:customer_home' %}">Home</a> /
+    {% if category %}
+    <span>{{ category.name }}</span>
+    {% else %}
+    <span>All Products</span>
+    {% endif %}
+</div>
+
+<!-- Category Header -->
+<div class="category-header">
+    <h1>{% if category %}{{ category.name }}{% else %}All Jewelry{% endif %}</h1>
+    <p>{% if category %}Discover our exclusive {{ category.name|lower }} collection{% else %}Browse all our stunning jewelry pieces{% endif %}</p>
+</div>
+
+<!-- Filters and Products -->
+<div class="filters-and-products">
+    <!-- Filters Panel -->
+    <aside class="filter-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h3 style="margin: 0; color: var(--primary-color); font-size: 1rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Filters</h3>
+            <button onclick="clearFilters()" style="background: none; border: none; color: var(--primary-color); cursor: pointer; font-size: 0.85rem; text-decoration: underline;">Clear All</button>
+        </div>
+        <div class="filter-group">
+            <h3>Metal Type</h3>
+            <label class="filter-option">
+                <input type="checkbox" class="filter-checkbox" data-filter="metal" value="gold">
+                <span>Gold</span>
+            </label>
+            <label class="filter-option">
+                <input type="checkbox" class="filter-checkbox" data-filter="metal" value="silver">
+                <span>Silver</span>
+            </label>
+            <label class="filter-option">
+                <input type="checkbox" class="filter-checkbox" data-filter="metal" value="diamond">
+                <span>Diamond</span>
+            </label>
+        </div>
+
+        <div class="filter-group">
+            <h3>Karat</h3>
+            <label class="filter-option">
+                <input type="checkbox" class="filter-checkbox" data-filter="karat" value="24KARAT">
+                <span>24K Gold</span>
+            </label>
+            <label class="filter-option">
+                <input type="checkbox" class="filter-checkbox" data-filter="karat" value="22KARAT">
+                <span>22K Gold</span>
+            </label>
+            <label class="filter-option">
+                <input type="checkbox" class="filter-checkbox" data-filter="karat" value="18KARAT">
+                <span>18K Gold</span>
+            </label>
+        </div>
+
+        <div class="filter-group">
+            <h3>Weight Range</h3>
+            <label class="filter-option">
+                <input type="checkbox" class="filter-checkbox" data-filter="weight" value="0-5">
+                <span>Under 5g</span>
+            </label>
+            <label class="filter-option">
+                <input type="checkbox" class="filter-checkbox" data-filter="weight" value="5-10">
+                <span>5g - 10g</span>
+            </label>
+            <label class="filter-option">
+                <input type="checkbox" class="filter-checkbox" data-filter="weight" value="10-20">
+                <span>10g - 20g</span>
+            </label>
+            <label class="filter-option">
+                <input type="checkbox" class="filter-checkbox" data-filter="weight" value="20-999">
+                <span>20g+</span>
+            </label>
+        </div>
+    </aside>
+
+    <!-- Products Section -->
+    <main class="products-section">
+        <!-- Products Header -->
+        <div class="products-header">
+            <span class="products-count">Showing {{ products.count }} products</span>
+            <select class="sort-dropdown" id="sortDropdown">
+                <option value="newest">Newest First</option>
+                <option value="name-asc">Name: A-Z</option>
+                <option value="name-desc">Name: Z-A</option>
+                <option value="weight-asc">Weight: Low to High</option>
+                <option value="weight-desc">Weight: High to Low</option>
+            </select>
+        </div>
+
+        <!-- Products Grid -->
+        {% if products %}
+        <div class="products-grid" id="productsGrid">
+            {% for product in products %}
+            <a href="{% url 'main:product_detail' product.id %}" style="text-decoration: none; color: inherit;" class="product-link" data-metal="{{ product.get_metal_type_display|lower }}" data-type="{{ product.type }}" data-weight="{{ product.weight|default:0 }}">
+                <div class="product-card">
+                    <div class="product-image-container">
+                        {% if product.image %}
+                        <img src="{{ product.image.url }}" alt="{{ product.ornament_name }}" class="product-image">
+                        {% else %}
+                        <div style="width: 100%; height: 100%; background: #333; display: flex; align-items: center; justify-content: center; color: #666;">
+                            <i class="bi bi-image" style="font-size: 2rem;"></i>
+                        </div>
+                        {% endif %}
+                        <button class="wishlist-icon" onclick="toggleWishlist(event)">
+                            <i class="bi bi-heart"></i>
+                        </button>
+                    </div>
+                    <div class="product-info">
+                        <div class="product-code">{{ product.code }}</div>
+                        <div class="product-name">{{ product.ornament_name }}</div>
+                        <div class="product-specs">
+                            {{ product.get_metal_type_display }}
+                            {% if product.weight %}| {{ product.weight }}g{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            <p>No products found in this category.</p>
+            <a href="{% url 'main:customer_home' %}" style="color: var(--primary-color); text-decoration: none; margin-top: 1rem; display: inline-block;">
+                ← Back to Home
+            </a>
+        </div>
+        {% endif %}
+    </main>
+</div>
+
+<script>
+function toggleWishlist(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    const button = event.currentTarget;
+    button.classList.toggle('active');
+}
+
+// Sorting functionality
+document.getElementById('sortDropdown').addEventListener('change', function(e) {
+    const sortType = e.target.value;
+    // Sort functionality
+    const products = Array.from(document.querySelectorAll('.product-link'));
+    if (sortType === 'newest') {
+        // Default order
+        products.sort((a, b) => 0);
+    } else if (sortType === 'price-low') {
+        products.sort((a, b) => (a.dataset.price || 0) - (b.dataset.price || 0));
+    } else if (sortType === 'price-high') {
+        products.sort((a, b) => (b.dataset.price || 0) - (a.dataset.price || 0));
+    }
+    const grid = document.getElementById('productsGrid');
+    products.forEach(product => grid.appendChild(product));
+});
+
+// Filter functionality
+function applyFilters() {
+    const products = document.querySelectorAll('.product-link');
+    const metalFilters = Array.from(document.querySelectorAll('[data-filter="metal"]:checked')).map(el => el.value);
+    const karatFilters = Array.from(document.querySelectorAll('[data-filter="karat"]:checked')).map(el => el.value);
+    const weightFilters = Array.from(document.querySelectorAll('[data-filter="weight"]:checked')).map(el => el.value);
+    
+    let visibleCount = 0;
+    
+    products.forEach(product => {
+        let show = true;
+        
+        // Check metal filter
+        if (metalFilters.length > 0) {
+            const metalType = product.dataset.metal.toLowerCase();
+            show = show && metalFilters.some(filter => metalType.includes(filter.toLowerCase()));
+        }
+        
+        // Check karat filter
+        if (show && karatFilters.length > 0) {
+            const productType = product.dataset.type || '';
+            show = show && karatFilters.includes(productType);
+        }
+        
+        // Check weight filter
+        if (show && weightFilters.length > 0) {
+            const weight = parseFloat(product.dataset.weight) || 0;
+            show = show && weightFilters.some(filter => {
+                const [minW, maxW] = filter.split('-').map(Number);
+                return weight >= minW && weight <= maxW;
+            });
+        }
+        
+        if (show) {
+            product.style.display = '';
+            visibleCount++;
+        } else {
+            product.style.display = 'none';
+        }
+    });
+    
+    // Update product count
+    const countEl = document.querySelector('.products-count');
+    if (countEl) {
+        countEl.textContent = `Showing ${visibleCount} products`;
+    }
+}
+
+// Attach filter listeners
+document.querySelectorAll('.filter-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', applyFilters);
+});
+
+// Clear filters function
+function clearFilters() {
+    document.querySelectorAll('.filter-checkbox').forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    applyFilters();
+}
+
+// Initialize cart count on page load
+window.addEventListener('load', function() {
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    const cartCount = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
+    const cartCountElement = document.getElementById('cartCount');
+    if (cartCountElement) {
+        cartCountElement.textContent = cartCount;
+    }
+});
+</script>
+
+{% endblock %}

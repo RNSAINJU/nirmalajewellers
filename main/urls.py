@@ -6,7 +6,8 @@ from . import views_assets
 app_name = 'main'
 
 urlpatterns = [
-    path('', views.dashboard, name='dashboard'),
+    path('', views.customer_home, name='customer_home'),
+    path('admin-dashboard/', views.dashboard, name='dashboard'),
     path('home/', views.index, name='home'),
     path('stock-report/', views.stock_report, name='stock_report'),
     path('monthly-stock-report/', views.monthly_stock_report, name='monthly_stock_report'),
@@ -16,6 +17,17 @@ urlpatterns = [
     path('daily-rates/<int:pk>/delete/', views.delete_daily_rate, name='delete_daily_rate'),
     path('add-stock/', views.add_stock, name='add_stock'),
     path('edit-stock/<int:year>/', views.edit_stock, name='edit_stock'),
+    
+    # Customer API Endpoints
+    path('api/products/by-category/<int:category_id>/', views.api_products_by_category, name='api_products_by_category'),
+    path('api/products/search/', views.api_search_products, name='api_search_products'),
+    path('api/products/featured/', views.api_featured_products, name='api_featured_products'),
+    
+    # Customer Page Routes
+    path('products/<int:product_id>/', views.product_detail, name='product_detail'),
+    path('shop/', views.category_products, name='shop'),
+    path('shop/category/<int:category_id>/', views.category_products, name='category_products'),
+    path('cart/', views.cart, name='cart'),
     
     # Account Management URLs
     path('account-settings/', views_accounts.account_settings, name='account_settings'),

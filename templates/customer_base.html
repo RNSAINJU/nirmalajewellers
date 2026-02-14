@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block extra_css %}
+<style>
+    /* Hide admin sidebar and navbar on customer pages */
+    .sidebar {
+        display: none !important;
+    }
+
+    .top-navbar {
+        display: none !important;
+    }
+
+    #sidebarOverlay {
+        display: none !important;
+    }
+
+    body {
+        padding-top: 0 !important;
+    }
+
+    .content {
+        margin-left: 0 !important;
+        padding: 0 !important;
+    }
+</style>
+{% endblock %}

@@ -3,6 +3,7 @@ from django.db.models import Sum, Q, F, DecimalField
 from decimal import Decimal
 from django.utils import timezone
 from datetime import datetime, timedelta, date
+from django.http import JsonResponse
 import nepali_datetime as ndt
 from django.contrib import messages
 
@@ -207,9 +208,151 @@ def calculate_daily_ornament_totals(target_date, gold_rate=None, silver_rate=Non
     return result
 
 
+def customer_home(request):
+    """Customer-facing home page with products display."""
+    from ornament.models import Ornament, MainCategory
+    
+    # Get all active ornaments for stock
+    featured_products = Ornament.objects.filter(
+        ornament_type='stock',
+        status='active',
+        image__isnull=False
+    ).order_by('-created_at')[:12]
+    
+    # Get new arrivals (last 6 active ornaments with images)
+    new_arrivals = Ornament.objects.filter(
+        ornament_type='stock',
+        status='active',
+        image__isnull=False
+    ).order_by('-created_at')[:6]
+    
+    # Get categories
+    categories = MainCategory.objects.all()
+    
+    # Get latest gold and silver rates
+    latest_rate = DailyRate.objects.order_by('-created_at').first()
+    
+    context = {
+        'featured_products': featured_products,
+        'new_arrivals': new_arrivals,
+        'categories': categories,
+        'total_products': featured_products.count(),
+        'latest_rate': latest_rate,
+    }
+    
+    return render(request, 'main/customer_home.html', context)
+
+
+def api_products_by_category(request, category_id):
+    """API endpoint to fetch products by category."""
+    from ornament.models import Ornament
+    
+    products = Ornament.objects.filter(
+        maincategory_id=category_id,
+        ornament_type='stock',
+        status='active',
+        image__isnull=False
+    ).values('id', 'ornament_name', 'code', 'type', 'weight', 'image')[:20]
+    
+    return JsonResponse({'products': list(products)})
+
+
+def api_search_products(request):
+    """API endpoint to search products."""
+    from ornament.models import Ornament
+    
+    query = request.GET.get('q', '').strip()
+    
+    if not query or len(query) < 2:
+        return JsonResponse({'products': []})
+    
+    products = Ornament.objects.filter(
+        Q(ornament_name__icontains=query) | Q(code__icontains=query),
+        ornament_type='stock',
+        status='active',
+        image__isnull=False
+    ).values('id', 'ornament_name', 'code', 'type', 'weight', 'maincategory__name')[:15]
+    
+    return JsonResponse({'products': list(products)})
+
+
+def api_featured_products(request):
+    """API endpoint for featured products."""
+    from ornament.models import Ornament
+    
+    limit = request.GET.get('limit', 12)
+    
+    products = Ornament.objects.filter(
+        ornament_type='stock',
+        status='active',
+        image__isnull=False
+    ).order_by('-created_at').values('id', 'ornament_name', 'code', 'type', 'weight', 'image')[:int(limit)]
+    
+    return JsonResponse({'products': list(products)})
+
+
+def product_detail(request, product_id):
+    """Display full details of a single product."""
+    from ornament.models import Ornament
+    
+    product = get_object_or_404(Ornament, id=product_id, ornament_type='stock', status='active')
+    
+    # Get latest gold and silver rates
+    latest_rate = DailyRate.objects.order_by('-created_at').first()
+    
+    context = {
+        'product': product,
+        'latest_rate': latest_rate,
+    }
+    
+    return render(request, 'main/product_detail.html', context)
+
+
+def category_products(request, category_id=None):
+    """Display products filtered by category."""
+    from ornament.models import Ornament, MainCategory
+    
+    category = None
+    if category_id:
+        category = get_object_or_404(MainCategory, id=category_id)
+        products = Ornament.objects.filter(
+            maincategory=category,
+            ornament_type='stock',
+            status='active'
+        ).order_by('-created_at')
+    else:
+        products = Ornament.objects.filter(
+            ornament_type='stock',
+            status='active'
+        ).order_by('-created_at')
+    
+    # Get latest gold and silver rates
+    latest_rate = DailyRate.objects.order_by('-created_at').first()
+    
+    context = {
+        'category': category,
+        'products': products,
+        'latest_rate': latest_rate,
+    }
+    
+    return render(request, 'main/category_products.html', context)
+
+
+def cart(request):
+    """Shopping cart page."""
+    # Get latest gold and silver rates
+    latest_rate = DailyRate.objects.order_by('-created_at').first()
+    
+    context = {
+        'latest_rate': latest_rate,
+    }
+    
+    return render(request, 'main/cart.html', context)
+
+
 def index(request):
     """Home page."""
-    return redirect('main:dashboard')
+    return redirect('main:customer_home')
 
 
 def dashboard(request):
