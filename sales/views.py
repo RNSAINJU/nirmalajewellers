@@ -133,66 +133,90 @@ class SalesListView(ListView):
             Ornament.TypeCategory.FOURTEENKARAT: Decimal("14") / Decimal("24"),
         }
 
+        # OPTIMIZATION: Single iteration over sales with cached calculations
+        # Build a cache of sale data to avoid re-iterating
+        sale_data_cache = {}
+        
         gold_24_weight = Decimal("0")
         silver_weight = Decimal("0")
         total_sales_amount = Decimal("0")
 
-        # For each sale, sum ornament weights and sale_metals
+        # Single iteration to calculate all required metrics
         for sale in context["sales"]:
-            # Ornaments
-            for line in sale.order.order_ornaments.all():
+            # Cache ornament and metal data for this sale
+            ornament_lines = list(sale.order.order_ornaments.all())
+            sale_metals = list(sale.sale_metals.all())
+            
+            # Calculate ornament weights
+            ornament_weight = Decimal("0")
+            sale_gold_24 = Decimal("0")
+            sale_silver_24 = Decimal("0")
+            
+            for line in ornament_lines:
                 weight = line.ornament.weight or Decimal("0")
+                ornament_weight += weight
                 factor = purity_factors.get(getattr(line.ornament, 'type', None), Decimal("1.00"))
-                if getattr(line.ornament, 'metal_type', None) == getattr(Ornament.MetalTypeCategory, 'GOLD', 'gold'):
-                    gold_24_weight += weight * factor
-                elif getattr(line.ornament, 'metal_type', None) == getattr(Ornament.MetalTypeCategory, 'SILVER', 'silver'):
-                    silver_weight += weight
-            # Raw metals
-            for metal in sale.sale_metals.all():
+                metal_type = str(getattr(line.ornament, 'metal_type', '')).lower()
+                
+                if metal_type == str(gold_metal).lower():
+                    weighted = weight * factor
+                    sale_gold_24 += weighted
+                    gold_24_weight += weighted
+                elif metal_type == str(silver_metal).lower():
+                    weighted = weight * factor
+                    sale_silver_24 += weighted
+                    silver_weight += weighted
+            
+            # Calculate metal weights and amounts
+            metal_weight = Decimal("0")
+            metal_total = Decimal("0")
+            
+            for metal in sale_metals:
+                quantity = metal.quantity or Decimal("0")
+                metal_weight += quantity
+                metal_total += metal.line_amount or Decimal("0")
+                
                 if metal.metal_type == 'gold':
-                    gold_24_weight += metal.quantity
+                    gold_24_weight += quantity
+                    sale_gold_24 += quantity
                 elif metal.metal_type == 'silver':
-                    silver_weight += metal.quantity
+                    silver_weight += quantity
+                    sale_silver_24 += quantity
+                
                 total_sales_amount += metal.line_amount or Decimal("0")
-            # Add order total (ornaments + metals)
+            
+            # Add order total
             total_sales_amount += sale.order.total or Decimal("0")
+            
+            # Cache computed values for this sale
+            sale_data_cache[sale.id] = {
+                'ornament_weight': ornament_weight,
+                'metal_weight': metal_weight,
+                'total_weight': ornament_weight + metal_weight,
+                'gold_24_weight': sale_gold_24,
+                'silver_24_weight': sale_silver_24,
+                'metal_total': metal_total,
+                'display_total': metal_total if len(ornament_lines) == 0 else (sale.order.total or Decimal("0")),
+                'ornament_count': len(ornament_lines),
+            }
 
-        # Patch each sale with a total_weight that includes both ornaments and raw metals
-
-        def apply_sale_totals(queryset):
-            # Patch each sale with total_weight and display_total (ornaments + raw metals)
+        # Patch sales with cached data - no additional queries needed
+        def apply_cached_totals(queryset):
             for sale in queryset:
-                ornament_weight = sum(
-                    [(line.ornament.weight or Decimal("0")) for line in sale.order.order_ornaments.all()]
-                )
-                metal_weight = sum(
-                    [(metal.quantity or Decimal("0")) for metal in sale.sale_metals.all()]
-                )
-                sale.total_weight = ornament_weight + metal_weight
-                sale.gold_24_weight = Decimal("0")
-                sale.silver_24_weight = Decimal("0")
-                for line in sale.order.order_ornaments.all():
-                    metal_type = str(getattr(line.ornament, "metal_type", "")).lower()
-                    if metal_type == str(gold_metal).lower():
-                        weight = line.ornament.weight or Decimal("0")
-                        factor = purity_factors.get(getattr(line.ornament, "type", None), Decimal("1.00"))
-                        sale.gold_24_weight += weight * factor
-                    elif metal_type == str(silver_metal).lower():
-                        weight = line.ornament.weight or Decimal("0")
-                        factor = purity_factors.get(getattr(line.ornament, "type", None), Decimal("1.00"))
-                        sale.silver_24_weight += weight * factor
-                metal_total = sum([(metal.line_amount or Decimal("0")) for metal in sale.sale_metals.all()])
-                if sale.order.order_ornaments.count() == 0:
-                    sale.display_total = metal_total
-                else:
-                    sale.display_total = sale.order.total or Decimal("0")
+                cached = sale_data_cache.get(sale.id)
+                if cached:
+                    sale.total_weight = cached['total_weight']
+                    sale.gold_24_weight = cached['gold_24_weight']
+                    sale.silver_24_weight = cached['silver_24_weight']
+                    sale.display_total = cached['display_total']
 
-        apply_sale_totals(context["sales"])
-        apply_sale_totals(context["gold_sales"])
-        apply_sale_totals(context["silver_sales"])
-        apply_sale_totals(context["diamond_sales"])
+        apply_cached_totals(context["sales"])
+        apply_cached_totals(context["gold_sales"])
+        apply_cached_totals(context["silver_sales"])
+        apply_cached_totals(context["diamond_sales"])
 
-        def calculate_totals(queryset):
+        # Calculate category totals from cached data - no additional queries
+        def calculate_totals_from_cache(queryset):
             totals = {
                 "weight": Decimal("0"),
                 "total": Decimal("0"),
@@ -202,35 +226,14 @@ class SalesListView(ListView):
                 "silver_24_weight": Decimal("0"),
             }
             for sale in queryset:
-                ornament_weight = sum(
-                    [(line.ornament.weight or Decimal("0")) for line in sale.order.order_ornaments.all()]
-                )
-                metal_weight = sum(
-                    [(metal.quantity or Decimal("0")) for metal in sale.sale_metals.all()]
-                )
-                total_weight = ornament_weight + metal_weight
-                metal_total = sum([(metal.line_amount or Decimal("0")) for metal in sale.sale_metals.all()])
-                if sale.order.order_ornaments.count() == 0:
-                    display_total = metal_total
-                else:
-                    display_total = sale.order.total or Decimal("0")
-
-                for line in sale.order.order_ornaments.all():
-                    metal_type = str(getattr(line.ornament, "metal_type", "")).lower()
-                    if metal_type == str(gold_metal).lower():
-                        weight = line.ornament.weight or Decimal("0")
-                        factor = purity_factors.get(getattr(line.ornament, "type", None), Decimal("1.00"))
-                        totals["gold_24_weight"] += weight * factor
-                    elif metal_type == str(silver_metal).lower():
-                        weight = line.ornament.weight or Decimal("0")
-                        factor = purity_factors.get(getattr(line.ornament, "type", None), Decimal("1.00"))
-                        totals["silver_24_weight"] += weight * factor
-
-                totals["weight"] += total_weight
-                totals["total"] += display_total
-                totals["paid"] += sale.order.total_paid or Decimal("0")
-                totals["remaining"] += sale.order.remaining_amount or Decimal("0")
-
+                cached = sale_data_cache.get(sale.id)
+                if cached:
+                    totals["weight"] += cached['total_weight']
+                    totals["total"] += cached['display_total']
+                    totals["gold_24_weight"] += cached['gold_24_weight']
+                    totals["silver_24_weight"] += cached['silver_24_weight']
+                    totals["paid"] += sale.order.total_paid or Decimal("0")
+                    totals["remaining"] += sale.order.remaining_amount or Decimal("0")
             return totals
 
         context.update(
@@ -238,10 +241,10 @@ class SalesListView(ListView):
                 "gold_24_weight": gold_24_weight,
                 "silver_weight": silver_weight,
                 "total_sales_amount": total_sales_amount,
-                "all_totals": calculate_totals(sales_qs),
-                "gold_totals": calculate_totals(context["gold_sales"]),
-                "silver_totals": calculate_totals(context["silver_sales"]),
-                "diamond_totals": calculate_totals(context["diamond_sales"]),
+                "all_totals": calculate_totals_from_cache(sales_qs),
+                "gold_totals": calculate_totals_from_cache(context["gold_sales"]),
+                "silver_totals": calculate_totals_from_cache(context["silver_sales"]),
+                "diamond_totals": calculate_totals_from_cache(context["diamond_sales"]),
             }
         )
         return context
