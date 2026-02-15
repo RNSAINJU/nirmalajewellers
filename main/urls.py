@@ -7,7 +7,8 @@ app_name = 'main'
 
 urlpatterns = [
     path('', views.customer_home, name='customer_home'),
-    path('admin-dashboard/', views.dashboard, name='dashboard'),
+    path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
+    path('analytics/', views.dashboard, name='dashboard'),
     path('home/', views.index, name='home'),
     path('stock-report/', views.stock_report, name='stock_report'),
     path('monthly-stock-report/', views.monthly_stock_report, name='monthly_stock_report'),

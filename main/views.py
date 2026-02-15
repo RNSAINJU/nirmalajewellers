@@ -355,6 +355,83 @@ def index(request):
     return redirect('main:customer_home')
 
 
+def admin_dashboard(request):
+    """Modern mobile-first admin dashboard."""
+    import json
+    from sales.models import Sale
+    from datetime import timedelta
+    
+    # Get total sales (last 7 days)
+    seven_days_ago = date.today() - timedelta(days=7)
+    recent_sales = Sale.objects.filter(sale_date__gte=seven_days_ago)
+    total_sales = sum(sale.order.total for sale in recent_sales if sale.order) or Decimal('0')
+    
+    # Calculate sales change (compare with previous 7 days)
+    fourteen_days_ago = date.today() - timedelta(days=14)
+    previous_week_sales = Sale.objects.filter(
+        sale_date__gte=fourteen_days_ago,
+        sale_date__lt=seven_days_ago
+    )
+    previous_total = sum(sale.order.total for sale in previous_week_sales if sale.order) or Decimal('0')
+    
+    sales_change = Decimal('0')
+    if previous_total > 0:
+        sales_change = ((total_sales - previous_total) / previous_total) * Decimal('100')
+    elif total_sales > 0:
+        sales_change = Decimal('100')
+    
+    # Sales chart data (last 7 days)
+    sales_labels = []
+    sales_data = []
+    for i in range(6, -1, -1):
+        day = date.today() - timedelta(days=i)
+        day_sales = Sale.objects.filter(sale_date=day)
+        day_total = sum(sale.order.total for sale in day_sales if sale.order) or 0
+        sales_labels.append(day.strftime('%a'))
+        sales_data.append(float(day_total))
+    
+    # Orders count
+    total_orders = Order.objects.count()
+    pending_orders = Order.objects.filter(
+        remaining_amount__gt=0
+    ).count()
+    
+    # Gold rate
+    latest_rate = DailyRate.objects.order_by('-created_at').first()
+    gold_rate = Decimal('0')
+    gold_change = Decimal('-0.2')  # Default placeholder
+    
+    if latest_rate and latest_rate.gold_rate:
+        # Convert from per tola to per gram
+        gold_rate = latest_rate.gold_rate / Decimal('11.66')
+    
+    # Recent orders (last 4)
+    recent_orders = Order.objects.order_by('-created_at')[:4]
+    
+    # Add payment_status to each order
+    for order in recent_orders:
+        if order.remaining_amount <= 0:
+            order.payment_status = 'paid'
+        elif order.remaining_amount < order.total:
+            order.payment_status = 'partial'
+        else:
+            order.payment_status = 'pending'
+    
+    context = {
+        'total_sales': total_sales,
+        'sales_change': sales_change,
+        'sales_labels': json.dumps(sales_labels),
+        'sales_data': json.dumps(sales_data),
+        'total_orders': total_orders,
+        'pending_orders': pending_orders,
+        'gold_rate': gold_rate,
+        'gold_change': gold_change,
+        'recent_orders': recent_orders,
+    }
+    
+    return render(request, 'main/admin_dashboard.html', context)
+
+
 def dashboard(request):
     """Dashboard with basic counts and totals across apps."""
     daily_rate_form = None
