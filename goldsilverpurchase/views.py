@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.db import models
-from django.db.models import IntegerField, Q, Sum
+from django.db.models import IntegerField, Q, Sum, F, Case, When, DecimalField
 from django.db.models.functions import Cast
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
@@ -46,7 +46,8 @@ def export_metalstock_xlsx(request):
         'StockID', 'MetalType', 'StockType', 'Purity', 'Quantity', 'UnitCost', 'RateUnit', 'TotalCost', 'Location', 'Remarks', 'CreatedAt', 'LastUpdated'
     ]
     ws_stock.append(stock_headers)
-    for stock in MetalStock.objects.all():
+    # OPTIMIZED: Add select_related to avoid N+1 queries
+    for stock in MetalStock.objects.select_related('stock_type').all():
         ws_stock.append([
             stock.id,
             stock.metal_type,
@@ -67,7 +68,8 @@ def export_metalstock_xlsx(request):
         'MovementID', 'MetalStockID', 'MovementType', 'Quantity', 'Rate', 'ReferenceType', 'ReferenceID', 'Notes', 'MovementDate', 'CreatedAt'
     ]
     ws_movement.append(movement_headers)
-    for m in MetalStockMovement.objects.all():
+    # OPTIMIZED: Add select_related to avoid N+1 queries
+    for m in MetalStockMovement.objects.select_related('metal_stock').all():
         ws_movement.append([
             m.id,
             m.metal_stock.id if m.metal_stock else '',
@@ -210,21 +212,35 @@ class PurchaseListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         qs = self.get_queryset()
-        context['total_quantity'] = qs.aggregate(total=Sum('quantity'))['total'] or Decimal('0')
-        context['total_amount'] = qs.aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        
+        # OPTIMIZED: Combine multiple aggregates into a single query
+        aggregates = qs.aggregate(
+            total_quantity=Sum('quantity'),
+            total_amount=Sum('amount')
+        )
+        context['total_quantity'] = aggregates['total_quantity'] or Decimal('0')
+        context['total_amount'] = aggregates['total_amount'] or Decimal('0')
 
-        context['gold_purchase'] = (
-            GoldSilverPurchase.objects.filter(metal_type__icontains="gold")
-            .aggregate(total=Sum("quantity"))
-            .get("total")
-            or 0
+        # OPTIMIZED: Combine gold and silver purchases into a single query with conditional aggregation
+        from django.db.models import Case, When, DecimalField
+        metal_aggregates = GoldSilverPurchase.objects.aggregate(
+            gold_total=Sum(
+                Case(
+                    When(metal_type__icontains='gold', then=F('quantity')),
+                    default=0,
+                    output_field=DecimalField()
+                )
+            ),
+            silver_total=Sum(
+                Case(
+                    When(metal_type__icontains='silver', then=F('quantity')),
+                    default=0,
+                    output_field=DecimalField()
+                )
+            )
         )
-        context['silver_purchase'] = (
-            GoldSilverPurchase.objects.filter(metal_type__icontains="silver")
-            .aggregate(total=Sum("quantity"))
-            .get("total")
-            or 0
-        )
+        context['gold_purchase'] = metal_aggregates['gold_total'] or 0
+        context['silver_purchase'] = metal_aggregates['silver_total'] or 0
 
         context['date'] = self.request.GET.get('date', '')
         context['start_date'] = self.request.GET.get('start_date', '')

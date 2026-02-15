@@ -90,9 +90,38 @@ def finance_dashboard(request):
     total_salaries = EmployeeSalary.objects.filter(status='paid').aggregate(Sum('total_salary'))['total_salary__sum'] or 0
     pending_salaries = EmployeeSalary.objects.filter(status='pending').aggregate(Sum('total_salary'))['total_salary__sum'] or 0
     
-    # Debtor metrics - calculate from transactions
+    # Debtor metrics - OPTIMIZED: Use database aggregation instead of Python loop
+    # Calculate balance from transactions using database-level aggregation
+    from django.db.models import Case, When, F, DecimalField
+    
     active_debtors = SundryDebtor.objects.filter(is_active=True, is_paid=False)
-    total_debtor_balance = sum(debtor.get_calculated_balance() for debtor in active_debtors)
+    
+    # Calculate total balance across all active debtors using conditional aggregation
+    # Balance = Opening Balance + Invoices/Debit Memos - Payments/Credit Memos
+    debtor_balance_data = active_debtors.aggregate(
+        total_opening=Sum('opening_balance'),
+        total_invoices=Sum(
+            Case(
+                When(transactions__transaction_type__in=['invoice', 'debit_memo'], 
+                     then=F('transactions__amount')),
+                default=0,
+                output_field=DecimalField()
+            )
+        ),
+        total_payments=Sum(
+            Case(
+                When(transactions__transaction_type__in=['payment', 'credit_memo'], 
+                     then=F('transactions__amount')),
+                default=0,
+                output_field=DecimalField()
+            )
+        )
+    )
+    
+    total_opening = debtor_balance_data['total_opening'] or Decimal('0')
+    total_invoices = debtor_balance_data['total_invoices'] or Decimal('0')
+    total_payments = debtor_balance_data['total_payments'] or Decimal('0')
+    total_debtor_balance = total_opening + total_invoices - total_payments
     total_debtors = active_debtors.count()
     
     # Creditor metrics
