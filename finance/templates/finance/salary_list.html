@@ -29,55 +29,81 @@
 {% endblock %}
 
 {% block main_content %}
-<div class="row mb-3">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-body">
-                <form method="get" class="row g-3">
-                    <div class="col-md-4">
-                        <label class="form-label">Employee</label>
-                        <select name="employee" class="form-select">
-                            <option value="">All Employees</option>
-                            {% for emp in employees %}
-                            <option value="{{ emp.pk }}" {% if request.GET.employee|add:"0" == emp.pk %}selected{% endif %}>{{ emp.first_name }} {{ emp.last_name }}</option>
-                            {% endfor %}
-                        </select>
+<div class="container-fluid">
+    <!-- Summary Cards -->
+    <div class="row g-4 mb-5">
+        <!-- Total Salary Card -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card dashboard-card" style="border-left: 4px solid #3498db;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-0" style="font-size: 0.85rem;">Total Salary</p>
+                            <h3 class="mb-0 mt-2" style="color: #3498db;">रु{{ total_salary|floatformat:2 }}</h3>
+                        </div>
+                        <i class="bi bi-cash" style="font-size: 2rem; color: #3498db; opacity: 0.3;"></i>
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Status</label>
-                        <select name="status" class="form-select">
-                            <option value="">All Status</option>
-                            {% for value, label in statuses %}
-                            <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-4 d-flex align-items-end">
-                        <button type="submit" class="btn btn-secondary">Filter</button>
-                        <a href="{% url 'finance:salary_list' %}" class="btn btn-outline-secondary ms-2">Clear</a>
-                    </div>
-                </form>
+                    <hr class="my-2">
+                    <a href="{% url 'finance:salary_list' %}" class="text-decoration-none small">
+                        <i class="bi bi-arrow-right"></i> View All Salaries
+                    </a>
+                </div>
             </div>
         </div>
-    </div>
-</div>
 
-<div class="row mb-3">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Total Salary: रु{{ total_salary }}</h5>
+        <!-- Total Paid Card -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card dashboard-card" style="border-left: 4px solid #27ae60;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-0" style="font-size: 0.85rem;">Total Paid</p>
+                            <h3 class="mb-0 mt-2" style="color: #27ae60;">रु{{ total_paid|floatformat:2 }}</h3>
+                        </div>
+                        <i class="bi bi-check-circle-fill" style="font-size: 2rem; color: #27ae60; opacity: 0.3;"></i>
+                    </div>
+                    <hr class="my-2">
+                    <a href="{% url 'finance:salary_list' %}?status=paid" class="text-decoration-none small">
+                        <i class="bi bi-arrow-right"></i> View Paid Salaries
+                    </a>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-success text-white">
-                <h5 class="mb-0">Total Paid: रु{{ total_paid }}</h5>
+
+    <!-- Filter Section -->
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Employee</label>
+                            <select name="employee" class="form-select">
+                                <option value="">All Employees</option>
+                                {% for emp in employees %}
+                                <option value="{{ emp.pk }}" {% if request.GET.employee|add:"0" == emp.pk %}selected{% endif %}>{{ emp.first_name }} {{ emp.last_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Status</label>
+                            <select name="status" class="form-select">
+                                <option value="">All Status</option>
+                                {% for value, label in statuses %}
+                                <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-secondary">Filter</button>
+                            <a href="{% url 'finance:salary_list' %}" class="btn btn-outline-secondary ms-2">Clear</a>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
 {% if salaries %}
 <div class="table-responsive">
@@ -129,5 +155,31 @@
 </div>
 {% else %}
 <div class="alert alert-info">No salary records found.</div>
-{% endif %}
-{% endblock %}
+{% endif %}</div>
+
+<style>
+    .dashboard-card {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        border-radius: 8px;
+        border: none;
+    }
+
+    .dashboard-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px);
+    }
+
+    .dashboard-card .card-body {
+        padding: 1.5rem;
+    }
+
+    .dashboard-card a {
+        color: inherit;
+        font-weight: 500;
+    }
+
+    .dashboard-card a:hover {
+        opacity: 0.7;
+    }
+</style>{% endblock %}

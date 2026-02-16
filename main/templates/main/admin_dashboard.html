@@ -1,616 +1,329 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="dark" lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nirmala Jewellers - Dashboard</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0a0a0a;
-            color: #e5e5e5;
-            min-height: 100vh;
-            padding-bottom: 80px;
-        }
-
-        /* Top Navigation */
-        .top-nav {
-            background: #1a1a1a;
-            padding: 16px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid #2a2a2a;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .nav-left {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .menu-btn {
-            background: none;
-            border: none;
-            color: #FFD700;
-            font-size: 24px;
-            cursor: pointer;
-            padding: 4px;
-        }
-
-        .logo {
-            font-size: 20px;
-            font-weight: 700;
-            letter-spacing: 2px;
-            color: #FFD700;
-        }
-
-        .nav-right {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .notification-btn {
-            position: relative;
-            background: none;
-            border: none;
-            color: #e5e5e5;
-            font-size: 20px;
-            cursor: pointer;
-            padding: 4px;
-        }
-
-        .notification-badge {
-            position: absolute;
-            top: 0;
-            right: 0;
-            background: #FFD700;
-            color: #0a0a0a;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-        }
-
-        .profile-avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #FFD700, #FFA500);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #0a0a0a;
-            font-weight: 600;
-        }
-
-        /* Main Content */
-        .container {
-            padding: 20px;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .welcome {
-            margin-bottom: 24px;
-        }
-
-        .welcome h1 {
-            font-size: 24px;
-            font-weight: 400;
-            color: #FFD700;
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-        }
-
-        .welcome p {
-            font-size: 14px;
-            color: #999;
-        }
-
-        /* Cards */
-        .card {
-            background: #1a1a1a;
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 16px;
-            border: 1px solid #2a2a2a;
-        }
-
-        .card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-        }
-
-        .card-label {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: #666;
-            font-weight: 600;
-        }
-
-        .card-icon {
-            width: 40px;
-            height: 40px;
-            background: rgba(255, 215, 0, 0.15);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-        }
-
-        .card-value {
-            font-size: 32px;
-            font-weight: 700;
-            color: #FFD700;
-            margin-bottom: 12px;
-        }
-
-        .card-change {
-            font-size: 13px;
-            color: #10b981;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .card-change.negative {
-            color: #ef4444;
-        }
-
-        /* Sales Card */
-        .sales-chart {
-            width: 100%;
-            height: 80px;
-            margin-top: 16px;
-        }
-
-        /* Grid Cards */
-        .card-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-            margin-bottom: 16px;
-        }
-
-        .small-card {
-            background: #1a1a1a;
-            border-radius: 16px;
-            padding: 20px;
-            border: 1px solid #2a2a2a;
-        }
-
-        .small-card-value {
-            font-size: 28px;
-            font-weight: 700;
-            color: #e5e5e5;
-            margin-bottom: 12px;
-        }
-
-        .small-card-meta {
-            font-size: 12px;
-            color: #666;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .price-value {
-            color: #FFD700;
-        }
-
-        .price-unit {
-            font-size: 14px;
-            color: #999;
-        }
-
-        /* Recent Orders Section */
-        .section-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin: 32px 0 16px;
-        }
-
-        .section-title {
-            font-size: 16px;
-            font-weight: 400;
-            color: #FFD700;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        .view-all {
-            font-size: 13px;
-            color: #999;
-            text-decoration: none;
-            border-bottom: 1px solid transparent;
-            transition: all 0.2s;
-        }
-
-        .view-all:hover {
-            color: #FFD700;
-            border-bottom-color: #FFD700;
-        }
-
-        .orders-table {
-            background: #1a1a1a;
-            border-radius: 16px;
-            padding: 20px;
-            border: 1px solid #2a2a2a;
-            margin-bottom: 16px;
-            overflow-x: auto;
-        }
-
-        .table-header {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 16px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid #2a2a2a;
-        }
-
-        .table-header-cell {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #666;
-            font-weight: 600;
-        }
-
-        .table-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr;
-            gap: 12px;
-            padding: 14px 0;
-            border-bottom: 1px solid #2a2a2a;
-        }
-
-        .table-row:last-child {
-            border-bottom: none;
-        }
-
-        .table-cell {
-            font-size: 13px;
-            color: #e5e5e5;
-        }
-
-        .order-id {
-            color: #999;
-        }
-
-        .order-amount {
-            color: #FFD700;
-            font-weight: 600;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .status-paid {
-            background: rgba(16, 185, 129, 0.2);
-            color: #10b981;
-        }
-
-        .status-process {
-            background: rgba(245, 158, 11, 0.2);
-            color: #f59e0b;
-        }
-
-        .status-ship {
-            background: rgba(99, 102, 241, 0.2);
-            color: #6366f1;
-        }
-
-        /* Quick Actions */
-        .quick-actions {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            margin: 24px 0;
-        }
-
-        .action-btn {
-            background: #FFD700;
-            color: #0a0a0a;
-            border: none;
-            border-radius: 12px;
-            padding: 16px;
-            font-size: 13px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.2s;
-        }
-
-        .action-btn:hover {
-            background: #FFC700;
-            transform: translateY(-2px);
-        }
-
-        .action-btn:active {
-            transform: translateY(0);
-        }
-
-        .action-btn.secondary {
-            background: #2a2a2a;
-            color: #e5e5e5;
-        }
-
-        .action-btn.secondary:hover {
-            background: #3a3a3a;
-        }
-
-        /* Bottom Navigation */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: #1a1a1a;
-            border-top: 1px solid #2a2a2a;
-            display: flex;
-            justify-content: space-around;
-            padding: 12px 0;
-            z-index: 100;
-        }
-
-        .nav-item {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-            text-decoration: none;
-            color: #666;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            transition: color 0.2s;
-        }
-
-        .nav-item.active {
-            color: #FFD700;
-        }
-
-        .nav-item:hover {
-            color: #FFD700;
-        }
-
-        .nav-icon {
-            font-size: 20px;
-        }
-
-        /* Canvas for chart */
-        canvas {
-            max-width: 100%;
-        }
-
-        /* Responsive */
-        @media (max-width: 480px) {
-            .table-header,
-            .table-row {
-                font-size: 11px;
-            }
-            
-            .card-value {
-                font-size: 28px;
-            }
-            
-            .small-card-value {
-                font-size: 24px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <!-- Top Navigation -->
-    <div class="top-nav">
-        <div class="nav-left">
-            <button class="menu-btn" onclick="toggleMenu()">☰</button>
-            <div class="logo">NIRMALA</div>
-        </div>
-        <div class="nav-right">
-            <button class="notification-btn">
-                🔔
-                <span class="notification-badge"></span>
-            </button>
-            <div class="profile-avatar">👤</div>
-        </div>
-    </div>
-
-    <!-- Main Content -->
-    <div class="container">
-        <!-- Welcome Section -->
-        <div class="welcome">
-            <h1>Welcome Back,</h1>
-            <p>Here's what's happening today at Nirmala Jewellers.</p>
-        </div>
-
-        <!-- Total Sales Card -->
-        <div class="card">
-            <div class="card-header">
-                <div class="card-label">Total Sales</div>
-                <div class="card-icon">💰</div>
-            </div>
-            <div class="card-value">${{ total_sales|default:"0"|floatformat:2 }}</div>
-            <div class="card-change">
-                ↗ {{ sales_change|default:"0"|floatformat:1 }}% from last week
-            </div>
-            <canvas id="salesChart" class="sales-chart"></canvas>
-        </div>
-
-        <!-- Orders & Gold Rate Grid -->
-        <div class="card-grid">
-            <div class="small-card">
-                <div class="card-label">Orders</div>
-                <div class="small-card-value">{{ total_orders|default:"0" }}</div>
-                <div class="small-card-meta">
-                    🔒 {{ pending_orders|default:"0" }} Pending
-                </div>
-            </div>
-            <div class="small-card">
-                <div class="card-label">Gold (24K)</div>
-                <div class="small-card-value">
-                    <span class="price-value">${{ gold_rate|default:"0"|floatformat:2 }}</span><span class="price-unit">/g</span>
-                </div>
-                <div class="small-card-meta card-change negative">
-                    ↘ {{ gold_change|default:"0"|floatformat:1 }}%
-                </div>
-            </div>
-        </div>
-
-        <!-- Recent Orders Section -->
-        <div class="section-header">
-            <div class="section-title">Recent Orders</div>
-            <a href="{% url 'order:list' %}" class="view-all">View All</a>
-        </div>
-
-        <div class="orders-table">
-            <div class="table-header">
-                <div class="table-header-cell">Order</div>
-                <div class="table-header-cell">Customer</div>
-                <div class="table-header-cell">Amount</div>
-                <div class="table-header-cell">Status</div>
-            </div>
-            {% for order in recent_orders %}
-            <div class="table-row">
-                <div class="table-cell order-id">#ORD-{{ order.id }}</div>
-                <div class="table-cell">{{ order.customer_name|truncatewords:2 }}</div>
-                <div class="table-cell order-amount">${{ order.total|floatformat:0 }}</div>
-                <div class="table-cell">
-                    {% if order.payment_status == 'paid' %}
-                        <span class="status-badge status-paid">Paid</span>
-                    {% elif order.payment_status == 'partial' %}
-                        <span class="status-badge status-process">Process</span>
-                    {% else %}
-                        <span class="status-badge status-ship">Pending</span>
-                    {% endif %}
-                </div>
-            </div>
-            {% empty %}
-            <div class="table-row">
-                <div class="table-cell" style="grid-column: 1 / -1; text-align: center; color: #666;">
-                    No recent orders
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-
-        <!-- Quick Actions -->
-        <div class="section-header">
-            <div class="section-title">Quick Actions</div>
-        </div>
-        <div class="quick-actions">
-            <button class="action-btn" onclick="window.location.href='{% url 'ornament:create' %}'">
-                ➕ Add Inventory
-            </button>
-            <button class="action-btn secondary" onclick="window.location.href='{% url 'main:daily_rates' %}'">
-                📊 Daily Report
-            </button>
-        </div>
-    </div>
-
-    <!-- Bottom Navigation -->
-    <div class="bottom-nav">
-        <a href="{% url 'main:admin_dashboard' %}" class="nav-item active">
-            <div class="nav-icon">🏠</div>
-            <div>Home</div>
-        </a>
-        <a href="{% url 'ornament:list' %}" class="nav-item">
-            <div class="nav-icon">📦</div>
-            <div>Stock</div>
-        </a>
-        <a href="{% url 'order:list' %}" class="nav-item">
-            <div class="nav-icon">👥</div>
-            <div>Clients</div>
-        </a>
-        <a href="{% url 'main:dashboard' %}" class="nav-item">
-            <div class="nav-icon">📈</div>
-            <div>Analytics</div>
-        </a>
-    </div>
-
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
-    <script>
-        // Sales Chart
-        const ctx = document.getElementById('salesChart');
-        if (ctx) {
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: {{ sales_labels|safe }},
-                    datasets: [{
-                        data: {{ sales_data|safe }},
-                        borderColor: '#FFD700',
-                        backgroundColor: 'rgba(255, 215, 0, 0.1)',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        fill: true,
-                        pointRadius: 0,
-                        pointHoverRadius: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            enabled: false
-                        }
-                    },
-                    scales: {
-                        x: {
-                            display: false
-                        },
-                        y: {
-                            display: false
-                        }
-                    },
-                    interaction: {
-                        intersect: false,
-                        mode: 'index'
-                    }
-                }
-            });
-        }
-
-        function toggleMenu() {
-            // Implement sidebar toggle
-            alert('Menu toggle - implement sidebar');
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Admin Desktop Dashboard Overview</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&amp;family=Manrope:wght@200;300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "primary": "#f4c025",
+                "charcoal": "#0f0f0f",
+                "charcoal-brown": "#1a1814",
+                "charcoal-light": "#22201c",
+                "accent-gold": "#d4af37",
+              },
+              fontFamily: {
+                "display": ["Cinzel", "serif"],
+                "sans": ["Manrope", "sans-serif"]
+              },
+            },
+          },
         }
     </script>
-</body>
-</html>
+<style type="text/tailwindcss">
+        @layer base {
+            body { @apply bg-charcoal text-stone-300 font-sans antialiased; }
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .nav-active { @apply bg-primary/10 text-primary border-r-2 border-primary; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="flex h-screen overflow-hidden">
+<aside class="w-64 bg-charcoal-brown border-r border-primary/10 flex flex-col hidden lg:flex">
+<div class="p-8">
+<h1 class="font-display text-2xl tracking-[0.2em] text-primary uppercase">Nirmala</h1>
+<p class="text-[10px] tracking-[0.3em] text-stone-500 mt-1 uppercase">Jewellers Admin</p>
+</div>
+<nav class="flex-1 px-4 space-y-2">
+<a class="flex items-center gap-4 px-4 py-3 rounded-lg nav-active transition-all group" href="{% url 'main:admin_dashboard' %}">
+<span class="material-symbols-outlined text-xl">dashboard</span>
+<span class="font-medium tracking-wide">Dashboard</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-lg text-stone-400 hover:bg-white/5 hover:text-primary transition-all group" href="{% url 'ornament:list' %}">
+<span class="material-symbols-outlined text-xl">inventory_2</span>
+<span class="font-medium tracking-wide">Inventory</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-lg text-stone-400 hover:bg-white/5 hover:text-primary transition-all group" href="{% url 'order:list' %}">
+<span class="material-symbols-outlined text-xl">shopping_cart</span>
+<span class="font-medium tracking-wide">Orders</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-lg text-stone-400 hover:bg-white/5 hover:text-primary transition-all group" href="{% url 'order:list' %}">
+<span class="material-symbols-outlined text-xl">group</span>
+<span class="font-medium tracking-wide">Customers</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-lg text-stone-400 hover:bg-white/5 hover:text-primary transition-all group" href="{% url 'main:dashboard' %}">
+<span class="material-symbols-outlined text-xl">analytics</span>
+<span class="font-medium tracking-wide">Analytics</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-lg text-stone-400 hover:bg-white/5 hover:text-primary transition-all group" href="{% url 'main:daily_rates' %}">
+<span class="material-symbols-outlined text-xl">settings</span>
+<span class="font-medium tracking-wide">Settings</span>
+</a>
+</nav>
+<div class="p-6 border-t border-primary/5">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full border border-primary/30 overflow-hidden">
+<img alt="Admin" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDt8r-h7pTPi1vwwVyaYYcdOl0sYjE_hH5VE237GGcVFHWXdnXvwYaaurlw2K5rasqfX60UXdlY3XujfGkBernEvEvJWZJDkOkLl9vmXuaRMuPTcFcMo4PyKZ24rjHbU2uSlHv2L3w5g1-FzYpO_B07ROABNQdVybPfQhfsAOCZ7hOOe7p1RDcphS1Nsccgum2H23n6I-UVeMVJv8TGnx2lzlwTx4EiuIf66ddnOXrzHU5yz2BpKg5DkhZjCWf1pkYWR0kFtW3esA7X"/>
+</div>
+<div>
+<p class="text-sm font-semibold text-white">Rajesh Mehta</p>
+<p class="text-[10px] text-stone-500 uppercase tracking-tighter">Super Admin</p>
+</div>
+</div>
+</div>
+</aside>
+<main class="flex-1 flex flex-col overflow-y-auto bg-charcoal">
+<header class="h-20 border-b border-primary/10 flex items-center justify-between px-8 bg-charcoal/50 backdrop-blur-md sticky top-0 z-10">
+<div class="flex items-center flex-1 max-w-xl">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-stone-500">search</span>
+<input class="w-full bg-white/5 border-none rounded-full py-2 pl-10 pr-4 text-sm text-stone-300 focus:ring-1 focus:ring-primary/50 transition-all" placeholder="Search transactions, inventory, customers..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6 ml-8">
+<button class="relative text-stone-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-2xl">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-primary rounded-full ring-2 ring-charcoal"></span>
+</button>
+<div class="h-8 w-[1px] bg-primary/10 mx-2"></div>
+<div class="flex items-center gap-3">
+<div class="text-right">
+<p class="text-xs text-stone-500">Market Status</p>
+<p class="text-xs font-bold text-green-500 uppercase tracking-widest">Open</p>
+</div>
+<span class="material-symbols-outlined text-stone-500">expand_more</span>
+</div>
+</div>
+</header>
+<div class="p-8 space-y-8">
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<div class="bg-charcoal-brown p-6 rounded-2xl border border-primary/10 relative group">
+<div class="flex justify-between items-start mb-4">
+<div>
+<p class="text-[10px] uppercase tracking-[0.2em] text-stone-500 mb-1">Total Sales</p>
+<h3 class="text-3xl font-bold text-white tracking-tight">${{ total_sales|default:"0"|floatformat:2 }}</h3>
+</div>
+<div class="bg-primary/10 p-2 rounded-xl">
+<span class="material-symbols-outlined text-primary">payments</span>
+</div>
+</div>
+<div class="h-12 w-full mt-4">
+<svg class="w-full h-full stroke-primary fill-none stroke-[2]" viewBox="0 0 100 20">
+<path d="M0 15 Q 10 5, 20 12 T 40 8 T 60 14 T 80 5 T 100 10" stroke-linecap="round"></path>
+</svg>
+</div>
+<div class="mt-4 flex items-center gap-2 text-xs">
+<span class="text-green-500 flex items-center font-bold">
+<span class="material-symbols-outlined text-sm">trending_up</span> {{ sales_change|default:"0"|floatformat:1 }}%
+                        </span>
+<span class="text-stone-500">vs last month</span>
+</div>
+</div>
+<div class="bg-charcoal-brown p-6 rounded-2xl border border-primary/10">
+<div class="flex justify-between items-start mb-4">
+<div>
+<p class="text-[10px] uppercase tracking-[0.2em] text-stone-500 mb-1">Active Orders</p>
+<h3 class="text-3xl font-bold text-white tracking-tight">{{ active_orders|default:"0" }}</h3>
+</div>
+<div class="bg-stone-500/10 p-2 rounded-xl text-stone-400">
+<span class="material-symbols-outlined">shopping_bag</span>
+</div>
+</div>
+<div class="mt-8">
+<div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[65%] rounded-full"></div>
+</div>
+<div class="flex justify-between mt-2 text-[10px] uppercase tracking-wider text-stone-500 font-bold">
+<span>Processing ({{ processing_orders|default:"0" }})</span>
+<span>Pending ({{ pending_orders|default:"0" }})</span>
+</div>
+</div>
+</div>
+<div class="bg-charcoal-brown p-6 rounded-2xl border border-primary/10">
+<div class="flex justify-between items-start mb-4">
+<div>
+<p class="text-[10px] uppercase tracking-[0.2em] text-stone-500 mb-1">Total Customers</p>
+<h3 class="text-3xl font-bold text-white tracking-tight">{{ total_customers|default:"0" }}</h3>
+</div>
+<div class="bg-stone-500/10 p-2 rounded-xl text-stone-400">
+<span class="material-symbols-outlined">person_add</span>
+</div>
+</div>
+<div class="mt-8 flex items-center gap-4">
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full border border-charcoal bg-stone-700 flex items-center justify-center text-[8px]">AM</div>
+<div class="w-6 h-6 rounded-full border border-charcoal bg-stone-600 flex items-center justify-center text-[8px]">JD</div>
+<div class="w-6 h-6 rounded-full border border-charcoal bg-stone-500 flex items-center justify-center text-[8px]">SK</div>
+</div>
+<span class="text-[10px] text-stone-500 font-bold tracking-widest">+{{ new_customers_today|default:"0" }} NEW TODAY</span>
+</div>
+</div>
+<div class="bg-charcoal-brown p-6 rounded-2xl border border-primary/10">
+<div class="flex justify-between items-start mb-4">
+<div>
+<p class="text-[10px] uppercase tracking-[0.2em] text-stone-500 mb-1">Gold Rate (24K)</p>
+<h3 class="text-3xl font-bold text-primary tracking-tight">${{ gold_rate|default:"0"|floatformat:2 }}<span class="text-sm font-normal text-stone-500 ml-1">/g</span></h3>
+</div>
+<div class="bg-primary/20 p-2 rounded-xl text-primary animate-pulse">
+<span class="material-symbols-outlined">diamond</span>
+</div>
+</div>
+<div class="mt-8 flex items-center gap-2 text-xs">
+<span class="text-red-500 flex items-center font-bold">
+<span class="material-symbols-outlined text-sm">trending_down</span> {{ gold_change|default:"0"|floatformat:1 }}%
+                        </span>
+<span class="text-stone-500 italic">Updated 2m ago</span>
+</div>
+</div>
+</section>
+<section class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+<div class="xl:col-span-2 flex flex-col gap-6">
+<div class="flex justify-between items-center">
+<h3 class="font-display text-xl text-primary tracking-widest uppercase">Recent Transactions</h3>
+<button class="text-xs text-primary font-bold tracking-widest border border-primary/20 px-4 py-2 rounded-lg hover:bg-primary hover:text-charcoal transition-all uppercase">Export Data</button>
+</div>
+<div class="bg-charcoal-brown rounded-2xl border border-primary/10 overflow-hidden shadow-2xl">
+<div class="overflow-x-auto">
+<table class="w-full text-left text-sm">
+<thead>
+<tr class="bg-white/5">
+<th class="px-6 py-4 font-bold text-stone-500 text-[10px] uppercase tracking-[0.2em]">Transaction ID</th>
+<th class="px-6 py-4 font-bold text-stone-500 text-[10px] uppercase tracking-[0.2em]">Customer</th>
+<th class="px-6 py-4 font-bold text-stone-500 text-[10px] uppercase tracking-[0.2em]">Amount</th>
+<th class="px-6 py-4 font-bold text-stone-500 text-[10px] uppercase tracking-[0.2em]">Status</th>
+<th class="px-6 py-4 font-bold text-stone-500 text-[10px] uppercase tracking-[0.2em] text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-primary/5">
+{% for order in recent_orders %}
+<tr class="hover:bg-white/5 transition-colors group">
+<td class="px-6 py-5 font-mono text-xs text-stone-400">#ORD-{{ order.sn }}</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-stone-800 flex items-center justify-center text-[10px] font-bold text-primary">{{ order.customer_name|slice:":2"|upper }}</div>
+<span class="font-semibold text-white">{{ order.customer_name }}</span>
+</div>
+</td>
+<td class="px-6 py-5 text-primary font-bold">${{ order.total|floatformat:2 }}</td>
+<td class="px-6 py-5">
+{% if order.payment_status == 'paid' %}
+<span class="bg-green-500/10 text-green-500 text-[10px] px-3 py-1 rounded-full uppercase font-bold tracking-wider border border-green-500/20">Completed</span>
+{% elif order.payment_status == 'partial' %}
+<span class="bg-amber-500/10 text-amber-500 text-[10px] px-3 py-1 rounded-full uppercase font-bold tracking-wider border border-amber-500/20">Processing</span>
+{% else %}
+<span class="bg-stone-500/10 text-stone-400 text-[10px] px-3 py-1 rounded-full uppercase font-bold tracking-wider border border-stone-500/20">On Hold</span>
+{% endif %}
+</td>
+<td class="px-6 py-5 text-right">
+<a class="text-stone-500 hover:text-primary" href="{% url 'order:update' order.sn %}"><span class="material-symbols-outlined text-lg">more_vert</span></a>
+</td>
+</tr>
+{% empty %}
+<tr>
+<td class="px-6 py-6 text-center text-stone-500" colspan="5">No recent transactions</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+<div class="px-6 py-4 bg-white/2 flex justify-center">
+<button class="text-xs uppercase tracking-[0.2em] font-bold text-stone-500 hover:text-primary transition-colors">View All Transaction History</button>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-8">
+<div class="bg-charcoal-brown p-6 rounded-2xl border border-primary/10">
+<h3 class="font-display text-sm text-primary tracking-widest uppercase mb-6">Quick Actions</h3>
+<div class="space-y-3">
+<a class="w-full bg-primary flex items-center justify-center gap-3 py-3.5 rounded-xl text-charcoal font-bold text-xs uppercase tracking-widest hover:bg-accent-gold transition-colors" href="{% url 'order:create' %}">
+<span class="material-symbols-outlined text-lg">add_circle</span> New Sale
+                            </a>
+<a class="w-full bg-white/5 border border-primary/10 flex items-center justify-center gap-3 py-3.5 rounded-xl text-primary font-bold text-xs uppercase tracking-widest hover:bg-white/10 transition-colors" href="{% url 'ornament:create' %}">
+<span class="material-symbols-outlined text-lg">inventory</span> Add Inventory
+                            </a>
+<a class="w-full bg-white/5 border border-primary/10 flex items-center justify-center gap-3 py-3.5 rounded-xl text-stone-400 font-bold text-xs uppercase tracking-widest hover:bg-white/10 transition-colors" href="{% url 'main:daily_rates' %}">
+<span class="material-symbols-outlined text-lg">summarize</span> Daily Report
+                            </a>
+</div>
+</div>
+<div class="bg-charcoal-brown p-6 rounded-2xl border border-primary/10 flex-1">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-display text-sm text-primary tracking-widest uppercase">Best Sellers</h3>
+<span class="text-[10px] text-stone-500 font-bold">THIS WEEK</span>
+</div>
+<div class="space-y-5">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-charcoal-light flex items-center justify-center border border-primary/5">
+<span class="material-symbols-outlined text-primary">diamond</span>
+</div>
+<div class="flex-1">
+<p class="text-sm font-semibold text-white">Bridal Gold Choker</p>
+<p class="text-[10px] text-stone-500">22K Hallmark - 12 Sold</p>
+</div>
+<p class="text-sm font-bold text-primary">$4,500</p>
+</div>
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-charcoal-light flex items-center justify-center border border-primary/5">
+<span class="material-symbols-outlined text-primary">circle</span>
+</div>
+<div class="flex-1">
+<p class="text-sm font-semibold text-white">Classic Gold Bangle</p>
+<p class="text-[10px] text-stone-500">24K Investment - 8 Sold</p>
+</div>
+<p class="text-sm font-bold text-primary">$1,250</p>
+</div>
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-charcoal-light flex items-center justify-center border border-primary/5">
+<span class="material-symbols-outlined text-primary">star</span>
+</div>
+<div class="flex-1">
+<p class="text-sm font-semibold text-white">Diamond Studs</p>
+<p class="text-[10px] text-stone-500">VVS1 Clarity - 5 Sold</p>
+</div>
+<p class="text-sm font-bold text-primary">$2,800</p>
+</div>
+</div>
+<button class="w-full mt-6 py-3 border-t border-primary/5 text-[10px] uppercase tracking-widest text-stone-500 hover:text-primary transition-colors font-bold">View Inventory Insights</button>
+</div>
+</div>
+</section>
+</div>
+</main>
+<nav class="lg:hidden fixed bottom-0 left-0 right-0 bg-charcoal-brown/95 backdrop-blur-xl border-t border-primary/10 safe-area-inset-bottom pb-4 z-50">
+<div class="flex justify-around items-center py-3">
+<a class="flex flex-col items-center gap-1 text-primary" href="{% url 'main:admin_dashboard' %}">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-[9px] font-bold uppercase tracking-tighter">Dashboard</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-stone-500" href="{% url 'ornament:list' %}">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="text-[9px] font-bold uppercase tracking-tighter">Stock</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-stone-500" href="{% url 'order:list' %}">
+<span class="material-symbols-outlined">shopping_cart</span>
+<span class="text-[9px] font-bold uppercase tracking-tighter">Orders</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-stone-500" href="{% url 'main:daily_rates' %}">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-[9px] font-bold uppercase tracking-tighter">Settings</span>
+</a>
+</div>
+</nav>
+
+</body></html>

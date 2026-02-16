@@ -17,26 +17,39 @@
 {% endblock %}
 
 {% block main_content %}
-<div class="row mb-3">
-    <div class="col-md-12">
-        <form method="get" class="d-inline">
-            <label class="form-check">
-                <input type="checkbox" name="active_only" class="form-check-input" value="1" {% if request.GET.active_only %}checked{% endif %} onchange="this.form.submit()">
-                <span class="form-check-label">Show Active Only</span>
-            </label>
-        </form>
-    </div>
-</div>
-
-<div class="row mb-3">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Total Payable: रु{{ total_balance }}</h5>
+<div class="container-fluid">
+    <!-- Total Payable Card -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-6 col-lg-3">
+            <div class="card dashboard-card" style="border-left: 4px solid #e67e22;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-0" style="font-size: 0.85rem;">Total Payable</p>
+                            <h3 class="mb-0 mt-2" style="color: #e67e22;">रु{{ total_balance|floatformat:2 }}</h3>
+                        </div>
+                        <i class="bi bi-person-x-fill" style="font-size: 2rem; color: #e67e22; opacity: 0.3;"></i>
+                    </div>
+                    <hr class="my-2">
+                    <a href="{% url 'finance:creditor_list' %}" class="text-decoration-none small">
+                        <i class="bi bi-arrow-right"></i> View All Creditors
+                    </a>
+                </div>
             </div>
         </div>
     </div>
-</div>
+
+    <!-- Filter Section -->
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <form method="get" class="d-inline">
+                <label class="form-check">
+                    <input type="checkbox" name="active_only" class="form-check-input" value="1" {% if request.GET.active_only %}checked{% endif %} onchange="this.form.submit()">
+                    <span class="form-check-label">Show Active Only</span>
+                </label>
+            </form>
+        </div>
+    </div>
 
 {% if creditors %}
 <div class="table-responsive">
@@ -111,4 +124,32 @@
 {% else %}
 <div class="alert alert-info">No creditors found.</div>
 {% endif %}
+</div>
+
+<style>
+    .dashboard-card {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        border-radius: 8px;
+        border: none;
+    }
+
+    .dashboard-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px);
+    }
+
+    .dashboard-card .card-body {
+        padding: 1.5rem;
+    }
+
+    .dashboard-card a {
+        color: inherit;
+        font-weight: 500;
+    }
+
+    .dashboard-card a:hover {
+        opacity: 0.7;
+    }
+</style>
 {% endblock %}

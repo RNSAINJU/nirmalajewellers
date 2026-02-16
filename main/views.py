@@ -392,9 +392,13 @@ def admin_dashboard(request):
     
     # Orders count
     total_orders = Order.objects.count()
-    pending_orders = Order.objects.filter(
-        remaining_amount__gt=0
-    ).count()
+    pending_orders = Order.objects.filter(remaining_amount__gt=0).count()
+    processing_orders = Order.objects.filter(status='processing').count()
+    active_orders = Order.objects.filter(status__in=['order', 'processing']).count()
+    
+    # Customers count
+    total_customers = Order.objects.values('customer_name').distinct().count()
+    new_customers_today = Order.objects.filter(created_at__date=date.today()).values('customer_name').distinct().count()
     
     # Gold rate
     latest_rate = DailyRate.objects.order_by('-created_at').first()
@@ -424,6 +428,10 @@ def admin_dashboard(request):
         'sales_data': json.dumps(sales_data),
         'total_orders': total_orders,
         'pending_orders': pending_orders,
+        'processing_orders': processing_orders,
+        'active_orders': active_orders,
+        'total_customers': total_customers,
+        'new_customers_today': new_customers_today,
         'gold_rate': gold_rate,
         'gold_change': gold_change,
         'recent_orders': recent_orders,
@@ -468,6 +476,19 @@ def dashboard(request):
     total_orders = Order.objects.count()
     total_purchase_amount = GoldSilverPurchase.objects.aggregate(total=Sum('amount'))['total'] or 0
     total_order_amount = Order.objects.aggregate(total=Sum('total'))['total'] or 0
+    
+    # Top cards data (match design)
+    active_orders = Order.objects.filter(status__in=['order', 'processing']).count()
+    processing_orders = Order.objects.filter(status='processing').count()
+    pending_orders = Order.objects.filter(remaining_amount__gt=0).count()
+    total_customers = Order.objects.values('customer_name').distinct().count()
+    new_customers_today = Order.objects.filter(created_at__date=date.today()).values('customer_name').distinct().count()
+
+    # Active orders progress (processing vs pending)
+    total_active_bucket = processing_orders + pending_orders
+    processing_percent = 0
+    if total_active_bucket > 0:
+        processing_percent = int((processing_orders / total_active_bucket) * 100)
 
     # Sales by month for chart - using Sale model with NepaliDateField
     import json
@@ -503,6 +524,32 @@ def dashboard(request):
     # For Chart.js, serialize as JSON for safe JS rendering
     sales_month_labels_json = json.dumps(sales_month_labels)
     sales_month_totals_json = json.dumps(sales_month_totals)
+
+    # Sparkline: last 7 days sales totals
+    sparkline_points = []
+    for i in range(6, -1, -1):
+        day = date.today() - timedelta(days=i)
+        day_total = (
+            Order.objects.filter(created_at__date=day)
+            .aggregate(total=Sum('total'))
+            .get('total')
+            or Decimal('0')
+        )
+        sparkline_points.append(float(day_total))
+
+    sparkline_path = "M0 15 L100 15"
+    if sparkline_points:
+        min_val = min(sparkline_points)
+        max_val = max(sparkline_points)
+        span = max(max_val - min_val, 1.0)
+        step = 100 / max(len(sparkline_points) - 1, 1)
+        coords = []
+        for idx, val in enumerate(sparkline_points):
+            x = round(idx * step, 2)
+            # Map to 2..18 (higher value -> lower y)
+            y = 18 - ((val - min_val) / span) * 16
+            coords.append(f"{x} {round(y, 2)}")
+        sparkline_path = "M" + " L".join(coords)
 
     # Stock report by metal type
     # Gold stock: sum of all gold purchases (quantity)
@@ -627,12 +674,51 @@ def dashboard(request):
     
     # Get most recent rate for display
     latest_rate = today_rate
+    gold_rate_tola = Decimal('0')
+    gold_change = Decimal('0')
+    if latest_rate and latest_rate.gold_rate:
+        gold_rate_tola = latest_rate.gold_rate
+    if today_rate and yesterday_rate and yesterday_rate.gold_rate:
+        gold_change = ((today_rate.gold_rate - yesterday_rate.gold_rate) / yesterday_rate.gold_rate) * Decimal('100')
+    # Sales change vs previous 30 days
+    period_end = date.today()
+    period_start = period_end - timedelta(days=30)
+    prev_start = period_start - timedelta(days=30)
+    prev_end = period_start
+
+    current_sales = Order.objects.filter(created_at__date__gte=period_start, created_at__date__lte=period_end).aggregate(total=Sum('total'))['total'] or Decimal('0')
+    previous_sales = Order.objects.filter(created_at__date__gte=prev_start, created_at__date__lt=prev_end).aggregate(total=Sum('total'))['total'] or Decimal('0')
+    sales_change = Decimal('0')
+    if previous_sales > 0:
+        sales_change = ((current_sales - previous_sales) / previous_sales) * Decimal('100')
+    # Recent customer initials for the avatars
+    recent_customer_names = (Order.objects.order_by('-created_at')
+        .values_list('customer_name', flat=True)
+        .distinct()[:3])
+    customer_initials = []
+    for name in recent_customer_names:
+        parts = (name or '').strip().split()
+        initials = ''.join([p[0] for p in parts[:2]]).upper() if parts else 'NA'
+        customer_initials.append(initials)
 
     context = {
         'total_ornaments': total_ornaments,
         'total_orders': total_orders,
         'total_purchase_amount': total_purchase_amount,
         'total_order_amount': total_order_amount,
+        'total_sales_amount': total_order_amount,
+        'sparkline_points': sparkline_points,
+        'sparkline_path': sparkline_path,
+        'active_orders': active_orders,
+        'processing_orders': processing_orders,
+        'pending_orders': pending_orders,
+        'processing_percent': processing_percent,
+        'total_customers': total_customers,
+        'new_customers_today': new_customers_today,
+        'gold_rate_tola': gold_rate_tola,
+        'gold_change': gold_change,
+        'sales_change': sales_change,
+        'customer_initials': customer_initials,
         'gold_stock': gold_stock,
         'silver_stock': silver_stock,
         'diamond_stock': diamond_stock,

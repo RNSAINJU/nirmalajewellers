@@ -1,0 +1,12 @@
+Django==5.0
+requests
+beautifulsoup4
+cloudinary
+django-cloudinary-storage
+openpyxl
+python-dotenv
+gunicorn
+psycopg2-binary
+Pillow
+django-cors-headers
+django-nepali-datetime-field

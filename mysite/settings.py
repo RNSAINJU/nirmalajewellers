@@ -15,12 +15,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-nk_sd$(^2bzq3^9p3@e12d+=(==h7%$q)on$1732_n8dpude#2'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-nk_sd$(^2bzq3^9p3@e12d+=(==h7%$q)on$1732_n8dpude#2')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['nirmalajewellers.pythonanywhere.com','127.0.0.1:8000','127.0.0.1', 'localhost', 'testserver']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'nirmalajewellers.store,www.nirmalajewellers.store,localhost,127.0.0.1,5.189.164.193').split(',')
 
 # API Tokens loaded from .env file (see .env file in project root)
 
@@ -65,9 +65,9 @@ import cloudinary.api
 
 
 cloudinary.config(
-    cloud_name="dutjtpdhn",
-    api_key="891116228766476",
-    api_secret="dHak4tSRQb5PctRTS5qEClOHXis",
+    cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME', 'dutjtpdhn'),
+    api_key=os.getenv('CLOUDINARY_API_KEY', '891116228766476'),
+    api_secret=os.getenv('CLOUDINARY_API_SECRET', 'dHak4tSRQb5PctRTS5qEClOHXis'),
     secure=True
 )
 
@@ -117,12 +117,25 @@ WSGI_APPLICATION = 'mysite.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Use PostgreSQL in production, SQLite in development
+if DEBUG:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('DATABASE_NAME', 'nirmalajewellers_db'),
+            'USER': os.getenv('DATABASE_USER', 'nirmalajewellers_user'),
+            'PASSWORD': os.getenv('DATABASE_PASSWORD', 'probook'),
+            'HOST': os.getenv('DATABASE_HOST', 'localhost'),
+            'PORT': os.getenv('DATABASE_PORT', '5432'),
+        }
+    }
 
 
 # Password validation

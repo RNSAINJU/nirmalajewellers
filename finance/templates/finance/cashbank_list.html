@@ -8,7 +8,7 @@
     <div class="row">
         <div class="col-md-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 class="h2">💰 Cash & Bank Accounts</h1>
+                <h1 class="h2">Cash & Bank Accounts</h1>
                 <a href="{% url 'finance:cashbank_create' %}" class="btn btn-primary">
                     <i class="bi bi-plus-circle"></i> Add Account
                 </a>
@@ -17,50 +17,100 @@
     </div>
 
     <!-- Summary Cards -->
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card border-success">
-                <div class="card-body text-center">
-                    <h5 class="card-title">💵 Cash in Hand</h5>
-                    <h2 class="text-success">₹ {{ total_cash|floatformat:2 }}</h2>
+    <div class="row g-4 mb-5">
+        <!-- Cash in Hand Card -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card dashboard-card" style="border-left: 4px solid #27ae60;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-0" style="font-size: 0.85rem;">Cash in Hand</p>
+                            <h3 class="mb-0 mt-2" style="color: #27ae60;">रु{{ total_cash|floatformat:2 }}</h3>
+                        </div>
+                        <i class="bi bi-cash-stack" style="font-size: 2rem; color: #27ae60; opacity: 0.3;"></i>
+                    </div>
+                    <hr class="my-2">
+                    <span class="text-decoration-none small text-muted">
+                        <i class="bi bi-wallet2"></i> Liquid Cash
+                    </span>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card border-info">
-                <div class="card-body text-center">
-                    <h5 class="card-title">🏦 Bank Balances</h5>
-                    <h2 class="text-info">₹ {{ total_bank|floatformat:2 }}</h2>
+
+        <!-- Bank Balances Card -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card dashboard-card" style="border-left: 4px solid #3498db;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-0" style="font-size: 0.85rem;">Bank Balances</p>
+                            <h3 class="mb-0 mt-2" style="color: #3498db;">रु{{ total_bank|floatformat:2 }}</h3>
+                        </div>
+                        <i class="bi bi-bank" style="font-size: 2rem; color: #3498db; opacity: 0.3;"></i>
+                    </div>
+                    <hr class="my-2">
+                    <span class="text-decoration-none small text-muted">
+                        <i class="bi bi-building"></i> Total in Banks
+                    </span>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card border-primary">
-                <div class="card-body text-center">
-                    <h5 class="card-title">✅ Total Liquid Assets</h5>
-                    <h2 class="text-primary">₹ {{ total_all|floatformat:2 }}</h2>
+
+        <!-- Total Liquid Assets Card -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card dashboard-card" style="border-left: 4px solid #9b59b6;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-0" style="font-size: 0.85rem;">Total Liquid Assets</p>
+                            <h3 class="mb-0 mt-2" style="color: #9b59b6;">रु{{ total_all|floatformat:2 }}</h3>
+                        </div>
+                        <i class="bi bi-gem" style="font-size: 2rem; color: #9b59b6; opacity: 0.3;"></i>
+                    </div>
+                    <hr class="my-2">
+                    <span class="text-decoration-none small text-muted">
+                        <i class="bi bi-check-circle"></i> Available Funds
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gold Loan Card -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card dashboard-card" style="border-left: 4px solid #f39c12;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-0" style="font-size: 0.85rem;">Gold Loan</p>
+                            <h3 class="mb-0 mt-2" style="color: #f39c12;">रु{{ total_gold_loan|floatformat:2 }}</h3>
+                        </div>
+                        <i class="bi bi-coin" style="font-size: 2rem; color: #f39c12; opacity: 0.3;"></i>
+                    </div>
+                    <hr class="my-2">
+                    <span class="text-decoration-none small text-muted">
+                        <i class="bi bi-shield-check"></i> Secured Loan
+                    </span>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card border-warning">
-                <div class="card-body text-center">
-                    <h5 class="card-title">🪙 Gold Loan</h5>
-                    <h2 class="text-warning">₹ {{ total_gold_loan|floatformat:2 }}</h2>
-                </div>
-            </div>
-        </div>
-    </div>
     <!-- Other Investments Summary -->
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card border-info">
-                <div class="card-body text-center">
-                    <h5 class="card-title">📈 Other Investments</h5>
-                    <h2 class="text-info">₹ {{ total_other_investment|floatformat:2 }}</h2>
+    <div class="row g-4 mb-5">
+        <div class="col-md-6 col-lg-3">
+            <div class="card dashboard-card" style="border-left: 4px solid #1abc9c;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-0" style="font-size: 0.85rem;">Other Investments</p>
+                            <h3 class="mb-0 mt-2" style="color: #1abc9c;">रु{{ total_other_investment|floatformat:2 }}</h3>
+                        </div>
+                        <i class="bi bi-graph-up-arrow" style="font-size: 2rem; color: #1abc9c; opacity: 0.3;"></i>
+                    </div>
+                    <hr class="my-2">
+                    <span class="text-decoration-none small text-muted">
+                        <i class="bi bi-piggy-bank"></i> Investments
+                    </span>
                 </div>
             </div>
         </div>
@@ -70,7 +120,7 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">💵 Cash Accounts</h5>
+                    <h5 class="mb-0"><i class="bi bi-cash-stack"></i> Cash Accounts</h5>
                 </div>
                 <div class="card-body">
                     {% if cash_accounts %}
@@ -92,7 +142,7 @@
                                                 <strong>{{ account.account_name }}</strong>
                                             </td>
                                             <td class="text-end">
-                                                <span class="badge bg-success">₹ {{ account.balance|floatformat:2 }}</span>
+                                                <span class="badge bg-success">रु{{ account.balance|floatformat:2 }}</span>
                                             </td>
                                             <td>
                                                 {% if account.is_active %}
@@ -139,7 +189,7 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">🏦 Bank Accounts</h5>
+                    <h5 class="mb-0"><i class="bi bi-bank"></i> Bank Accounts</h5>
                 </div>
                 <div class="card-body">
                     {% if bank_accounts %}
@@ -164,7 +214,7 @@
                                                 <code>{{ account.account_number|default:"-" }}</code>
                                             </td>
                                             <td class="text-end">
-                                                <span class="badge bg-info">₹ {{ account.balance|floatformat:2 }}</span>
+                                                <span class="badge bg-info">रु{{ account.balance|floatformat:2 }}</span>
                                             </td>
                                             <td>
                                                 {% if account.is_active %}
@@ -208,7 +258,7 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-header bg-warning text-dark">
-                    <h5 class="mb-0">🪙 Gold Loan Accounts</h5>
+                    <h5 class="mb-0"><i class="bi bi-coin"></i> Gold Loan Accounts</h5>
                 </div>
                 <div class="card-body">
                     {% if gold_loan_accounts %}
@@ -230,7 +280,7 @@
                                                 <strong>{{ account.account_name }}</strong>
                                             </td>
                                             <td class="text-end">
-                                                <span class="badge bg-warning text-dark">₹ {{ account.balance|floatformat:2 }}</span>
+                                                <span class="badge bg-warning text-dark">रु{{ account.balance|floatformat:2 }}</span>
                                             </td>
                                             <td>
                                                 {% if account.is_active %}
@@ -277,7 +327,7 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">📈 Other Investments Accounts</h5>
+                    <h5 class="mb-0"><i class="bi bi-graph-up-arrow"></i> Other Investments Accounts</h5>
                 </div>
                 <div class="card-body">
                     {% if other_investment_accounts %}
@@ -299,7 +349,7 @@
                                                 <strong>{{ account.account_name }}</strong>
                                             </td>
                                             <td class="text-end">
-                                                <span class="badge bg-info">₹ {{ account.balance|floatformat:2 }}</span>
+                                                <span class="badge bg-info">रु{{ account.balance|floatformat:2 }}</span>
                                             </td>
                                             <td>
                                                 {% if account.is_active %}
@@ -341,6 +391,33 @@
         </div>
     </div>
 </div>
+
+<style>
+    .dashboard-card {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        border-radius: 8px;
+        border: none;
+    }
+
+    .dashboard-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px);
+    }
+
+    .dashboard-card .card-body {
+        padding: 1.5rem;
+    }
+
+    .dashboard-card a {
+        color: inherit;
+        font-weight: 500;
+    }
+
+    .dashboard-card a:hover {
+        opacity: 0.7;
+    }
+</style>
 
 <script>
 function toggleStatus(accountId) {

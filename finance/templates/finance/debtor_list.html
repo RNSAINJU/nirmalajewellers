@@ -17,41 +17,54 @@
 {% endblock %}
 
 {% block main_content %}
-<div class="row mb-3">
-    <div class="col-md-6">
-        <form method="get" class="d-flex gap-2 align-items-center">
-            <label class="form-check mb-0">
-                <input type="checkbox" name="active_only" class="form-check-input" value="1" {% if request.GET.active_only %}checked{% endif %} onchange="this.form.submit()">
-                <span class="form-check-label">Show Active Only</span>
-            </label>
-        </form>
-    </div>
-    <div class="col-md-6">
-        <form method="get" class="d-flex gap-2">
-            <label for="sort_by" class="form-label mb-0">Sort by:</label>
-            <select name="sort_by" id="sort_by" class="form-select form-select-sm" style="max-width: 200px;" onchange="this.form.submit()">
-                <option value="name" {% if sort_by == 'name' %}selected{% endif %}>Name (A-Z)</option>
-                <option value="created_first" {% if sort_by == 'created_first' %}selected{% endif %}>Created First</option>
-                <option value="created_recent" {% if sort_by == 'created_recent' %}selected{% endif %}>Created Recently</option>
-                <option value="balance" {% if sort_by == 'balance' %}selected{% endif %}>Highest Balance</option>
-            </select>
-            <!-- Preserve active_only filter -->
-            {% if request.GET.active_only %}
-            <input type="hidden" name="active_only" value="1">
-            {% endif %}
-        </form>
-    </div>
-</div>
-
-<div class="row mb-3">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Total Outstanding: रु{{ total_balance }}</h5>
+<div class="container-fluid">
+    <!-- Total Outstanding Card -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-6 col-lg-3">
+            <div class="card dashboard-card" style="border-left: 4px solid #9b59b6;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-0" style="font-size: 0.85rem;">Total Outstanding</p>
+                            <h3 class="mb-0 mt-2" style="color: #9b59b6;">रु{{ total_balance|floatformat:2 }}</h3>
+                        </div>
+                        <i class="bi bi-person-check-fill" style="font-size: 2rem; color: #9b59b6; opacity: 0.3;"></i>
+                    </div>
+                    <hr class="my-2">
+                    <a href="{% url 'finance:debtor_list' %}" class="text-decoration-none small">
+                        <i class="bi bi-arrow-right"></i> View All Debtors
+                    </a>
+                </div>
             </div>
         </div>
     </div>
-</div>
+
+    <!-- Filter and Sort Section -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <form method="get" class="d-flex gap-2 align-items-center">
+                <label class="form-check mb-0">
+                    <input type="checkbox" name="active_only" class="form-check-input" value="1" {% if request.GET.active_only %}checked{% endif %} onchange="this.form.submit()">
+                    <span class="form-check-label">Show Active Only</span>
+                </label>
+            </form>
+        </div>
+        <div class="col-md-6">
+            <form method="get" class="d-flex gap-2">
+                <label for="sort_by" class="form-label mb-0">Sort by:</label>
+                <select name="sort_by" id="sort_by" class="form-select form-select-sm" style="max-width: 200px;" onchange="this.form.submit()">
+                    <option value="name" {% if sort_by == 'name' %}selected{% endif %}>Name (A-Z)</option>
+                    <option value="created_first" {% if sort_by == 'created_first' %}selected{% endif %}>Created First</option>
+                    <option value="created_recent" {% if sort_by == 'created_recent' %}selected{% endif %}>Created Recently</option>
+                    <option value="balance" {% if sort_by == 'balance' %}selected{% endif %}>Highest Balance</option>
+                </select>
+                <!-- Preserve active_only filter -->
+                {% if request.GET.active_only %}
+                <input type="hidden" name="active_only" value="1">
+                {% endif %}
+            </form>
+        </div>
+    </div>
 
 <ul class="nav nav-tabs mb-3">
     <li class="nav-item">
@@ -71,4 +84,32 @@
         {% include 'finance/debtor_table.html' %}
     {% endwith %}
 {% endif %}
+</div>
+
+<style>
+    .dashboard-card {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        border-radius: 8px;
+        border: none;
+    }
+
+    .dashboard-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px);
+    }
+
+    .dashboard-card .card-body {
+        padding: 1.5rem;
+    }
+
+    .dashboard-card a {
+        color: inherit;
+        font-weight: 500;
+    }
+
+    .dashboard-card a:hover {
+        opacity: 0.7;
+    }
+</style>
 {% endblock %}

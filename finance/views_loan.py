@@ -49,10 +49,26 @@ def loan_list(request):
         monthly_interest = (loan.amount * loan.interest_rate) / 100 / 12
         total_monthly_interest += monthly_interest
     
+    # Calculate bank-wise totals
+    bank_totals = {}
+    for loan in loans:
+        bank_name = loan.bank_name
+        if bank_name not in bank_totals:
+            bank_totals[bank_name] = {
+                'total_amount': Decimal('0'),
+                'loan_count': 0
+            }
+        bank_totals[bank_name]['total_amount'] += loan.amount
+        bank_totals[bank_name]['loan_count'] += 1
+    
+    # Sort banks by amount (descending)
+    sorted_banks = sorted(bank_totals.items(), key=lambda x: x[1]['total_amount'], reverse=True)
+    
     context = {
         'loans': loans,
         'total_loan_amount': total_loan_amount,
         'total_monthly_interest': total_monthly_interest,
+        'bank_totals': sorted_banks,
     }
     return render(request, 'finance/loan_list.html', context)
 

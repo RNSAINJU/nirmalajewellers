@@ -13,79 +13,162 @@
 {% endblock %}
 
 {% block main_content %}
-<div class="row mb-3">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-body p-0">
-                <div class="row g-0">
-                    <div class="col-md-6 border-end p-3">
-                        <div class="text-center">
-                            <h6 class="text-muted mb-2">Total Loan Amount</h6>
-                            <h3 class="mb-0 text-primary">रु{{ total_loan_amount }}</h3>
+<div class="container-fluid">
+    <!-- Main Summary Cards -->
+    <div class="row g-4 mb-5">
+        <!-- Total Loan Amount Card -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card dashboard-card" style="border-left: 4px solid #e74c3c;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-0" style="font-size: 0.85rem;">Total Loan Amount</p>
+                            <h3 class="mb-0 mt-2" style="color: #e74c3c;">रु{{ total_loan_amount|floatformat:2 }}</h3>
                         </div>
+                        <i class="bi bi-cash-stack" style="font-size: 2rem; color: #e74c3c; opacity: 0.3;"></i>
                     </div>
-                    <div class="col-md-6 p-3">
-                        <div class="text-center">
-                            <h6 class="text-muted mb-2">Total Monthly Interest</h6>
-                            <h3 class="mb-0 text-success">रु{{ total_monthly_interest }}</h3>
+                    <hr class="my-2">
+                    <a href="{% url 'finance:loan_list' %}" class="text-decoration-none small">
+                        <i class="bi bi-arrow-right"></i> View All Loans
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Monthly Interest Card -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card dashboard-card" style="border-left: 4px solid #27ae60;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-0" style="font-size: 0.85rem;">Total Monthly Interest</p>
+                            <h3 class="mb-0 mt-2" style="color: #27ae60;">रु{{ total_monthly_interest|floatformat:2 }}</h3>
                         </div>
+                        <i class="bi bi-percent" style="font-size: 2rem; color: #27ae60; opacity: 0.3;"></i>
                     </div>
+                    <hr class="my-2">
+                    <a href="{% url 'finance:loan_list' %}" class="text-decoration-none small">
+                        <i class="bi bi-arrow-right"></i> Interest Details
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bank-wise Loan Cards -->
+    {% if bank_totals %}
+    <div class="row g-4 mb-5">
+        {% for bank_name, bank_data in bank_totals %}
+        <div class="col-md-6 col-lg-3">
+            <div class="card dashboard-card" style="border-left: 4px solid {% cycle '#3498db' '#9b59b6' '#f39c12' '#e67e22' '#1abc9c' '#34495e' %};">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-0" style="font-size: 0.85rem;">{{ bank_name }}</p>
+                            <h3 class="mb-0 mt-2" style="color: {% cycle '#3498db' '#9b59b6' '#f39c12' '#e67e22' '#1abc9c' '#34495e' %};">
+                                रु{{ bank_data.total_amount|floatformat:2 }}
+                            </h3>
+                        </div>
+                        <i class="bi bi-bank" style="font-size: 2rem; color: {% cycle '#3498db' '#9b59b6' '#f39c12' '#e67e22' '#1abc9c' '#34495e' %}; opacity: 0.3;"></i>
+                    </div>
+                    <hr class="my-2">
+                    <small class="text-muted">
+                        {% if bank_data.loan_count == 1 %}
+                            <i class="bi bi-file-text"></i> 1 loan
+                        {% else %}
+                            <i class="bi bi-file-text"></i> {{ bank_data.loan_count }} loans
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Loan List Table -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Loan Management</h5>
+                </div>
+                <div class="card-body">
+                    {% if loans %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Bank Name</th>
+                                    <th>Amount (रु)</th>
+                                    <th>Interest Rate (%)</th>
+                                    <th>Start Date</th>
+                                    <th>Notes</th>
+                                    <th>Added</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            {% for loan in loans %}
+                                <tr>
+                                    <td>{{ loan.bank_name }}</td>
+                                    <td>{{ loan.amount }}</td>
+                                    <td>{{ loan.interest_rate }}</td>
+                                    <td>{{ loan.start_date }}</td>
+                                    <td>{{ loan.notes|default:'—' }}</td>
+                                    <td>{{ loan.created_at|date:'Y-m-d H:i' }}</td>
+                                    <td class="text-end">
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'finance:loan_update' loan.pk %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-pencil"></i> Edit
+                                            </a>
+                                            <a href="{% url 'finance:loan_delete' loan.pk %}" class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-trash"></i> Delete
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info mb-0">No loans found. Click "Add Loan" to create one.</div>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Loan Management</h5>
-            </div>
-            <div class="card-body">
-                {% if loans %}
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Bank Name</th>
-                                <th>Amount (रु)</th>
-                                <th>Interest Rate (%)</th>
-                                <th>Start Date</th>
-                                <th>Notes</th>
-                                <th>Added</th>
-                                <th class="text-end">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        {% for loan in loans %}
-                            <tr>
-                                <td>{{ loan.bank_name }}</td>
-                                <td>{{ loan.amount }}</td>
-                                <td>{{ loan.interest_rate }}</td>
-                                <td>{{ loan.start_date }}</td>
-                                <td>{{ loan.notes|default:'—' }}</td>
-                                <td>{{ loan.created_at|date:'Y-m-d H:i' }}</td>
-                                <td class="text-end">
-                                    <div class="btn-group" role="group">
-                                        <a href="{% url 'finance:loan_update' loan.pk %}" class="btn btn-sm btn-outline-primary">
-                                            <i class="bi bi-pencil"></i> Edit
-                                        </a>
-                                        <a href="{% url 'finance:loan_delete' loan.pk %}" class="btn btn-sm btn-outline-danger">
-                                            <i class="bi bi-trash"></i> Delete
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}
-                <div class="alert alert-info mb-0">No loans found. Click "Add Loan" to create one.</div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
+<style>
+    .dashboard-card {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        border-radius: 8px;
+        border: none;
+    }
+
+    .dashboard-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px);
+    }
+
+    .dashboard-card .card-body {
+        padding: 1.5rem;
+    }
+
+    .dashboard-card .card-body hr {
+        margin: 0.5rem 0;
+    }
+
+    .dashboard-card a {
+        color: inherit;
+        font-weight: 500;
+    }
+
+    .dashboard-card a:hover {
+        opacity: 0.7;
+    }
+</style>
 {% endblock %}

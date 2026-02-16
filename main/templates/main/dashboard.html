@@ -196,6 +196,65 @@
     display: inline-block;
   }
 
+  .stat-subtext {
+    font-size: 0.85rem;
+    color: #6b5f3a;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .stat-progress {
+    width: 100%;
+    height: 6px;
+    background: rgba(0, 0, 0, 0.12);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-top: 10px;
+  }
+
+  .stat-progress .bar {
+    height: 100%;
+    background: #f4c025;
+    border-radius: 999px;
+    width: var(--processing-width, 0%);
+  }
+
+  .stat-meta-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #6b5f3a;
+    margin-top: 8px;
+  }
+
+  .stat-avatars {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .stat-avatars span {
+    width: 26px;
+    height: 26px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 700;
+    background: #d6c08a;
+    color: #221e10;
+  }
+
+  .stat-updated {
+    font-size: 0.8rem;
+    color: #a8996a;
+    font-style: italic;
+  }
+
   .action-buttons {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -238,6 +297,76 @@
 
   .btn-action.ornaments-btn {
     background-color: #f4c025;
+  }
+
+  /* Dark mode overrides for dashboard content */
+  body.dark .dashboard-shell {
+    background: radial-gradient(circle at top, #151515 0%, #0f0f0f 55%, #0a0a0a 100%);
+  }
+
+  body.dark .dashboard-header h1,
+  body.dark .dashboard-header p {
+    color: #e5e5e5;
+  }
+
+  body.dark .rate-input-card {
+    background: linear-gradient(135deg, #2a250f 0%, #1a1810 100%);
+    color: #f5d76e;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35);
+  }
+
+  body.dark .rate-input-card h2,
+  body.dark .rate-input-form label {
+    color: #f5d76e;
+  }
+
+  body.dark .rate-input-form input {
+    background: #151515;
+    border-color: #2a2a2a;
+    color: #e5e5e5;
+  }
+
+  body.dark .stat-card {
+    background: linear-gradient(135deg, #221f16 0%, #1a1813 100%);
+    color: #f5d76e;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.4);
+  }
+
+  body.dark .stat-card.orders,
+  body.dark .stat-card.purchases,
+  body.dark .stat-card.sales,
+  body.dark .stat-card.ornaments {
+    background: linear-gradient(135deg, #221f16 0%, #1a1813 100%);
+  }
+
+  body.dark .stat-card-title,
+  body.dark .stat-card-link {
+    color: #d2c09a;
+  }
+
+  body.dark .stat-subtext,
+  body.dark .stat-meta-row,
+  body.dark .stat-updated {
+    color: #b8a06a;
+  }
+
+  body.dark .stat-progress {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  body.dark .stat-avatars span {
+    background: #3a3422;
+    color: #f5d76e;
+  }
+
+  body.dark .btn-action {
+    background-color: #f4c025;
+    color: #1a1410;
+  }
+
+  body.dark .btn-action:hover {
+    background-color: #ffd700;
+    color: #1a1410;
   }
 
   .btn-action.orders-btn {
@@ -301,6 +430,26 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+  }
+
+  body.dark .stock-card {
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.4);
+    color: #e5e5e5;
+  }
+
+  body.dark .stock-card-title {
+    color: #d2c09a;
+  }
+
+  body.dark .stock-card-value {
+    color: #f5d76e;
+    font-weight: 700;
+  }
+
+  body.dark .stock-card-note {
+    color: #b8a06a;
   }
 
   .stock-card-value {
@@ -562,44 +711,64 @@
 {% endif %}
 
 <div class="stats-container">
-  <!-- Ornaments Card -->
-  <div class="stat-card ornaments">
-    <div class="stat-card-header">
-      <div class="stat-card-title">Total Ornaments</div>
-      <span class="stat-card-icon">👑</span>
-    </div>
-    <div class="stat-card-value">{{ total_ornaments }}</div>
-    <a href="/ornament/" class="stat-card-link">View Ornaments →</a>
-  </div>
-
-  <!-- Orders Card -->
-  <div class="stat-card orders">
-    <div class="stat-card-header">
-      <div class="stat-card-title">Total Orders</div>
-      <span class="stat-card-icon">📦</span>
-    </div>
-    <div class="stat-card-value">{{ total_orders }}</div>
-    <a href="/order/" class="stat-card-link">View Orders →</a>
-  </div>
-
-  <!-- Purchase Amount Card -->
-  <div class="stat-card purchases">
-    <div class="stat-card-header">
-      <div class="stat-card-title">Total Purchase Amount</div>
-      <span class="stat-card-icon">💰</span>
-    </div>
-    <div class="stat-card-value">₹{{ total_purchase_amount|floatformat:0 }}</div>
-    <a href="/purchase/" class="stat-card-link">View Purchases →</a>
-  </div>
-
-  <!-- Sales Amount Card -->
+  <!-- Total Sales -->
   <div class="stat-card sales">
     <div class="stat-card-header">
-      <div class="stat-card-title">Total Sales Amount</div>
-      <span class="stat-card-icon">📈</span>
+      <div class="stat-card-title">Total Sales</div>
+      <span class="stat-card-icon">💳</span>
     </div>
-    <div class="stat-card-value">₹{{ total_order_amount|floatformat:0 }}</div>
-    <a href="/order/" class="stat-card-link">View Sales →</a>
+    <div class="stat-card-value">${{ total_sales_amount|default:"0"|floatformat:0 }}</div>
+    <div style="height: 48px; margin: 8px 0 4px;">
+      <svg viewBox="0 0 100 20" style="width:100%; height:100%;" fill="none" stroke="#f4c025" stroke-width="2">
+        <path d="{{ sparkline_path }}" stroke-linecap="round" />
+      </svg>
+    </div>
+    <div class="stat-subtext">
+      <span style="color:#22c55e; font-weight:700;">↗ {{ sales_change|default:"0"|floatformat:1 }}%</span>
+      <span>vs last month</span>
+    </div>
+  </div>
+
+  <!-- Active Orders -->
+  <div class="stat-card orders">
+    <div class="stat-card-header">
+      <div class="stat-card-title">Active Orders</div>
+      <span class="stat-card-icon">👜</span>
+    </div>
+    <div class="stat-card-value">{{ active_orders|default:"0" }}</div>
+    <div class="stat-progress" style="--processing-width: {{ processing_percent|default:0 }}%;"><div class="bar"></div></div>
+    <div class="stat-meta-row">
+      <span>Processing ({{ processing_orders|default:"0" }})</span>
+      <span>Pending ({{ pending_orders|default:"0" }})</span>
+    </div>
+  </div>
+
+  <!-- Total Customers -->
+  <div class="stat-card purchases">
+    <div class="stat-card-header">
+      <div class="stat-card-title">Total Customers</div>
+      <span class="stat-card-icon">👥</span>
+    </div>
+    <div class="stat-card-value">{{ total_customers|default:"0" }}</div>
+    <div class="stat-avatars">
+        {% for initials in customer_initials %}
+          <span>{{ initials }}</span>
+        {% endfor %}
+        <div class="stat-subtext" style="margin-left:6px;">+{{ new_customers_today|default:"0" }} New Today</div>
+      </div>
+  </div>
+
+  <!-- Gold Rate -->
+  <div class="stat-card ornaments">
+    <div class="stat-card-header">
+      <div class="stat-card-title">Gold Rate (24K)</div>
+      <span class="stat-card-icon">💎</span>
+    </div>
+    <div class="stat-card-value">${{ gold_rate_tola|default:"0"|floatformat:0 }}<span style="font-size:1rem; opacity:0.8;">/tola</span></div>
+    <div class="stat-subtext">
+      <span style="color:#ef4444; font-weight:700;">↘ {{ gold_change|default:"0"|floatformat:1 }}%</span>
+      <span class="stat-updated">Updated recently</span>
+    </div>
   </div>
 </div>
 
