@@ -30,10 +30,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         try:
-            # Primary source: Ashesh gold page (HTML table/contents). Override via GOLD_RATE_URL if needed.
+            # Primary source: FENEGOSIDA official website. Override via GOLD_RATE_URL if needed.
             url = os.environ.get(
                 'GOLD_RATE_URL',
-                'https://www.ashesh.com.np/gold/'
+                'https://fenegosida.org/'
             )
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -202,16 +202,18 @@ class Command(BaseCommand):
                         return normalize_digits(last_match.group(1)).replace(',', '')
                 return None
 
-            # Ashesh widget rows often look like: "Hallmark Gold (9999) 1 Tola Rs. 138000" or with रु
+            # FENEGOSIDA format: "FINE GOLD (9999)per 1 tolaरु 301900"
             gold_tola_str = find_amount([
+                r"FINE\s*GOLD\s*\(9999\)[^\n\r]*?per\s*1\s*tola[^\n\r]*?(?:रु|Rs\.?|NRs\.?)\s*([0-9][0-9,\.]+)",
                 r"Hallmark\s*Gold[^\n\r]*?(?:NRs\.?|Nrs\.?|Rs\.?|रु)\s*([0-9][0-9,\.]+)",
                 r"Fine\s*Gold[^\n\r]*?(?:NRs\.?|Nrs\.?|Rs\.?|रु)\s*([0-9][0-9,\.]+)",
                 r"Gold\s*\(9999\)[^\n\r]*?(?:NRs\.?|Nrs\.?|Rs\.?|रु)\s*([0-9][0-9,\.]+)",
                 r"Gold[^\n\r]*?Tola[^\n\r]*?(?:NRs\.?|Nrs\.?|Rs\.?|रु)\s*([0-9][0-9,\.]+)",
             ])
 
-            # Silver row often: "Silver 1 Tola Rs. 1690" or "Silver (1 Tola) NRs. 1690"
+            # FENEGOSIDA format: "SILVERper 1 tolaरु 4885"
             silver_tola_str = find_amount([
+                r"SILVER[^\n\r]*?per\s*1\s*tola[^\n\r]*?(?:रु|Rs\.?|NRs\.?)\s*([0-9][0-9,\.]+)",
                 r"Silver[^\n\r]*?Tola[^\n\r]*?(?:NRs\.?|Nrs\.?|Rs\.?|रु)\s*([0-9][0-9,\.]+)",
                 r"Silver[^\n\r]*?(?:NRs\.?|Nrs\.?|Rs\.?|रु)\s*([0-9][0-9,\.]+)",
             ])
@@ -260,10 +262,10 @@ class Command(BaseCommand):
                     return
 
                 today = date.today()
+                # Use bs_date as unique identifier since there's no date field
                 rate, created = DailyRate.objects.update_or_create(
-                    date=today,
+                    bs_date=bs_date or today.isoformat(),
                     defaults={
-                        'bs_date': bs_date or '',
                         'gold_rate': gold_tola,
                         'silver_rate': silver_tola,
                         'gold_rate_10g': gold_10g,
@@ -281,14 +283,13 @@ class Command(BaseCommand):
                 # If today's rates not found, try to use yesterday's rates as fallback
                 from datetime import timedelta
                 yesterday = date.today() - timedelta(days=1)
-                yesterday_rate = DailyRate.objects.filter(date=yesterday).first()
+                yesterday_rate = DailyRate.objects.order_by('-created_at').first()
                 
                 if yesterday_rate:
                     today = date.today()
                     rate, created = DailyRate.objects.update_or_create(
-                        date=today,
+                        bs_date=bs_date or today.isoformat(),
                         defaults={
-                            'bs_date': yesterday_rate.bs_date,
                             'gold_rate': yesterday_rate.gold_rate,
                             'silver_rate': yesterday_rate.silver_rate,
                             'gold_rate_10g': yesterday_rate.gold_rate_10g,
