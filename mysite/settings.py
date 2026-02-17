@@ -18,7 +18,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-nk_sd$(^2bzq3^9p3@e12d+=(==h7%$q)on$1732_n8dpude#2')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+DEBUG = os.getenv('DEBUG', 'False') == 'False'
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'nirmalajewellers.store,www.nirmalajewellers.store,localhost,127.0.0.1,5.189.164.193').split(',')
 

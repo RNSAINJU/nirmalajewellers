@@ -5,48 +5,74 @@
 {% block content %}
 
 <style>
-    /* Base stat card styles */
+    /* Base stat card styles - Dark Gold Theme */
     .stat-card {
-        background: white;
+        background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
         border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-        text-align: center;
+        padding: 30px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+        text-align: left;
         transition: all 0.3s;
-        color: white;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fcd34d;
+        border: 1px solid #2a2a2a;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 160px;
     }
     
     .stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        transform: translateY(-8px);
+        box-shadow: 0 12px 24px rgba(252, 211, 77, 0.2);
     }
     
     .stat-card.profit {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
     }
     
     .stat-card.remaining {
-        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
     }
     
     .stat-card.count {
-        background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+        background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+    }
+    
+    .stat-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
     }
     
     .stat-label {
-        font-size: 14px;
-        opacity: 0.9;
-        margin-bottom: 8px;
+        font-size: 0.95rem;
+        opacity: 0.85;
         font-weight: 500;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        color: #b0b0b0;
+    }
+    
+    .stat-card-icon {
+        font-size: 2rem;
+        opacity: 0.7;
     }
     
     .stat-value {
-        font-size: 28px;
-        font-weight: 700;
+        font-size: 2.5rem;
+        font-weight: 800;
         margin: 0;
+        color: #fcd34d;
+    }
+    
+    .stat-subtext {
+        font-size: 0.85rem;
+        color: #90ee90;
+        margin-top: auto;
+        display: flex;
+        align-items: center;
+        gap: 6px;
     }
     
     /* Stats tabs container */
@@ -126,12 +152,53 @@
         border: 2px solid #e9ecef;
     }
     
-    /* Search section */
+    /* Search section - Dark Gold Theme */
     .search-section {
-        background: white;
-        padding: 15px;
+        background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+        padding: 20px;
         border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        border: 1px solid #2a2a2a;
+    }
+
+    .search-section input.form-control {
+        background: #0f0f0f;
+        border: 1px solid #2a2a2a;
+        color: #f5f5f5;
+    }
+
+    .search-section input.form-control:focus {
+        background: #0f0f0f;
+        border-color: #fcd34d;
+        color: #f5f5f5;
+        box-shadow: 0 0 0 0.2rem rgba(252, 211, 77, 0.25);
+    }
+
+    .search-section input.form-control::placeholder {
+        color: #6b7280;
+    }
+
+    .search-section .btn-primary {
+        background: linear-gradient(135deg, #fcd34d 0%, #fbbf24 100%);
+        border: none;
+        color: #000;
+        font-weight: 600;
+    }
+
+    .search-section .btn-primary:hover {
+        background: linear-gradient(135deg, #fbbf24 0%, #f4c025 100%);
+        color: #000;
+    }
+
+    .search-section .btn-outline-secondary {
+        border-color: #2a2a2a;
+        color: #b0b0b0;
+    }
+
+    .search-section .btn-outline-secondary:hover {
+        background: #2a2a2a;
+        border-color: #2a2a2a;
+        color: #f5f5f5;
     }
     
     /* Ornament link styles */
@@ -173,24 +240,116 @@
     /* Table improvements */
     .table-responsive {
         border-radius: 10px;
-        overflow: hidden;
+        overflow-x: auto;
+        overflow-y: visible;
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
         box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        background: #1a1a1a;
     }
-    
+
+    .table-responsive::-webkit-scrollbar {
+        height: 8px;
+    }
+
+    .table-responsive::-webkit-scrollbar-track {
+        background: #0f0f0f;
+    }
+
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: #fcd34d;
+        border-radius: 4px;
+    }
+
+    .table-responsive::-webkit-scrollbar-thumb:hover {
+        background: #fbbf24;
+    }
+
+    /* Scroll hint for mobile devices */
+    .scroll-hint {
+        display: none;
+        text-align: center;
+        color: #fcd34d;
+        font-size: 0.85rem;
+        margin-top: 8px;
+        animation: scroll-indicator 1.5s ease-in-out infinite;
+    }
+
+    @keyframes scroll-indicator {
+        0%, 100% { opacity: 0.6; }
+        50% { opacity: 1; }
+    }
+
+    @media (max-width: 1024px) {
+        .scroll-hint {
+            display: block;
+        }
+    }
+
     .table {
         margin-bottom: 0;
     }
-    
+
     .table thead th {
         font-weight: 600;
         font-size: 14px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        background: #1f1f1f;
+        color: #fcd34d;
+        border-color: #2a2a2a;
+        padding: 12px 8px;
     }
-    
-    /* Tab improvements */
-    .nav-tabs {
-        border-bottom: 2px solid #e9ecef;
+
+    .table tbody td {
+        background: #1a1a1a;
+        color: #e5e5e5;
+        border-color: #2a2a2a;
+        padding: 12px 8px;
+        font-size: 0.9rem;
+    }
+
+    .table tbody tr:hover {
+        background: rgba(252, 211, 77, 0.08);
+    }
+
+    /* Action button styles for dark theme */
+    .btn-outline-warning {
+        border-color: #fbbf24;
+        color: #fbbf24;
+    }
+
+    .btn-outline-warning:hover {
+        background: #fbbf24;
+        color: #000;
+        border-color: #fbbf24;
+    }
+
+    .btn-outline-danger {
+        border-color: #ef4444;
+        color: #ef4444;
+    }
+
+    .btn-outline-danger:hover {
+        background: #ef4444;
+        color: #fff;
+        border-color: #ef4444;
+    }
+
+    .btn-outline-primary {
+        border-color: #3b82f6;
+        color: #3b82f6;
+    }
+
+    .btn-outline-primary:hover {
+        background: #3b82f6;
+        color: #fff;
+        border-color: #3b82f6;
+    }
+
+    .btn-group .btn-sm {
+        padding: 6px 10px;
+        font-size: 0.85rem;
     }
     
     .nav-tabs .nav-link {
@@ -297,42 +456,59 @@
         <div class="row g-3">
             <div class="col-md-3 col-sm-6">
                 <div class="stat-card">
-                    <div class="stat-label">Total 24K Weight</div>
-                    <h3 class="stat-value">{{ total_24k_weight|floatformat:3 }} gram</h3>
+                    <div class="stat-card-header">
+                        <div class="stat-label">Total 24K Weight</div>
+                        <span class="stat-card-icon">⚖️</span>
+                    </div>
+                    <h3 class="stat-value">{{ total_24k_weight|floatformat:2 }}</h3>
+                    <div class="stat-subtext">
+                        <span>gram</span>
+                    </div>
                 </div>
             </div>
             <div class="col-md-3 col-sm-6">
                 <div class="stat-card profit">
-                    <div class="stat-label">Total Profit</div>
-                    <h3 class="stat-value">रू {{ total_profit|floatformat:2 }}</h3>
+                    <div class="stat-card-header">
+                        <div class="stat-label">Total Profit</div>
+                        <span class="stat-card-icon">💰</span>
+                    </div>
+                    <h3 class="stat-value">रू {{ total_profit|floatformat:0 }}</h3>
+                    <div class="stat-subtext">
+                        <span style="color:#22c55e;">✓ Calculated</span>
+                    </div>
                 </div>
             </div>
             <div class="col-md-3 col-sm-6">
                 <div class="stat-card remaining">
-                    <div class="stat-label">Remaining Amount</div>
-                    <h3 class="stat-value">रू {{ total_remaining|floatformat:2 }}</h3>
+                    <div class="stat-card-header">
+                        <div class="stat-label">Remaining Amount</div>
+                        <span class="stat-card-icon">📊</span>
+                    </div>
+                    <h3 class="stat-value">रू {{ total_remaining|floatformat:0 }}</h3>
+                    <div class="stat-subtext">
+                        <span>pending</span>
+                    </div>
                 </div>
             </div>
             <div class="col-md-3 col-sm-6">
                 <div class="stat-card count">
-                    <div class="stat-label">Total Orders</div>
+                    <div class="stat-card-header">
+                        <div class="stat-label">Total Orders</div>
+                        <span class="stat-card-icon">📦</span>
+                    </div>
                     <h3 class="stat-value">{{ order_count }}</h3>
+                    <div class="stat-subtext">
+                        <span>across system</span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Create button -->
-    <div class="d-flex justify-content-center mb-4">
-        <a href="{% url 'order:create' %}" class="btn btn-create">
-            <i class="bi bi-plus-circle-fill me-2"></i> Create Order
-        </a>
-    </div>
-
-    <!-- Search and Actions Toggle Row -->
+    <!-- Search and Create Button Row -->
     <div class="row mb-4 g-3 align-items-center">
         <!-- Search Box -->
-        <div class="col-md-9">
+        <div class="col-lg-9">
             <div class="search-section">
                 <form method="get" class="d-flex gap-2">
                     <input type="text" name="search" class="form-control" placeholder="Search by order number, customer name, phone..." value="{{ request.GET.search }}">
@@ -342,18 +518,18 @@
             </div>
         </div>
 
-        <!-- Import/Export Toggle Button -->
-        <div class="col-md-3">
+        <!-- Create Order Button -->
+        <div class="col-lg-3">
             <div class="text-center">
-                <button class="btn btn-create w-100" type="button" data-bs-toggle="collapse" data-bs-target="#actionsSection" aria-expanded="false" aria-controls="actionsSection">
-                    <i class="bi bi-gear-fill me-2"></i>Import/Export
-                </button>
+                <a href="{% url 'order:create' %}" class="btn btn-create w-100" style="padding: 12px 30px; font-weight: 600;">
+                    <i class="bi bi-plus-circle-fill me-2"></i>Create Order
+                </a>
             </div>
         </div>
     </div>
 
-    <!-- Import/Export Actions Section -->
-    <div class="collapse" id="actionsSection">
+    <!-- Import/Export Actions Section - HIDDEN FOR NOW -->
+    <div class="collapse" id="actionsSection" style="display: none;">
         <div class="row mb-4">
             <div class="col-12">
                 <div class="action-buttons">
@@ -438,7 +614,7 @@
                     {% if orders_list %}
                     <div class="table-responsive">
                         <table class="table table-bordered table-striped table-hover align-middle">
-                            <thead class="table-dark">
+                            <thead>
                                 <tr>
                                     <th>Order No</th>
                                     <th>Order Date</th>
@@ -505,14 +681,14 @@
                                         {% endif %}
                                     </td>
                                     <td>{{ order.remaining_amount }}</td>
-                                    <td><span class="badge bg-info">{{ order.get_status_display }}</span></td>
+                                    <td><span class="badge" style="background: #3b82f6; color: #fff;">{{ order.get_status_display }}</span></td>
                                     <td class="text-center">
                                         <div class="btn-group" role="group">
                                             <a href="{% url 'order:update' order.sn %}" class="btn btn-sm btn-outline-warning" title="Edit">
-                                                <i class="bi bi-pencil-square"></i>
+                                                <i class="bi bi-pencil-square"></i> Edit
                                             </a>
                                             <a href="{% url 'order:delete' order.sn %}" class="btn btn-sm btn-outline-danger" title="Delete">
-                                                <i class="bi bi-trash-fill"></i>
+                                                <i class="bi bi-trash-fill"></i> Delete
                                             </a>
                                             {% if order.sale %}
                                                 <span class="badge bg-success align-self-center" title="Already in Sales">In Sales</span>
@@ -520,7 +696,7 @@
                                                 <form method="post" action="{% url 'order:create_sale_from_order' order.sn %}" class="d-inline">
                                                     {% csrf_token %}
                                                     <button type="submit" class="btn btn-sm btn-outline-primary" title="Add to Sales">
-                                                        <i class="bi bi-plus-circle"></i>
+                                                        <i class="bi bi-plus-circle"></i> Add
                                                     </button>
                                                 </form>
                                             {% endif %}
@@ -530,6 +706,9 @@
                                 {% endfor %}
                             </tbody>
                         </table>
+                    </div>
+                    <div class="scroll-hint">
+                        <i class="bi bi-arrow-left-right"></i> Scroll right to see more columns and action buttons
                     </div>
                     {% else %}
                     <div class="alert alert-secondary text-center">

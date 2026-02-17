@@ -13,9 +13,9 @@
       theme: {
         extend: {
           colors: {
-            "primary": "#f4c025",
-            "background-light": "#f8f8f5",
-            "background-dark": "#221e10",
+            "primary": "#fcd34d",
+            "background-light": "#0d0d0d",
+            "background-dark": "#000000",
           },
           fontFamily: {
             "display": ["Manrope", "sans-serif"]
@@ -29,12 +29,13 @@
   body { font-family: 'Manrope', sans-serif; }
   
   .rate-input-card {
-    background: linear-gradient(135deg, #f4c025 0%, #ffd700 100%);
+    background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
     border-radius: 12px;
     padding: 25px;
-    color: #221e10;
-    box-shadow: 0 8px 16px rgba(244, 192, 37, 0.3);
+    color: #fcd34d;
+    box-shadow: 0 8px 16px rgba(252, 211, 77, 0.15);
     margin-bottom: 30px;
+    border: 1px solid #2a2a2a;
   }
 
   .rate-input-card h2 {
@@ -44,7 +45,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    color: #221e10;
+    color: #fcd34d;
   }
 
   .rate-input-form {
@@ -69,21 +70,22 @@
     font-weight: 500;
     margin-bottom: 5px;
     display: block;
-    color: #221e10;
+    color: #b0b0b0;
   }
 
   .rate-input-form input {
-    background: rgba(255, 255, 255, 0.95);
-    border: 2px solid rgba(255, 255, 255, 0.3);
+    background: #1a1a1a;
+    border: 2px solid #2a2a2a;
     padding: 10px 12px;
     border-radius: 8px;
     transition: all 0.2s;
+    color: #f5f5f5;
   }
 
   .rate-input-form input:focus {
     outline: none;
-    border-color: #f4c025;
-    box-shadow: 0 0 0 3px rgba(244, 192, 37, 0.3);
+    border-color: #fcd34d;
+    box-shadow: 0 0 0 3px rgba(252, 211, 77, 0.2);
   }
 
   :root {
@@ -92,7 +94,7 @@
   }
 
   .dashboard-shell {
-    background: radial-gradient(circle at top, #f8f8f5 0%, #ffffff 45%, #ffffff 100%);
+    background: #0d0d0d;
     border-radius: 18px;
     padding-bottom: 2rem;
   }
@@ -105,12 +107,12 @@
   .dashboard-header h1 {
     font-size: 2.2rem;
     font-weight: 800;
-    color: var(--text-main);
+    color: #f5f5f5;
     margin-bottom: 6px;
   }
 
   .dashboard-header p {
-    color: var(--text-muted);
+    color: #b0b0b0;
     font-size: 1rem;
   }
 
@@ -128,11 +130,11 @@
   }
 
   .stat-card {
-    background: linear-gradient(135deg, #f4c025 0%, #ffd700 100%);
+    background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
     border-radius: 12px;
     padding: 30px;
-    color: #221e10;
-    box-shadow: 0 8px 16px rgba(244, 192, 37, 0.2);
+    color: #fcd34d;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     cursor: pointer;
     text-decoration: none;
@@ -140,27 +142,28 @@
     flex-direction: column;
     justify-content: space-between;
     min-height: 170px;
+    border: 1px solid #2a2a2a;
   }
 
   .stat-card:hover {
     transform: translateY(-8px);
-    box-shadow: 0 12px 24px rgba(244, 192, 37, 0.3);
+    box-shadow: 0 12px 24px rgba(252, 211, 77, 0.2);
   }
 
   .stat-card.ornaments {
-    background: linear-gradient(135deg, #f4c025 0%, #ffd700 100%);
+    background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
   }
 
   .stat-card.orders {
-    background: linear-gradient(135deg, #f4c025 0%, #ffec99 100%);
+    background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
   }
 
   .stat-card.purchases {
-    background: linear-gradient(135deg, #f4c025 0%, #ffe066 100%);
+    background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
   }
 
   .stat-card.sales {
-    background: linear-gradient(135deg, #f4c025 0%, #ffd43b 100%);
+    background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
   }
 
   .stat-card-header {
@@ -173,9 +176,10 @@
   .stat-card-title {
     font-size: 0.95rem;
     font-weight: 500;
-    opacity: 0.95;
+    opacity: 0.85;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    color: #b0b0b0;
   }
 
   .stat-card-icon {
@@ -187,18 +191,20 @@
     font-size: 2.5rem;
     font-weight: 800;
     margin-bottom: 10px;
+    color: #fcd34d;
   }
 
   .stat-card-link {
     font-size: 0.85rem;
-    opacity: 0.9;
+    opacity: 0.8;
     margin-top: auto;
     display: inline-block;
+    color: #90ee90;
   }
 
   .stat-subtext {
     font-size: 0.85rem;
-    color: #6b5f3a;
+    color: #90ee90;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -207,7 +213,7 @@
   .stat-progress {
     width: 100%;
     height: 6px;
-    background: rgba(0, 0, 0, 0.12);
+    background: rgba(255, 255, 255, 0.1);
     border-radius: 999px;
     overflow: hidden;
     margin-top: 10px;
@@ -215,7 +221,7 @@
 
   .stat-progress .bar {
     height: 100%;
-    background: #f4c025;
+    background: #fcd34d;
     border-radius: 999px;
     width: var(--processing-width, 0%);
   }
@@ -226,7 +232,7 @@
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: #6b5f3a;
+    color: #909090;
     margin-top: 8px;
   }
 
@@ -245,13 +251,13 @@
     justify-content: center;
     font-size: 0.65rem;
     font-weight: 700;
-    background: #d6c08a;
-    color: #221e10;
+    background: #2a2a2a;
+    color: #fcd34d;
   }
 
   .stat-updated {
     font-size: 0.8rem;
-    color: #a8996a;
+    color: #909090;
     font-style: italic;
   }
 
@@ -275,8 +281,8 @@
   }
 
   .btn-action {
-    background-color: #f4c025;
-    color: #221e10;
+    background-color: #fcd34d;
+    color: #000;
     padding: 12px 20px;
     border-radius: 8px;
     text-decoration: none;
@@ -285,119 +291,49 @@
     transition: background-color 0.3s ease, transform 0.3s ease;
     border: none;
     cursor: pointer;
-    box-shadow: 0 6px 18px rgba(244, 192, 37, 0.2);
+    box-shadow: 0 6px 18px rgba(252, 211, 77, 0.25);
   }
 
   .btn-action:hover {
-    background-color: #ffd700;
+    background-color: #fbbf24;
     transform: scale(1.05);
     text-decoration: none;
-    color: #221e10;
+    color: #000;
   }
 
   .btn-action.ornaments-btn {
-    background-color: #f4c025;
-  }
-
-  /* Dark mode overrides for dashboard content */
-  body.dark .dashboard-shell {
-    background: radial-gradient(circle at top, #151515 0%, #0f0f0f 55%, #0a0a0a 100%);
-  }
-
-  body.dark .dashboard-header h1,
-  body.dark .dashboard-header p {
-    color: #e5e5e5;
-  }
-
-  body.dark .rate-input-card {
-    background: linear-gradient(135deg, #2a250f 0%, #1a1810 100%);
-    color: #f5d76e;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35);
-  }
-
-  body.dark .rate-input-card h2,
-  body.dark .rate-input-form label {
-    color: #f5d76e;
-  }
-
-  body.dark .rate-input-form input {
-    background: #151515;
-    border-color: #2a2a2a;
-    color: #e5e5e5;
-  }
-
-  body.dark .stat-card {
-    background: linear-gradient(135deg, #221f16 0%, #1a1813 100%);
-    color: #f5d76e;
-    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.4);
-  }
-
-  body.dark .stat-card.orders,
-  body.dark .stat-card.purchases,
-  body.dark .stat-card.sales,
-  body.dark .stat-card.ornaments {
-    background: linear-gradient(135deg, #221f16 0%, #1a1813 100%);
-  }
-
-  body.dark .stat-card-title,
-  body.dark .stat-card-link {
-    color: #d2c09a;
-  }
-
-  body.dark .stat-subtext,
-  body.dark .stat-meta-row,
-  body.dark .stat-updated {
-    color: #b8a06a;
-  }
-
-  body.dark .stat-progress {
-    background: rgba(255, 255, 255, 0.1);
-  }
-
-  body.dark .stat-avatars span {
-    background: #3a3422;
-    color: #f5d76e;
-  }
-
-  body.dark .btn-action {
-    background-color: #f4c025;
-    color: #1a1410;
-  }
-
-  body.dark .btn-action:hover {
-    background-color: #ffd700;
-    color: #1a1410;
+    background-color: #fcd34d;
   }
 
   .btn-action.orders-btn {
-    background-color: #ffec99;
-    color: #221e10;
+    background-color: #fcd34d;
+    color: #000;
   }
 
   .btn-action.purchases-btn {
-    background-color: #ffe066;
-    color: #221e10;
+    background-color: #fcd34d;
+    color: #000;
   }
 
   .btn-action.ornaments-btn:hover {
-    background-color: #ffd700;
+    background-color: #fbbf24;
   }
 
   .btn-action.orders-btn:hover {
-    background-color: #ffd700;
+    background-color: #fbbf24;
   }
 
   .btn-action.purchases-btn:hover {
-    background-color: #f4c025;
+    background-color: #fbbf24;
   }
 
   .btn-action.sales-btn {
-    background-color: #ffd43b;
-    color: #221e10;
+    background-color: #fcd34d;
+    color: #000;
   }
 
   .btn-action.sales-btn:hover {
-    background-color: #f4c025;
+    background-color: #fbbf24;
   }
 
   .stock-cards {
@@ -414,74 +350,76 @@
   }
 
   .stock-card {
-    background: #ffffff;
+    background: #1a1a1a;
     border-radius: 12px;
     padding: 1rem 1.25rem;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+    border: 1px solid #2a2a2a;
   }
 
   .stock-card-title {
     font-size: 0.9rem;
     font-weight: 600;
-    color: #555;
+    color: #b0b0b0;
     display: flex;
     align-items: center;
     justify-content: space-between;
   }
 
-  body.dark .stock-card {
-    background: #1a1a1a;
-    border: 1px solid #2a2a2a;
-    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.4);
-    color: #e5e5e5;
+  .stock-card-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #fcd34d;
   }
 
-  body.dark .stock-card-title {
-    color: #d2c09a;
+  .stock-card-note {
+    font-size: 0.85rem;
+    color: #909090;
   }
 
   body.dark .stock-card-value {
-    color: #f5d76e;
+    color: #fcd34d;
     font-weight: 700;
   }
 
   body.dark .stock-card-note {
-    color: #b8a06a;
+    color: #909090;
   }
 
   .stock-card-value {
     font-size: 1.4rem;
     font-weight: 700;
-    color: #333;
+    color: #fcd34d;
   }
 
   .stock-card-note {
     font-size: 0.85rem;
-    color: #6b7280;
+    color: #909090;
   }
 
   .section-card {
-    background: var(--surface);
+    background: #1a1a1a;
     border-radius: 16px;
     padding: 28px;
-    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    border: 1px solid #2a2a2a;
   }
 
   .pl-card-title {
     font-size: 1.1rem;
     font-weight: 600;
     margin-bottom: 8px;
-    color: #333;
+    color: #fcd34d;
   }
 
   .pl-tabs {
     display: flex;
     gap: 10px;
     margin-bottom: 20px;
-    border-bottom: 2px solid #e5e7eb;
+    border-bottom: 2px solid #2a2a2a;
     flex-wrap: nowrap;
     overflow-x: auto;
   }
@@ -499,15 +437,15 @@
     border-bottom: 3px solid transparent;
     cursor: pointer;
     font-weight: 600;
-    color: #6b7280;
+    color: #909090;
     transition: all 0.3s ease;
     white-space: nowrap;
     flex-shrink: 0;
   }
 
   .pl-tab-button.active {
-    color: #f4c025;
-    border-bottom-color: #f4c025;
+    color: #fcd34d;
+    border-bottom-color: #fcd34d;
   }
 
   .pl-tab-content {
@@ -539,10 +477,10 @@
   }
 
   .pl-item {
-    background: #f8f9fa;
+    background: #252525;
     padding: 15px;
     border-radius: 8px;
-    border-left: 4px solid #f4c025;
+    border-left: 4px solid #fcd34d;
   }
 
   .pl-item.loss {
@@ -551,7 +489,7 @@
 
   .pl-item-label {
     font-size: 0.85rem;
-    color: #6b7280;
+    color: #909090;
     font-weight: 500;
     margin-bottom: 5px;
   }
@@ -559,7 +497,7 @@
   .pl-item-value {
     font-size: 1.5rem;
     font-weight: 700;
-    color: #111827;
+    color: #fcd34d;
   }
 
   .pl-item.loss .pl-item-value {
@@ -567,18 +505,19 @@
   }
 
   .pl-difference-card {
-    background: linear-gradient(135deg, #f4c025 0%, #ffd700 100%);
+    background: linear-gradient(135deg, #fcd34d 0%, #fbbf24 100%);
     padding: 25px;
     border-radius: 12px;
-    color: #221e10;
+    color: #000;
     margin-top: 20px;
     text-align: center;
-    box-shadow: 0 4px 12px rgba(244, 192, 37, 0.3);
+    box-shadow: 0 4px 12px rgba(252, 211, 77, 0.3);
   }
 
   .pl-difference-card.loss {
     background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
     box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    color: #fff;
   }
 
   .pl-difference-label {
@@ -667,8 +606,6 @@
 
 <div class="dashboard-shell container-fluid px-2 px-md-4">
   <div class="dashboard-header py-3">
-    <h1 class="mb-2">💎 Dashboard</h1>
-    <p class="mb-0">Welcome to Nirmal Jewellers Management System</p>
   </div>
 
 <!-- Daily Rate Input Section -->
@@ -719,7 +656,7 @@
     </div>
     <div class="stat-card-value">${{ total_sales_amount|default:"0"|floatformat:0 }}</div>
     <div style="height: 48px; margin: 8px 0 4px;">
-      <svg viewBox="0 0 100 20" style="width:100%; height:100%;" fill="none" stroke="#f4c025" stroke-width="2">
+      <svg viewBox="0 0 100 20" style="width:100%; height:100%;" fill="none" stroke="#fcd34d" stroke-width="2">
         <path d="{{ sparkline_path }}" stroke-linecap="round" />
       </svg>
     </div>
@@ -807,7 +744,7 @@
 <!-- Daily Profit & Loss Section -->
 <div class="section-card mt-4">
   <div style="display: flex; align-items: center; margin-bottom: 25px; gap: 10px;">
-    <h2 style="margin: 0; font-size: 1.8rem; font-weight: 700; color: #2c3e50;">📊 Daily Profit & Loss</h2>
+    <h2 style="margin: 0; font-size: 1.8rem; font-weight: 700; color: #D4AF37;">📊 Daily Profit & Loss</h2>
     <span style="font-size: 0.9rem; color: #6b7280; background: #f3f4f6; padding: 4px 10px; border-radius: 20px;">Ornament Analysis</span>
   </div>
 
@@ -833,7 +770,7 @@
   <!-- Today Tab -->
   <div id="pl-today" class="pl-tab-content active">
     {% if today_rate %}
-    <div style="background: linear-gradient(135deg, #f4c025 0%, #ffd700 100%); padding: 15px; border-radius: 8px; color: #221e10; margin-bottom: 15px; font-size: 0.9rem;">
+    <div style="background: linear-gradient(135deg, #fcd34d 0%, #fbbf24 100%); padding: 15px; border-radius: 8px; color: #000; margin-bottom: 15px; font-size: 0.9rem;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
           <strong>Date:</strong> {{ today_date_label }}
@@ -862,9 +799,9 @@
         <div style="font-size: 0.85rem; color: #9ca3af; margin-top: 5px;">{{ today_totals.diamond_count }} items • {{ today_totals.diamond_weight|floatformat:3 }}g</div>
       </div>
     </div>
-    <div style="background: linear-gradient(135deg, #f4c025 0%, #ffd700 100%); padding: 20px; border-radius: 10px; color: #221e10; text-align: center; margin-top: 15px;">
-      <div style="font-size: 0.9rem; opacity: 0.9;">Total Today</div>
-      <div style="font-size: 2rem; font-weight: 700;">रु {{ today_totals.total_amount|floatformat:2 }}</div>
+    <div style="background: linear-gradient(135deg, #fcd34d 0%, #fbbf24 100%); padding: 20px; border-radius: 10px; color: #000; text-align: center; margin-top: 15px;">
+      <div style="font-size: 0.9rem; opacity: 0.9; color: #000;">Total Today</div>
+      <div style="font-size: 2rem; font-weight: 700; color: #000;">रु {{ today_totals.total_amount|floatformat:2 }}</div>
     </div>
   </div>
 
@@ -1164,13 +1101,13 @@
           datasets: [{
             label: 'Monthly Sales ($)',
             data: salesTotals,
-            borderColor: '#f4c025',
+            borderColor: '#fcd34d',
             backgroundColor: 'rgba(244, 192, 37, 0.1)',
             borderWidth: 2.5,
             fill: true,
             tension: 0.4,
             pointRadius: 5,
-            pointBackgroundColor: '#f4c025',
+            pointBackgroundColor: '#fcd34d',
             pointBorderColor: '#fff',
             pointBorderWidth: 2,
             pointHoverRadius: 7,
