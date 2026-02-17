@@ -781,7 +781,7 @@
       <span>Gold Stock</span>
       <span>🥇</span>
     </div>
-    <div class="stock-card-value">{{ gold_stock|default:"0" }}</div>
+    <div class="stock-card-value">{{ gold_stock|default:"0"|floatformat:2 }}</div>
     <div class="stock-card-note">Total metal weight in stock (Gold)</div>
   </div>
 
@@ -790,7 +790,7 @@
       <span>Silver Stock</span>
       <span>🥈</span>
     </div>
-    <div class="stock-card-value">{{ silver_stock|default:"0" }}</div>
+    <div class="stock-card-value">{{ silver_stock|default:"0"|floatformat:2 }}</div>
     <div class="stock-card-note">Total metal weight in stock (Silver)</div>
   </div>
 
@@ -799,7 +799,7 @@
       <span>Diamond Stock</span>
       <span>💎</span>
     </div>
-    <div class="stock-card-value">{{ diamond_stock|default:"0" }}</div>
+    <div class="stock-card-value">{{ diamond_stock|default:"0"|floatformat:2 }}</div>
     <div class="stock-card-note">Total metal weight in stock (Diamond)</div>
   </div>
 </div>
@@ -1150,4 +1150,83 @@
 
 {% block extra_js %}
   {% include 'main/_chartjs_head.html' %}
+  <script>
+    // Sales Chart - Monthly Sales
+    const salesCtx = document.getElementById('salesChart');
+    if (salesCtx) {
+      const salesLabels = {{ sales_month_labels_json|safe }};
+      const salesTotals = {{ sales_month_totals_json|safe }};
+      
+      new Chart(salesCtx, {
+        type: 'line',
+        data: {
+          labels: salesLabels,
+          datasets: [{
+            label: 'Monthly Sales ($)',
+            data: salesTotals,
+            borderColor: '#f4c025',
+            backgroundColor: 'rgba(244, 192, 37, 0.1)',
+            borderWidth: 2.5,
+            fill: true,
+            tension: 0.4,
+            pointRadius: 5,
+            pointBackgroundColor: '#f4c025',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointHoverRadius: 7,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top',
+              labels: {
+                font: { size: 11 },
+                padding: 10,
+                color: '#666'
+              }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              padding: 10,
+              titleFont: { size: 12 },
+              bodyFont: { size: 11 },
+              callbacks: {
+                label: function(context) {
+                  return '$' + context.parsed.y.toLocaleString('en-US', {maximumFractionDigits: 0});
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              grid: {
+                color: 'rgba(0, 0, 0, 0.05)',
+              },
+              ticks: {
+                callback: function(value) {
+                  return '$' + (value / 1000).toFixed(0) + 'K';
+                },
+                font: { size: 10 }
+              }
+            },
+            x: {
+              grid: {
+                display: false,
+              },
+              ticks: {
+                maxRotation: 45,
+                minRotation: 0,
+                font: { size: 10 }
+              }
+            }
+          }
+        }
+      });
+    }
+  </script>
 {% endblock %}

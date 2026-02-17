@@ -718,7 +718,7 @@
         {% url 'order:debtor_aging_report' as order_report_debtor_aging_url %}
         {% url 'order:monthly_sales_report' as order_report_monthly_sales_url %}
         {% url 'order:daily_profit_loss_report' as order_report_daily_pl_url %}
-        {% url 'order:ornament_stock_report' as order_report_ornament_stock_url %}
+        {% url 'ornament:ornament_stock_report' as ornament_stock_report_url %}
 
         {% url 'sales:sale_create' as sales_create_url %}
         {% url 'sales:sales_by_month' as sales_by_month_url %}
@@ -759,6 +759,7 @@
                 <a href="{{ ornament_subcategory_url }}" class="nav-link">Sub Category</a>
                 <a href="{{ ornament_report_url }}" class="nav-link">Category Report</a>
                 <a href="{{ ornament_weight_report_url }}" class="nav-link">Weight Report</a>
+                <a href="{{ ornament_stock_report_url }}" class="nav-link">Ornament Stock</a>
                 <hr class="dropdown-divider">
                 <a href="{{ stone_list_url }}" class="nav-link">Stones</a>
                 <a href="{{ motimala_list_url }}" class="nav-link">Motimala</a>
@@ -834,7 +835,6 @@
                 <a href="{{ order_report_payment_mix_url }}" class="nav-link">Payment Mix</a>
                 <a href="{{ order_report_debtor_aging_url }}" class="nav-link">Debtor Aging</a>
                 <a href="{{ order_report_daily_pl_url }}" class="nav-link">Daily Profit/Loss</a>
-                <a href="{{ order_report_ornament_stock_url }}" class="nav-link">Ornament Stock</a>
             </div>
         </div>
 

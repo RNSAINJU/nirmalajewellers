@@ -400,11 +400,12 @@
                             aria-controls="content-{{ status_key }}"
                             {% if forloop.first %}aria-selected="true"{% else %}aria-selected="false"{% endif %}>
                         <span class="badge me-2" 
-                              {% if status_key == 'order' %}style="background-color: #3b82f6;"{% elif status_key == 'processing' %}style="background-color: #f59e0b;"{% elif status_key == 'completed' %}style="background-color: #8b5cf6;"{% elif status_key == 'delivered' %}style="background-color: #10b981;"{% endif %}>
+                              {% if status_key == 'order' %}style="background-color: #3b82f6;"{% elif status_key == 'processing' %}style="background-color: #f59e0b;"{% elif status_key == 'on_hold' %}style="background-color: #ef4444;"{% elif status_key == 'completed' %}style="background-color: #8b5cf6;"{% elif status_key == 'delivered' %}style="background-color: #10b981;"{% endif %}>
                             {{ orders_list.count }}
                         </span>
                         {% if status_key == 'order' %}Order
                         {% elif status_key == 'processing' %}Processing
+                        {% elif status_key == 'on_hold' %}On Hold
                         {% elif status_key == 'completed' %}Completed
                         {% elif status_key == 'delivered' %}Delivered
                         {% endif %}
@@ -423,11 +424,12 @@
                      aria-labelledby="tab-{{ status_key }}">
                     
                     <!-- Status-specific info -->
-                    <div class="alert {% if status_key == 'order' %}alert-info{% elif status_key == 'processing' %}alert-warning{% elif status_key == 'completed' %}alert-primary{% elif status_key == 'delivered' %}alert-success{% endif %} mb-3">
-                        <i class="bi {% if status_key == 'order' %}bi-question-circle{% elif status_key == 'processing' %}bi-hourglass-split{% elif status_key == 'completed' %}bi-check-circle{% elif status_key == 'delivered' %}bi-check2-circle{% endif %} me-2"></i>
+                    <div class="alert {% if status_key == 'order' %}alert-info{% elif status_key == 'processing' %}alert-warning{% elif status_key == 'on_hold' %}alert-danger{% elif status_key == 'completed' %}alert-primary{% elif status_key == 'delivered' %}alert-success{% endif %} mb-3">
+                        <i class="bi {% if status_key == 'order' %}bi-question-circle{% elif status_key == 'processing' %}bi-hourglass-split{% elif status_key == 'on_hold' %}bi-pause-circle{% elif status_key == 'completed' %}bi-check-circle{% elif status_key == 'delivered' %}bi-check2-circle{% endif %} me-2"></i>
                         <strong>
                         {% if status_key == 'order' %}Order
                         {% elif status_key == 'processing' %}Processing
+                        {% elif status_key == 'on_hold' %}On Hold
                         {% elif status_key == 'completed' %}Completed
                         {% elif status_key == 'delivered' %}Delivered
                         {% endif %} Orders:</strong> {{ orders_list.count }} order{{ orders_list|pluralize }} | <strong>Total 24K Weight:</strong> {{ status_24k_weights|get_item:status_key|floatformat:3 }} gram

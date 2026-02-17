@@ -18,6 +18,7 @@ class Order(models.Model):
     STATUS_CHOICES = [
         ('order', 'Order'),
         ('processing', 'Processing'),
+        ('on_hold', 'On Hold'),
         ('completed', 'Completed'),
         ('delivered', 'Delivered'),
     ]

@@ -1367,3 +1367,43 @@ def kaligar_list(request):
     }
     
     return render(request, 'ornament/kaligar_list.html', context)
+
+
+# ===== Ornament Stock Report (imported from order.reports) =====
+# Import from order app to avoid code duplication
+from order.reports import OrnamentStockReport, ornament_stock_export_excel
+
+__all__ = [
+    'OrnamentListView',
+    'OrnamentCreateView', 
+    'OrnamentUpdateView',
+    'OrnamentDeleteView',
+    'OrnamentDestroyView',
+    'MainCategoryCreateView',
+    'SubCategoryCreateView',
+    'KaligarCreateView',
+    'print_view',
+    'export_excel',
+    'import_excel',
+    'multiple_ornament_create',
+    'ornament_report',
+    'ornament_weight_report',
+    'rates_and_stock_view',
+    'kaligar_list',
+    'StoneListView',
+    'StoneCreateView',
+    'MotimalaListView',
+    'MotimalaCreateView',
+    'PoteyListView',
+    'PoteyCreateView',
+    'create_kaligar_cash_account',
+    'create_kaligar_gold_account',
+    'export_stone_excel',
+    'import_stone_excel',
+    'export_motimala_excel',
+    'import_motimala_excel',
+    'export_potey_excel',
+    'import_potey_excel',
+    'OrnamentStockReport',
+    'ornament_stock_export_excel',
+]

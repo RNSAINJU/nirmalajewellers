@@ -32,8 +32,6 @@ from .reports import (
     DebtorAgingReport,
     MonthlySalesReport,
     DailyProfitLossReport,
-    OrnamentStockReport,
-    ornament_stock_export_excel,
 )
 
 app_name = 'order'
@@ -70,6 +68,4 @@ urlpatterns = [
     path('reports/debtor-aging/', DebtorAgingReport.as_view(), name='debtor_aging_report'),
     path('reports/monthly-sales/', MonthlySalesReport.as_view(), name='monthly_sales_report'),
     path('reports/daily-profit-loss/', DailyProfitLossReport.as_view(), name='daily_profit_loss_report'),
-    path('reports/ornament-stock/', OrnamentStockReport.as_view(), name='ornament_stock_report'),
-    path('reports/ornament-stock/export/', ornament_stock_export_excel, name='ornament_stock_export'),
 ]

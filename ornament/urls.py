@@ -24,6 +24,8 @@ from .views import (
     export_stone_excel, import_stone_excel,
     export_motimala_excel, import_motimala_excel,
     export_potey_excel, import_potey_excel,
+    OrnamentStockReport,
+    ornament_stock_export_excel,
 )
 
 app_name = 'ornament'
@@ -59,5 +61,7 @@ urlpatterns = [
     path('potey/import-excel/', import_potey_excel, name='potey_import_excel'),
     path('kaligar/<int:kaligar_id>/create-cash-account/', create_kaligar_cash_account, name='create_kaligar_cash_account'),
     path('kaligar/<int:kaligar_id>/create-gold-account/', create_kaligar_gold_account, name='create_kaligar_gold_account'),
+    path('stock/', OrnamentStockReport.as_view(), name='ornament_stock_report'),
+    path('stock/export/', ornament_stock_export_excel, name='ornament_stock_export'),
 ]
 

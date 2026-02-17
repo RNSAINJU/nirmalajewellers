@@ -755,6 +755,7 @@ def dashboard(request):
 
 def daily_rates(request):
     """List and allow editing of fetched daily rates."""
+    import json
     rates = DailyRate.objects.all().order_by('-created_at')
 
     if request.method == 'POST':
@@ -782,8 +783,15 @@ def daily_rates(request):
 
         return redirect('main:daily_rates')
 
+    # Prepare chart data (last 30 days of gold rates)
+    chart_data = DailyRate.objects.all().order_by('created_at')[:30]
+    chart_dates = [str(rate.bs_date) for rate in chart_data]
+    chart_gold_rates = [float(rate.gold_rate or 0) for rate in chart_data]
+    
     context = {
         'rates': rates,
+        'chart_dates': json.dumps(chart_dates),
+        'chart_gold_rates': json.dumps(chart_gold_rates),
     }
     return render(request, 'main/daily_rates.html', context)
 
