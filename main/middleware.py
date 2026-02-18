@@ -7,37 +7,43 @@ class LoginRequiredMiddleware:
 
     def __init__(self, get_response):
         self.get_response = get_response
-        self.exempt_prefixes = {
-            settings.LOGIN_URL.rstrip('/'),
-            '/accounts',
-            '/admin',
-            '/order/api/search-ornaments',
-            '/order/api/create-ornament-inline',
-            '/',  # Customer home page
-            '/shop',  # Shop pages
-            '/products',  # Product detail pages
-            '/api',  # API endpoints
+        # Only allow specific public paths - be restrictive!
+        self.exempt_paths = {
+            '/accounts/login/',
+            '/accounts/logout/',
+            '/accounts/password_reset/',
+            '/accounts/password_reset/done/',
+            '/accounts/reset/',
         }
-        self.static_prefix = getattr(settings, 'STATIC_URL', '/static/') or '/static/'
-        self.media_prefix = getattr(settings, 'MEDIA_URL', '/media/') or '/media/'
+        # Public URL prefixes (no trailing slash - will use startswith)
+        self.public_prefixes = {
+            '/static/',
+            '/media/',
+            '/api/products/',
+            '/shop',
+            '/products/',
+        }
 
     def __call__(self, request):
         path = request.path
 
-        # Allow static/media
-        if self.static_prefix and path.startswith(self.static_prefix):
-            return self.get_response(request)
-        if self.media_prefix and path.startswith(self.media_prefix):
-            return self.get_response(request)
-
-        # Allow admin and auth/account routes
-        for prefix in self.exempt_prefixes:
-            if prefix and path.startswith(prefix):
+        # Allow static/media files
+        for prefix in self.public_prefixes:
+            if path.startswith(prefix):
                 return self.get_response(request)
+        
+        # Allow specific login/auth paths
+        if path in self.exempt_paths:
+            return self.get_response(request)
+        
+        # Allow home page for customers (no deep paths)
+        if path == '/':
+            return self.get_response(request)
 
+        # Everything else requires authentication
         if request.user.is_authenticated:
             return self.get_response(request)
 
         # Redirect to login with next param
-        login_url = settings.LOGIN_URL or '/accounts/login/'
+        login_url = '/accounts/login/'
         return redirect(f"{login_url}?next={path}")

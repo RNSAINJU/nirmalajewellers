@@ -5,7 +5,7 @@
 
 {% block content %}
 <!DOCTYPE html>
-<html class="dark" lang="en">
+<html id="htmlElement" class="dark" lang="en">
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
@@ -85,9 +85,9 @@
         }
     </style>
 </head>
-<body class="bg-background-light dark:bg-background-dark text-stone-800 dark:text-stone-200 min-h-screen pb-24">
+<body class="bg-background-light dark:bg-background-dark text-stone-900 dark:text-stone-200 min-h-screen pb-24">
 <!-- Sticky Header -->
-<header class="sticky top-0 z-50 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-primary/10">
+<header class="sticky top-0 z-50 bg-background-light dark:bg-background-dark/80 backdrop-blur-md border-b border-primary/10">
 <div class="px-4 py-3 flex flex-col gap-3">
 <div class="flex justify-between items-center">
 <button class="p-2 -ml-2" onclick="toggleMenu()">
@@ -95,6 +95,9 @@
 </button>
 <h1 class="text-2xl font-light tracking-[0.2em] text-primary uppercase">Nirmala</h1>
 <div class="flex items-center gap-1">
+<button class="p-2" onclick="toggleTheme()" title="Toggle dark/light mode">
+<span class="material-icons-outlined" id="themeIcon">dark_mode</span>
+</button>
 <button class="p-2" onclick="toggleCart()">
 <span class="material-icons-outlined">shopping_bag</span>
 <span id="cartCount" class="absolute text-[10px] bg-primary text-background-dark rounded-full w-5 h-5 flex items-center justify-center">0</span>
@@ -103,8 +106,8 @@
 </div>
 <!-- Search Bar -->
 <div class="relative group">
-<span class="material-icons-outlined absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 group-focus-within:text-primary transition-colors">search</span>
-<input id="searchInput" class="w-full bg-stone-100 dark:bg-white/5 border-none rounded-xl py-3 pl-10 pr-4 focus:ring-1 focus:ring-primary text-sm placeholder:text-stone-500" placeholder="Search gold, diamonds, collections..." type="text"/>
+<span class="material-icons-outlined absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 dark:text-stone-400 group-focus-within:text-primary transition-colors">search</span>
+<input id="searchInput" class="w-full bg-stone-50 dark:bg-white/5 border border-stone-200 dark:border-none rounded-xl py-3 pl-10 pr-4 focus:ring-1 focus:ring-primary text-sm placeholder:text-stone-500 text-stone-900 dark:text-stone-200" placeholder="Search gold, diamonds, collections..." type="text"/>
 </div>
 </div>
 </header>
@@ -117,8 +120,8 @@
 <div class="absolute inset-0 bg-gradient-to-t from-background-dark via-transparent to-transparent"></div>
 <div class="absolute bottom-8 left-8 right-8 text-center flex flex-col items-center gap-4">
 <p class="text-xs uppercase tracking-[0.3em] text-primary/80 font-medium">The Eternal Sparkle</p>
-<h2 class="text-3xl font-light tracking-tight text-white">Antique Gold Collections</h2>
-<button class="bg-primary text-background-dark font-bold px-8 py-3 rounded-full text-sm uppercase tracking-widest hover:bg-white transition-colors" onclick="scrollToProducts()">
+<h2 class="text-3xl font-light tracking-tight text-white dark:text-white">Antique Gold Collections</h2>
+<button class="bg-primary text-background-dark font-bold px-8 py-3 rounded-full text-sm uppercase tracking-widest hover:bg-yellow-300 transition-colors" onclick="scrollToProducts()">
 Shop Collection
 </button>
 </div>
@@ -128,7 +131,7 @@ Shop Collection
 <!-- Category Rail -->
 <section class="flex flex-col gap-4">
 <div class="px-4 flex justify-between items-end">
-<h3 class="text-lg font-light tracking-widest uppercase">Categories</h3>
+<h3 class="text-lg font-light tracking-widest uppercase text-stone-900 dark:text-stone-100">Categories</h3>
 <a class="text-xs text-primary underline underline-offset-4" href="{% url 'main:shop' %}">View All</a>
 </div>
 <div class="flex overflow-x-auto gap-6 px-4 pb-2 hide-scrollbar">
@@ -140,7 +143,7 @@ Shop Collection
 <img class="w-full h-full object-cover" src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=100&h=100&fit=crop" alt="{{ category.name }}"/>
 </div>
 </div>
-<span class="text-[10px] uppercase tracking-widest font-medium text-center">{{ category.name|truncatewords:1 }}</span>
+<span class="text-[10px] uppercase tracking-widest font-medium text-center text-stone-900 dark:text-stone-200">{{ category.name|truncatewords:1 }}</span>
 </div>
 {% endfor %}
 </div>
@@ -149,29 +152,29 @@ Shop Collection
 <!-- New Arrivals Grid -->
 <section class="flex flex-col gap-4 px-4" id="arrivals">
 <div class="flex justify-between items-end">
-<h3 class="text-lg font-light tracking-widest uppercase">New Arrivals</h3>
-<span class="text-xs text-stone-500">{{ new_arrivals.count }} Items</span>
+<h3 class="text-lg font-light tracking-widest uppercase text-stone-900 dark:text-stone-100">New Arrivals</h3>
+<span class="text-xs text-stone-600 dark:text-stone-500">{{ new_arrivals.count }} Items</span>
 </div>
 <div class="grid grid-cols-2 gap-4">
 {% for product in new_arrivals %}
 <!-- Product Card -->
 <a href="{% url 'main:product_detail' product.id %}" style="text-decoration: none; color: inherit;">
 <div class="flex flex-col gap-3 group">
-<div class="relative bg-white/5 rounded-xl aspect-[3/4] overflow-hidden">
+<div class="relative bg-white/5 dark:bg-white/5 rounded-xl aspect-[3/4] overflow-hidden border border-stone-200 dark:border-stone-700">
 {% if product.image %}
 <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="{{ product.image.url }}" alt="{{ product.ornament_name }}"/>
 {% else %}
-<div class="w-full h-full bg-stone-700 flex items-center justify-center">
-<span class="material-icons-outlined text-stone-500 text-4xl">image</span>
+<div class="w-full h-full bg-stone-200 dark:bg-stone-700 flex items-center justify-center">
+<span class="material-icons-outlined text-stone-400 dark:text-stone-500 text-4xl">image</span>
 </div>
 {% endif %}
-<button class="absolute top-3 right-3 w-8 h-8 rounded-full bg-background-dark/40 backdrop-blur-sm flex items-center justify-center text-white/80 hover:text-primary" onclick="toggleWishlist(event, {{ product.id }})">
+<button class="absolute top-3 right-3 w-8 h-8 rounded-full bg-background-dark/40 dark:bg-background-dark/40 backdrop-blur-sm flex items-center justify-center text-white/80 hover:text-primary" onclick="toggleWishlist(event, {{ product.id }})">
 <span class="material-icons-outlined text-lg">favorite_border</span>
 </button>
 </div>
 <div class="flex flex-col gap-1">
-<h4 class="text-xs text-stone-400 font-medium uppercase tracking-wider">{% if product.maincategory %}{{ product.maincategory.name }}{% else %}JEWELRY{% endif %}</h4>
-<p class="text-sm font-semibold truncate">{{ product.ornament_name }}</p>
+<h4 class="text-xs text-stone-500 dark:text-stone-400 font-medium uppercase tracking-wider">{% if product.maincategory %}{{ product.maincategory.name }}{% else %}JEWELRY{% endif %}</h4>
+<p class="text-sm font-semibold truncate text-stone-900 dark:text-stone-100">{{ product.ornament_name }}</p>
 <p class="text-primary font-bold text-base">VIEW</p>
 </div>
 </div>
@@ -185,8 +188,8 @@ Shop Collection
 <div class="bg-primary/10 border border-primary/20 rounded-xl p-6 flex flex-col gap-4 items-center text-center">
 <span class="material-icons-outlined text-primary text-4xl">loyalty</span>
 <div class="flex flex-col gap-1">
-<h4 class="text-lg font-bold">Exclusive Perks</h4>
-<p class="text-xs text-stone-400">Join our Nirmala Circle for early access to new collections and special member pricing.</p>
+<h4 class="text-lg font-bold text-stone-900 dark:text-stone-100">Exclusive Perks</h4>
+<p class="text-xs text-stone-600 dark:text-stone-400">Join our Nirmala Circle for early access to new collections and special member pricing.</p>
 </div>
 <button class="bg-primary text-background-dark px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-yellow-300 transition-colors">Join Now</button>
 </div>
@@ -194,7 +197,7 @@ Shop Collection
 </main>
 
 <!-- Bottom Navigation Bar -->
-<nav class="fixed bottom-0 left-0 right-0 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-lg border-t border-primary/10">
+<nav class="fixed bottom-0 left-0 right-0 bg-background-light dark:bg-background-dark/95 backdrop-blur-lg border-t border-primary/10">
 <div class="flex justify-around items-center py-3 px-2">
 <button class="flex flex-col items-center gap-1 text-primary" onclick="window.location.href='{% url 'main:customer_home' %}'">
 <span class="material-icons-outlined">home</span>
@@ -219,8 +222,8 @@ Shop Collection
 <div class="fixed inset-0 bg-black/70 z-40 hidden" id="sidebarOverlay" onclick="closeMenu()"></div>
 
 <!-- Mobile Sidebar -->
-<aside class="fixed top-0 left-0 w-64 h-screen bg-background-dark border-r border-primary/10 z-50 transform -translate-x-full transition-transform duration-300" id="mobileSidebar">
-<button class="p-2 absolute top-3 right-3 text-stone-400 hover:text-primary" onclick="closeMenu()">
+<aside class="fixed top-0 left-0 w-64 h-screen bg-background-light dark:bg-background-dark border-r border-primary/10 z-50 transform -translate-x-full transition-transform duration-300" id="mobileSidebar">
+<button class="p-2 absolute top-3 right-3 text-stone-600 dark:text-stone-400 hover:text-primary" onclick="closeMenu()">
 <span class="material-icons-outlined">close</span>
 </button>
 <div class="p-6 pt-12">
@@ -228,7 +231,7 @@ Shop Collection
 <ul class="flex flex-col gap-2">
 <li><a href="{% url 'main:customer_home' %}" class="text-primary hover:text-primary text-sm" onclick="closeMenu()">Home</a></li>
 <li><a href="{% url 'main:shop' %}" class="text-primary hover:text-primary text-sm" onclick="closeMenu()">Shop All</a></li>
-<li><hr class="my-2 border-stone-700"/></li>
+<li><hr class="my-2 border-stone-300 dark:border-stone-700"/></li>
 <li><a href="#" class="text-primary hover:text-primary text-sm" onclick="closeMenu()">Necklaces</a></li>
 <li><a href="#" class="text-primary hover:text-primary text-sm" onclick="closeMenu()">Earrings</a></li>
 <li><a href="#" class="text-primary hover:text-primary text-sm" onclick="closeMenu()">Rings</a></li>
@@ -238,6 +241,37 @@ Shop Collection
 </aside>
 
 <script>
+// Initialize theme on page load
+function initTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    const htmlElement = document.getElementById('htmlElement');
+    const themeIcon = document.getElementById('themeIcon');
+    
+    if (savedTheme === 'light') {
+        htmlElement.classList.remove('dark');
+        themeIcon.textContent = 'light_mode';
+    } else {
+        htmlElement.classList.add('dark');
+        themeIcon.textContent = 'dark_mode';
+    }
+}
+
+// Toggle between dark and light mode
+function toggleTheme() {
+    const htmlElement = document.getElementById('htmlElement');
+    const themeIcon = document.getElementById('themeIcon');
+    
+    if (htmlElement.classList.contains('dark')) {
+        htmlElement.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+        themeIcon.textContent = 'light_mode';
+    } else {
+        htmlElement.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+        themeIcon.textContent = 'dark_mode';
+    }
+}
+
 function toggleMenu() {
     const sidebar = document.getElementById('mobileSidebar');
     const overlay = document.getElementById('sidebarOverlay');
@@ -300,6 +334,7 @@ document.getElementById('searchInput').addEventListener('input', function(e) {
 
 // Initialize cart count from localStorage
 window.addEventListener('load', function() {
+    initTheme(); // Initialize theme
     const cartCount = localStorage.getItem('cartCount') || '0';
     document.getElementById('cartCount').textContent = cartCount;
 });

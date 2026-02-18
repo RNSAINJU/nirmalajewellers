@@ -45,12 +45,12 @@
                                 <small class="text-muted">Role ID: {{ item.group.id }}</small>
                             </td>
                             <td class="text-end">
-                                <div class="btn-group btn-group-sm">
-                                    <a href="{% url 'main:role_update' item.group.id %}" class="btn btn-outline-primary" title="Edit Role">
-                                        <i class="bi bi-pencil"></i>
+                                <div class=\"action-btn-group\">
+                                    <a href=\"{% url 'main:role_update' item.group.id %}\" class=\"btn btn-sm btn-action-edit\" title=\"Edit Role\">
+                                        <i class=\"bi bi-pencil-square me-1\"></i>Edit
                                     </a>
-                                    <a href="{% url 'main:role_delete' item.group.id %}" class="btn btn-outline-danger" title="Delete Role">
-                                        <i class="bi bi-trash"></i>
+                                    <a href=\"{% url 'main:role_delete' item.group.id %}\" class=\"btn btn-sm btn-action-delete\" title=\"Delete Role\">
+                                        <i class=\"bi bi-trash-fill me-1\"></i>Delete
                                     </a>
                                 </div>
                             </td>

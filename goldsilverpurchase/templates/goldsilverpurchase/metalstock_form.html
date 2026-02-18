@@ -272,12 +272,12 @@
             </div>
 
             <!-- Form Actions -->
-            <div class="form-actions">
-                <button type="submit" class="btn-submit">
-                    <i class="fas fa-save"></i> {{ button_text }}
+            <div class="form-actions d-flex gap-2">
+                <button type="submit" class="btn btn-sm btn-action-save">
+                    <i class="bi bi-check-circle me-1"></i> {{ button_text }}
                 </button>
-                <a href="{% url 'gsp:metal_stock_list' %}" class="btn-cancel">
-                    <i class="fas fa-times"></i> Cancel
+                <a href="{% url 'gsp:metal_stock_list' %}" class="btn btn-sm btn-action-cancel">
+                    <i class="bi bi-x-circle me-1"></i> Cancel
                 </a>
             </div>
         </form>

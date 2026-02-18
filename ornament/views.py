@@ -1,11 +1,14 @@
 from django.db import models
 from django.urls import reverse_lazy
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.shortcuts import render, redirect, get_object_or_404
 from .models import Ornament, Stone, Motimala, Potey
 # Import ListView and CreateView for generic class-based views
-from django.views.generic import ListView, CreateView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from .forms import OrnamentForm, KaligarCashAccountForm, KaligarGoldAccountForm
-from django.shortcuts import get_object_or_404
 # Create Kaligar_CashAccount for a Kaligar
+@login_required(login_url='/accounts/login/')
 def create_kaligar_cash_account(request, kaligar_id=None):
     kaligar = get_object_or_404(Kaligar, id=kaligar_id) if kaligar_id else None
     if request.method == 'POST':
@@ -18,6 +21,7 @@ def create_kaligar_cash_account(request, kaligar_id=None):
     return render(request, 'ornament/kaligar_cashaccount_form.html', {'form': form, 'kaligar': kaligar})
 
 # Create Kaligar_GoldAccount for a Kaligar
+@login_required(login_url='/accounts/login/')
 def create_kaligar_gold_account(request, kaligar_id=None):
     kaligar = get_object_or_404(Kaligar, id=kaligar_id) if kaligar_id else None
     if request.method == 'POST':
@@ -377,6 +381,7 @@ class OrnamentDestroyView(UpdateView):
         return super().form_valid(form)
 
 
+@login_required(login_url='/accounts/login/')
 def multiple_ornament_create(request):
     """Create multiple ornaments at once using a model formset.
 
@@ -404,6 +409,7 @@ def multiple_ornament_create(request):
     })
 
 
+@login_required(login_url='/accounts/login/')
 def print_view(request):
     ornament = Ornament.objects.filter(id__gte=1).order_by('id')
 
@@ -417,6 +423,7 @@ def print_view(request):
     })
 
 
+@login_required(login_url='/accounts/login/')
 def export_excel(request):
     view = OrnamentListView()
     view.request = request  # attach request
@@ -494,6 +501,7 @@ def to_decimal(val):
     return Decimal(str(val))   # SAFE conversion from float → Decimal
 
 
+@login_required(login_url='/accounts/login/')
 def import_excel(request):
     if request.method == "POST":
         file = request.FILES.get("file")
@@ -677,6 +685,7 @@ def import_excel(request):
 
     return render(request, "ornament/import_excel.html")
 @login_required
+@login_required(login_url='/accounts/login/')
 def export_stone_excel(request):
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -713,6 +722,7 @@ def export_stone_excel(request):
     return response
 
 @login_required
+@login_required(login_url='/accounts/login/')
 def import_stone_excel(request):
     if request.method != "POST":
         return redirect('ornament:stone_list')
@@ -767,6 +777,7 @@ def import_stone_excel(request):
     return redirect('ornament:stone_list')
 
 @login_required
+@login_required(login_url='/accounts/login/')
 def export_motimala_excel(request):
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -803,6 +814,7 @@ def export_motimala_excel(request):
     return response
 
 @login_required
+@login_required(login_url='/accounts/login/')
 def import_motimala_excel(request):
     if request.method != "POST":
         return redirect('ornament:motimala_list')
@@ -857,6 +869,7 @@ def import_motimala_excel(request):
     return redirect('ornament:motimala_list')
 
 @login_required
+@login_required(login_url='/accounts/login/')
 def export_potey_excel(request):
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -893,6 +906,7 @@ def export_potey_excel(request):
     return response
 
 @login_required
+@login_required(login_url='/accounts/login/')
 def import_potey_excel(request):
     if request.method != "POST":
         return redirect('ornament:potey_list')
@@ -947,6 +961,7 @@ def import_potey_excel(request):
     return redirect('ornament:potey_list')
 
 
+@login_required(login_url='/accounts/login/')
 def ornament_report(request):
     """Show ornament counts grouped by metal type, then by main category."""
     from django.db.models import Count
@@ -1013,6 +1028,7 @@ def ornament_report(request):
     return render(request, 'ornament/ornament_report.html', context)
 
 
+@login_required(login_url='/accounts/login/')
 def ornament_weight_report(request):
     """Show ornament total net weight by metal type."""
     from django.db.models import F, Count
@@ -1205,6 +1221,7 @@ def ornament_weight_report(request):
     return render(request, 'ornament/ornament_weight_report.html', context)
 
 
+@login_required(login_url='/accounts/login/')
 def rates_and_stock_view(request):
     """View to display fetched rates and stock year rates with dropdown."""
     from main.models import DailyRate
@@ -1263,6 +1280,7 @@ def rates_and_stock_view(request):
     return render(request, 'ornament/rates_and_stock.html', context)
 
 
+@login_required(login_url='/accounts/login/')
 def kaligar_list(request):
     """Display list of all kaligar with their ornament weights."""
     from django.db.models import Sum, DecimalField

@@ -4,6 +4,7 @@ from decimal import Decimal
 from django.utils import timezone
 from datetime import datetime, timedelta, date
 from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
 import nepali_datetime as ndt
 from django.contrib import messages
 
@@ -355,6 +356,7 @@ def index(request):
     return redirect('main:customer_home')
 
 
+@login_required(login_url='/accounts/login/')
 def admin_dashboard(request):
     """Modern mobile-first admin dashboard."""
     import json
@@ -440,6 +442,7 @@ def admin_dashboard(request):
     return render(request, 'main/admin_dashboard.html', context)
 
 
+@login_required(login_url='/accounts/login/')
 def dashboard(request):
     """Dashboard with basic counts and totals across apps."""
     daily_rate_form = None
@@ -753,9 +756,9 @@ def dashboard(request):
     return render(request, 'main/dashboard.html', context)
 
 
+@login_required(login_url='/accounts/login/')
 def daily_rates(request):
     """List and allow editing of fetched daily rates."""
-    import json
     rates = DailyRate.objects.all().order_by('-created_at')
 
     if request.method == 'POST':
@@ -783,19 +786,13 @@ def daily_rates(request):
 
         return redirect('main:daily_rates')
 
-    # Prepare chart data (last 30 days of gold rates)
-    chart_data = DailyRate.objects.all().order_by('created_at')[:30]
-    chart_dates = [str(rate.bs_date) for rate in chart_data]
-    chart_gold_rates = [float(rate.gold_rate or 0) for rate in chart_data]
-    
     context = {
         'rates': rates,
-        'chart_dates': json.dumps(chart_dates),
-        'chart_gold_rates': json.dumps(chart_gold_rates),
     }
     return render(request, 'main/daily_rates.html', context)
 
 
+@login_required(login_url='/accounts/login/')
 def add_daily_rate(request):
     """Add a new daily rate."""
     if request.method == 'POST':
@@ -822,6 +819,7 @@ def add_daily_rate(request):
     return render(request, 'main/daily_rate_form.html', context)
 
 
+@login_required(login_url='/accounts/login/')
 def edit_daily_rate(request, pk):
     """Edit a daily rate."""
     rate = get_object_or_404(DailyRate, pk=pk)
@@ -850,6 +848,7 @@ def edit_daily_rate(request, pk):
     return render(request, 'main/daily_rate_form.html', context)
 
 
+@login_required(login_url='/accounts/login/')
 def delete_daily_rate(request, pk):
     """Delete a daily rate."""
     rate = get_object_or_404(DailyRate, pk=pk)
@@ -868,6 +867,7 @@ def delete_daily_rate(request, pk):
 
 
 
+@login_required(login_url='/accounts/login/')
 def stock_report(request):
     """Stock report filtered by optional date range (BS).
 
@@ -1156,6 +1156,7 @@ def stock_report(request):
     return render(request, "main/stock_report.html", context)
 
 
+@login_required(login_url='/accounts/login/')
 def monthly_stock_report(request):
     """Monthly stock report filtered by BS month (YYYY-MM).
 
@@ -1275,6 +1276,7 @@ def monthly_stock_report(request):
     return render(request, "main/monthly_stock_report.html", context)
 
 
+@login_required(login_url='/accounts/login/')
 def add_stock(request):
     """View to add stock details manually."""
     from django.shortcuts import redirect
@@ -1297,6 +1299,7 @@ def add_stock(request):
     return render(request, 'main/stock_form.html', context)
 
 
+@login_required(login_url='/accounts/login/')
 def edit_stock(request, year):
     """View to edit stock details for a specific year."""
     from django.shortcuts import redirect, get_object_or_404

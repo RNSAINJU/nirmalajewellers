@@ -55,20 +55,6 @@
   <p class="mb-0" style="opacity:0.95">Gold & Silver rates as fetched per day.</p>
 </div>
 
-<!-- Gold Rate Chart -->
-<div class="card mb-4">
-  <div class="card-header">
-    <h5 class="mb-0">
-      <i class="bi bi-graph-up"></i> Gold Rate Trend (Last 30 Days)
-    </h5>
-  </div>
-  <div class="card-body">
-    <div style="position: relative; height: 400px;">
-      <canvas id="goldRateChart"></canvas>
-    </div>
-  </div>
-</div>
-
 <div class="card">
   <div class="card-header d-flex justify-content-between align-items-center">
     <h5 class="mb-0">Rate Details</h5>
@@ -126,77 +112,5 @@
     {% endif %}
   </div>
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-<script>
-  const ctx = document.getElementById('goldRateChart').getContext('2d');
-  const dates = {{ chart_dates|safe }};
-  const goldRates = {{ chart_gold_rates|safe }};
-
-  new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: dates,
-      datasets: [{
-        label: 'Gold Rate (per Tola) रू',
-        data: goldRates,
-        borderColor: '#f59e0b',
-        backgroundColor: 'rgba(245, 158, 11, 0.1)',
-        borderWidth: 2,
-        fill: true,
-        tension: 0.4,
-        pointRadius: 4,
-        pointBackgroundColor: '#f59e0b',
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
-        pointHoverRadius: 6,
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: true,
-          position: 'top',
-          labels: {
-            font: { size: 12 },
-            padding: 15,
-          }
-        },
-        tooltip: {
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          padding: 12,
-          titleFont: { size: 14 },
-          bodyFont: { size: 13 },
-          borderColor: '#f59e0b',
-          borderWidth: 1,
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: false,
-          grid: {
-            color: 'rgba(0, 0, 0, 0.05)',
-          },
-          ticks: {
-            callback: function(value) {
-              return 'रू ' + value.toLocaleString();
-            }
-          }
-        },
-        x: {
-          grid: {
-            display: false,
-          },
-          ticks: {
-            maxRotation: 45,
-            minRotation: 0,
-          }
-        }
-      }
-    }
-  });
-</script>
 
 {% endblock %}

@@ -28,11 +28,11 @@
 
                     <form method="post" class="d-inline">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-danger">
-                            <i class="fas fa-trash"></i> Yes, Delete It
+                        <button type="submit" class="btn btn-sm btn-action-delete">
+                            <i class="bi bi-trash me-1"></i> Yes, Delete It
                         </button>
-                        <a href="{% url 'gsp:metal_stock_list' %}" class="btn btn-secondary">
-                            <i class="fas fa-times"></i> Cancel
+                        <a href="{% url 'gsp:metal_stock_list' %}" class="btn btn-sm btn-action-cancel">
+                            <i class="bi bi-x-circle me-1"></i> Cancel
                         </a>
                     </form>
                 </div>

@@ -5,6 +5,9 @@ from django.views.generic.edit import DeleteView
 from django.http import JsonResponse, HttpResponse
 from django.views import View
 from django.db.models import Q, Sum, F
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.utils.decorators import method_decorator
 from decimal import Decimal
 from datetime import timedelta
 import json
@@ -164,7 +167,7 @@ class OrnamentCreateView(View):
 
         return render(request, self.template_name, {"formset": formset})
 
-class OrderListView(ListView):
+class OrderListView(LoginRequiredMixin, ListView):
     model = Order
     template_name = 'order/order_list.html'
     context_object_name = 'orders'
@@ -257,7 +260,7 @@ class OrderListView(ListView):
         return ctx
 
 
-class OrderCreateView(CreateView):
+class OrderCreateView(LoginRequiredMixin, CreateView):
     model = Order
     form_class = OrderForm
     template_name = 'order/order_form.html'
@@ -544,7 +547,7 @@ class OrderCreateView(CreateView):
         return redirect('order:list')
         
         
-class OrderUpdateView(UpdateView):
+class OrderUpdateView(LoginRequiredMixin, UpdateView):
     model = Order
     form_class = OrderForm
     template_name = 'order/order_form.html'
@@ -814,13 +817,13 @@ class OrderUpdateView(UpdateView):
         return redirect('order:list')
 
 
-class OrderDeleteView(DeleteView):
+class OrderDeleteView(LoginRequiredMixin, DeleteView):
     model = Order
     template_name = 'order/order_confirm_delete.html'
     success_url = reverse_lazy('order:list')
 
 
-class CreateSaleFromOrderView(View):
+class CreateSaleFromOrderView(LoginRequiredMixin, View):
     """(Deprecated here) moved to sales.views.CreateSaleFromOrderView."""
 
     def dispatch(self, request, *args, **kwargs):
@@ -829,7 +832,7 @@ class CreateSaleFromOrderView(View):
         return _Create.as_view()(request, *args, **kwargs)
 
 
-class SalesListView(ListView):
+class SalesListView(LoginRequiredMixin, ListView):
     """(Deprecated here) moved to sales.views.SalesListView."""
 
     def get(self, request, *args, **kwargs):
@@ -838,7 +841,7 @@ class SalesListView(ListView):
         return _List.as_view()(request, *args, **kwargs)
 
 
-class SaleUpdateView(UpdateView):
+class SaleUpdateView(LoginRequiredMixin, UpdateView):
     """(Deprecated here) moved to sales.views.SaleUpdateView."""
 
     def dispatch(self, request, *args, **kwargs):
@@ -847,7 +850,7 @@ class SaleUpdateView(UpdateView):
         return _Update.as_view()(request, *args, **kwargs)
 
 
-class SaleDeleteView(DeleteView):
+class SaleDeleteView(LoginRequiredMixin, DeleteView):
     """(Deprecated here) moved to sales.views.SaleDeleteView."""
 
     def dispatch(self, request, *args, **kwargs):
@@ -856,6 +859,7 @@ class SaleDeleteView(DeleteView):
         return _Delete.as_view()(request, *args, **kwargs)
 
 
+@login_required(login_url='/accounts/login/')
 def order_print_view(request):
     """Printable view of orders (same queryset as OrderListView)."""
 
@@ -866,6 +870,7 @@ def order_print_view(request):
     return render(request, "order/print_view.html", {"orders": orders})
 
 
+@login_required(login_url='/accounts/login/')
 def order_export_excel(request):
     """Export orders, ornament lines, and payments to Excel (multiple sheets)."""
 
@@ -1006,6 +1011,7 @@ def order_export_excel(request):
     return response
 
 
+@login_required(login_url='/accounts/login/')
 def order_ornaments_export_excel(request):
     """Export order line items (OrderOrnament) to Excel."""
     view = OrderListView()
@@ -1078,6 +1084,7 @@ def order_ornaments_export_excel(request):
     return response
 
 
+@login_required(login_url='/accounts/login/')
 def order_payments_export_excel(request):
     """Export order payments to Excel."""
     view = OrderListView()
@@ -1127,6 +1134,7 @@ def order_payments_export_excel(request):
     return response
 
 
+@login_required(login_url='/accounts/login/')
 def order_ornaments_import_excel(request):
     """Import order ornament lines from an Excel file.
 
@@ -1212,6 +1220,7 @@ def order_ornaments_import_excel(request):
     return render(request, "order/import_excel.html")
 
 
+@login_required(login_url='/accounts/login/')
 def order_payments_import_excel(request):
     """Import order payments from an Excel file.
 
@@ -1274,6 +1283,7 @@ def order_payments_import_excel(request):
     return render(request, "order/import_excel.html")
 
 
+@login_required(login_url='/accounts/login/')
 def order_import_excel(request):
     """Import orders from an Excel file with columns matching export."""
 

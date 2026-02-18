@@ -2,6 +2,9 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import ListView, UpdateView, CreateView, DeleteView, FormView, TemplateView
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.utils.decorators import method_decorator
 from decimal import Decimal
 from datetime import timedelta
 from io import BytesIO
@@ -25,7 +28,7 @@ from .forms import ExcelImportForm
 from finance.models import SundryDebtor
 
 
-class CreateSaleFromOrderView(View):
+class CreateSaleFromOrderView(LoginRequiredMixin, View):
     """Create a Sale entry from an existing Order.
 
     This is triggered from the order list via a button. If a Sale already
@@ -72,7 +75,7 @@ class CreateSaleFromOrderView(View):
         return redirect("order:list")
 
 
-class SalesListView(ListView):
+class SalesListView(LoginRequiredMixin, ListView):
     """List all Sales with their related Orders."""
 
     model = Sale
@@ -250,7 +253,7 @@ class SalesListView(ListView):
         return context
 
 
-class SaleUpdateView(UpdateView):
+class SaleUpdateView(LoginRequiredMixin, UpdateView):
     """Edit a Sale (bill number and sale date)."""
 
     model = Sale
@@ -281,7 +284,7 @@ class SaleUpdateView(UpdateView):
         return reverse_lazy("sales:sales_list")
 
 
-class SaleDeleteView(DeleteView):
+class SaleDeleteView(LoginRequiredMixin, DeleteView):
     """Delete a Sale and return the order to the open orders list."""
 
     model = Sale
@@ -300,7 +303,7 @@ class SaleDeleteView(DeleteView):
         return response
 
 
-class DeleteSaleAndOrderView(View):
+class DeleteSaleAndOrderView(LoginRequiredMixin, View):
     """Delete both the Sale and its related Order.
 
     Also returns all ornaments on that order back to stock by clearing
@@ -327,7 +330,7 @@ class DeleteSaleAndOrderView(View):
         return redirect("sales:sales_list")
 
 
-class DirectSaleCreateView(CreateView):
+class DirectSaleCreateView(LoginRequiredMixin, CreateView):
     """Create a new Order + Sale in one step, using the same
     auto-calculation and ornament selection logic as the Order
     create page, but finalizing it directly as a Sale.
@@ -527,6 +530,7 @@ class DirectSaleCreateView(CreateView):
         return redirect(self.get_success_url())
 
 
+@login_required(login_url='/accounts/login/')
 def sales_print_view(request):
     """Printable view of sales (with related orders)."""
 
@@ -537,6 +541,7 @@ def sales_print_view(request):
     return render(request, "sales/print_view.html", {"sales": sales})
 
 
+@login_required(login_url='/accounts/login/')
 def sales_export_excel(request):
     """Export sales to Excel, similar to ornaments/purchases export."""
 
@@ -608,6 +613,7 @@ def sales_export_excel(request):
     return response
 
 
+@login_required(login_url='/accounts/login/')
 def sales_monthly_tax_report(request):
     """Export monthly sales tax report to Excel."""
 
@@ -682,6 +688,7 @@ def sales_monthly_tax_report(request):
     return response
 
 
+@login_required(login_url='/accounts/login/')
 def sales_import_excel(request):
     """Import sales from Excel in detailed format.
 
@@ -848,6 +855,7 @@ def sales_import_excel(request):
     return render(request, "sales/import_excel.html")
 
 
+@login_required(login_url='/accounts/login/')
 def download_import_template(request):
     """Download Excel template for bulk import."""
     
@@ -929,7 +937,7 @@ def download_import_template(request):
     return response
 
 
-class ImportWizardStepOneView(TemplateView):
+class ImportWizardStepOneView(LoginRequiredMixin, TemplateView):
     """Step 1: Welcome and download template."""
     
     template_name = 'sales/import_wizard_step1.html'
@@ -940,7 +948,7 @@ class ImportWizardStepOneView(TemplateView):
         return context
 
 
-class ImportWizardStepTwoView(FormView):
+class ImportWizardStepTwoView(LoginRequiredMixin, FormView):
     """Step 2: Upload and preview Excel file."""
     
     form_class = ExcelImportForm
@@ -1005,7 +1013,7 @@ class ImportWizardStepTwoView(FormView):
             return redirect('sales:import_wizard_step2')
 
 
-class ImportWizardStepThreeView(View):
+class ImportWizardStepThreeView(LoginRequiredMixin, View):
     """Step 3: Confirm and import."""
     
     def get(self, request):
@@ -1450,7 +1458,7 @@ class ExcelImportProcessor:
             return 'twentyfourkarat'
 
 
-class SalesByMonthView(ListView):
+class SalesByMonthView(LoginRequiredMixin, ListView):
     """List sales filtered by a selected month and year."""
     
     model = Sale
@@ -1657,7 +1665,7 @@ class SalesByMonthView(ListView):
         return context
 
 
-class SalesForecastView(TemplateView):
+class SalesForecastView(LoginRequiredMixin, TemplateView):
     """Sales forecasting based on historical monthly totals."""
 
     template_name = "sales/sales_forecast.html"
@@ -1781,7 +1789,7 @@ class SalesForecastView(TemplateView):
         return context
 
 
-class CustomerSegmentationView(TemplateView):
+class CustomerSegmentationView(LoginRequiredMixin, TemplateView):
     """Segment customers by buying behavior for targeted insights."""
 
     template_name = "sales/customer_segmentation.html"
@@ -1846,7 +1854,7 @@ class CustomerSegmentationView(TemplateView):
         return context
 
 
-class ProductPerformanceView(TemplateView):
+class ProductPerformanceView(LoginRequiredMixin, TemplateView):
     """Evaluate product and product-line performance from sales."""
 
     template_name = "sales/product_performance.html"
@@ -1925,7 +1933,7 @@ class ProductPerformanceView(TemplateView):
         return context
 
 
-class MarginAnalysisView(TemplateView):
+class MarginAnalysisView(LoginRequiredMixin, TemplateView):
     """Analyze profit margins by product and product line."""
 
     template_name = "sales/margin_analysis.html"
@@ -2022,7 +2030,7 @@ class MarginAnalysisView(TemplateView):
         return context
 
 
-class TrendAnalysisView(TemplateView):
+class TrendAnalysisView(LoginRequiredMixin, TemplateView):
     """Identify trends in customer preferences and seasonal demand."""
 
     template_name = "sales/trend_analysis.html"

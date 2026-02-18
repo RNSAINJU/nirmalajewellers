@@ -2,6 +2,8 @@ from decimal import Decimal
 from io import BytesIO
 
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.db import models
@@ -35,6 +37,7 @@ from sales.models import Sale, SalesMetalStock
 # Decimal alias used in a few imports
 D = Decimal
 
+@login_required(login_url='/accounts/login/')
 def export_metalstock_xlsx(request):
     wb = openpyxl.Workbook()
     ws_stock = wb.active
@@ -103,7 +106,7 @@ def export_metalstock_xlsx(request):
     return response
 
 @method_decorator(csrf_exempt, name='dispatch')
-class ImportMetalStockXLSXView(View):
+class ImportMetalStockXLSXView(LoginRequiredMixin, View):
     def post(self, request):
         from datetime import date, datetime
         file = request.FILES.get('file')
@@ -169,7 +172,7 @@ class ImportMetalStockXLSXView(View):
         return HttpResponse('Import completed.')
 
 
-class PurchaseListView(ListView):
+class PurchaseListView(LoginRequiredMixin, ListView):
     model = GoldSilverPurchase
     template_name = 'goldsilverpurchase/purchase_list.html'
     context_object_name = 'purchases'
@@ -249,7 +252,7 @@ class PurchaseListView(ListView):
         context['selected_party'] = self.request.GET.get('party', '')
         context['metal_type'] = self.request.GET.get('metal_type', '')
         return context
-class PurchaseCreateView(CreateView):
+class PurchaseCreateView(LoginRequiredMixin, CreateView):
     model = GoldSilverPurchase
     fields = [
         'bill_no', 'bill_date', 'party',
@@ -260,7 +263,7 @@ class PurchaseCreateView(CreateView):
     success_url = reverse_lazy('gsp:purchaselist')
 
 
-class PurchaseUpdateView(UpdateView):
+class PurchaseUpdateView(LoginRequiredMixin, UpdateView):
     model = GoldSilverPurchase
     fields = [
         'bill_no', 'bill_date', 'party',
@@ -272,35 +275,35 @@ class PurchaseUpdateView(UpdateView):
     success_url = reverse_lazy('gsp:purchaselist')
 
 
-class PurchaseDeleteView(DeleteView):
+class PurchaseDeleteView(LoginRequiredMixin, DeleteView):
     model = GoldSilverPurchase
     template_name = 'goldsilverpurchase/purchase_confirm_delete.html'
     success_url = reverse_lazy('gsp:purchaselist')
 
 
 # ---------------------- Party Management ----------------------
-class PartyCreateView(CreateView):
+class PartyCreateView(LoginRequiredMixin, CreateView):
     model = Party
     fields = ['party_name', 'panno']
     template_name = 'goldsilverpurchase/party_form.html'
     success_url = reverse_lazy('gsp:purchaselist')
 
 
-class PartyUpdateView(UpdateView):
+class PartyUpdateView(LoginRequiredMixin, UpdateView):
     model = Party
     fields = ['party_name', 'panno']
     template_name = 'goldsilverpurchase/party_form.html'
     success_url = reverse_lazy('gsp:purchaselist')
 
 
-class PartyDeleteView(DeleteView):
+class PartyDeleteView(LoginRequiredMixin, DeleteView):
     model = Party
     template_name = 'goldsilverpurchase/party_confirm_delete.html'
     success_url = reverse_lazy('gsp:purchaselist')
 
 
 # ---------------------- Customer Purchases ----------------------
-class CustomerPurchaseListView(ListView):
+class CustomerPurchaseListView(LoginRequiredMixin, ListView):
     model = CustomerPurchase
     template_name = 'goldsilverpurchase/customer_purchase_list.html'
     context_object_name = 'customer_purchases'
@@ -376,7 +379,7 @@ class CustomerPurchaseListView(ListView):
         return ctx
 
 
-class CustomerPurchaseCreateView(CreateView):
+class CustomerPurchaseCreateView(LoginRequiredMixin, CreateView):
     model = CustomerPurchase
     form_class = CustomerPurchaseForm
     template_name = 'goldsilverpurchase/customer_purchase_form.html'
@@ -407,7 +410,7 @@ class CustomerPurchaseCreateView(CreateView):
         return response
 
 
-class CustomerPurchaseUpdateView(UpdateView):
+class CustomerPurchaseUpdateView(LoginRequiredMixin, UpdateView):
     model = CustomerPurchase
     form_class = CustomerPurchaseForm
     template_name = 'goldsilverpurchase/customer_purchase_form.html'
@@ -438,13 +441,14 @@ class CustomerPurchaseUpdateView(UpdateView):
         return response
 
 
-class CustomerPurchaseDeleteView(DeleteView):
+class CustomerPurchaseDeleteView(LoginRequiredMixin, DeleteView):
     model = CustomerPurchase
     template_name = 'goldsilverpurchase/customer_purchase_confirm_delete.html'
     success_url = reverse_lazy('gsp:customer_purchase_list')
 
 
 
+@login_required(login_url='/accounts/login/')
 def print_view(request):
     view = PurchaseListView()
     view.request = request  # attach request
@@ -457,6 +461,7 @@ def print_view(request):
     })
 
 
+@login_required(login_url='/accounts/login/')
 def export_excel(request):
     view = PurchaseListView()
     view.request = request  # attach request
@@ -515,6 +520,7 @@ def export_excel(request):
     return response
 
 
+@login_required(login_url='/accounts/login/')
 def export_customer_excel(request):
     view = CustomerPurchaseListView()
     view.request = request
@@ -574,6 +580,7 @@ def to_decimal(val):
     return Decimal(str(val))   # SAFE conversion from float → Decimal
 
 
+@login_required(login_url='/accounts/login/')
 def import_excel(request):
     if request.method == "POST":
         file = request.FILES.get("file")
@@ -717,6 +724,7 @@ def import_excel(request):
     return render(request, "goldsilverpurchase/import_excel.html")
 
 
+@login_required(login_url='/accounts/login/')
 def import_customer_excel(request):
     if request.method == "POST":
         file = request.FILES.get("file")
@@ -794,6 +802,7 @@ def import_customer_excel(request):
     return render(request, "goldsilverpurchase/customer_import_excel.html")
 
 
+@login_required(login_url='/accounts/login/')
 def data_settings(request):
     """Settings page with data export and import controls."""
     if request.method == "POST":
@@ -806,6 +815,7 @@ def data_settings(request):
     return render(request, "goldsilverpurchase/data_settings.html")
 
 
+@login_required(login_url='/accounts/login/')
 def export_full_db_dump(request):
     """Export a full database dump as JSON (Django dumpdata)."""
     from django.core.management import call_command
@@ -838,6 +848,7 @@ def export_full_db_dump(request):
     return response
 
 
+@login_required(login_url='/accounts/login/')
 def import_full_db_dump(request):
     """Import a full database dump from SQLite or JSON (wipe then restore)."""
     if request.method != "POST" or "import_file" not in request.FILES:
@@ -915,6 +926,7 @@ def import_full_db_dump(request):
             os.unlink(tmp_path)
 
 
+@login_required(login_url='/accounts/login/')
 def export_all_data(request):
     from openpyxl import Workbook
     from django.http import HttpResponse
@@ -1147,6 +1159,7 @@ def export_all_data(request):
     return response
 
 
+@login_required(login_url='/accounts/login/')
 def import_all_data(request):
     """Import all data from a multi-sheet Excel file."""
     if request.method != "POST" or "import_file" not in request.FILES:
@@ -1565,6 +1578,7 @@ def import_all_data(request):
         return redirect("gsp:data_settings")
 
 
+@login_required(login_url='/accounts/login/')
 def delete_customer_purchases(request):
     """Delete all customer purchases with password protection."""
     if request.method != "POST":
@@ -1600,6 +1614,7 @@ def delete_customer_purchases(request):
         return redirect("gsp:data_settings")
 
 
+@login_required(login_url='/accounts/login/')
 def export_all_data_json(request):
     """Export all data as JSON for faster backups - includes all models from all apps."""
     import json
@@ -1694,6 +1709,7 @@ def export_all_data_json(request):
         return HttpResponse(f"Export failed: {str(e)}", status=500)
 
 
+@login_required(login_url='/accounts/login/')
 def import_all_data_json(request):
     """Import all data from a JSON file for faster restoration."""
     import json
@@ -1971,6 +1987,7 @@ def import_all_data_json(request):
         return redirect("gsp:data_settings")
 
 
+@login_required(login_url='/accounts/login/')
 def delete_all_data(request):
     """Delete all data from ALL tables across all apps (with confirmation)."""
     if request.method != "POST":
@@ -2129,7 +2146,7 @@ def delete_all_data(request):
 
     return redirect("gsp:data_settings")
 
-class MetalStockListView(ListView):
+class MetalStockListView(LoginRequiredMixin, ListView):
     """View to display all metal stocks (raw and refined)"""
     model = MetalStock
     template_name = 'goldsilverpurchase/metalstock_list.html'
@@ -2265,6 +2282,7 @@ class MetalStockListView(ListView):
         return context
 
 
+@login_required(login_url='/accounts/login/')
 def metal_stock_detail(request, pk):
     """View stock details and its movement history"""
     # Always re-fetch the MetalStock from the DB to get the latest quantity
@@ -2294,7 +2312,7 @@ def metal_stock_detail(request, pk):
     return render(request, 'goldsilverpurchase/metalstock_detail.html', context)
 
 
-class MetalStockCreateView(CreateView):
+class MetalStockCreateView(LoginRequiredMixin, CreateView):
     """Create a new metal stock"""
     model = MetalStock
     form_class = MetalStockForm
@@ -2330,7 +2348,7 @@ class MetalStockCreateView(CreateView):
         return context
 
 
-class MetalStockUpdateView(UpdateView):
+class MetalStockUpdateView(LoginRequiredMixin, UpdateView):
     """Update an existing metal stock"""
     model = MetalStock
     form_class = MetalStockForm
@@ -2348,7 +2366,7 @@ class MetalStockUpdateView(UpdateView):
         return context
 
 
-class MetalStockDeleteView(DeleteView):
+class MetalStockDeleteView(LoginRequiredMixin, DeleteView):
     """Delete a metal stock"""
     model = MetalStock
     template_name = 'goldsilverpurchase/metalstock_confirm_delete.html'
@@ -2368,7 +2386,7 @@ from .forms import MetalStockForm
 from .forms_movement import MetalStockMovementForm
 
 
-class MetalStockMovementCreateView(CreateView):
+class MetalStockMovementCreateView(LoginRequiredMixin, CreateView):
     model = MetalStockMovement
     form_class = MetalStockMovementForm
     template_name = 'goldsilverpurchase/metalstockmovement_form.html'
@@ -2398,7 +2416,7 @@ class MetalStockMovementCreateView(CreateView):
 
 
 
-class MetalStockMovementUpdateView(UpdateView):
+class MetalStockMovementUpdateView(LoginRequiredMixin, UpdateView):
     model = MetalStockMovement
     form_class = MetalStockMovementForm
     template_name = 'goldsilverpurchase/metalstockmovement_form.html'
@@ -2424,7 +2442,7 @@ class MetalStockMovementUpdateView(UpdateView):
         return context
 
 
-class MetalStockMovementDeleteView(DeleteView):
+class MetalStockMovementDeleteView(LoginRequiredMixin, DeleteView):
     model = MetalStockMovement
     template_name = 'goldsilverpurchase/metalstockmovement_confirm_delete.html'
 
@@ -2462,11 +2480,13 @@ class MetalStockMovementDeleteView(DeleteView):
         return context
 
 
+@login_required(login_url='/accounts/login/')
 def import_wizard(request):
     """Display the import wizard interface."""
     return render(request, 'goldsilverpurchase/import_wizard.html')
 
 
+@login_required(login_url='/accounts/login/')
 def import_wizard_process(request):
     """Process the import with progress tracking."""
     import json
