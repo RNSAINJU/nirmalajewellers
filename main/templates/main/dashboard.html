@@ -37,6 +37,13 @@
     margin-bottom: 30px;
     border: 1px solid #2a2a2a;
   }
+  
+  body:not(.dark) .rate-input-card {
+    background: linear-gradient(135deg, #ffffff 0%, #fafaf8 100%) !important;
+    color: #2d2d2d !important;
+    border: 1px solid #e5e5df !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
+  }
 
   .rate-input-card h2 {
     font-size: 1.3rem;
@@ -46,6 +53,10 @@
     align-items: center;
     gap: 10px;
     color: #fcd34d;
+  }
+  
+  body:not(.dark) .rate-input-card h2 {
+    color: #f4c025 !important;
   }
 
   .rate-input-form {
@@ -72,6 +83,10 @@
     display: block;
     color: #b0b0b0;
   }
+  
+  body:not(.dark) .rate-input-form label {
+    color: #6b6b6b !important;
+  }
 
   .rate-input-form input {
     background: #1a1a1a;
@@ -81,11 +96,33 @@
     transition: all 0.2s;
     color: #f5f5f5;
   }
+  
+  body:not(.dark) .rate-input-form input {
+    background: #ffffff !important;
+    border-color: #e5e5df !important;
+    color: #2d2d2d !important;
+  }
 
   .rate-input-form input:focus {
     outline: none;
     border-color: #fcd34d;
     box-shadow: 0 0 0 3px rgba(252, 211, 77, 0.2);
+  }
+  
+  body:not(.dark) .rate-input-form input:focus {
+    border-color: #f4c025 !important;
+    box-shadow: 0 0 0 3px rgba(244, 192, 37, 0.15) !important;
+  }
+  
+  .rate-input-card button[type="submit"]:hover {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(252, 211, 77, 0.4) !important;
+  }
+  
+  .rate-input-card button[type="submit"]:active {
+    transform: translateY(0px);
+    box-shadow: 0 4px 12px rgba(252, 211, 77, 0.3) !important;
   }
 
   :root {
@@ -97,6 +134,45 @@
     background: #0d0d0d;
     border-radius: 18px;
     padding-bottom: 2rem;
+  }
+  
+  /* Light mode dashboard shell */
+  body:not(.dark) .dashboard-shell {
+    background: #f8f8f5 !important;
+  }
+  
+  /* Ensure dashboard stays dark in dark mode */
+  body.dark .dashboard-shell {
+    background: #0d0d0d !important;
+  }
+  
+  body.dark .rate-input-card {
+    background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%) !important;
+    color: #fcd34d !important;
+    border-color: #2a2a2a !important;
+  }
+  
+  body.dark .stat-card {
+    background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%) !important;
+    border-color: #2a2a2a !important;
+  }
+  
+  body.dark .section-card {
+    background: #1a1a1a !important;
+    border-color: #2a2a2a !important;
+  }
+  
+  body.dark .stock-card {
+    background: #1a1a1a !important;
+    border-color: #2a2a2a !important;
+  }
+  
+  body.dark .dashboard-header h1 {
+    color: #f5f5f5 !important;
+  }
+  
+  body.dark .dashboard-header p {
+    color: #b0b0b0 !important;
   }
 
   .dashboard-header {
@@ -114,6 +190,15 @@
   .dashboard-header p {
     color: #b0b0b0;
     font-size: 1rem;
+  }
+  
+  /* Light mode header */
+  body:not(.dark) .dashboard-header h1 {
+    color: #2d2d2d !important;
+  }
+  
+  body:not(.dark) .dashboard-header p {
+    color: #6b6b6b !important;
   }
 
   .stats-container {
@@ -149,6 +234,18 @@
     transform: translateY(-8px);
     box-shadow: 0 12px 24px rgba(252, 211, 77, 0.2);
   }
+  
+  /* Light mode stat cards */
+  body:not(.dark) .stat-card {
+    background: linear-gradient(135deg, #ffffff 0%, #fafaf8 100%) !important;
+    border: 1px solid #e5e5df !important;
+    color: #2d2d2d !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  }
+  
+  body:not(.dark) .stat-card:hover {
+    box-shadow: 0 8px 20px rgba(244, 192, 37, 0.15) !important;
+  }
 
   .stat-card.ornaments {
     background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
@@ -181,6 +278,10 @@
     letter-spacing: 0.5px;
     color: #b0b0b0;
   }
+  
+  body:not(.dark) .stat-card-title {
+    color: #6b6b6b !important;
+  }
 
   .stat-card-icon {
     font-size: 2rem;
@@ -193,6 +294,10 @@
     margin-bottom: 10px;
     color: #fcd34d;
   }
+  
+  body:not(.dark) .stat-card-value {
+    color: #f4c025 !important;
+  }
 
   .stat-card-link {
     font-size: 0.85rem;
@@ -201,6 +306,10 @@
     display: inline-block;
     color: #90ee90;
   }
+  
+  body:not(.dark) .stat-card-link {
+    color: #059669 !important;
+  }
 
   .stat-subtext {
     font-size: 0.85rem;
@@ -208,6 +317,10 @@
     display: flex;
     align-items: center;
     gap: 8px;
+  }
+  
+  body:not(.dark) .stat-subtext {
+    color: #059669 !important;
   }
 
   .stat-progress {
@@ -225,6 +338,14 @@
     border-radius: 999px;
     width: var(--processing-width, 0%);
   }
+  
+  body:not(.dark) .stat-progress {
+    background: rgba(0, 0, 0, 0.08) !important;
+  }
+  
+  body:not(.dark) .stat-progress .bar {
+    background: #f4c025 !important;
+  }
 
   .stat-meta-row {
     display: flex;
@@ -234,6 +355,10 @@
     letter-spacing: 0.08em;
     color: #909090;
     margin-top: 8px;
+  }
+  
+  body:not(.dark) .stat-meta-row {
+    color: #6b6b6b !important;
   }
 
   .stat-avatars {
@@ -254,11 +379,20 @@
     background: #2a2a2a;
     color: #fcd34d;
   }
+  
+  body:not(.dark) .stat-avatars span {
+    background: #f4c025 !important;
+    color: #000 !important;
+  }
 
   .stat-updated {
     font-size: 0.8rem;
     color: #909090;
     font-style: italic;
+  }
+  
+  body:not(.dark) .stat-updated {
+    color: #9b9b9b !important;
   }
 
   .action-buttons {
@@ -275,7 +409,7 @@
     }
 
     .btn-action {
-      padding: 10px 16px;
+      padding: 12px 18px;
       font-size: 0.95rem;
     }
   }
@@ -283,57 +417,71 @@
   .btn-action {
     background-color: #fcd34d;
     color: #000;
-    padding: 12px 20px;
-    border-radius: 8px;
+    padding: 14px 24px;
+    border-radius: 10px;
     text-decoration: none;
     text-align: center;
-    font-weight: 600;
-    transition: background-color 0.3s ease, transform 0.3s ease;
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.3px;
+    transition: all 0.3s ease;
     border: none;
     cursor: pointer;
-    box-shadow: 0 6px 18px rgba(252, 211, 77, 0.25);
+    box-shadow: 0 6px 18px rgba(252, 211, 77, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
   }
 
   .btn-action:hover {
     background-color: #fbbf24;
-    transform: scale(1.05);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(252, 211, 77, 0.4);
     text-decoration: none;
     color: #000;
   }
 
+  .btn-action:active {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(252, 211, 77, 0.3);
+  }
+
   .btn-action.ornaments-btn {
-    background-color: #fcd34d;
+    background: linear-gradient(135deg, #fcd34d 0%, #fbbf24 100%);
   }
 
   .btn-action.orders-btn {
-    background-color: #fcd34d;
-    color: #000;
+    background: linear-gradient(135deg, #fcd34d 0%, #fbbf24 100%);
   }
 
   .btn-action.purchases-btn {
-    background-color: #fcd34d;
-    color: #000;
+    background: linear-gradient(135deg, #fcd34d 0%, #fbbf24 100%);
   }
 
-  .btn-action.ornaments-btn:hover {
-    background-color: #fbbf24;
-  }
-
-  .btn-action.orders-btn:hover {
-    background-color: #fbbf24;
-  }
-
+  .btn-action.ornaments-btn:hover,
+  .btn-action.orders-btn:hover,
   .btn-action.purchases-btn:hover {
-    background-color: #fbbf24;
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
   }
 
   .btn-action.sales-btn {
-    background-color: #fcd34d;
-    color: #000;
+    background: linear-gradient(135deg, #fcd34d 0%, #fbbf24 100%);
   }
 
   .btn-action.sales-btn:hover {
-    background-color: #fbbf24;
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  }
+  
+  .btn-action .btn-icon {
+    font-size: 1.2rem;
+    margin-right: 4px;
+  }
+  
+  .btn-action .btn-text {
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
 
   .stock-cards {
@@ -359,6 +507,12 @@
     gap: 0.25rem;
     border: 1px solid #2a2a2a;
   }
+  
+  body:not(.dark) .stock-card {
+    background: #ffffff !important;
+    border: 1px solid #e5e5df !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+  }
 
   .stock-card-title {
     font-size: 0.9rem;
@@ -378,6 +532,18 @@
   .stock-card-note {
     font-size: 0.85rem;
     color: #909090;
+  }
+  
+  body:not(.dark) .stock-card-title {
+    color: #6b6b6b !important;
+  }
+  
+  body:not(.dark) .stock-card-value {
+    color: #f4c025 !important;
+  }
+  
+  body:not(.dark) .stock-card-note {
+    color: #9b9b9b !important;
   }
 
   body.dark .stock-card-value {
@@ -407,12 +573,22 @@
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     border: 1px solid #2a2a2a;
   }
+  
+  body:not(.dark) .section-card {
+    background: #ffffff !important;
+    border: 1px solid #e5e5df !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06) !important;
+  }
 
   .pl-card-title {
     font-size: 1.1rem;
     font-weight: 600;
     margin-bottom: 8px;
     color: #fcd34d;
+  }
+  
+  body:not(.dark) .pl-card-title {
+    color: #f4c025 !important;
   }
 
   .pl-tabs {
@@ -422,6 +598,10 @@
     border-bottom: 2px solid #2a2a2a;
     flex-wrap: nowrap;
     overflow-x: auto;
+  }
+  
+  body:not(.dark) .pl-tabs {
+    border-bottom-color: #e5e5df !important;
   }
 
   @media (max-width: 1024px) {
@@ -437,15 +617,46 @@
     border-bottom: 3px solid transparent;
     cursor: pointer;
     font-weight: 600;
+    font-size: 0.95rem;
     color: #909090;
     transition: all 0.3s ease;
     white-space: nowrap;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .pl-tab-button:hover {
+    color: #fcd34d;
+    background: rgba(252, 211, 77, 0.1);
+    border-radius: 8px 8px 0 0;
   }
 
   .pl-tab-button.active {
     color: #fcd34d;
     border-bottom-color: #fcd34d;
+    background: rgba(252, 211, 77, 0.15);
+    border-radius: 8px 8px 0 0;
+  }
+  
+  .pl-tab-button span {
+    font-size: 1.1rem;
+  }
+  
+  body:not(.dark) .pl-tab-button {
+    color: #6b6b6b !important;
+  }
+  
+  body:not(.dark) .pl-tab-button:hover {
+    color: #f4c025 !important;
+    background: rgba(244, 192, 37, 0.08) !important;
+  }
+  
+  body:not(.dark) .pl-tab-button.active {
+    color: #f4c025 !important;
+    border-bottom-color: #f4c025 !important;
+    background: rgba(244, 192, 37, 0.12) !important;
   }
 
   .pl-tab-content {
@@ -502,6 +713,27 @@
 
   .pl-item.loss .pl-item-value {
     color: #ef4444;
+  }
+  
+  body:not(.dark) .pl-item {
+    background: #fafaf8 !important;
+    border-left-color: #f4c025 !important;
+  }
+  
+  body:not(.dark) .pl-item.loss {
+    border-left-color: #ef4444 !important;
+  }
+  
+  body:not(.dark) .pl-item-label {
+    color: #6b6b6b !important;
+  }
+  
+  body:not(.dark) .pl-item-value {
+    color: #f4c025 !important;
+  }
+  
+  body:not(.dark) .pl-item.loss .pl-item-value {
+    color: #ef4444 !important;
   }
 
   .pl-difference-card {
@@ -602,6 +834,45 @@
       font-size: 0.85rem;
     }
   }
+
+  /* COMPREHENSIVE LIGHT MODE OVERRIDES */
+  body:not(.dark) {
+    background: #f8f8f5 !important;
+  }
+
+  body:not(.dark) .container-fluid,
+  body:not(.dark) .dashboard-shell {
+    background: #f8f8f5 !important;
+  }
+
+  /* Override any inline gradient styles for light mode */
+  body:not(.dark) [style*="background"] {
+    background: linear-gradient(135deg, #ffffff 0%, #fafaf8 100%) !important;
+  }
+
+  body:not(.dark) .card,
+  body:not(.dark) .section-card,
+  body:not(.dark) .stat-card,
+  body:not(.dark) .stock-card {
+    background: linear-gradient(135deg, #ffffff 0%, #fafaf8 100%) !important;
+    border-color: #e5e5df !important;
+    color: #2d2d2d !important;
+  }
+
+  body:not(.dark) h1, body:not(.dark) h2, body:not(.dark) h3,
+  body:not(.dark) h4, body:not(.dark) h5, body:not(.dark) h6 {
+    color: #2d2d2d !important;
+  }
+
+  body:not(.dark) .text-muted {
+    color: #6b6b6b !important;
+  }
+
+  body:not(.dark) .stat-card-value,
+  body:not(.dark) .pl-difference-value,
+  body:not(.dark) .stock-card h2 {
+    color: #f4c025 !important;
+  }
 </style>
 
 <div class="dashboard-shell container-fluid px-2 px-md-4">
@@ -639,8 +910,9 @@
       {% endif %}
     </div>
     <div class="col-12 d-grid d-md-flex justify-content-md-end mt-2">
-      <button type="submit" class="btn btn-light btn-lg w-100 w-md-auto">
-        <span>💾 Save</span>
+      <button type="submit" class="btn btn-lg w-100 w-md-auto" style="background: linear-gradient(135deg, #fcd34d 0%, #fbbf24 100%); color: #000; font-weight: 700; padding: 12px 30px; border: none; border-radius: 10px; box-shadow: 0 6px 18px rgba(252, 211, 77, 0.3); transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px;">
+        <span style="font-size: 1.2rem;">💾</span>
+        <span style="text-transform: uppercase; letter-spacing: 0.5px;">Save Rates</span>
       </button>
     </div>
   </form>
@@ -751,19 +1023,19 @@
   <!-- Tab Navigation -->
   <div class="pl-tabs">
     <button class="pl-tab-button active" onclick="switchPLTab('today')">
-      Today
+      <span>📅</span> Today
     </button>
     <button class="pl-tab-button" onclick="switchPLTab('yesterday')">
-      Yesterday
+      <span>🕐</span> Yesterday
     </button>
     <button class="pl-tab-button" onclick="switchPLTab('comparison')">
-      Comparison
+      <span>⚖️</span> Comparison
     </button>
     <button class="pl-tab-button" onclick="switchPLTab('stock-closing')">
-      Stock Closing Rate
+      <span>📉</span> Stock Closing Rate
     </button>
     <button class="pl-tab-button" onclick="switchPLTab('closing-today')">
-      Closing vs Today
+      <span>📊</span> Closing vs Today
     </button>
   </div>
 
@@ -1022,13 +1294,34 @@
 </script>
 
 <div class="action-buttons">
-  <a href="/ornament/" class="btn-action ornaments-btn">👑 Ornaments</a>
-  <a href="/order/" class="btn-action orders-btn">📦 Orders</a>
-  <a href="/purchase/" class="btn-action purchases-btn">💰 Purchases</a>
-  <a href="/order/" class="btn-action sales-btn">📈 Sales</a>
-  <a href="{% url 'main:stock_report' %}" class="btn-action" style="background-color: #9b59b6;">📊 Stock Report</a>
-  <a href="{% url 'main:monthly_stock_report' %}" class="btn-action" style="background-color: #2980b9;">🗓️ Monthly Stock</a>
-  <a href="/admin/" class="btn-action">⚙️ Admin</a>
+  <a href="/ornament/" class="btn-action ornaments-btn">
+    <span class="btn-icon">👑</span>
+    <span class="btn-text">Ornaments</span>
+  </a>
+  <a href="/order/" class="btn-action orders-btn">
+    <span class="btn-icon">📦</span>
+    <span class="btn-text">Orders</span>
+  </a>
+  <a href="/purchase/" class="btn-action purchases-btn">
+    <span class="btn-icon">💰</span>
+    <span class="btn-text">Purchases</span>
+  </a>
+  <a href="/order/" class="btn-action sales-btn">
+    <span class="btn-icon">📈</span>
+    <span class="btn-text">Sales</span>
+  </a>
+  <a href="{% url 'main:stock_report' %}" class="btn-action" style="background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);">
+    <span class="btn-icon">📊</span>
+    <span class="btn-text">Stock Report</span>
+  </a>
+  <a href="{% url 'main:monthly_stock_report' %}" class="btn-action" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);">
+    <span class="btn-icon">🗓️</span>
+    <span class="btn-text">Monthly Stock</span>
+  </a>
+  <a href="/admin/" class="btn-action" style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);">
+    <span class="btn-icon">⚙️</span>
+    <span class="btn-text">Admin Panel</span>
+  </a>
 </div>
 
 <!-- Sales by Month Chart: placed at the end of dashboard -->

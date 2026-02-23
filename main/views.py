@@ -5,6 +5,8 @@ from django.utils import timezone
 from datetime import datetime, timedelta, date
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
+from django.core.management import call_command
+import io
 import nepali_datetime as ndt
 from django.contrib import messages
 
@@ -790,6 +792,56 @@ def daily_rates(request):
         'rates': rates,
     }
     return render(request, 'main/daily_rates.html', context)
+
+
+def run_fetch_rates(request):
+    """Run the fetch_rates management command via AJAX and return the result."""
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'POST required'}, status=405)
+    try:
+        from datetime import date as _date
+        today = _date.today()
+
+        # Check if today's rate already exists (by updated_at date)
+        existing = DailyRate.objects.filter(updated_at__date=today).order_by('-updated_at').first()
+        already_fetched = existing is not None
+
+        stdout_buf = io.StringIO()
+        stderr_buf = io.StringIO()
+        call_command('fetch_rates', stdout=stdout_buf, stderr=stderr_buf)
+        output = stdout_buf.getvalue().strip()
+
+        # Get the latest rate after running command
+        latest = DailyRate.objects.order_by('-updated_at').first()
+
+        rate_info = None
+        if latest:
+            rate_info = {
+                'bs_date': str(latest.bs_date),
+                'gold_tola': str(latest.gold_rate),
+                'gold_10g': str(latest.gold_rate_10g),
+                'silver_tola': str(latest.silver_rate),
+                'silver_10g': str(latest.silver_rate_10g),
+            }
+
+        # Determine if it was already fetched before this call
+        if already_fetched:
+            return JsonResponse({
+                'status': 'already_fetched',
+                'message': f'Rates for today ({today.strftime("%Y-%m-%d")}) were already fetched.',
+                'rate': rate_info,
+            })
+        else:
+            # Check if command succeeded
+            if 'error' in output.lower() or 'could not' in output.lower():
+                return JsonResponse({'status': 'error', 'message': output or 'Failed to fetch rates.', 'rate': None})
+            return JsonResponse({
+                'status': 'success',
+                'message': output or f'Rates fetched successfully for {today.strftime("%Y-%m-%d")}.',
+                'rate': rate_info,
+            })
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 
 @login_required(login_url='/accounts/login/')

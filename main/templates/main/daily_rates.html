@@ -46,6 +46,53 @@
   .table-hover tbody tr:hover {
     background: rgba(79, 70, 229, 0.06);
   }
+  .fetch-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 7px 16px;
+    border-radius: 7px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    background: linear-gradient(135deg, #f4c025 0%, #e6a817 100%);
+    color: #1a1a1a;
+  }
+  .fetch-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(244, 192, 37, 0.4);
+  }
+  .fetch-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+  .fetch-result {
+    margin-top: 10px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    display: none;
+  }
+  .fetch-result.success {
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #065f46;
+  }
+  .fetch-result.already {
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    color: #1e40af;
+  }
+  .fetch-result.error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #991b1b;
+  }
+  body.dark .fetch-result.success { color: #6ee7b7; }
+  body.dark .fetch-result.already { color: #93c5fd; }
+  body.dark .fetch-result.error { color: #fca5a5; }
 </style>
 
 <div class="rates-card">
@@ -56,12 +103,19 @@
 </div>
 
 <div class="card">
-  <div class="card-header d-flex justify-content-between align-items-center">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
     <h5 class="mb-0">Rate Details</h5>
-    <a href="{% url 'main:add_daily_rate' %}" class="btn btn-sm btn-success">
-      <i class="bi bi-plus-circle"></i> Add Rate
-    </a>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <button class="fetch-btn" id="fetchRatesBtn" onclick="fetchRates()">
+        <i class="bi bi-arrow-down-circle" id="fetchIcon"></i>
+        <span id="fetchBtnText">Fetch Today's Rates</span>
+      </button>
+      <a href="{% url 'main:add_daily_rate' %}" class="btn btn-sm btn-success">
+        <i class="bi bi-plus-circle"></i> Add Rate
+      </a>
+    </div>
   </div>
+  <div id="fetchResult" class="fetch-result mx-3"></div>
   <div class="card-body">
     {% if rates %}
     <div class="table-responsive">
@@ -113,4 +167,90 @@
   </div>
 </div>
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function fetchRates() {
+  const btn = document.getElementById('fetchRatesBtn');
+  const icon = document.getElementById('fetchIcon');
+  const btnText = document.getElementById('fetchBtnText');
+  const result = document.getElementById('fetchResult');
+
+  btn.disabled = true;
+  icon.className = 'bi bi-arrow-repeat spin-icon';
+  btnText.textContent = 'Fetching...';
+  result.style.display = 'none';
+  result.className = 'fetch-result mx-3';
+
+  fetch("{% url 'main:run_fetch_rates' %}", {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'Content-Type': 'application/json',
+    }
+  })
+  .then(res => res.json())
+  .then(data => {
+    result.style.display = 'block';
+    btn.disabled = false;
+    icon.className = 'bi bi-arrow-down-circle';
+    btnText.textContent = "Fetch Today's Rates";
+
+    if (data.status === 'success') {
+      result.classList.add('success');
+      let html = '<div class="d-flex align-items-start gap-2">';
+      html += '<i class="bi bi-check-circle-fill mt-1"></i>';
+      html += '<div>';
+      html += '<strong>Rates Fetched Successfully!</strong>';
+      if (data.rate) {
+        html += `<div class="mt-1" style="font-size:0.88rem">`;
+        html += `<span class="me-3">🥇 Gold / tola: <strong>रू ${data.rate.gold_tola}</strong></span>`;
+        html += `<span class="me-3">Gold / 10g: <strong>रू ${data.rate.gold_10g}</strong></span><br class="d-sm-none">`;
+        html += `<span class="me-3">🥈 Silver / tola: <strong>रू ${data.rate.silver_tola}</strong></span>`;
+        html += `<span>Silver / 10g: <strong>रू ${data.rate.silver_10g}</strong></span>`;
+        html += `<div class="mt-1 text-muted">BS Date: ${data.rate.bs_date}</div>`;
+        html += `</div>`;
+      }
+      html += '</div></div>';
+      result.innerHTML = html;
+      setTimeout(() => location.reload(), 2500);
+
+    } else if (data.status === 'already_fetched') {
+      result.classList.add('already');
+      let html = '<div class="d-flex align-items-start gap-2">';
+      html += '<i class="bi bi-info-circle-fill mt-1"></i>';
+      html += '<div>';
+      html += '<strong>Rates already fetched for today.</strong>';
+      if (data.rate) {
+        html += `<div class="mt-1" style="font-size:0.88rem">`;
+        html += `<span class="me-3">🥇 Gold / tola: <strong>रू ${data.rate.gold_tola}</strong></span>`;
+        html += `<span class="me-3">Gold / 10g: <strong>रू ${data.rate.gold_10g}</strong></span><br class="d-sm-none">`;
+        html += `<span class="me-3">🥈 Silver / tola: <strong>रू ${data.rate.silver_tola}</strong></span>`;
+        html += `<span>Silver / 10g: <strong>रू ${data.rate.silver_10g}</strong></span>`;
+        html += `<div class="mt-1 text-muted">BS Date: ${data.rate.bs_date}</div>`;
+        html += `</div>`;
+      }
+      html += '</div></div>';
+      result.innerHTML = html;
+
+    } else {
+      result.classList.add('error');
+      result.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i>' + (data.message || 'Failed to fetch rates.');
+    }
+  })
+  .catch(err => {
+    result.style.display = 'block';
+    result.classList.add('error');
+    result.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i>Network error: ' + err.message;
+    btn.disabled = false;
+    icon.className = 'bi bi-arrow-down-circle';
+    btnText.textContent = "Fetch Today's Rates";
+  });
+}
+</script>
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin-icon { display: inline-block; animation: spin 0.8s linear infinite; }
+</style>
 {% endblock %}

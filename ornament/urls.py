@@ -2,6 +2,7 @@ from django.urls import path
 
 from .views import (
     OrnamentListView,
+    OrnamentAdminInventoryView,
     OrnamentCreateView,
     OrnamentUpdateView,
     OrnamentDeleteView,
@@ -32,6 +33,7 @@ app_name = 'ornament'
 
 urlpatterns = [
     path('', OrnamentListView.as_view(), name='list'),
+    path('admin-inventory/', OrnamentAdminInventoryView.as_view(), name='admin_inventory'),
     path('create/', OrnamentCreateView.as_view(), name='create'),
     path('create-multiple/', multiple_ornament_create, name='create_multiple'),
     path('<int:pk>/edit/', OrnamentUpdateView.as_view(), name='update'),

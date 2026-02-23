@@ -239,6 +239,110 @@ class OrnamentListView(ListView):
         return context
 
 
+@method_decorator(login_required, name='dispatch')
+class OrnamentAdminInventoryView(ListView):
+    """Modern admin inventory view for ornaments with card/list view toggle."""
+    model = Ornament
+    template_name = 'ornament/ornament_admin_inventory.html'
+    context_object_name = 'ornaments'
+    ordering = ['-id']
+    paginate_by = 12
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        
+        # Optimize with prefetch_related for foreign keys
+        qs = qs.select_related('maincategory', 'subcategory', 'kaligar')
+
+        # Filters
+        code = self.request.GET.get("code")
+        name = self.request.GET.get("name")
+        type = self.request.GET.get("type")
+        ornament_type = self.request.GET.get("ornament_type")
+        metal_type = self.request.GET.get("metal_type")
+        kaligar_id = self.request.GET.get('kaligar')
+        status = self.request.GET.get('status')
+        search = self.request.GET.get('search')
+
+        if search:
+            from django.db.models import Q
+            qs = qs.filter(
+                Q(code__icontains=search) |
+                Q(ornament_name__icontains=search) |
+                Q(weight__icontains=search) |
+                Q(diamond_weight__icontains=search) |
+                Q(gross_weight__icontains=search)
+            )
+
+        if code:
+            qs = qs.filter(code__icontains=code)
+
+        if name:
+            qs = qs.filter(ornament_name__icontains=name)
+
+        if type:
+            qs = qs.filter(type=type)
+
+        if ornament_type:
+            qs = qs.filter(ornament_type=ornament_type)
+
+        if metal_type:
+            qs = qs.filter(metal_type=metal_type)
+
+        if status:
+            qs = qs.filter(status=status)
+
+        if kaligar_id:
+            qs = qs.filter(kaligar_id=kaligar_id)
+
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Get all Ornaments (not just paginated ones) for statistics
+        all_ornaments = Ornament.objects.filter(status='active')
+        
+        # Statistics
+        context['total_stock'] = all_ornaments.count()
+        context['gold_count'] = all_ornaments.filter(metal_type='Gold').count()
+        context['silver_count'] = all_ornaments.filter(metal_type='Silver').count()
+        context['diamond_count'] = all_ornaments.filter(metal_type='Diamond').count()
+        
+        # Low stock calculation (items with less than 5 units)
+        # Grouping by ornament_name to count similar items
+        from django.db.models import Count
+        low_stock_items = all_ornaments.values('ornament_name').annotate(
+            count=Count('id')
+        ).filter(count__lt=5)
+        context['low_stock_count'] = sum(item['count'] for item in low_stock_items)
+        
+        # Kaligar list for filter
+        from .models import Kaligar
+        context['kaligar_list'] = Kaligar.objects.all()
+        
+        # Add stock status to each ornament based on similar item count
+        ornaments = context['ornaments']
+        ornament_counts = all_ornaments.values('ornament_name').annotate(
+            count=Count('id')
+        )
+        count_dict = {item['ornament_name']: item['count'] for item in ornament_counts}
+        
+        for ornament in ornaments:
+            count = count_dict.get(ornament.ornament_name, 1)
+            if count >= 10:
+                ornament.stock_status = 'in_stock'
+                ornament.units = count
+            elif count >= 5:
+                ornament.stock_status = 'low_stock'
+                ornament.units = count
+            else:
+                ornament.stock_status = 'out_of_stock'
+                ornament.units = count
+        
+        return context
+
+
 class OrnamentCreateView(CreateView):
     model = Ornament
     form_class = OrnamentForm

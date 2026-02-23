@@ -1,0 +1,336 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin_ornament_inventory.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-inventory-container">
+    <!-- HEADER -->
+    <div class="inventory-header">
+        <div class="inventory-title">
+            <i class="bi bi-gem"></i>
+            INVENTORY
+        </div>
+        <a href="{% url 'ornament:create' %}" class="btn-add-new">
+            <i class="bi bi-plus-circle-fill"></i> ADD NEW
+        </a>
+    </div>
+
+    <!-- STATS CARDS -->
+    <div class="stats-container">
+        <div class="stat-card gold">
+            <div class="stat-label">Total Stock</div>
+            <div class="stat-value">{{ total_stock }}</div>
+            <div class="stat-unit">pcs</div>
+        </div>
+        <div class="stat-card warning">
+            <div class="stat-label">Low Stock</div>
+            <div class="stat-value">{{ low_stock_count }}</div>
+            <div class="stat-unit">items</div>
+        </div>
+        <div class="stat-card silver">
+            <div class="stat-label">Gold Ornaments</div>
+            <div class="stat-value">{{ gold_count }}</div>
+            <div class="stat-unit">units</div>
+        </div>
+    </div>
+
+    <!-- SEARCH & FILTER -->
+    <div class="search-filter-section">
+        <form class="search-box" method="get">
+            <input type="text" name="search" placeholder="Search by SKU or name..." value="{{ request.GET.search }}">
+            <button type="submit" class="search-icon" title="Search">
+                <i class="bi bi-search"></i>
+            </button>
+        </form>
+        <button class="filter-btn" onclick="toggleFilter()" title="Show filters">
+            <i class="bi bi-funnel-fill"></i> FILTERS
+        </button>
+    </div>
+
+    <!-- FILTER PANEL (Hidden by default) -->
+    <div id="filterPanel" class="filter-panel hidden">
+        <h6><i class="bi bi-funnel-fill"></i> Advanced Filters</h6>
+        <form method="get" id="filterForm">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>Code</label>
+                    <input type="text" name="code" placeholder="Ornament code" value="{{ request.GET.code }}">
+                </div>
+                <div class="filter-group">
+                    <label>Name</label>
+                    <input type="text" name="name" placeholder="Ornament name" value="{{ request.GET.name }}">
+                </div>
+                <div class="filter-group">
+                    <label>Metal Type</label>
+                    <select name="metal_type">
+                        <option value="">All Metals</option>
+                        <option value="Gold" {% if request.GET.metal_type == "Gold" %}selected{% endif %}>Gold</option>
+                        <option value="Silver" {% if request.GET.metal_type == "Silver" %}selected{% endif %}>Silver</option>
+                        <option value="Diamond" {% if request.GET.metal_type == "Diamond" %}selected{% endif %}>Diamond</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Karat</label>
+                    <select name="type">
+                        <option value="">All Karats</option>
+                        <option value="24KARAT" {% if request.GET.type == "24KARAT" %}selected{% endif %}>24 Karat</option>
+                        <option value="22KARAT" {% if request.GET.type == "22KARAT" %}selected{% endif %}>22 Karat</option>
+                        <option value="18KARAT" {% if request.GET.type == "18KARAT" %}selected{% endif %}>18 Karat</option>
+                    </select>
+                </div>
+            </div>
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>Ornament Type</label>
+                    <select name="ornament_type">
+                        <option value="">All Types</option>
+                        <option value="stock" {% if request.GET.ornament_type == "stock" %}selected{% endif %}>Stock</option>
+                        <option value="order" {% if request.GET.ornament_type == "order" %}selected{% endif %}>Order</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Status</label>
+                    <select name="status">
+                        <option value="">All Status</option>
+                        <option value="active" {% if request.GET.status == "active" %}selected{% endif %}>Active</option>
+                        <option value="deleted" {% if request.GET.status == "deleted" %}selected{% endif %}>Deleted</option>
+                        <option value="destroyed" {% if request.GET.status == "destroyed" %}selected{% endif %}>Destroyed</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Kaligar</label>
+                    <select name="kaligar">
+                        <option value="">All Kaligar</option>
+                        {% for k in kaligar_list %}
+                            <option value="{{ k.id }}" {% if request.GET.kaligar == k.id|stringformat:"s" %}selected{% endif %}>{{ k.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="filter-btn-submit">
+                    <i class="bi bi-search"></i> Apply Filters
+                </button>
+                <a href="{% url 'ornament:admin_inventory' %}" class="filter-btn-clear">
+                    <i class="bi bi-arrow-clockwise"></i> Reset
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- VIEW TOGGLE & ACTIONS -->
+    <div class="view-actions-bar">
+        <div style="display: flex; gap: 12px;">
+            <a href="{% url 'ornament:import_excel' %}" class="filter-btn" title="Import from Excel">
+                <i class="bi bi-upload"></i> Import
+            </a>
+            <a href="{% url 'ornament:export_excel' %}" class="filter-btn" title="Export to Excel">
+                <i class="bi bi-download"></i> Export
+            </a>
+        </div>
+        <div class="view-toggle">
+            <button class="view-toggle-btn active" onclick="switchView('card')">
+                <i class="bi bi-columns-gap"></i> CARD
+            </button>
+            <button class="view-toggle-btn" onclick="switchView('table')">
+                <i class="bi bi-table"></i> LIST
+            </button>
+        </div>
+    </div>
+
+    <!-- CARD VIEW -->
+    <div id="cardView" class="visible">
+        {% if ornaments %}
+            <div class="inventory-grid">
+                {% for ornament in ornaments %}
+                <div class="inventory-card">
+                    <!-- IMAGE SECTION -->
+                    <div class="card-image-section">
+                        {% if ornament.image %}
+                            <img src="{{ ornament.image.url }}" alt="{{ ornament.ornament_name }}">
+                        {% else %}
+                            <div class="card-image-placeholder">
+                                <i class="bi bi-gem"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- CONTENT SECTION -->
+                    <div class="card-content">
+                        <!-- TITLE AND NAME -->
+                        <div class="card-title-wrapper">
+                            <h3 class="card-title">{{ ornament.ornament_name }}</h3>
+                            <div class="card-sku">SKU: {{ ornament.code }}</div>
+                        </div>
+
+                        <!-- STATUS BADGE -->
+                        <div class="card-status-wrapper">
+                            <span class="card-status-badge {% if ornament.stock_status == 'in_stock' %}in-stock{% elif ornament.stock_status == 'low_stock' %}low-stock{% else %}out-of-stock{% endif %}">
+                                {% if ornament.stock_status == 'in_stock' %}IN STOCK{% elif ornament.stock_status == 'low_stock' %}LOW STOCK{% else %}OUT OF STOCK{% endif %}
+                            </span>
+                        </div>
+
+                        <!-- UNITS AND PRICE -->
+                        <div class="card-stats">
+                            <div class="stat-item">
+                                <div class="stat-label">Units</div>
+                                <div class="stat-value">{{ ornament.units }}</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Price</div>
+                                <div class="stat-value price">रू {{ ornament.stone_totalprice|floatformat:2 }}</div>
+                            </div>
+                        </div>
+
+                        <!-- ACTION BUTTONS -->
+                        <div class="card-actions">
+                            <a href="{% url 'ornament:update' ornament.pk %}" class="card-action-btn edit" title="Edit">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{% url 'ornament:delete' ornament.pk %}" class="card-action-btn delete" title="Delete">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon"><i class="bi bi-inbox"></i></div>
+                <p class="empty-state-text">No ornaments found. <a href="{% url 'ornament:create' %}">Create one now</a></p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- LIST VIEW (TABLE) -->
+    <div id="tableView" class="hidden">
+        {% if ornaments %}
+            <div class="inventory-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>Code</th>
+                            <th>Name</th>
+                            <th>Metal</th>
+                            <th>Karat</th>
+                            <th>Weight</th>
+                            <th>Units</th>
+                            <th>Status</th>
+                            <th>Price</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ornament in ornaments %}
+                        <tr>
+                            <td>
+                                {% if ornament.image %}
+                                    <img src="{{ ornament.image.url }}" alt="{{ ornament.ornament_name }}">
+                                {% else %}
+                                    <i class="bi bi-gem" style="font-size: 20px;"></i>
+                                {% endif %}
+                            </td>
+                            <td>{{ ornament.code }}</td>
+                            <td>{{ ornament.ornament_name }}</td>
+                            <td>{{ ornament.get_metal_type_display }}</td>
+                            <td>{{ ornament.get_type_display }}</td>
+                            <td>{{ ornament.weight|default:"0" }} तोल</td>
+                            <td><strong>{{ ornament.units }}</strong></td>
+                            <td>
+                                <span class="card-status-badge {% if ornament.stock_status == 'in_stock' %}in-stock{% elif ornament.stock_status == 'low_stock' %}low-stock{% else %}out-of-stock{% endif %}">
+                                    {% if ornament.stock_status == 'in_stock' %}IN STOCK{% elif ornament.stock_status == 'low_stock' %}LOW STOCK{% else %}OUT OF STOCK{% endif %}
+                                </span>
+                            </td>
+                            <td>रू {{ ornament.stone_totalprice|floatformat:2 }}</td>
+                            <td style="text-align: center;">
+                                <div style="display: flex; gap: 6px; justify-content: center;">
+                                    <a href="{% url 'ornament:update' ornament.pk %}" class="card-action-btn edit" style="flex: auto; min-width: auto;">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{% url 'ornament:delete' ornament.pk %}" class="card-action-btn delete" style="flex: auto; min-width: auto;">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon"><i class="bi bi-inbox"></i></div>
+                <p class="empty-state-text">No ornaments found. <a href="{% url 'ornament:create' %}">Create one now</a></p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- PAGINATION -->
+    {% if is_paginated %}
+    <div class="pagination-section">
+        {% if page_obj.has_previous %}
+            <a href="?page=1{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" class="pagination-btn">
+                <i class="bi bi-chevron-double-left"></i>
+            </a>
+            <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" class="pagination-btn">
+                <i class="bi bi-chevron-left"></i> Previous
+            </a>
+        {% endif %}
+
+        {% for page_num in paginator.page_range %}
+            {% if page_num == page_obj.number %}
+                <button class="pagination-btn active">{{ page_num }}</button>
+            {% elif page_num > page_obj.number|add:'-3' and page_num < page_obj.number|add:'3' %}
+                <a href="?page={{ page_num }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" class="pagination-btn">
+                    {{ page_num }}
+                </a>
+            {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" class="pagination-btn">
+                Next <i class="bi bi-chevron-right"></i>
+            </a>
+            <a href="?page={{ paginator.num_pages }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" class="pagination-btn">
+                <i class="bi bi-chevron-double-right"></i>
+            </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    function switchView(viewType) {
+        const cardView = document.getElementById('cardView');
+        const tableView = document.getElementById('tableView');
+        const buttons = document.querySelectorAll('.view-toggle-btn');
+
+        buttons.forEach(btn => btn.classList.remove('active'));
+
+        if (viewType === 'card') {
+            cardView.classList.remove('hidden');
+            cardView.classList.add('visible');
+            tableView.classList.remove('visible');
+            tableView.classList.add('hidden');
+            event.target.closest('.view-toggle-btn').classList.add('active');
+        } else {
+            cardView.classList.remove('visible');
+            cardView.classList.add('hidden');
+            tableView.classList.remove('hidden');
+            tableView.classList.add('visible');
+            event.target.closest('.view-toggle-btn').classList.add('active');
+        }
+    }
+
+    function toggleFilter() {
+        const filterPanel = document.getElementById('filterPanel');
+        filterPanel.classList.toggle('hidden');
+        filterPanel.classList.toggle('visible');
+    }
+</script>
+{% endblock %}

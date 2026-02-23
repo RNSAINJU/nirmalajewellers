@@ -28,17 +28,17 @@
     :root {
         --sidebar-width: 260px;
         --topbar-height: 56px;
-        --sidebar-bg: linear-gradient(180deg, #1a1813 0%, #0f0e0b 100%);
-        --sidebar-hover: rgba(255, 215, 0, 0.12);
-        --sidebar-active: rgba(255, 215, 0, 0.22);
-        --admin-bg: #0a0a0a;
-        --admin-panel: #1a1a1a;
-        --admin-panel-soft: #1f1f1f;
-        --admin-border: #2a2a2a;
-        --admin-text: #e5e5e5;
-        --admin-muted: #9b9b9b;
-        --admin-gold: #FFD700;
-        --admin-gold-soft: rgba(255, 215, 0, 0.12);
+        --sidebar-bg: linear-gradient(180deg, #f8f8f5 0%, #f0f0eb 100%);
+        --sidebar-hover: rgba(255, 215, 0, 0.15);
+        --sidebar-active: rgba(255, 215, 0, 0.25);
+        --admin-bg: #f8f8f5;
+        --admin-panel: #ffffff;
+        --admin-panel-soft: #fafaf8;
+        --admin-border: #e5e5df;
+        --admin-text: #2d2d2d;
+        --admin-muted: #6b6b6b;
+        --admin-gold: #f4c025;
+        --admin-gold-soft: rgba(244, 192, 37, 0.15);
     }
 
     body {
@@ -73,6 +73,15 @@
     .sidebar::-webkit-scrollbar-thumb {
         background: rgba(255,255,255,0.2);
         border-radius: 3px;
+    }
+    
+    /* Light mode scrollbar */
+    body:not(.dark) .sidebar::-webkit-scrollbar-thumb {
+        background: rgba(0,0,0,0.2);
+    }
+    
+    body:not(.dark) .sidebar::-webkit-scrollbar-thumb:hover {
+        background: rgba(0,0,0,0.3);
     }
 
     .sidebar.hide {
@@ -112,16 +121,34 @@
     .sidebar .collapse .nav-link {
         font-size: 0.9rem;
         padding-left: 2.2rem;
-        color: #e5e5e5 !important;
+        color: var(--admin-text);
         display: block;
         opacity: 0.95;
     }
 
     .sidebar .collapse {
         padding: 0.25rem 0 0.5rem;
-        background: rgba(255, 255, 255, 0.02);
+        background: rgba(0, 0, 0, 0.02);
         border-radius: 8px;
         visibility: visible;
+    }
+    
+    /* Light mode collapse styling */
+    body:not(.dark) .sidebar .collapse {
+        background: rgba(244, 192, 37, 0.05);
+    }
+    
+    body:not(.dark) .sidebar .collapse .nav-link {
+        color: #2d2d2d !important;
+    }
+    
+    /* Dark mode collapse styling */
+    body.dark .sidebar .collapse {
+        background: rgba(255, 255, 255, 0.02);
+    }
+    
+    body.dark .sidebar .collapse .nav-link {
+        color: #e5e5e5 !important;
     }
 
     .sidebar .collapse .nav-link:hover {
@@ -182,14 +209,75 @@
         letter-spacing: 1px;
     }
 
+    /* Light mode specific styles */
+    body:not(.dark) .sidebar {
+        background: linear-gradient(180deg, #f8f8f5 0%, #f0f0eb 100%);
+        border-right: 1px solid #e5e5df;
+    }
+    
+    body:not(.dark) .top-navbar {
+        background: #ffffff;
+        border-bottom: 1px solid #e5e5df;
+    }
+    
+    body:not(.dark) .sidebar .nav-link {
+        color: #2d2d2d;
+    }
+    
+    body:not(.dark) .sidebar .nav-link:hover {
+        background: rgba(244, 192, 37, 0.15);
+        color: #f4c025;
+    }
+    
+    body:not(.dark) .sidebar .nav-link.active {
+        background: rgba(244, 192, 37, 0.25);
+        color: #f4c025;
+        box-shadow: inset 0 0 0 1px rgba(244, 192, 37, 0.4);
+    }
+
     /* Dark mode content styling */
     body.dark {
-        background: #0a0a0a;
-        color: #e5e5e5;
+        background: #0a0a0a !important;
+        color: #e5e5e5 !important;
+        --admin-bg: #0a0a0a !important;
+        --admin-panel: #1a1a1a !important;
+        --admin-panel-soft: #1f1f1f !important;
+        --admin-border: #2a2a2a !important;
+        --admin-text: #e5e5e5 !important;
+        --admin-muted: #9b9b9b !important;
+        --admin-gold: #FFD700 !important;
+        --sidebar-bg: linear-gradient(180deg, #1a1813 0%, #0f0e0b 100%) !important;
+        --sidebar-hover: rgba(255, 215, 0, 0.12) !important;
+        --sidebar-active: rgba(255, 215, 0, 0.22) !important;
     }
 
     body.dark .content {
-        background: #0f0f0f;
+        background: #0f0f0f !important;
+        color: #e5e5e5 !important;
+    }
+    
+    body.dark .sidebar {
+        background: linear-gradient(180deg, #1a1813 0%, #0f0e0b 100%) !important;
+        border-right: 1px solid #2a2a2a !important;
+    }
+    
+    body.dark .top-navbar {
+        background: #1a1a1a !important;
+        border-bottom: 1px solid #2a2a2a !important;
+    }
+    
+    body.dark .sidebar .nav-link {
+        color: #e5e5e5 !important;
+    }
+    
+    body.dark .sidebar .nav-link:hover {
+        background: rgba(255, 215, 0, 0.12) !important;
+        color: #FFD700 !important;
+    }
+    
+    body.dark .sidebar .nav-link.active {
+        background: rgba(255, 215, 0, 0.22) !important;
+        color: #FFD700 !important;
     }
 
     body.dark .card,
@@ -198,56 +286,105 @@
     body.dark .list-group-item,
     body.dark .offcanvas,
     body.dark .table-responsive {
-        background: #1a1a1a;
-        border-color: #2a2a2a;
-        color: #e5e5e5;
+        background: #1a1a1a !important;
+        border-color: #2a2a2a !important;
+        color: #e5e5e5 !important;
     }
 
     body.dark .card-header,
     body.dark .card-footer {
-        background: #1f1f1f;
-        border-color: #2a2a2a;
-        color: #e5e5e5;
+        background: #1f1f1f !important;
+        border-color: #2a2a2a !important;
+        color: #e5e5e5 !important;
+    }
+    
+    body.dark h1,
+    body.dark h2,
+    body.dark h3,
+    body.dark h4,
+    body.dark h5,
+    body.dark h6 {
+        color: #e5e5e5 !important;
+    }
+    
+    body.dark p,
+    body.dark span,
+    body.dark div {
+        color: inherit;
     }
 
     body.dark .table {
-        color: #e5e5e5;
+        color: #e5e5e5 !important;
+        background: transparent !important;
     }
 
     body.dark .table thead th {
-        color: #9b9b9b;
-        border-bottom: 1px solid #2a2a2a;
+        color: #9b9b9b !important;
+        border-bottom: 1px solid #2a2a2a !important;
+        background: transparent !important;
     }
 
     body.dark .table tbody tr {
-        border-color: #2a2a2a;
+        border-color: #2a2a2a !important;
+    }
+    
+    body.dark .table tbody td {
+        color: #e5e5e5 !important;
+        background: transparent !important;
     }
 
     body.dark .table-hover tbody tr:hover {
-        background: rgba(255, 215, 0, 0.06);
+        background: rgba(255, 215, 0, 0.06) !important;
+    }
+    
+    body.dark .table-striped tbody tr:nth-of-type(odd) {
+        background: rgba(255, 255, 255, 0.02) !important;
     }
 
     body.dark .form-control,
     body.dark .form-select,
     body.dark .input-group-text {
-        background: #151515;
-        border-color: #2a2a2a;
-        color: #e5e5e5;
+        background: #151515 !important;
+        border-color: #2a2a2a !important;
+        color: #e5e5e5 !important;
+    }
+    
+    body.dark .form-control:focus,
+    body.dark .form-select:focus {
+        background: #151515 !important;
+        color: #e5e5e5 !important;
+        border-color: #FFD700 !important;
     }
 
     body.dark .form-control::placeholder {
-        color: #7a7a7a;
+        color: #7a7a7a !important;
+    }
+    
+    body.dark label,
+    body.dark .form-label {
+        color: #e5e5e5 !important;
     }
 
     body.dark .btn-light {
-        background: #2a2a2a;
-        border-color: #2a2a2a;
-        color: #e5e5e5;
+        background: #2a2a2a !important;
+        border-color: #2a2a2a !important;
+        color: #e5e5e5 !important;
     }
 
     body.dark .btn-light:hover {
-        background: #3a3a3a;
-        border-color: #3a3a3a;
+        background: #3a3a3a !important;
+        border-color: #3a3a3a !important;
+        color: #e5e5e5 !important;
+    }
+    
+    body.dark .btn-outline-light {
+        border-color: #e5e5e5 !important;
+        color: #e5e5e5 !important;
+    }
+    
+    body.dark .btn-outline-light:hover {
+        background: #e5e5e5 !important;
+        color: #0a0a0a !important;
     }
 
     body.dark .bg-white,
@@ -256,6 +393,120 @@
     }
 
     body.dark .text-dark {
+        color: #e5e5e5 !important;
+    }
+    
+    body.dark .text-muted {
+        color: #9b9b9b !important;
+    }
+    
+    body.dark .dropdown-item {
+        color: #e5e5e5 !important;
+    }
+    
+    body.dark .dropdown-item:hover {
+        background: rgba(255, 215, 0, 0.1) !important;
+        color: #FFD700 !important;
+    }
+    
+    body.dark .dropdown-divider {
+        border-top-color: #2a2a2a !important;
+    }
+    
+    body.dark .alert {
+        background: #1f1f1f !important;
+        border-color: #2a2a2a !important;
+        color: #e5e5e5 !important;
+    }
+    
+    /* Dark mode breadcrumb */
+    body.dark .breadcrumb {
+        background: #1a1a1a !important;
+    }
+    
+    body.dark .breadcrumb-item {
+        color: #e5e5e5 !important;
+    }
+    
+    body.dark .breadcrumb-item.active {
+        color: #9b9b9b !important;
+    }
+    
+    /* Dark mode pagination */
+    body.dark .pagination .page-link {
+        background: #1a1a1a !important;
+        border-color: #2a2a2a !important;
+        color: #e5e5e5 !important;
+    }
+    
+    body.dark .pagination .page-link:hover {
+        background: #2a2a2a !important;
+        color: #FFD700 !important;
+    }
+    
+    body.dark .pagination .page-item.active .page-link {
+        background: #FFD700 !important;
+        border-color: #FFD700 !important;
+        color: #000 !important;
+    }
+    
+    body.dark .text-secondary {
+        color: #9b9b9b !important;
+    }
+    
+    body.dark .border {
+        border-color: #2a2a2a !important;
+    }
+    
+    body.dark hr {
+        border-color: #2a2a2a !important;
+        opacity: 1;
+    }
+    
+    /* Additional dark mode overrides for Bootstrap elements */
+    body.dark .container,
+    body.dark .container-fluid {
+        color: #e5e5e5;
+    }
+    
+    body.dark .row {
+        color: inherit;
+    }
+    
+    body.dark .col,
+    body.dark [class*="col-"] {
+        color: inherit;
+    }
+    
+    body.dark .navbar {
+        background: #1a1a1a !important;
+        color: #e5e5e5 !important;
+    }
+    
+    body.dark .navbar-dark {
+        background: #1a1a1a !important;
+    }
+    
+    /* Ensure no white backgrounds slip through */
+    body.dark .bg-white {
+        background: #1a1a1a !important;
+    }
+    
+    body.dark .bg-secondary {
+        background: #2a2a2a !important;
+    }
+    
+    body.dark .text-white {
+        color: #e5e5e5 !important;
+    }
+    
+    /* Override any remaining Bootstrap white defaults */
+    body.dark * {
+        scrollbar-color: #2a2a2a #0a0a0a;
+    }
+    
+    body.dark input-group-text {
+        background: #151515 !important;
         color: #e5e5e5 !important;
     }
 
@@ -294,7 +545,20 @@
     }
 
     .table-hover tbody tr:hover {
-        background: rgba(255, 215, 0, 0.06);
+        background: rgba(244, 192, 37, 0.08);
+    }
+    
+    /* Light mode form controls */
+    body:not(.dark) .form-control,
+    body:not(.dark) .form-select,
+    body:not(.dark) .input-group-text {
+        background: #ffffff;
+        border-color: #e5e5df;
+        color: #2d2d2d;
+    }
+    
+    body:not(.dark) .form-control::placeholder {
+        color: #9b9b9b;
     }
 
     .btn-primary {
@@ -321,7 +585,7 @@
 
     .form-control,
     .form-select {
-        background: #151515;
+        background: var(--admin-panel);
         border: 1px solid var(--admin-border);
         color: var(--admin-text);
     }
@@ -329,12 +593,85 @@
     .form-control:focus,
     .form-select:focus {
         border-color: var(--admin-gold);
-        box-shadow: 0 0 0 0.2rem rgba(255, 215, 0, 0.15);
+        box-shadow: 0 0 0 0.2rem var(--admin-gold-soft);
+    }
+    
+    body.dark .form-control,
+    body.dark .form-select {
+        background: #151515;
     }
 
     .badge,
     .alert {
         border-radius: 10px;
+    }
+    
+    /* Light mode dropdown styling */
+    body:not(.dark) .dropdown-menu {
+        background: #ffffff;
+        border: 1px solid #e5e5df;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    body:not(.dark) .dropdown-item {
+        color: #2d2d2d;
+    }
+    
+    body:not(.dark) .dropdown-item:hover {
+        background: rgba(244, 192, 37, 0.1);
+        color: #f4c025;
+    }
+    
+    body:not(.dark) .dropdown-divider {
+        border-top-color: #e5e5df;
+    }
+    
+    /* Light mode navbar buttons */
+    body:not(.dark) .btn-outline-light {
+        border-color: #e5e5df;
+        color: #2d2d2d;
+    }
+    
+    body:not(.dark) .btn-outline-light:hover {
+        background: #f4c025;
+        border-color: #f4c025;
+        color: #000;
+    }
+    
+    /* Light mode badge styling */
+    body:not(.dark) .badge.bg-primary {
+        background: #f4c025 !important;
+        color: #000;
+    }
+    
+    body:not(.dark) .text-white {
+        color: #2d2d2d !important;
+    }
+    
+    /* Light mode list group */
+    body:not(.dark) .list-group-item {
+        background: #ffffff;
+        border-color: #e5e5df;
+        color: #2d2d2d;
+    }
+    
+    /* Light mode offcanvas */
+    body:not(.dark) .offcanvas {
+        background: #ffffff;
+        color: #2d2d2d;
+    }
+    
+    body:not(.dark) .offcanvas-header {
+        border-bottom-color: #e5e5df;
+    }
+    
+    /* Light mode modal */
+    body:not(.dark) .modal-header {
+        border-bottom-color: #e5e5df;
+    }
+    
+    body:not(.dark) .modal-footer {
+        border-top-color: #e5e5df;
     }
 
     /* MOBILE RESPONSIVE */
@@ -620,6 +957,50 @@
         color: var(--bs-dropdown-link-hover-color) !important;
         background-color: var(--bs-dropdown-link-hover-bg) !important;
     }
+    
+    /* Light mode navbar text colors */
+    body:not(.dark) .navbar-brand {
+        color: #2d2d2d !important;
+    }
+    
+    body:not(.dark) .navbar .text-white {
+        color: #2d2d2d !important;
+    }
+    
+    body:not(.dark) .navbar .small {
+        color: #2d2d2d;
+    }
+    
+    body:not(.dark) .navbar .badge {
+        background: #f4c025 !important;
+        color: #000;
+    }
+    
+    /* Dark mode navbar colors */
+    body.dark .navbar-brand {
+        color: #FFD700 !important;
+    }
+    
+    body.dark .navbar .text-white {
+        color: #e5e5e5 !important;
+    }
+    
+    body.dark .navbar .small {
+        color: #e5e5e5 !important;
+    }
+    
+    body.dark .navbar .badge.bg-primary {
+        background: #FFD700 !important;
+        color: #000 !important;
+    }
+    
+    body.dark .navbar span {
+        color: #e5e5e5;
+    }
+    
+    body.dark .navbar i {
+        color: #e5e5e5;
+    }
 </style>
 </head>
 
@@ -647,8 +1028,9 @@
                 <span class="ms-2">Silver: रु{{ latest_rate.silver_rate|floatformat:0 }}</span>
             </div>
             {% endif %}
-            <button class="btn btn-outline-light btn-sm" onclick="toggleTheme()" aria-label="Toggle theme">
+            <button class="btn btn-outline-light btn-sm d-flex align-items-center gap-2" onclick="toggleTheme()" aria-label="Toggle theme">
                 <i class="bi bi-moon-fill" id="themeIcon"></i>
+                <span class="d-none d-md-inline" id="themeLabel">Dark</span>
             </button>
             {% if user.is_authenticated %}
             <div class="dropdown">
@@ -983,13 +1365,16 @@ function toggleSidebar() {
 function toggleTheme() {
     document.body.classList.toggle('dark');
     const icon = document.getElementById('themeIcon');
+    const label = document.getElementById('themeLabel');
     if (document.body.classList.contains('dark')) {
         icon.classList.remove('bi-moon-fill');
         icon.classList.add('bi-sun-fill');
+        if (label) label.textContent = 'Light';
         localStorage.setItem('theme', 'dark');
     } else {
         icon.classList.remove('bi-sun-fill');
         icon.classList.add('bi-moon-fill');
+        if (label) label.textContent = 'Dark';
         localStorage.setItem('theme', 'light');
     }
 }
@@ -998,10 +1383,12 @@ function toggleTheme() {
 document.addEventListener('DOMContentLoaded', function() {
     const savedTheme = localStorage.getItem('theme');
     const icon = document.getElementById('themeIcon');
+    const label = document.getElementById('themeLabel');
     if (savedTheme === 'dark') {
         document.body.classList.add('dark');
         icon.classList.remove('bi-moon-fill');
         icon.classList.add('bi-sun-fill');
+        if (label) label.textContent = 'Light';
     }
 
     // Ensure sidebar collapse menus toggle on click only when Bootstrap is unavailable

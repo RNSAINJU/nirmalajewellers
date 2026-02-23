@@ -16,6 +16,7 @@ urlpatterns = [
     path('daily-rates/add/', views.add_daily_rate, name='add_daily_rate'),
     path('daily-rates/<int:pk>/edit/', views.edit_daily_rate, name='edit_daily_rate'),
     path('daily-rates/<int:pk>/delete/', views.delete_daily_rate, name='delete_daily_rate'),
+    path('daily-rates/fetch/', views.run_fetch_rates, name='run_fetch_rates'),
     path('add-stock/', views.add_stock, name='add_stock'),
     path('edit-stock/<int:year>/', views.edit_stock, name='edit_stock'),
     
