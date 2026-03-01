@@ -21,6 +21,11 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-nk_sd$(^2bzq3^9p3@e12d+=(=
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'nirmalajewellers.store,www.nirmalajewellers.store,localhost,127.0.0.1,5.189.164.193,.ngrok-free.app,.ngrok.io').split(',')
+
+CSRF_TRUSTED_ORIGINS = os.getenv(
+    'CSRF_TRUSTED_ORIGINS',
+    'https://nirmalajewellers.store,https://www.nirmalajewellers.store,https://*.ngrok-free.app,https://*.ngrok.io'
+).split(',')
 # API Tokens loaded from .env file (see .env file in project root)
 
 # Security hardening (applies in production only)
