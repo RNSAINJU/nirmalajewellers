@@ -3,12 +3,9 @@ from django.dispatch import receiver
 from decimal import Decimal
 from .models import MetalStock, MetalStockType, MetalStockMovement, GoldSilverPurchase
 
-# --- MetalStockMovement for GoldSilverPurchase (always create for 'raw') ---
+# --- MetalStockMovement for GoldSilverPurchase (always create for any purchase) ---
 @receiver(post_save, sender=GoldSilverPurchase)
 def create_or_update_metal_stock_and_movement_for_raw(sender, instance, created, **kwargs):
-    particular = instance.particular or ''
-    if 'raw' not in particular.lower():
-        return
     stock_type = MetalStockType.objects.filter(name='raw').first()
     if not stock_type:
         return
