@@ -1,0 +1,121 @@
+{% extends 'finance/base_finance.html' %}
+
+{% block action_buttons %}
+<a href="{% url 'finance:loan_list' %}" class="btn btn-secondary">
+    <i class="bi bi-arrow-left"></i> Back to Loans
+</a>
+{% endblock %}
+
+{% block main_content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="bi bi-currency-rupee"></i>
+                        Add Interest Payment &mdash; {{ loan.bank_name }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Loan Summary -->
+                    <div class="alert alert-info mb-4">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <small class="text-muted d-block">Loan Amount</small>
+                                <strong>रु{{ loan.amount|floatformat:2 }}</strong>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">Interest Rate</small>
+                                <strong>{{ loan.interest_rate }}% p.a.</strong>
+                            </div>
+                            <div class="col-4">
+                                <small class="text-muted d-block">Monthly Interest</small>
+                                <span class="badge bg-success">रु{{ monthly_interest|floatformat:2 }}</span>
+                            </div>
+                            <div class="col-4">
+                                <small class="text-muted d-block">3-Month Interest</small>
+                                <span class="badge bg-warning text-dark fw-bold">रु{{ quarterly_interest|floatformat:2 }}</span>
+                            </div>
+                            <div class="col-4">
+                                <small class="text-muted d-block">Yearly Interest</small>
+                                <span class="badge bg-purple">रु{{ loan.yearly_interest|floatformat:2 }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Months Covered</label>
+                            <select name="months_covered" class="form-select" id="monthsCovered">
+                                <option value="1">1 Month</option>
+                                <option value="2">2 Months</option>
+                                <option value="3" selected>3 Months (Quarterly)</option>
+                                <option value="6">6 Months (Half-Yearly)</option>
+                                <option value="12">12 Months (Yearly)</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                Amount Paid (रु)
+                                <small class="text-muted fw-normal">&mdash; pre-filled with tentative interest</small>
+                            </label>
+                            <input type="number" name="amount" id="amountField"
+                                   class="form-control form-control-lg"
+                                   value="{{ quarterly_interest|floatformat:2 }}"
+                                   step="0.01" min="0" required>
+                            <div class="form-text">
+                                Tentative: 1M = रु{{ monthly_interest|floatformat:2 }} |
+                                3M = रु{{ quarterly_interest|floatformat:2 }} |
+                                1Y = रु{{ loan.yearly_interest|floatformat:2 }}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Payment Date (BS)</label>
+                            <input type="text" name="payment_date" class="form-control"
+                                   placeholder="e.g. 2082-01-15" required>
+                            <div class="form-text">Enter in BS format: YYYY-MM-DD</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Notes (optional)</label>
+                            <textarea name="notes" class="form-control" rows="2"
+                                      placeholder="e.g. Paid via cheque, receipt no. 1234"></textarea>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-warning text-dark fw-semibold flex-fill">
+                                <i class="bi bi-check-lg"></i> Record Payment
+                            </button>
+                            <a href="{% url 'finance:loan_list' %}" class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const monthlyInterest = {{ monthly_interest|floatformat:2 }};
+    const monthsSelect = document.getElementById('monthsCovered');
+    const amountField = document.getElementById('amountField');
+
+    monthsSelect.addEventListener('change', function () {
+        const months = parseInt(this.value);
+        amountField.value = (monthlyInterest * months).toFixed(2);
+    });
+})();
+</script>
+
+<style>
+    .bg-purple { background-color: #6f42c1 !important; color: #fff !important; }
+</style>
+{% endblock %}

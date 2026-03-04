@@ -10,6 +10,8 @@ class Loan(models.Model):
     interest_rate = models.DecimalField(max_digits=5, decimal_places=2, help_text="Annual interest rate (%)")
     start_date = NepaliDateField()
     notes = models.TextField(blank=True, null=True)
+    is_settled = models.BooleanField(default=False, help_text="Mark as settled/fully paid")
+    settled_date = NepaliDateField(blank=True, null=True, help_text="Date when loan was settled")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -19,6 +21,46 @@ class Loan(models.Model):
 
     def __str__(self):
         return f"{self.bank_name} - रु{self.amount} @ {self.interest_rate}%"
+
+    @property
+    def monthly_interest(self):
+        """Monthly interest amount"""
+        return (self.amount * self.interest_rate) / Decimal('100') / Decimal('12')
+
+    @property
+    def quarterly_interest(self):
+        """3-month tentative interest amount"""
+        return self.monthly_interest * Decimal('3')
+
+    @property
+    def yearly_interest(self):
+        """Yearly tentative interest amount"""
+        return (self.amount * self.interest_rate) / Decimal('100')
+
+    @property
+    def total_interest_paid(self):
+        """Total interest paid so far"""
+        from django.db.models import Sum
+        result = self.interest_payments.aggregate(Sum('amount'))['amount__sum']
+        return result or Decimal('0')
+
+
+class LoanInterestPayment(models.Model):
+    """Model for tracking 3-month interest payments on loans"""
+    loan = models.ForeignKey(Loan, on_delete=models.CASCADE, related_name='interest_payments')
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    payment_date = NepaliDateField()
+    months_covered = models.PositiveSmallIntegerField(default=3, help_text="Number of months this payment covers")
+    notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-payment_date', '-created_at']
+        verbose_name = "Loan Interest Payment"
+        verbose_name_plural = "Loan Interest Payments"
+
+    def __str__(self):
+        return f"{self.loan.bank_name} - रु{self.amount} ({self.months_covered} months) on {self.payment_date}"
 
 
 class Expense(models.Model):

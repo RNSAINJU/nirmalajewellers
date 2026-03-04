@@ -1201,9 +1201,17 @@
                 <hr class="dropdown-divider">
                 <a href="{{ customer_purchase_url }}" class="nav-link">Customer Purchases</a>
                 <a href="{{ customer_purchase_create_url }}" class="nav-link">Add Customer Purchase</a>
-                <hr class="dropdown-divider">
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <a class="nav-link" data-bs-toggle="collapse" href="#metalStockMenu" role="button" aria-expanded="false">
+                <span><i class="bi bi-boxes"></i> Metal Stock</span>
+                <i class="bi bi-chevron-down"></i>
+            </a>
+            <div class="collapse" id="metalStockMenu">
                 <a href="{{ metal_stock_list_url }}" class="nav-link">
-                    <i class="bi bi-boxes me-1"></i>Metal Stock
+                    <i class="bi bi-list-ul me-1"></i>Stock List
                 </a>
                 <a href="{{ metal_stock_create_url }}" class="nav-link">
                     <i class="bi bi-plus-circle me-1"></i>Add Metal Stock
