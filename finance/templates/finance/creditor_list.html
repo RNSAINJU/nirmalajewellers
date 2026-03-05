@@ -1,15 +1,15 @@
 {% extends 'finance/base_finance.html' %}
 
 {% block action_buttons %}
-<a href="{% url 'finance:creditor_create' %}" class="btn btn-primary">
+<a href="{% url 'finance:creditor_create' %}" class="btn btn-create">
     <i class="bi bi-plus-lg"></i> Add Creditor
 </a>
-<a href="{% url 'finance:creditor_export' %}" class="btn btn-outline-success">
+<a href="{% url 'finance:creditor_export' %}" class="btn btn-export btn-action">
     <i class="bi bi-download"></i> Export Excel
 </a>
 <form method="post" action="{% url 'finance:creditor_import' %}" enctype="multipart/form-data" class="d-inline">
     {% csrf_token %}
-    <label class="btn btn-outline-secondary mb-0">
+    <label class="btn btn-import btn-action mb-0">
         <i class="bi bi-upload"></i> Import Excel
         <input type="file" name="file" accept=".xlsx" class="d-none" onchange="this.form.submit()">
     </label>
@@ -53,7 +53,7 @@
 
 {% if creditors %}
 <div class="table-responsive">
-    <table class="table table-hover">
+    <table class="table table-bordered table-striped table-hover align-middle">
         <thead class="table-dark">
             <tr>
                 <th>Name</th>
@@ -94,25 +94,25 @@
                     {% if creditor.is_paid %}
                     <form method="post" action="{% url 'finance:creditor_mark_unpaid' creditor.pk %}" class="d-inline">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-sm btn-outline-warning" title="Mark Pending">
+                        <button type="submit" class="btn btn-sm btn-action-status" title="Mark Pending">
                             <i class="bi bi-arrow-counterclockwise"></i>
                         </button>
                     </form>
                     {% else %}
                     <form method="post" action="{% url 'finance:creditor_mark_paid' creditor.pk %}" class="d-inline">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-sm btn-outline-success" title="Mark Paid">
+                        <button type="submit" class="btn btn-sm btn-action-settle" title="Mark Paid">
                             <i class="bi bi-check2-circle"></i>
                         </button>
                     </form>
                     {% endif %}
-                    <a href="{% url 'finance:creditor_detail' creditor.pk %}" class="btn btn-sm btn-info" title="View">
+                    <a href="{% url 'finance:creditor_detail' creditor.pk %}" class="btn btn-sm btn-action-view" title="View">
                         <i class="bi bi-eye"></i>
                     </a>
-                    <a href="{% url 'finance:creditor_update' creditor.pk %}" class="btn btn-sm btn-warning" title="Edit">
+                    <a href="{% url 'finance:creditor_update' creditor.pk %}" class="btn btn-sm btn-action-edit" title="Edit">
                         <i class="bi bi-pencil"></i>
                     </a>
-                    <a href="{% url 'finance:creditor_delete' creditor.pk %}" class="btn btn-sm btn-danger" title="Delete">
+                    <a href="{% url 'finance:creditor_delete' creditor.pk %}" class="btn btn-sm btn-action-delete" title="Delete">
                         <i class="bi bi-trash"></i>
                     </a>
                 </td>

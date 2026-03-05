@@ -4,188 +4,99 @@
 {% block content %}
 
 <style>
-    .stats-card {
-        border-radius: 12px;
-        transition: transform 0.2s, box-shadow 0.2s;
-        background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
-        border: 2px solid #e9ecef;
-    }
-    .stats-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.15) !important;
-    }
-    .stat-number {
-        font-size: 28px;
-        font-weight: 700;
-        color: #667eea;
-        margin: 15px 0;
-    }
-    .stat-label {
-        color: #6c757d;
-        font-size: 14px;
-        font-weight: 600;
-        text-transform: uppercase;
-    }
-    .filter-section {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 15px;
-        padding: 25px;
-        color: white;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-        margin-bottom: 30px;
-    }
-    .filter-section label {
-        color: white;
-        font-weight: 600;
-        margin-bottom: 8px;
-    }
-    .filter-section .form-control,
-    .filter-section .form-select {
-        border-radius: 8px;
-        border: 2px solid rgba(255,255,255,0.3);
-        background: rgba(255,255,255,0.95);
-        padding: 10px 12px;
-    }
+    /* metalstock-specific styles — shared styles come from management_list.css */
     .table-container {
         background: white;
         border-radius: 12px;
         padding: 20px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.08);
     }
-    .table {
-        margin-bottom: 0;
-    }
-    .table thead {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
-    .table thead th {
-        border: none;
-        font-weight: 600;
-        padding: 15px;
-        vertical-align: middle;
-    }
-    .table tbody tr {
-        border-bottom: 1px solid #e9ecef;
-        transition: background 0.2s;
-    }
-    .table tbody tr:hover {
-        background-color: #f8f9fa;
-    }
-    .table tbody td {
-        padding: 12px 15px;
-        vertical-align: middle;
-    }
-    .badge-raw {
-        background-color: #ffc107;
-        color: #000;
-    }
-    .badge-refined {
-        background-color: #28a745;
-        color: white;
-    }
-    .stock-status {
-        padding: 6px 12px;
-        border-radius: 6px;
-        font-size: 12px;
-        font-weight: 600;
-    }
-    .stock-good {
-        background: #d4edda;
-        color: #155724;
-    }
-    .stock-low {
-        background: #f8d7da;
-        color: #721c24;
-    }
+    .badge-raw    { background-color: #ffc107; color: #000; }
+    .badge-refined{ background-color: #28a745; color: white; }
+    .stock-status { padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+    .stock-good   { background: #d4edda; color: #155724; }
+    .stock-low    { background: #f8d7da; color: #721c24; }
     .btn-view {
-        background: #667eea;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        padding: 6px 12px;
-        font-size: 12px;
-        font-weight: 600;
-        transition: all 0.2s;
+        background: #667eea; color: white; border: none;
+        border-radius: 6px; padding: 6px 12px;
+        font-size: 12px; font-weight: 600; transition: all 0.2s;
+        text-decoration: none; display: inline-block;
     }
-    .btn-view:hover {
-        background: #764ba2;
-        color: white;
-        text-decoration: none;
-    }
+    .btn-view:hover { background: #764ba2; color: white; }
     .alert-low-stock {
-        background: #fff3cd;
-        border: 2px solid #ffc107;
-        border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 25px;
+        background: #fff3cd; border: 2px solid #ffc107;
+        border-radius: 10px; padding: 20px; margin-bottom: 25px;
     }
-    .alert-low-stock h5 {
-        color: #856404;
-        margin-bottom: 15px;
-    }
-    .alert-low-stock ul {
-        margin-bottom: 0;
-    }
-    .pagination {
-        justify-content: center;
-    }
+    .alert-low-stock h5 { color: #856404; margin-bottom: 15px; }
+    .pagination { justify-content: center; }
 </style>
 
-<div class="container-fluid p-4">
+<div class="container mt-5">
     <!-- Header -->
-    <div class="mb-4 d-flex justify-content-between align-items-center">
-        <div>
-            <h1 class="display-5 fw-bold" style="color: #333;">
-                <i class="fas fa-cube"></i> Metal Stock Management
-            </h1>
-            <p class="text-muted">Track raw and refined gold and silver inventory</p>
-        </div>
-        <div class="d-flex" style="gap: 10px;">
-            <a href="{% url 'gsp:metal_stock_export_xlsx' %}" class="btn btn-success" style="height: fit-content;">
-                <i class="fas fa-file-excel me-2"></i> Export XLSX
-            </a>
-            <form action="{% url 'gsp:metal_stock_import_xlsx' %}" method="post" enctype="multipart/form-data" style="display:inline;">
-                {% csrf_token %}
-                <label class="btn btn-info" style="margin-bottom:0;">
-                    <i class="fas fa-upload me-2"></i> Import XLSX
-                    <input type="file" name="file" style="display:none;" onchange="this.form.submit();">
-                </label>
-            </form>
-            <a href="{% url 'gsp:metal_stock_create' %}" class="btn btn-primary" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; height: fit-content;">
-                <i class="fas fa-plus me-2"></i> Add Stock
-            </a>
-        </div>
+    <h1 class="text-center mb-4" style="color: #667eea; font-weight: 700;">Metal Stock Management</h1>
+    <p class="text-center text-muted mb-4">Track raw and refined gold and silver inventory</p>
+
+    <!-- Action Buttons -->
+    <div class="d-flex justify-content-center mb-4 gap-3 flex-wrap">
+        <a href="{% url 'gsp:metal_stock_create' %}" class="btn btn-create">
+            <i class="bi bi-plus-circle-fill me-2"></i> Add Stock
+        </a>
+        <a href="{% url 'gsp:metal_stock_export_xlsx' %}" class="btn btn-export btn-action">
+            <i class="bi bi-file-earmark-excel-fill me-1"></i> Export XLSX
+        </a>
+        <form action="{% url 'gsp:metal_stock_import_xlsx' %}" method="post" enctype="multipart/form-data" class="d-inline">
+            {% csrf_token %}
+            <label class="btn btn-import btn-action mb-0">
+                <i class="bi bi-file-earmark-arrow-up me-1"></i> Import XLSX
+                <input type="file" name="file" class="d-none" onchange="this.form.submit();">
+            </label>
+        </form>
     </div>
 
 
-    <!-- Minimal Summary Statistics -->
-    <div class="row mb-3" style="gap: 0.5rem;">
-        <div class="col-auto px-2 py-1" style="min-width:120px;">
-            <div style="font-size:13px; color:#888;">Gold</div>
-            <div style="font-size:18px; font-weight:600;">{{ total_gold_quantity|default:"0.000" }} g</div>
-            <div style="font-size:12px; color:#888;">₹{{ total_gold_value|floatformat:2 }}</div>
-        </div>
-        <div class="col-auto px-2 py-1" style="min-width:120px;">
-            <div style="font-size:13px; color:#888;">Silver</div>
-            <div style="font-size:18px; font-weight:600;">{{ total_silver_quantity|default:"0.000" }} g</div>
-            <div style="font-size:12px; color:#888;">₹{{ total_silver_value|floatformat:2 }}</div>
-        </div>
-        <div class="col-auto px-2 py-1" style="min-width:120px;">
-            <div style="font-size:13px; color:#888;">Total Value</div>
-            <div style="font-size:18px; font-weight:600;">₹{{ total_value|floatformat:2 }}</div>
-        </div>
-        <div class="col-auto px-2 py-1" style="min-width:120px;">
-            <div style="font-size:13px; color:#888;">Stock Items</div>
-            <div style="font-size:18px; font-weight:600;">{{ metal_stocks.paginator.count|default:"0" }}</div>
-        </div>
-        <div class="col-auto px-2 py-1" style="min-width:120px;">
-            <div style="font-size:13px; color:#888;">Avg Gold Rate</div>
-            <div style="font-size:18px; font-weight:600;">₹{{ avg_gold_purchase_rate_tola|floatformat:2 }}/tola</div>
-        </div>
-        <div class="col-auto px-2 py-1" style="min-width:120px;">
-            <div style="font-size:13px; color:#888;">Avg Silver Rate</div>
-            <div style="font-size:18px; font-weight:600;">₹{{ avg_silver_purchase_rate_tola|floatformat:2 }}/tola</div>
+    <!-- Summary Statistics -->
+    <div class="stats-tabs">
+        <div class="row g-3">
+            <div class="col-md-2 col-sm-4">
+                <div class="mgmt-stat-card gold">
+                    <div class="mgmt-stat-label">🥇 Gold Qty</div>
+                    <h3 class="mgmt-stat-value">{{ total_gold_quantity|default:"0.000" }}</h3>
+                    <small>grams</small>
+                </div>
+            </div>
+            <div class="col-md-2 col-sm-4">
+                <div class="mgmt-stat-card silver">
+                    <div class="mgmt-stat-label">🥈 Silver Qty</div>
+                    <h3 class="mgmt-stat-value">{{ total_silver_quantity|default:"0.000" }}</h3>
+                    <small>grams</small>
+                </div>
+            </div>
+            <div class="col-md-2 col-sm-4">
+                <div class="mgmt-stat-card amount">
+                    <div class="mgmt-stat-label">💰 Total Value</div>
+                    <h3 class="mgmt-stat-value">₹{{ total_value|floatformat:0 }}</h3>
+                </div>
+            </div>
+            <div class="col-md-2 col-sm-4">
+                <div class="mgmt-stat-card count">
+                    <div class="mgmt-stat-label">📦 Stock Items</div>
+                    <h3 class="mgmt-stat-value">{{ metal_stocks.paginator.count|default:"0" }}</h3>
+                </div>
+            </div>
+            <div class="col-md-2 col-sm-4">
+                <div class="mgmt-stat-card">
+                    <div class="mgmt-stat-label">📊 Avg Gold Rate</div>
+                    <h3 class="mgmt-stat-value">₹{{ avg_gold_purchase_rate_tola|floatformat:0 }}</h3>
+                    <small>per tola</small>
+                </div>
+            </div>
+            <div class="col-md-2 col-sm-4">
+                <div class="mgmt-stat-card purple">
+                    <div class="mgmt-stat-label">📊 Avg Silver Rate</div>
+                    <h3 class="mgmt-stat-value">₹{{ avg_silver_purchase_rate_tola|floatformat:0 }}</h3>
+                    <small>per tola</small>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -194,15 +105,17 @@
     <!-- Metal Stocks Table - Tabbed Interface -->
     <div class="table-container">
         <!-- Tabs Navigation -->
-        <ul class="nav nav-tabs mb-4" id="metalTabs" role="tablist" style="border-bottom: 2px solid #e9ecef;">
+        <ul class="nav nav-tabs mb-4" id="metalTabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="gold-tab" data-bs-toggle="tab" data-bs-target="#goldTab" type="button" role="tab" aria-controls="goldTab" aria-selected="true" style="color: #ff9800; font-weight: 600; border-bottom: 3px solid transparent;">
-                    <i class="fas fa-crown"></i> Gold Stocks
+                <button class="nav-link active" id="gold-tab" data-bs-toggle="tab" data-bs-target="#goldTab" type="button" role="tab" aria-controls="goldTab" aria-selected="true">
+                    <span style="color:#f59e0b; font-weight:600;">🥇 Gold Stocks</span>
+                    <small class="ms-2" style="color:#666;">({{ gold_stocks|length }})</small>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="silver-tab" data-bs-toggle="tab" data-bs-target="#silverTab" type="button" role="tab" aria-controls="silverTab" aria-selected="false" style="color: #999; font-weight: 600; border-bottom: 3px solid transparent;">
-                    <i class="fas fa-gem"></i> Silver Stocks
+                <button class="nav-link" id="silver-tab" data-bs-toggle="tab" data-bs-target="#silverTab" type="button" role="tab" aria-controls="silverTab" aria-selected="false">
+                    <span style="color:#9ca3af; font-weight:600;">🥈 Silver Stocks</span>
+                    <small class="ms-2" style="color:#666;">({{ silver_stocks|length }})</small>
                 </button>
             </li>
         </ul>
@@ -217,9 +130,9 @@
                     <p class="text-muted">Total Quantity: <strong>{{ gold_stocks|length }}</strong> items</p>
                 </div>
                 <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr style="background: linear-gradient(135deg, #ff9800 0%, #ffc107 100%); color: white;">
+                    <table class="table table-bordered table-striped table-hover align-middle">
+                        <thead class="table-dark">
+                            <tr>
                                 <th>Stock Type</th>
                                 <th>Purity</th>
                                 <th>Quantity (g)</th>
@@ -301,9 +214,9 @@
                     <p class="text-muted">Total Quantity: <strong>{{ silver_stocks|length }}</strong> items</p>
                 </div>
                 <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr style="background: linear-gradient(135deg, #999 0%, #c0c0c0 100%); color: white;">
+                    <table class="table table-bordered table-striped table-hover align-middle">
+                        <thead class="table-dark">
+                            <tr>
                                 <th>Stock Type</th>
                                 <th>Purity</th>
                                 <th>Quantity (g)</th>

@@ -110,7 +110,7 @@
         <i class="bi bi-arrow-down-circle" id="fetchIcon"></i>
         <span id="fetchBtnText">Fetch Today's Rates</span>
       </button>
-      <a href="{% url 'main:add_daily_rate' %}" class="btn btn-sm btn-success">
+      <a href="{% url 'main:add_daily_rate' %}" class="btn btn-sm btn-create">
         <i class="bi bi-plus-circle"></i> Add Rate
       </a>
     </div>
@@ -149,9 +149,9 @@
             <td><span class="rate-pill rate-silver">{{ r.silver_rate_10g|floatformat:2 }}</span></td>
             <td>{{ r.updated_at|date:"Y-m-d H:i" }}</td>
             <td>
-              <button type="submit" form="rate-form-{{ r.id }}" class="btn btn-sm btn-primary">Save</button>
-              <a href="{% url 'main:edit_daily_rate' r.id %}" class="btn btn-sm btn-info">Edit</a>
-              <a href="{% url 'main:delete_daily_rate' r.id %}" class="btn btn-sm btn-danger">Delete</a>
+              <button type="submit" form="rate-form-{{ r.id }}" class="btn btn-sm btn-action-settle">Save</button>
+              <a href="{% url 'main:edit_daily_rate' r.id %}" class="btn btn-sm btn-action-edit">Edit</a>
+              <a href="{% url 'main:delete_daily_rate' r.id %}" class="btn btn-sm btn-action-delete">Delete</a>
             </td>
           </tr>
           {% endfor %}

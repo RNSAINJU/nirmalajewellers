@@ -9,7 +9,7 @@
         <div class="col-md-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1 class="h2">Cash & Bank Accounts</h1>
-                <a href="{% url 'finance:cashbank_create' %}" class="btn btn-primary">
+                <a href="{% url 'finance:cashbank_create' %}" class="btn btn-create">
                     <i class="bi bi-plus-circle"></i> Add Account
                 </a>
             </div>
@@ -125,8 +125,8 @@
                 <div class="card-body">
                     {% if cash_accounts %}
                         <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead class="table-light">
+                            <table class="table table-bordered table-striped table-hover align-middle">
+                                <thead class="table-dark">
                                     <tr>
                                         <th>Account Name</th>
                                         <th class="text-end">Balance</th>
@@ -155,17 +155,17 @@
                                                 <small class="text-muted">{{ account.notes|truncatewords:5 }}</small>
                                             </td>
                                             <td class="text-end">
-                                                <a href="{% url 'finance:cashbank_update' account.pk %}" class="btn btn-sm btn-warning">
+                                                <a href="{% url 'finance:cashbank_update' account.pk %}" class="btn btn-sm btn-action-edit">
                                                     <i class="bi bi-pencil"></i> Edit
                                                 </a>
-                                                <button class="btn btn-sm btn-secondary" onclick="toggleStatus({{ account.pk }})">
+                                                <button class="btn btn-sm btn-action-status" onclick="toggleStatus({{ account.pk }})">
                                                     {% if account.is_active %}
                                                         <i class="bi bi-x"></i> Deactivate
                                                     {% else %}
                                                         <i class="bi bi-check"></i> Activate
                                                     {% endif %}
                                                 </button>
-                                                <a href="{% url 'finance:cashbank_delete' account.pk %}" class="btn btn-sm btn-danger">
+                                                <a href="{% url 'finance:cashbank_delete' account.pk %}" class="btn btn-sm btn-action-delete">
                                                     <i class="bi bi-trash"></i> Delete
                                                 </a>
                                             </td>
@@ -194,8 +194,8 @@
                 <div class="card-body">
                     {% if bank_accounts %}
                         <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead class="table-light">
+                            <table class="table table-bordered table-striped table-hover align-middle">
+                                <thead class="table-dark">
                                     <tr>
                                         <th>Bank Name</th>
                                         <th>Account Name</th>
@@ -224,17 +224,17 @@
                                                 {% endif %}
                                             </td>
                                             <td class="text-end">
-                                                <a href="{% url 'finance:cashbank_update' account.pk %}" class="btn btn-sm btn-warning">
+                                                <a href="{% url 'finance:cashbank_update' account.pk %}" class="btn btn-sm btn-action-edit">
                                                     <i class="bi bi-pencil"></i> Edit
                                                 </a>
-                                                <button class="btn btn-sm btn-secondary" onclick="toggleStatus({{ account.pk }})">
+                                                <button class="btn btn-sm btn-action-status" onclick="toggleStatus({{ account.pk }})">
                                                     {% if account.is_active %}
                                                         <i class="bi bi-x"></i> Deactivate
                                                     {% else %}
                                                         <i class="bi bi-check"></i> Activate
                                                     {% endif %}
                                                 </button>
-                                                <a href="{% url 'finance:cashbank_delete' account.pk %}" class="btn btn-sm btn-danger">
+                                                <a href="{% url 'finance:cashbank_delete' account.pk %}" class="btn btn-sm btn-action-delete">
                                                     <i class="bi bi-trash"></i> Delete
                                                 </a>
                                             </td>
@@ -263,18 +263,14 @@
                 <div class="card-body">
                     {% if gold_loan_accounts %}
                         <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead class="table-light">
+                            <table class="table table-bordered table-striped table-hover align-middle">
+                                <thead class="table-dark">
                                     <tr>
                                         <th>Account Name</th>
                                         <th class="text-end">Balance</th>
                                         <th>Status</th>
                                         <th>Notes</th>
                                         <th class="text-end">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for account in gold_loan_accounts %}
                                         <tr>
                                             <td>
                                                 <strong>{{ account.account_name }}</strong>
@@ -293,17 +289,17 @@
                                                 <small class="text-muted">{{ account.notes|truncatewords:5 }}</small>
                                             </td>
                                             <td class="text-end">
-                                                <a href="{% url 'finance:cashbank_update' account.pk %}" class="btn btn-sm btn-warning">
+                                                <a href="{% url 'finance:cashbank_update' account.pk %}" class="btn btn-sm btn-action-edit">
                                                     <i class="bi bi-pencil"></i> Edit
                                                 </a>
-                                                <button class="btn btn-sm btn-secondary" onclick="toggleStatus({{ account.pk }})">
+                                                <button class="btn btn-sm btn-action-status" onclick="toggleStatus({{ account.pk }})">
                                                     {% if account.is_active %}
                                                         <i class="bi bi-x"></i> Deactivate
                                                     {% else %}
                                                         <i class="bi bi-check"></i> Activate
                                                     {% endif %}
                                                 </button>
-                                                <a href="{% url 'finance:cashbank_delete' account.pk %}" class="btn btn-sm btn-danger">
+                                                <a href="{% url 'finance:cashbank_delete' account.pk %}" class="btn btn-sm btn-action-delete">
                                                     <i class="bi bi-trash"></i> Delete
                                                 </a>
                                             </td>
@@ -332,8 +328,8 @@
                 <div class="card-body">
                     {% if other_investment_accounts %}
                         <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead class="table-light">
+                            <table class="table table-bordered table-striped table-hover align-middle">
+                                <thead class="table-dark">
                                     <tr>
                                         <th>Account Name</th>
                                         <th class="text-end">Balance</th>
@@ -362,17 +358,17 @@
                                                 <small class="text-muted">{{ account.notes|truncatewords:5 }}</small>
                                             </td>
                                             <td class="text-end">
-                                                <a href="{% url 'finance:cashbank_update' account.pk %}" class="btn btn-sm btn-info">
+                                                <a href="{% url 'finance:cashbank_update' account.pk %}" class="btn btn-sm btn-action-edit">
                                                     <i class="bi bi-pencil"></i> Edit
                                                 </a>
-                                                <button class="btn btn-sm btn-secondary" onclick="toggleStatus({{ account.pk }})">
+                                                <button class="btn btn-sm btn-action-status" onclick="toggleStatus({{ account.pk }})">
                                                     {% if account.is_active %}
                                                         <i class="bi bi-x"></i> Deactivate
                                                     {% else %}
                                                         <i class="bi bi-check"></i> Activate
                                                     {% endif %}
                                                 </button>
-                                                <a href="{% url 'finance:cashbank_delete' account.pk %}" class="btn btn-sm btn-danger">
+                                                <a href="{% url 'finance:cashbank_delete' account.pk %}" class="btn btn-sm btn-action-delete">
                                                     <i class="bi bi-trash"></i> Delete
                                                 </a>
                                             </td>

@@ -1,0 +1,417 @@
+/*
+ * management_list.css
+ * Standard shared styles for all management list pages.
+ * Design reference: sales_list.html
+ */
+
+/* ============================================================
+   SEARCH SECTION
+   ============================================================ */
+.search-section {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 20px;
+    border: 2px solid #e9ecef;
+}
+
+/* ============================================================
+   ACTION BUTTONS SECTION
+   ============================================================ */
+.action-buttons {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+/* ============================================================
+   FILTER SECTION (collapsible)
+   ============================================================ */
+.filter-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 15px;
+    padding: 25px;
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    margin-bottom: 20px;
+}
+.filter-section label {
+    color: white;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+.filter-section .form-control,
+.filter-section .form-select {
+    border-radius: 8px;
+    border: 2px solid rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.95);
+}
+
+/* ============================================================
+   STANDARD BUTTONS
+   ============================================================ */
+.btn-create {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 10px;
+    padding: 12px 24px;
+    font-weight: 600;
+    transition: all 0.3s;
+    color: white !important;
+}
+.btn-create:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    color: white !important;
+}
+.btn-action {
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-weight: 600;
+    transition: all 0.3s;
+    border: 2px solid;
+}
+.btn-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+.btn-import {
+    background: #10b981;
+    border-color: #10b981;
+    color: white !important;
+}
+.btn-import:hover {
+    background: #059669;
+    border-color: #059669;
+    color: white !important;
+}
+.btn-export {
+    background: #0ea5e9;
+    border-color: #0ea5e9;
+    color: white !important;
+}
+.btn-export:hover {
+    background: #0284c7;
+    border-color: #0284c7;
+    color: white !important;
+}
+.btn-print {
+    background: #1f2937;
+    border-color: #1f2937;
+    color: white !important;
+}
+.btn-print:hover {
+    background: #111827;
+    border-color: #111827;
+    color: white !important;
+}
+
+/* ============================================================
+   TABLE ROW ACTION BUTTONS  (btn-sm sized, used inside tables)
+   Match the image: thick rounded outline, icon + label, hover fills
+   ============================================================ */
+
+.btn-action-edit,
+.btn-action-delete,
+.btn-action-destroy,
+.btn-action-view,
+.btn-action-settle,
+.btn-action-status,
+.btn-action-add,
+.btn-action-save {
+    display: inline-flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 3px !important;
+    padding: 6px 14px !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    border-radius: 12px !important;
+    border-width: 2px !important;
+    border-style: solid !important;
+    background: transparent !important;
+    text-decoration: none !important;
+    transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease !important;
+    white-space: nowrap;
+    min-width: 60px;
+    line-height: 1.3;
+}
+.btn-action-edit i,
+.btn-action-delete i,
+.btn-action-destroy i,
+.btn-action-view i,
+.btn-action-settle i,
+.btn-action-status i,
+.btn-action-add i,
+.btn-action-save i {
+    font-size: 1.1rem !important;
+}
+.btn-action-edit:hover,
+.btn-action-delete:hover,
+.btn-action-destroy:hover,
+.btn-action-view:hover,
+.btn-action-settle:hover,
+.btn-action-status:hover,
+.btn-action-add:hover,
+.btn-action-save:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25) !important;
+    color: #fff !important;
+}
+
+/* Edit — amber */
+.btn-action-edit {
+    color: #f59e0b !important;
+    border-color: #f59e0b !important;
+}
+.btn-action-edit:hover {
+    background: #f59e0b !important;
+    border-color: #f59e0b !important;
+}
+
+/* Delete — red */
+.btn-action-delete {
+    color: #ef4444 !important;
+    border-color: #ef4444 !important;
+}
+.btn-action-delete:hover {
+    background: #ef4444 !important;
+    border-color: #ef4444 !important;
+}
+
+/* Destroy — deep red */
+.btn-action-destroy {
+    color: #dc2626 !important;
+    border-color: #dc2626 !important;
+}
+.btn-action-destroy:hover {
+    background: #dc2626 !important;
+    border-color: #dc2626 !important;
+}
+
+/* View — cyan */
+.btn-action-view {
+    color: #06b6d4 !important;
+    border-color: #06b6d4 !important;
+}
+.btn-action-view:hover {
+    background: #06b6d4 !important;
+    border-color: #06b6d4 !important;
+}
+
+/* Settle / Pay — green */
+.btn-action-settle {
+    color: #10b981 !important;
+    border-color: #10b981 !important;
+}
+.btn-action-settle:hover {
+    background: #10b981 !important;
+    border-color: #10b981 !important;
+}
+
+/* Status toggle — gray */
+.btn-action-status {
+    color: #6b7280 !important;
+    border-color: #6b7280 !important;
+}
+.btn-action-status:hover {
+    background: #6b7280 !important;
+    border-color: #6b7280 !important;
+}
+
+/* Add / special — blue */
+.btn-action-add {
+    color: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+}
+.btn-action-add:hover {
+    background: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+}
+
+/* Save — purple */
+.btn-action-save {
+    color: #667eea !important;
+    border-color: #667eea !important;
+}
+.btn-action-save:hover {
+    background: #667eea !important;
+    border-color: #667eea !important;
+}
+
+/* ============================================================
+   STATS / ANALYTICS CARDS
+   ============================================================ */
+.stats-tabs {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom: 30px;
+}
+/* Generic gradient stat card */
+.mgmt-stat-card {
+    border-radius: 10px;
+    padding: 20px;
+    color: white;
+    text-align: center;
+    transition: all 0.3s;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+.mgmt-stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+.mgmt-stat-card.gold    { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+.mgmt-stat-card.silver  { background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%); }
+.mgmt-stat-card.amount  { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+.mgmt-stat-card.count   { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); }
+.mgmt-stat-card.danger  { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+.mgmt-stat-card.warning { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+.mgmt-stat-card.purple  { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
+
+.mgmt-stat-label {
+    font-size: 14px;
+    opacity: 0.9;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+.mgmt-stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0;
+}
+
+/* ============================================================
+   NAV TABS  (standard Bootstrap, override any dark themes)
+   ============================================================ */
+.nav-tabs {
+    border-bottom: 2px solid #dee2e6;
+}
+.nav-tabs .nav-link {
+    color: #495057;
+    font-weight: 500;
+    border: none;
+    border-bottom: 3px solid transparent;
+    border-radius: 0;
+    padding: 10px 18px;
+    transition: all 0.2s;
+    background: transparent;
+}
+.nav-tabs .nav-link:hover {
+    color: #667eea;
+    border-bottom-color: #c7d2fe;
+    background: transparent;
+}
+.nav-tabs .nav-link.active {
+    color: #667eea;
+    background: transparent;
+    border-bottom: 3px solid #667eea;
+    font-weight: 600;
+}
+
+/* ============================================================
+   STANDARD DATA TABLE
+   ============================================================ */
+.mgmt-table-wrap {
+    border-radius: 10px;
+    overflow-x: auto;
+    overflow-y: visible;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    background: white;
+}
+/* Ensure table-dark thead uses the standard dark style */
+.table thead.table-dark th {
+    background-color: #212529;
+    color: #fff;
+    border-color: #373b3e;
+    font-weight: 600;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    padding: 12px 10px;
+}
+
+/* ============================================================
+   ORNAMENT LINK / CHIP STYLES
+   ============================================================ */
+.ornament-link {
+    color: #0d6efd;
+    font-weight: 600;
+    text-decoration: none;
+}
+.ornament-link:hover {
+    color: #0a58ca;
+    text-decoration: underline;
+}
+.ornament-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-width: 260px;
+}
+.ornament-chip {
+    background: #eef2ff;
+    color: #4338ca;
+    border: 1px solid #c7d2fe;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+.ornament-chip-muted {
+    background: #f3f4f6;
+    color: #4b5563;
+    border-color: #e5e7eb;
+}
+
+/* ============================================================
+   STATS CARD (for pages like ornament_list, purchase_list)
+   ============================================================ */
+.stats-card {
+    border-radius: 12px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.stats-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15) !important;
+}
+
+/* ============================================================
+   PAGE TITLE
+   ============================================================ */
+.mgmt-page-title {
+    color: #667eea;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 768px) {
+    .filter-section,
+    .search-section,
+    .action-buttons {
+        padding: 15px;
+    }
+    .btn-create,
+    .btn-action {
+        width: 100%;
+        margin-bottom: 8px;
+        padding: 10px 16px;
+    }
+    .stats-card { margin-bottom: 1rem; }
+    .d-flex.gap-2 { flex-direction: column; gap: 0.5rem !important; }
+    .d-flex.gap-2 .btn { width: 100%; }
+}
+@media (max-width: 576px) {
+    .filter-section,
+    .search-section,
+    .action-buttons { padding: 12px; }
+    .btn-create,
+    .btn-action { padding: 8px 12px; font-size: 0.9rem; }
+}

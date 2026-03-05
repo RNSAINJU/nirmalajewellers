@@ -308,7 +308,7 @@
     </div>
 
     <!-- STATUS TABS -->
-    <ul class="nav nav-tabs mb-3" role="tablist">
+    <ul class="nav nav-tabs mb-4" role="tablist">
         {% for status_key, status_label in status_choices.items %}
         <li class="nav-item" role="presentation">
             <button class="nav-link {% if forloop.first %}active{% endif %}" 
@@ -317,8 +317,16 @@
                     data-bs-target="#status-{{ status_key }}" 
                     type="button" 
                     role="tab">
-                {{ status_label }}
-                <span class="badge bg-secondary ms-2">{{ ornaments_by_status|get_item:status_key|length }}</span>
+                {% if status_key == 'active' %}
+                    <span style="color:#10b981; font-weight:600;">💎 {{ status_label }}</span>
+                {% elif status_key == 'deleted' %}
+                    <span style="color:#f59e0b; font-weight:600;">🗑️ {{ status_label }}</span>
+                {% elif status_key == 'destroyed' %}
+                    <span style="color:#ef4444; font-weight:600;">💥 {{ status_label }}</span>
+                {% else %}
+                    <span style="font-weight:600;">{{ status_label }}</span>
+                {% endif %}
+                <small class="ms-2" style="color:#666;">({{ ornaments_by_status|get_item:status_key|length }})</small>
             </button>
         </li>
         {% endfor %}
@@ -334,7 +342,7 @@
             <!-- TABLE VIEW -->
             <div class="view-table">
                 <div class="table-responsive">
-                <table class="table table-bordered table-striped table-hover">
+                <table class="table table-bordered table-striped table-hover align-middle">
                     <thead class="table-dark">
                         <tr>
                             <th>SN</th>

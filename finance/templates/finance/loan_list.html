@@ -1,13 +1,13 @@
 {% extends 'finance/base_finance.html' %}
 
 {% block action_buttons %}
-<a href="{% url 'finance:loan_create' %}" class="btn btn-primary">
+<a href="{% url 'finance:loan_create' %}" class="btn btn-create">
     <i class="bi bi-plus-lg"></i> Add Loan
 </a>
-<a href="{% url 'finance:loan_export' %}" class="btn btn-success">
+<a href="{% url 'finance:loan_export' %}" class="btn btn-export btn-action">
     <i class="bi bi-download"></i> Export
 </a>
-<a href="{% url 'finance:loan_import' %}" class="btn btn-info">
+<a href="{% url 'finance:loan_import' %}" class="btn btn-import btn-action">
     <i class="bi bi-upload"></i> Import
 </a>
 {% endblock %}
@@ -107,23 +107,23 @@
     {% endif %}
 
     <!-- Status Filter Tabs -->
-    <div class="mb-3">
+    <div class="mb-4">
         <ul class="nav nav-tabs">
             <li class="nav-item">
                 <a class="nav-link {% if status_filter == 'active' %}active{% endif %}" href="?status=active">
-                    <i class="bi bi-activity"></i> Active
-                    <span class="badge bg-danger ms-1">{{ active_count }}</span>
+                    <span style="color:#ef4444; font-weight:600;">⚡ Active</span>
+                    <small class="ms-2" style="color:#666;">({{ active_count }})</small>
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {% if status_filter == 'settled' %}active{% endif %}" href="?status=settled">
-                    <i class="bi bi-check-circle"></i> Settled
-                    <span class="badge bg-success ms-1">{{ settled_count }}</span>
+                    <span style="color:#10b981; font-weight:600;">✅ Settled</span>
+                    <small class="ms-2" style="color:#666;">({{ settled_count }})</small>
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {% if status_filter == 'all' %}active{% endif %}" href="?status=all">
-                    <i class="bi bi-list"></i> All
+                    <span style="color:#667eea; font-weight:600;">📋 All</span>
                 </a>
             </li>
         </ul>
@@ -142,8 +142,8 @@
                 <div class="card-body p-0">
                     {% if loans %}
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light">
+                        <table class="table table-bordered table-striped table-hover align-middle mb-0">
+                            <thead class="table-dark">
                                 <tr>
                                     <th>Bank / Loan</th>
                                     <th class="text-end">Amount (रु)</th>
@@ -211,20 +211,20 @@
                                         <div class="d-flex gap-1 justify-content-end flex-wrap">
                                             {% if not loan.is_settled %}
                                             <a href="{% url 'finance:loan_add_interest' loan.pk %}"
-                                               class="btn btn-sm btn-warning text-dark text-nowrap"
+                                               class="btn btn-sm btn-action-settle text-nowrap"
                                                title="Add 3-Month Interest Payment">
                                                 <i class="bi bi-currency-rupee"></i> Pay Interest
                                             </a>
                                             <a href="{% url 'finance:loan_settle' loan.pk %}"
-                                               class="btn btn-sm btn-success text-nowrap"
+                                               class="btn btn-sm btn-action-settle text-nowrap"
                                                title="Mark Loan as Settled">
                                                 <i class="bi bi-check2-circle"></i> Settle
                                             </a>
                                             {% endif %}
-                                            <a href="{% url 'finance:loan_update' loan.pk %}" class="btn btn-sm btn-outline-primary" title="Edit">
+                                            <a href="{% url 'finance:loan_update' loan.pk %}" class="btn btn-sm btn-action-edit" title="Edit">
                                                 <i class="bi bi-pencil"></i>
                                             </a>
-                                            <a href="{% url 'finance:loan_delete' loan.pk %}" class="btn btn-sm btn-outline-danger" title="Delete">
+                                            <a href="{% url 'finance:loan_delete' loan.pk %}" class="btn btn-sm btn-action-delete" title="Delete">
                                                 <i class="bi bi-trash"></i>
                                             </a>
                                         </div>
@@ -287,8 +287,5 @@
     .bg-purple-subtle   { background-color: #e9d8fd !important; }
     .text-purple        { color: #6f42c1 !important; }
     .border-purple-subtle { border-color: #c5a3e8 !important; }
-    .nav-tabs .nav-link { color: #6c757d; }
-    .nav-tabs .nav-link.active { font-weight: 600; color: #0d6efd; }
-    table th, table td { vertical-align: middle; }
 </style>
 {% endblock %}

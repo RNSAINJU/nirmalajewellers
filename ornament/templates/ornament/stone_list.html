@@ -3,11 +3,11 @@
 <div class="container mt-4">
     <h2>Stones</h2>
     <div class="d-flex flex-wrap gap-2 mb-3">
-        <a href="{% url 'ornament:stone_create' %}" class="btn btn-primary">Add Stone</a>
-        <a href="{% url 'ornament:stone_export_excel' %}" class="btn btn-outline-success">Export XLSX</a>
+        <a href="{% url 'ornament:stone_create' %}" class="btn btn-create">Add Stone</a>
+        <a href="{% url 'ornament:stone_export_excel' %}" class="btn btn-export btn-action">Export XLSX</a>
         <form method="post" action="{% url 'ornament:stone_import_excel' %}" enctype="multipart/form-data" class="d-inline">
             {% csrf_token %}
-            <label class="btn btn-outline-secondary mb-0">
+            <label class="btn btn-import btn-action mb-0">
                 Import XLSX
                 <input type="file" name="file" accept=".xlsx" class="d-none" onchange="this.form.submit()">
             </label>
@@ -17,8 +17,8 @@
         <div><strong>Total Carat:</strong> {{ total_carat|floatformat:3 }}</div>
         <div><strong>Total Cost Price:</strong> ₹{{ total_cost_price|floatformat:2 }}</div>
     </div>
-    <table class="table table-bordered">
-        <thead>
+    <table class="table table-bordered table-striped table-hover align-middle">
+        <thead class="table-dark">
             <tr>
                 <th>Name</th>
                 <th>Cost/Carat</th>

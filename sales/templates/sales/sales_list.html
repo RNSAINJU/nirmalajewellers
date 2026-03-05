@@ -3,141 +3,6 @@
 
 {% block content %}
 
-<style>
-    .search-section {
-        background: #f8f9fa;
-        border-radius: 12px;
-        padding: 20px;
-        border: 2px solid #e9ecef;
-    }
-    .action-buttons {
-        background: white;
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-    }
-    .btn-create {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border: none;
-        border-radius: 10px;
-        padding: 12px 24px;
-        font-weight: 600;
-        transition: all 0.3s;
-        color: white;
-    }
-    .btn-create:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-        color: white;
-    }
-    .btn-action {
-        border-radius: 10px;
-        padding: 10px 20px;
-        font-weight: 600;
-        transition: all 0.3s;
-        border: 2px solid;
-    }
-    .btn-action:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    }
-    .btn-import {
-        background: #10b981;
-        border-color: #10b981;
-        color: white;
-    }
-    .btn-import:hover {
-        background: #059669;
-        border-color: #059669;
-        color: white;
-    }
-    .btn-export {
-        background: #0ea5e9;
-        border-color: #0ea5e9;
-        color: white;
-    }
-    .btn-export:hover {
-        background: #0284c7;
-        border-color: #0284c7;
-        color: white;
-    }
-    .btn-print {
-        background: #1f2937;
-        border-color: #1f2937;
-        color: white;
-    }
-    .btn-print:hover {
-        background: #111827;
-        border-color: #111827;
-        color: white;
-    }
-    .stats-tabs {
-        background: white;
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        margin-bottom: 30px;
-    }
-    .stat-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 10px;
-        padding: 20px;
-        color: white;
-        text-align: center;
-        transition: all 0.3s;
-    }
-    .stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
-    }
-    .stat-card.gold { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
-    .stat-card.silver { background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%); }
-    .stat-card.amount { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
-    .stat-card.count { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); }
-    .stat-label {
-        font-size: 14px;
-        opacity: 0.9;
-        margin-bottom: 8px;
-        font-weight: 500;
-    }
-    .stat-value {
-        font-size: 28px;
-        font-weight: 700;
-        margin: 0;
-    }
-    .ornament-link {
-        color: #0d6efd;
-        font-weight: 600;
-        text-decoration: none;
-    }
-    .ornament-link:hover {
-        color: #0a58ca;
-        text-decoration: underline;
-    }
-    /* Compact ornament chips */
-    .ornament-chips {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        max-width: 260px;
-    }
-    .ornament-chip {
-        background: #eef2ff;
-        color: #4338ca;
-        border: 1px solid #c7d2fe;
-        padding: 4px 8px;
-        border-radius: 999px;
-        font-size: 12px;
-        line-height: 1.2;
-        white-space: nowrap;
-    }
-    .ornament-chip-muted {
-        background: #f3f4f6;
-        color: #4b5563;
-        border-color: #e5e7eb;
-    }
-</style>
-
 <div class="container mt-5">
     <h1 class="text-center mb-4" style="color: #667eea; font-weight: 700;">Sales</h1>
 
@@ -317,8 +182,8 @@
                                                 {% endif %}
                                             </td>
                                             <td>
-                                                <a href="{% url 'sales:sale_update' sale.pk %}" class="btn btn-sm btn-primary">Edit</a>
-                                                <a href="{% url 'sales:sale_delete_with_order' sale.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                                                <a href="{% url 'sales:sale_update' sale.pk %}" class="btn btn-sm btn-action-edit">Edit</a>
+                                                <a href="{% url 'sales:sale_delete_with_order' sale.pk %}" class="btn btn-sm btn-action-delete">Delete</a>
                                             </td>
                                         </tr>
                                         {% endwith %}
@@ -418,8 +283,8 @@
                                                 {% endif %}
                                             </td>
                                             <td>
-                                                <a href="{% url 'sales:sale_update' sale.pk %}" class="btn btn-sm btn-primary">Edit</a>
-                                                <a href="{% url 'sales:sale_delete_with_order' sale.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                                                <a href="{% url 'sales:sale_update' sale.pk %}" class="btn btn-sm btn-action-edit">Edit</a>
+                                                <a href="{% url 'sales:sale_delete_with_order' sale.pk %}" class="btn btn-sm btn-action-delete">Delete</a>
                                             </td>
                                         </tr>
                                         {% endwith %}
@@ -495,7 +360,7 @@
                                                     {% if items and items|length > 0 %}
                                                         <div class="ornament-chips" title="{% for line in items %}{{ line.ornament.ornament_name }} ({{ line.ornament.metal_type }}, {{ line.ornament.type }}){% if not forloop.last %}, {% endif %}{% endfor %}">
                                                             {% for line in items|slice:':3' %}
-                                                                <span class="ornament-chip">{{ line.ornament.ornament_name }}</span>
+                                                                <span class="ornament-chip ornament-link">{{ line.ornament.ornament_name }}</span>
                                                             {% endfor %}
                                                             {% if items|length > 3 %}
                                                                 <span class="ornament-chip ornament-chip-muted">+{{ items|length|add:"-3" }}</span>
@@ -521,10 +386,17 @@
                                                     <span class="badge bg-warning text-dark">Due</span>
                                                 {% endif %}
                                             </td>
-                                            <td>
-                                                <a href="{% url 'sales:sale_update' sale.pk %}" class="btn btn-sm btn-primary">Edit</a>
-                                                <a href="{% url 'sales:sale_delete_with_order' sale.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                                            <td class="text-center">
+                                                <div class="btn-group" role="group"></div>
+                                                    <a href="{% url 'sales:sale_update' sale.pk %}" class="btn btn-sm btn-action-edit" title="Edit">
+                                                            <i class="bi bi-pencil-square"></i>Edit
+                                                    </a>
+                                                    <a href="{% url 'sales:sale_delete_with_order' sale.pk %}" class="btn btn-sm btn-action-delete" title="Delete">
+                                                            <i class="bi bi-trash-fill"></i>Delete
+                                                    </a>
+                                            </div>
                                             </td>
+
                                         </tr>
                                         {% endwith %}
                                         {% empty %}
@@ -626,8 +498,8 @@
                                                 {% endif %}
                                             </td>
                                             <td>
-                                                <a href="{% url 'sales:sale_update' sale.pk %}" class="btn btn-sm btn-primary">Edit</a>
-                                                <a href="{% url 'sales:sale_delete_with_order' sale.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                                                <a href="{% url 'sales:sale_update' sale.pk %}" class="btn btn-sm btn-action-edit">Edit</a>
+                                                <a href="{% url 'sales:sale_delete_with_order' sale.pk %}" class="btn btn-sm btn-action-delete">Delete</a>
                                             </td>
                                         </tr>
                                         {% endwith %}

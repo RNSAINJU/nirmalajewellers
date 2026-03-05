@@ -280,7 +280,7 @@
 
     <!-- Purchases Table -->
     <div class="table-responsive">
-        <table class="table table-bordered table-striped table-hover">
+        <table class="table table-bordered table-striped table-hover align-middle">
             <thead class="table-dark">
                 <tr>
                     <th>Bill No</th>
@@ -317,13 +317,13 @@
 
                         <div class="btn-group">
                             <a href="{% url 'gsp:update' p.pk %}" 
-                               class="btn btn-sm btn-outline-warning"
+                               class="btn btn-sm btn-action-edit"
                                title="Edit">
                                 <i class="bi bi-pencil-square"></i>
                             </a>
                     
                             <a href="{% url 'gsp:delete' p.pk %}" 
-                               class="btn btn-sm btn-outline-danger"
+                               class="btn btn-sm btn-action-delete"
                                title="Delete">
                                 <i class="bi bi-trash-fill"></i>
                             </a>

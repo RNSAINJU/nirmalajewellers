@@ -5,446 +5,66 @@
 {% block content %}
 
 <style>
-    /* Base stat card styles - Dark Gold Theme */
+    /* Order stat cards — colorful gradient, matching sales_list theme */
     .stat-card {
-        background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
         border-radius: 12px;
-        padding: 30px;
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
-        text-align: left;
+        padding: 24px 20px;
+        color: white;
+        text-align: center;
         transition: all 0.3s;
-        color: #fcd34d;
-        border: 1px solid #2a2a2a;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        min-height: 160px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     }
-    
     .stat-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 12px 24px rgba(252, 211, 77, 0.2);
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
     }
-    
-    .stat-card.profit {
-        background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
-    }
-    
-    .stat-card.remaining {
-        background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
-    }
-    
-    .stat-card.count {
-        background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
-    }
-    
+    .stat-card.profit    { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+    .stat-card.remaining { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+    .stat-card.count     { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); }
+
     .stat-card-header {
         display: flex;
         justify-content: space-between;
-        align-items: center;
-        margin-bottom: 12px;
+        align-items: flex-start;
+        margin-bottom: 10px;
     }
-    
     .stat-label {
-        font-size: 0.95rem;
-        opacity: 0.85;
+        font-size: 14px;
+        opacity: 0.92;
         font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: #b0b0b0;
+        text-align: left;
     }
-    
-    .stat-card-icon {
-        font-size: 2rem;
-        opacity: 0.7;
-    }
-    
+    .stat-card-icon { font-size: 1.8rem; opacity: 0.75; }
     .stat-value {
-        font-size: 2.5rem;
+        font-size: 2rem;
         font-weight: 800;
         margin: 0;
-        color: #fcd34d;
+        text-align: left;
     }
-    
     .stat-subtext {
-        font-size: 0.85rem;
-        color: #90ee90;
-        margin-top: auto;
-        display: flex;
-        align-items: center;
-        gap: 6px;
+        font-size: 0.82rem;
+        margin-top: 8px;
+        opacity: 0.9;
+        text-align: left;
     }
-    
-    /* Stats tabs container */
-    .stats-tabs {
-        margin-bottom: 25px;
-    }
-    
-    /* Button styles */
-    .btn-create {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        padding: 12px 30px;
-        border-radius: 8px;
-        font-weight: 600;
-        transition: all 0.3s;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-    }
-    
-    .btn-create:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-        color: white;
-    }
-    
-    .btn-import {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        color: white;
-        border: none;
-        transition: all 0.3s;
-    }
-    
-    .btn-import:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
-        color: white;
-    }
-    
-    .btn-export {
-        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-        color: white;
-        border: none;
-        transition: all 0.3s;
-    }
-    
-    .btn-export:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-        color: white;
-    }
-    
-    .btn-print {
-        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-        color: white;
-        border: none;
-        transition: all 0.3s;
-    }
-    
-    .btn-print:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
-        color: white;
-    }
-    
-    .btn-action {
-        padding: 8px 16px;
-        border-radius: 6px;
-        font-size: 14px;
-        font-weight: 500;
-    }
-    
-    /* Action buttons section */
-    .action-buttons {
-        background: #f8f9fa;
-        padding: 20px;
-        border-radius: 12px;
-        border: 2px solid #e9ecef;
-    }
-    
-    /* Search section - Dark Gold Theme */
-    .search-section {
-        background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-        border: 1px solid #2a2a2a;
-    }
+    .stats-tabs { margin-bottom: 25px; }
 
-    .search-section input.form-control {
-        background: #0f0f0f;
-        border: 1px solid #2a2a2a;
-        color: #f5f5f5;
-    }
-
-    .search-section input.form-control:focus {
-        background: #0f0f0f;
-        border-color: #fcd34d;
-        color: #f5f5f5;
-        box-shadow: 0 0 0 0.2rem rgba(252, 211, 77, 0.25);
-    }
-
-    .search-section input.form-control::placeholder {
-        color: #6b7280;
-    }
-
-    .search-section .btn-primary {
-        background: linear-gradient(135deg, #fcd34d 0%, #fbbf24 100%);
-        border: none;
-        color: #000;
-        font-weight: 600;
-    }
-
-    .search-section .btn-primary:hover {
-        background: linear-gradient(135deg, #fbbf24 0%, #f4c025 100%);
-        color: #000;
-    }
-
-    .search-section .btn-outline-secondary {
-        border-color: #2a2a2a;
-        color: #b0b0b0;
-    }
-
-    .search-section .btn-outline-secondary:hover {
-        background: #2a2a2a;
-        border-color: #2a2a2a;
-        color: #f5f5f5;
-    }
-    
-    /* Ornament link styles */
-    .ornament-link {
-        color: #0d6efd;
-        font-weight: 600;
-        text-decoration: none;
-    }
-    
-    .ornament-link:hover {
-        color: #0a58ca;
-        text-decoration: underline;
-    }
-    
-    .ornament-chips {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        max-width: 260px;
-    }
-    
-    .ornament-chip {
-        background: #eef2ff;
-        color: #4338ca;
-        border: 1px solid #c7d2fe;
-        padding: 4px 8px;
-        border-radius: 999px;
-        font-size: 12px;
-        line-height: 1.2;
-        white-space: nowrap;
-    }
-    
-    .ornament-chip-muted {
-        background: #f3f4f6;
-        color: #4b5563;
-        border-color: #e5e7eb;
-    }
-    
-    /* Table improvements */
-    .table-responsive {
-        border-radius: 10px;
-        overflow-x: auto;
-        overflow-y: visible;
-        scroll-behavior: smooth;
-        -webkit-overflow-scrolling: touch;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        background: #1a1a1a;
-    }
-
-    .table-responsive::-webkit-scrollbar {
-        height: 8px;
-    }
-
-    .table-responsive::-webkit-scrollbar-track {
-        background: #0f0f0f;
-    }
-
-    .table-responsive::-webkit-scrollbar-thumb {
-        background: #fcd34d;
-        border-radius: 4px;
-    }
-
-    .table-responsive::-webkit-scrollbar-thumb:hover {
-        background: #fbbf24;
-    }
-
-    /* Scroll hint for mobile devices */
+    /* Scroll hint */
     .scroll-hint {
         display: none;
         text-align: center;
-        color: #fcd34d;
+        color: #667eea;
         font-size: 0.85rem;
         margin-top: 8px;
-        animation: scroll-indicator 1.5s ease-in-out infinite;
     }
+    @media (max-width: 1024px) { .scroll-hint { display: block; } }
 
-    @keyframes scroll-indicator {
-        0%, 100% { opacity: 0.6; }
-        50% { opacity: 1; }
-    }
-
-    @media (max-width: 1024px) {
-        .scroll-hint {
-            display: block;
-        }
-    }
-
-    .table {
-        margin-bottom: 0;
-    }
-
-    .table thead th {
-        font-weight: 600;
-        font-size: 14px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        background: #1f1f1f;
-        color: #fcd34d;
-        border-color: #2a2a2a;
-        padding: 12px 8px;
-    }
-
-    .table tbody td {
-        background: #1a1a1a;
-        color: #e5e5e5;
-        border-color: #2a2a2a;
-        padding: 12px 8px;
-        font-size: 0.9rem;
-    }
-
-    .table tbody tr:hover {
-        background: rgba(252, 211, 77, 0.08);
-    }
-
-    /* Action button styles for dark theme */
-    .btn-outline-warning {
-        border-color: #fbbf24;
-        color: #fbbf24;
-    }
-
-    .btn-outline-warning:hover {
-        background: #fbbf24;
-        color: #000;
-        border-color: #fbbf24;
-    }
-
-    .btn-outline-danger {
-        border-color: #ef4444;
-        color: #ef4444;
-    }
-
-    .btn-outline-danger:hover {
-        background: #ef4444;
-        color: #fff;
-        border-color: #ef4444;
-    }
-
-    .btn-outline-primary {
-        border-color: #3b82f6;
-        color: #3b82f6;
-    }
-
-    .btn-outline-primary:hover {
-        background: #3b82f6;
-        color: #fff;
-        border-color: #3b82f6;
-    }
-
-    .btn-group .btn-sm {
-        padding: 6px 10px;
-        font-size: 0.85rem;
-    }
-    
-    .nav-tabs .nav-link {
-        border: none;
-        color: #6b7280;
-        font-weight: 600;
-        padding: 12px 20px;
-        transition: all 0.3s;
-    }
-    
-    .nav-tabs .nav-link:hover {
-        color: #374151;
-        background: #f3f4f6;
-    }
-    
-    .nav-tabs .nav-link.active {
-        color: #667eea;
-        background: white;
-        border-bottom: 3px solid #667eea;
-    }
-    
-    .nav-tabs .badge {
-        font-size: 12px;
-        padding: 4px 8px;
-    }
-
-    /* MOBILE RESPONSIVE IMPROVEMENTS */
+    /* Mobile tweaks */
     @media (max-width: 768px) {
-        .stat-card {
-            padding: 15px;
-            margin-bottom: 1rem;
-        }
-
-        .stat-value {
-            font-size: 22px;
-        }
-
-        .stat-label {
-            font-size: 12px;
-        }
-
-        .action-buttons {
-            padding: 15px;
-        }
-
-        .btn-create,
-        .btn-import,
-        .btn-export,
-        .btn-print {
-            width: 100%;
-            margin-bottom: 8px;
-        }
-
-        .ornament-chips {
-            flex-wrap: wrap;
-        }
-
-        .nav-tabs {
-            overflow-x: auto;
-            flex-wrap: nowrap;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .nav-tabs .nav-link {
-            padding: 10px 15px;
-            font-size: 0.9rem;
-            white-space: nowrap;
-        }
-    }
-
-    @media (max-width: 576px) {
-        .stat-card {
-            padding: 12px;
-        }
-
-        .stat-value {
-            font-size: 20px;
-        }
-
-        .stat-label {
-            font-size: 11px;
-        }
-
-        .btn-action {
-            padding: 6px 12px;
-            font-size: 13px;
-        }
-
-        .action-buttons {
-            padding: 12px;
-        }
-
-        .search-section {
-            padding: 12px;
-        }
+        .stat-card { padding: 15px; margin-bottom: 1rem; }
+        .stat-value { font-size: 1.5rem; }
+        .nav-tabs { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+        .nav-tabs .nav-link { white-space: nowrap; }
     }
 </style>
 
@@ -563,33 +183,33 @@
     </div>
 
     <!-- Status Tabs -->
-    <div class="mb-4">
-        <ul class="nav nav-tabs" id="statusTabs" role="tablist">
-            {% for status_key, orders_list in orders_by_status.items %}
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link {% if forloop.first %}active{% endif %}" 
-                            id="tab-{{ status_key }}" 
-                            data-bs-toggle="tab" 
-                            data-bs-target="#content-{{ status_key }}" 
-                            type="button" 
-                            role="tab"
-                            aria-controls="content-{{ status_key }}"
-                            {% if forloop.first %}aria-selected="true"{% else %}aria-selected="false"{% endif %}>
-                        <span class="badge me-2" 
-                              {% if status_key == 'order' %}style="background-color: #3b82f6;"{% elif status_key == 'processing' %}style="background-color: #f59e0b;"{% elif status_key == 'on_hold' %}style="background-color: #ef4444;"{% elif status_key == 'completed' %}style="background-color: #8b5cf6;"{% elif status_key == 'delivered' %}style="background-color: #10b981;"{% endif %}>
-                            {{ orders_list.count }}
-                        </span>
-                        {% if status_key == 'order' %}Order
-                        {% elif status_key == 'processing' %}Processing
-                        {% elif status_key == 'on_hold' %}On Hold
-                        {% elif status_key == 'completed' %}Completed
-                        {% elif status_key == 'delivered' %}Delivered
-                        {% endif %}
-                    </button>
-                </li>
-            {% endfor %}
-        </ul>
-    </div>
+    <ul class="nav nav-tabs mb-4" id="statusTabs" role="tablist">
+        {% for status_key, orders_list in orders_by_status.items %}
+            <li class="nav-item" role="presentation">
+                <button class="nav-link {% if forloop.first %}active{% endif %}"
+                        id="tab-{{ status_key }}"
+                        data-bs-toggle="tab"
+                        data-bs-target="#content-{{ status_key }}"
+                        type="button"
+                        role="tab"
+                        aria-controls="content-{{ status_key }}"
+                        {% if forloop.first %}aria-selected="true"{% else %}aria-selected="false"{% endif %}>
+                    {% if status_key == 'order' %}
+                        <span style="color:#3b82f6; font-weight:600;">📋 Order</span>
+                    {% elif status_key == 'processing' %}
+                        <span style="color:#f59e0b; font-weight:600;">⚙️ Processing</span>
+                    {% elif status_key == 'on_hold' %}
+                        <span style="color:#ef4444; font-weight:600;">⏸ On Hold</span>
+                    {% elif status_key == 'completed' %}
+                        <span style="color:#8b5cf6; font-weight:600;">✅ Completed</span>
+                    {% elif status_key == 'delivered' %}
+                        <span style="color:#10b981; font-weight:600;">🚚 Delivered</span>
+                    {% endif %}
+                    <small class="ms-2" style="color:#666;">({{ orders_list.count }})</small>
+                </button>
+            </li>
+        {% endfor %}
+    </ul>
 
     <!-- Status Tab Content -->
     <div class="tab-content" id="statusTabContent">
@@ -614,7 +234,7 @@
                     {% if orders_list %}
                     <div class="table-responsive">
                         <table class="table table-bordered table-striped table-hover align-middle">
-                            <thead>
+                            <thead class="table-dark">
                                 <tr>
                                     <th>Order No</th>
                                     <th>Order Date</th>
@@ -684,10 +304,10 @@
                                     <td><span class="badge" style="background: #3b82f6; color: #fff;">{{ order.get_status_display }}</span></td>
                                     <td class="text-center">
                                         <div class="btn-group" role="group">
-                                            <a href="{% url 'order:update' order.sn %}" class="btn btn-sm btn-outline-warning" title="Edit">
+                                            <a href="{% url 'order:update' order.sn %}" class="btn btn-sm btn-action-edit" title="Edit">
                                                 <i class="bi bi-pencil-square"></i> Edit
                                             </a>
-                                            <a href="{% url 'order:delete' order.sn %}" class="btn btn-sm btn-outline-danger" title="Delete">
+                                            <a href="{% url 'order:delete' order.sn %}" class="btn btn-sm btn-action-delete" title="Delete">
                                                 <i class="bi bi-trash-fill"></i> Delete
                                             </a>
                                             {% if order.sale %}
@@ -695,7 +315,7 @@
                                             {% else %}
                                                 <form method="post" action="{% url 'order:create_sale_from_order' order.sn %}" class="d-inline">
                                                     {% csrf_token %}
-                                                    <button type="submit" class="btn btn-sm btn-outline-primary" title="Add to Sales">
+                                                    <button type="submit" class="btn btn-sm btn-action-add" title="Add to Sales">
                                                         <i class="bi bi-plus-circle"></i> Add
                                                     </button>
                                                 </form>
