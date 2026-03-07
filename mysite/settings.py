@@ -69,9 +69,9 @@ import cloudinary.api
 
 
 cloudinary.config(
-    cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME', 'dutjtpdhn'),
-    api_key=os.getenv('CLOUDINARY_API_KEY', '891116228766476'),
-    api_secret=os.getenv('CLOUDINARY_API_SECRET', 'dHak4tSRQb5PctRTS5qEClOHXis'),
+    cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
+    api_key=os.getenv('CLOUDINARY_API_KEY'),
+    api_secret=os.getenv('CLOUDINARY_API_SECRET'),
     secure=True
 )
 
@@ -133,11 +133,11 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.getenv('DATABASE_NAME', 'nirmalajewellers_db'),
-            'USER': os.getenv('DATABASE_USER', 'nirmalajewellers_user'),
-            'PASSWORD': os.getenv('DATABASE_PASSWORD', 'probook'),
-            'HOST': os.getenv('DATABASE_HOST', 'localhost'),
-            'PORT': os.getenv('DATABASE_PORT', '5432'),
+            'NAME': os.getenv('DATABASE_NAME'),
+            'USER': os.getenv('DATABASE_USER'),
+            'PASSWORD': os.getenv('DATABASE_PASSWORD'),
+            'HOST': os.getenv('DATABASE_HOST'),
+            'PORT': os.getenv('DATABASE_PORT'),
         }
     }
 
