@@ -1,0 +1,302 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <!-- Header -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="mb-0">
+                            <i class="bi bi-calculator"></i> Ornament Price Calculator
+                        </h3>
+                        <a href="{% url 'ornament:barcode_scanner' %}" class="btn btn-light btn-sm">
+                            <i class="bi bi-arrow-left"></i> Back to Scanner
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Current Rates Alert -->
+                    {% if current_rate %}
+                    <div class="alert alert-info">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <strong>Date:</strong> {{ current_rate.bs_date }}
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Gold Rate:</strong> रु{{ current_rate.gold_rate|floatformat:0 }}/तोल
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Silver Rate:</strong> रु{{ current_rate.silver_rate|floatformat:0 }}/तोल
+                            </div>
+                            <div class="col-md-3">
+                                <a href="{% url 'main:daily_rates' %}" class="btn btn-sm btn-outline-primary">Update Rates</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i> No current rates available. <a href="{% url 'main:daily_rates' %}">Set rates</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Ornament Details -->
+            <div class="row">
+                <!-- Left Column: Ornament Details -->
+                <div class="col-lg-6">
+                    <div class="card shadow mb-4">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="mb-0"><i class="bi bi-gem"></i> Ornament Details</h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Image and Barcode -->
+                            {% if ornament.barcode_image %}
+                            <div class="text-center mb-3">
+                                <div style="border: 2px solid #ddd; padding: 10px; display: inline-block; border-radius: 8px;">
+                                    <img src="{{ ornament.barcode_image.url }}" alt="Barcode" style="max-width: 180px; height: auto;">
+                                </div>
+                                <p class="mt-2 text-muted small">{{ ornament.barcode }}</p>
+                            </div>
+                            {% endif %}
+
+                            {% if ornament.image %}
+                            <div class="text-center mb-3">
+                                <img src="{{ ornament.image.url }}" alt="{{ ornament.ornament_name }}" 
+                                     style="max-width: 100%; height: auto; border-radius: 8px;">
+                            </div>
+                            {% endif %}
+
+                            <!-- Ornament Info -->
+                            <table class="table table-borderless">
+                                <tbody>
+                                    <tr>
+                                        <td class="fw-bold" width="50%">Code:</td>
+                                        <td>{{ ornament.code }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Name:</td>
+                                        <td>{{ ornament.ornament_name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Metal Type:</td>
+                                        <td>
+                                            <span class="badge bg-warning text-dark">
+                                                {{ price_breakdown.metal_type }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Karat:</td>
+                                        <td>
+                                            <span class="badge bg-info">
+                                                {{ price_breakdown.purity }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Main Category:</td>
+                                        <td>{{ ornament.maincategory.name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Sub Category:</td>
+                                        <td>{{ ornament.subcategory.name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Kaligar:</td>
+                                        <td>{{ ornament.kaligar.name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Status:</td>
+                                        <td>
+                                            <span class="badge {% if ornament.status == 'active' %}bg-success{% elif ornament.status == 'deleted' %}bg-warning{% elif ornament.status == 'destroyed' %}bg-danger{% endif %}">
+                                                {{ ornament.get_status_display }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Weight and Price Calculation -->
+                <div class="col-lg-6">
+                    <!-- Weights Card -->
+                    <div class="card shadow mb-4">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0"><i class="bi bi-scale"></i> Weight Details</h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm">
+                                <tbody>
+                                    <tr class="table-light">
+                                        <td class="fw-bold">Gross Weight:</td>
+                                        <td class="text-end"><strong>{{ price_breakdown.gross_weight }}</strong> तोल</td>
+                                    </tr>
+                                    <tr class="table-light">
+                                        <td class="fw-bold">Net Weight (Metal):</td>
+                                        <td class="text-end"><strong>{{ price_breakdown.net_weight }}</strong> तोल</td>
+                                    </tr>
+                                    {% if price_breakdown.diamond_weight > 0 %}
+                                    <tr>
+                                        <td class="fw-bold">Diamond Weight:</td>
+                                        <td class="text-end">{{ price_breakdown.diamond_weight }} ग्राम</td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if price_breakdown.stone_weight > 0 %}
+                                    <tr>
+                                        <td class="fw-bold">Stone Weight:</td>
+                                        <td class="text-end">{{ price_breakdown.stone_weight }} ग्राम</td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Price Calculation Card -->
+                    <div class="card shadow mb-4 border-success">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i class="bi bi-receipt"></i> Price Calculation</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if current_rate %}
+                            <table class="table table-sm">
+                                <tbody>
+                                    <!-- Metal Value -->
+                                    {% if price_breakdown.metal_type == 'Gold' or price_breakdown.metal_type == 'Silver' %}
+                                    <tr class="table-light">
+                                        <td>
+                                            <strong>{{ price_breakdown.metal_type }} Value</strong>
+                                            <small class="d-block text-muted">
+                                                @ रु{%  if price_breakdown.metal_type == 'Gold' %}{{ current_rate.gold_rate|floatformat:0 }}{% else %}{{ current_rate.silver_rate|floatformat:0 }}{% endif %}/तोल
+                                            </small>
+                                        </td>
+                                        <td class="text-end">
+                                            <strong class="text-success">रु{{ price_breakdown.metal_value|floatformat:0 }}</strong>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+
+                                    <!-- Diamond Value -->
+                                    {% if price_breakdown.diamond_weight > 0 %}
+                                    <tr>
+                                        <td>
+                                            <strong>Diamond Value</strong>
+                                            <small class="d-block text-muted">
+                                                @ रु{{ ornament.diamond_rate }}/ग्राम
+                                            </small>
+                                        </td>
+                                        <td class="text-end">
+                                            <strong class="text-primary">रु{{ price_breakdown.diamond_value|floatformat:0 }}</strong>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+
+                                    <!-- Stone Value -->
+                                    {% if price_breakdown.stone_weight > 0 %}
+                                    <tr>
+                                        <td>
+                                            <strong>Stone Value</strong>
+                                            <small class="d-block text-muted">
+                                                @ रु{{ ornament.stone_percaratprice }}/ग्राम
+                                            </small>
+                                        </td>
+                                        <td class="text-end">
+                                            <strong class="text-primary">रु{{ price_breakdown.stone_value|floatformat:0 }}</strong>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+
+                                    <tr class="table-secondary">
+                                        <td class="fw-bold">Material Value</td>
+                                        <td class="text-end fw-bold">रु{{ price_breakdown.total_material_value|floatformat:0 }}</td>
+                                    </tr>
+
+                                    <!-- Labor & Other Costs -->
+                                    {% if price_breakdown.jarti_value > 0 %}
+                                    <tr>
+                                        <td><strong>Jarti (Labor)</strong></td>
+                                        <td class="text-end">रु{{ price_breakdown.jarti_value|floatformat:2 }}</td>
+                                    </tr>
+                                    {% endif %}
+
+                                    {% if price_breakdown.jyala_value > 0 %}
+                                    <tr>
+                                        <td><strong>Jyala (Design Cost)</strong></td>
+                                        <td class="text-end">रु{{ price_breakdown.jyala_value|floatformat:2 }}</td>
+                                    </tr>
+                                    {% endif %}
+
+                                    <!-- Total Price -->
+                                    <tr class="table-success" style="font-size: 1.1rem;">
+                                        <td class="fw-bold">TOTAL PRICE</td>
+                                        <td class="text-end fw-bold text-success">
+                                            रु{{ price_breakdown.final_price|floatformat:0 }}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <!-- Price Summary Box -->
+                            <div class="alert alert-success mt-3 mb-0">
+                                <div class="text-center">
+                                    <p class="mb-2 text-muted">Estimated Selling Price</p>
+                                    <h2 class="mb-0 text-success">
+                                        रु<span id="finalPrice">{{ price_breakdown.final_price|floatformat:0 }}</span>
+                                    </h2>
+                                </div>
+                            </div>
+
+                            {% else %}
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle"></i> Cannot calculate price. Please set current rates.
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'ornament:update' ornament.pk %}" class="btn btn-warning">
+                            <i class="bi bi-pencil"></i> Edit Ornament
+                        </a>
+                        <a href="{% url 'ornament:barcode_scanner' %}" class="btn btn-secondary">
+                            <i class="bi bi-qr-code"></i> Scan Another Barcode
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-header {
+        border-radius: 8px 8px 0 0;
+    }
+
+    .alert {
+        border-radius: 8px;
+    }
+
+    table tbody tr:hover {
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+
+    .badge {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}

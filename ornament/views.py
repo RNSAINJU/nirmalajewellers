@@ -1491,6 +1491,117 @@ def kaligar_list(request):
     return render(request, 'ornament/kaligar_list.html', context)
 
 
+# ===== Barcode Scanner Views =====
+@login_required(login_url='/accounts/login/')
+def barcode_scanner(request):
+    """Page to scan barcode and enter ornament details."""
+    searched_ornament = None
+    current_rate = None
+    error_message = None
+    
+    if request.method == 'POST':
+        barcode = request.POST.get('barcode', '').strip()
+        
+        if barcode:
+            # Try to find ornament by barcode or code
+            try:
+                searched_ornament = Ornament.objects.get(barcode=barcode)
+            except Ornament.DoesNotExist:
+                try:
+                    searched_ornament = Ornament.objects.get(code=barcode)
+                except Ornament.DoesNotExist:
+                    error_message = f"Ornament with barcode '{barcode}' not found."
+    
+    # Get the latest rate
+    from main.models import DailyRate
+    current_rate = DailyRate.objects.first()
+    
+    context = {
+        'searched_ornament': searched_ornament,
+        'current_rate': current_rate,
+        'error_message': error_message,
+    }
+    
+    return render(request, 'ornament/barcode_scanner.html', context)
+
+
+@login_required(login_url='/accounts/login/')
+def ornament_price_calculator(request, pk):
+    """Display ornament details with price calculation based on current rates."""
+    ornament = get_object_or_404(Ornament, pk=pk)
+    
+    # Get the latest rate
+    from main.models import DailyRate
+    from decimal import Decimal
+    
+    current_rate = DailyRate.objects.first()
+    
+    # Calculate prices based on current rates
+    price_breakdown = {
+        'metal_type': ornament.get_metal_type_display(),
+        'purity': ornament.get_type_display(),
+        'gross_weight': ornament.gross_weight,
+        'net_weight': ornament.weight,
+        'diamond_weight': ornament.diamond_weight,
+        'stone_weight': ornament.stone_weight,
+        'jarti': ornament.jarti,
+        'jyala': ornament.jyala,
+    }
+    
+    # Calculate valuations if rates are available
+    if current_rate:
+        price_breakdown['current_rate'] = current_rate
+        
+        # Gold/Silver calculation (based on net metal weight)
+        if ornament.metal_type == 'Gold':
+            # Convert weight in tola to calculate (1 tola = 11.664grams)
+            weight_in_tola = Decimal(str(ornament.weight)) / Decimal('11.664')
+            price_breakdown['metal_value'] = weight_in_tola * current_rate.gold_rate
+        elif ornament.metal_type == 'Silver':
+            weight_in_tola = Decimal(str(ornament.weight)) / Decimal('11.664')
+            price_breakdown['metal_value'] = weight_in_tola * current_rate.silver_rate
+        else:
+            price_breakdown['metal_value'] = Decimal('0.00')
+        
+        # Diamond calculation
+        if ornament.diamond_weight and ornament.diamond_rate:
+            price_breakdown['diamond_value'] = Decimal(str(ornament.diamond_weight)) * Decimal(str(ornament.diamond_rate))
+        else:
+            price_breakdown['diamond_value'] = Decimal('0.00')
+        
+        # Stone calculation
+        if ornament.stone_weight and ornament.stone_percaratprice:
+            price_breakdown['stone_value'] = Decimal(str(ornament.stone_weight)) * Decimal(str(ornament.stone_percaratprice))
+        else:
+            price_breakdown['stone_value'] = Decimal('0.00')
+        
+        # Total material value
+        price_breakdown['total_material_value'] = (
+            price_breakdown.get('metal_value', Decimal('0.00')) +
+            price_breakdown.get('diamond_value', Decimal('0.00')) +
+            price_breakdown.get('stone_value', Decimal('0.00'))
+        )
+        
+        # Add labor (jarti) and other costs
+        price_breakdown['jarti_value'] = ornament.jarti or Decimal('0.00')
+        price_breakdown['jyala_value'] = ornament.jyala or Decimal('0.00')
+        
+        # Final price
+        price_breakdown['final_price'] = (
+            price_breakdown.get('total_material_value', Decimal('0.00')) +
+            price_breakdown.get('jarti_value', Decimal('0.00')) +
+            price_breakdown.get('jyala_value', Decimal('0.00'))
+        )
+    
+    context = {
+        'ornament': ornament,
+        'price_breakdown': price_breakdown,
+        'current_rate': current_rate,
+    }
+    
+    return render(request, 'ornament/ornament_price_calculator.html', context)
+
+
 # ===== Ornament Stock Report (imported from order.reports) =====
 # Import from order app to avoid code duplication
 from order.reports import OrnamentStockReport, ornament_stock_export_excel
@@ -1526,6 +1637,8 @@ __all__ = [
     'import_motimala_excel',
     'export_potey_excel',
     'import_potey_excel',
+    'barcode_scanner',
+    'ornament_price_calculator',
     'OrnamentStockReport',
     'ornament_stock_export_excel',
 ]

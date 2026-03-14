@@ -1072,6 +1072,7 @@
         {% url 'main:role_list' as role_list_url %}
 
         {% url 'ornament:list' as ornament_list_url %}
+        {% url 'ornament:barcode_scanner' as ornament_barcode_scanner_url %}
         {% url 'ornament:create' as ornament_create_url %}
         {% url 'ornament:create_multiple' as ornament_create_multiple_url %}
         {% url 'ornament:createmaincategory' as ornament_maincategory_url %}
@@ -1147,12 +1148,37 @@
         </div>
 
         <div class="mb-3">
+            <a class="nav-link" data-bs-toggle="collapse" href="#metalStockMenu" role="button" aria-expanded="false">
+                <span><i class="bi bi-boxes"></i> Metal Stock</span>
+                <i class="bi bi-chevron-down"></i>
+            </a>
+            <div class="collapse" id="metalStockMenu">
+                <a href="{{ metal_stock_list_url }}" class="nav-link">
+                    <i class="bi bi-list-ul me-1"></i>Stock List
+                </a>
+                <a href="{{ metal_stock_create_url }}" class="nav-link">
+                    <i class="bi bi-plus-circle me-1"></i>Add Metal Stock
+                </a>
+                {% comment %} <a href="{{ metal_stock_export_url }}" class="nav-link">
+                    <i class="bi bi-file-earmark-excel me-1"></i>Export Stock
+                </a>
+                <a href="{{ metal_stock_import_url }}" class="nav-link">
+                    <i class="bi bi-file-earmark-arrow-up me-1"></i>Import Stock
+                </a> {% endcomment %}
+            </div>
+        </div>
+
+        <div class="mb-3">
             <a class="nav-link" data-bs-toggle="collapse" href="#ornamentMenu" role="button" aria-expanded="false">
                 <span><i class="bi bi-gem"></i> Ornaments</span>
                 <i class="bi bi-chevron-down"></i>
             </a>
             <div class="collapse" id="ornamentMenu">
                 <a href="{{ ornament_list_url }}" class="nav-link">Ornament List</a>
+                <a href="{{ ornament_barcode_scanner_url }}" class="nav-link" style="font-weight: bold;">
+                    <i class="bi bi-qr-code"></i> Barcode Scanner
+                </a>
+                <hr class="dropdown-divider">
                 <a href="{{ ornament_create_url }}" class="nav-link">Create Ornament</a>
                 <a href="{{ ornament_create_multiple_url }}" class="nav-link">Create Multiple</a>
                 <a href="{{ ornament_maincategory_url }}" class="nav-link">Main Category</a>
@@ -1204,26 +1230,7 @@
             </div>
         </div>
 
-        <div class="mb-3">
-            <a class="nav-link" data-bs-toggle="collapse" href="#metalStockMenu" role="button" aria-expanded="false">
-                <span><i class="bi bi-boxes"></i> Metal Stock</span>
-                <i class="bi bi-chevron-down"></i>
-            </a>
-            <div class="collapse" id="metalStockMenu">
-                <a href="{{ metal_stock_list_url }}" class="nav-link">
-                    <i class="bi bi-list-ul me-1"></i>Stock List
-                </a>
-                <a href="{{ metal_stock_create_url }}" class="nav-link">
-                    <i class="bi bi-plus-circle me-1"></i>Add Metal Stock
-                </a>
-                <a href="{{ metal_stock_export_url }}" class="nav-link">
-                    <i class="bi bi-file-earmark-excel me-1"></i>Export Stock
-                </a>
-                <a href="{{ metal_stock_import_url }}" class="nav-link">
-                    <i class="bi bi-file-earmark-arrow-up me-1"></i>Import Stock
-                </a>
-            </div>
-        </div>
+
 
         <div class="mb-3">
             <a class="nav-link" data-bs-toggle="collapse" href="#ordersMenu" role="button" aria-expanded="false">

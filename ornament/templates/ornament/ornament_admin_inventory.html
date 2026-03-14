@@ -40,7 +40,7 @@
     <!-- SEARCH & FILTER -->
     <div class="search-filter-section">
         <form class="search-box" method="get">
-            <input type="text" name="search" placeholder="Search by SKU or name..." value="{{ request.GET.search }}">
+            <input type="text" name="search" placeholder="Search by SKU, barcode or name..." value="{{ request.GET.search }}">
             <button type="submit" class="search-icon" title="Search">
                 <i class="bi bi-search"></i>
             </button>
@@ -58,6 +58,10 @@
                 <div class="filter-group">
                     <label>Code</label>
                     <input type="text" name="code" placeholder="Ornament code" value="{{ request.GET.code }}">
+                </div>
+                <div class="filter-group">
+                    <label>Barcode</label>
+                    <input type="text" name="barcode" placeholder="Barcode" value="{{ request.GET.barcode }}">
                 </div>
                 <div class="filter-group">
                     <label>Name</label>
@@ -164,6 +168,13 @@
                         <div class="card-title-wrapper">
                             <h3 class="card-title">{{ ornament.ornament_name }}</h3>
                             <div class="card-sku">SKU: {{ ornament.code }}</div>
+                            {% if ornament.barcode_image %}
+                                <div style="margin-top: 8px;">
+                                    <img src="{{ ornament.barcode_image.url }}" alt="Barcode" style="max-width: 120px; height: auto;">
+                                </div>
+                            {% else %}
+                                <div class="card-sku" style="margin-top: 8px;">Barcode: {{ ornament.barcode }}</div>
+                            {% endif %}
                         </div>
 
                         <!-- STATUS BADGE -->
@@ -215,6 +226,7 @@
                         <tr>
                             <th>Image</th>
                             <th>Code</th>
+                            <th>Barcode</th>
                             <th>Name</th>
                             <th>Metal</th>
                             <th>Karat</th>
@@ -236,6 +248,13 @@
                                 {% endif %}
                             </td>
                             <td>{{ ornament.code }}</td>
+                            <td>
+                                {% if ornament.barcode_image %}
+                                    <img src="{{ ornament.barcode_image.url }}" alt="Barcode" style="max-width: 100px; height: auto;">
+                                {% else %}
+                                    {{ ornament.barcode }}
+                                {% endif %}
+                            </td>
                             <td>{{ ornament.ornament_name }}</td>
                             <td>{{ ornament.get_metal_type_display }}</td>
                             <td>{{ ornament.get_type_display }}</td>

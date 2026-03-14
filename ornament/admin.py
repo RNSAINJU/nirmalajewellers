@@ -17,11 +17,11 @@ class SubCategory(admin.ModelAdmin):
 
 @admin.register(Ornament)
 class OrnamentAdmin(admin.ModelAdmin):
-    list_display = ('code','maincategory','subcategory', 'ornament_name', 'kaligar', 'weight', 'jarti', 'ornament_type', 'status', 'has_image_display')
+    list_display = ('code', 'barcode', 'maincategory','subcategory', 'ornament_name', 'kaligar', 'weight', 'jarti', 'ornament_type', 'status', 'has_image_display')
     list_filter = ('type', 'ornament_type', 'status')
-    search_fields = ('code', 'ornament_name')
+    search_fields = ('code', 'barcode', 'ornament_name')
     ordering = ('-ornament_date', '-created_at')
-    readonly_fields = ('created_at', 'updated_at')
+    readonly_fields = ('created_at', 'updated_at', 'code', 'barcode')
     
     actions = ['mark_as_destroyed']
 

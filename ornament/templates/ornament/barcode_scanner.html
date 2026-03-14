@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-qr-code"></i> Barcode Scanner
+                    </h3>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Display Rate Information -->
+                    {% if current_rate %}
+                    <div class="alert alert-info mb-4">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <strong>Date:</strong> {{ current_rate.bs_date }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Gold Rate (per tola):</strong> रु{{ current_rate.gold_rate|floatformat:0 }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Silver Rate (per tola):</strong> रु{{ current_rate.silver_rate|floatformat:0 }}
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning mb-4">
+                        <i class="bi bi-exclamation-triangle"></i> No current rates available. Please <a href="{% url 'main:daily_rates' %}">set today's rates</a> first.
+                    </div>
+                    {% endif %}
+
+                    <!-- Error Message -->
+                    {% if error_message %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="bi bi-x-circle"></i> {{ error_message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endif %}
+
+                    <!-- Barcode Input Form -->
+                    <form method="post" class="mb-4">
+                        {% csrf_token %}
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text">
+                                <i class="bi bi-barcode"></i>
+                            </span>
+                            <input 
+                                type="text" 
+                                name="barcode" 
+                                class="form-control" 
+                                placeholder="Scan or enter barcode (e.g., ORN-0000006327)" 
+                                autofocus
+                                autocomplete="off"
+                                required
+                            />
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-search"></i> Search
+                            </button>
+                        </div>
+                        <small class="form-text text-muted mt-2">
+                            You can scan the barcode or enter the barcode/code manually
+                        </small>
+                    </form>
+
+                    <!-- Ornament Result -->
+                    {% if searched_ornament %}
+                    <div class="card border-success mb-4">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-check-circle"></i> Ornament Found
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <!-- Ornament Image -->
+                                    {% if searched_ornament.barcode_image %}
+                                    <div class="mb-3 text-center">
+                                        <div style="border: 2px solid #ddd; padding: 10px; display: inline-block;">
+                                            <img src="{{ searched_ornament.barcode_image.url }}" alt="Barcode" style="max-width: 200px; height: auto;">
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if searched_ornament.image %}
+                                    <div class="text-center">
+                                        <img src="{{ searched_ornament.image.url }}" alt="{{ searched_ornament.ornament_name }}" 
+                                             style="max-width: 200px; height: auto; border-radius: 8px;">
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <table class="table table-sm">
+                                        <tbody>
+                                            <tr>
+                                                <td><strong>Code:</strong></td>
+                                                <td>{{ searched_ornament.code }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Barcode:</strong></td>
+                                                <td><code>{{ searched_ornament.barcode }}</code></td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Name:</strong></td>
+                                                <td>{{ searched_ornament.ornament_name }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Metal Type:</strong></td>
+                                                <td>{{ searched_ornament.get_metal_type_display }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Karat:</strong></td>
+                                                <td>{{ searched_ornament.get_type_display }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Sub Category:</strong></td>
+                                                <td>{{ searched_ornament.subcategory.name }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Gross Weight:</strong></td>
+                                                <td>{{ searched_ornament.gross_weight }} तोल</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Net Weight:</strong></td>
+                                                <td>{{ searched_ornament.weight }} तोल</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Price Calculator Button -->
+                            <div class="text-center">
+                                <a href="{% url 'ornament:price_calculator' searched_ornament.pk %}" class="btn btn-lg btn-success">
+                                    <i class="bi bi-calculator"></i> Calculate Price
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <!-- No Result Yet -->
+                    <div class="text-center py-5">
+                        <i class="bi bi-qr-code" style="font-size: 4rem; color: #ccc;"></i>
+                        <p class="mt-3 text-muted">
+                            Scan a barcode to see ornament details
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .input-group-lg .form-control {
+        padding: 1rem;
+        font-size: 1.25rem;
+    }
+
+    .card {
+        border-radius: 8px;
+    }
+
+    .card-header {
+        border-radius: 8px 8px 0 0;
+    }
+
+    .alert {
+        border-radius: 8px;
+    }
+</style>
+{% endblock %}

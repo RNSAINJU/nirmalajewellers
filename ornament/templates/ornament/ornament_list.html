@@ -171,7 +171,7 @@
             <div class="search-section">
 
                 <form method="get" class="d-flex gap-2">
-                    <input type="text" name="search" class="form-control" placeholder="Search by code, name, metal type..." value="{{ request.GET.search }}">
+                    <input type="text" name="search" class="form-control" placeholder="Search by code, barcode, name, metal type..." value="{{ request.GET.search }}">
                     <button class="btn btn-primary fw-bold" style="min-width: 100px;">Search</button>
                     <a href="{% url 'ornament:list' %}" class="btn btn-outline-secondary fw-bold">Clear</a>
                 </form>
@@ -206,6 +206,10 @@
                 <div class="col-md-2">
                     <label>Code</label>
                     <input type="text" name="code" class="form-control" placeholder="Code" value="{{ request.GET.code }}">
+                </div>
+                <div class="filter-group">
+                    <label>Barcode</label>
+                    <input type="text" name="barcode" class="form-control" placeholder="Barcode" value="{{ request.GET.barcode }}">
                 </div>
                 <div class="col-md-2">
                     <label>Name</label>
@@ -349,6 +353,7 @@
                             <th>Image</th>
                             <th>Date</th>
                             <th>Code</th>
+                            <th>Barcode</th>
                             <th>Ornament Name</th>
                             <th>Metal Type</th>
                             <th>Karat</th>
@@ -385,6 +390,13 @@
 
                             <td>{{ o.ornament_date }}</td>
                             <td>{{ o.code }}</td>
+                            <td>
+                                {% if o.barcode_image %}
+                                    <img src="{{ o.barcode_image.url }}" alt="Barcode" style="max-width: 100px; height: auto;">
+                                {% else %}
+                                    {{ o.barcode }}
+                                {% endif %}
+                            </td>
                             <td>{{ o.ornament_name }}</td>
                             <td>{{ o.get_metal_type_display }}</td>
                             <td>{{ o.get_type_display }}</td>
@@ -459,7 +471,14 @@
                         <div class="card-header-row">
                             <div>
                                 <div class="card-title">{{ o.ornament_name }}</div>
-                                <div class="card-code">Code: {{ o.code }} | {{ o.get_metal_type_display }} | {{ o.get_type_display }}</div>
+                                <div class="card-code">Code: {{ o.code }} | Metal: {{ o.get_metal_type_display }} | Karat: {{ o.get_type_display }}</div>
+                                {% if o.barcode_image %}
+                                    <div style="margin-top: 8px;">
+                                        <img src="{{ o.barcode_image.url }}" alt="Barcode" style="max-width: 120px; height: auto;">
+                                    </div>
+                                {% else %}
+                                    <div class="card-code">Barcode: {{ o.barcode }}</div>
+                                {% endif %}
                             </div>
                             <span class="badge {% if o.status == 'active' %}bg-success{% elif o.status == 'deleted' %}bg-warning{% elif o.status == 'destroyed' %}bg-danger{% endif %}">
                                 {{ o.get_status_display }}

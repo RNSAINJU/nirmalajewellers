@@ -126,6 +126,24 @@
                                         />
                                     </div>
 
+                                    <!-- Barcode -->
+                                    <div class="col-md-3 col-sm-6">
+                                        <label class="form-label mb-1">Barcode</label>
+                                        <input
+                                            type="text"
+                                            id="id_barcode_preview"
+                                            class="form-control form-control-sm bg-light"
+                                            placeholder="Auto-generated"
+                                            readonly
+                                            value="{% if form.instance.barcode %}{{ form.instance.barcode }}{% endif %}"
+                                        />
+                                        {% if form.instance.barcode_image %}
+                                            <div class="mt-2">
+                                                <img src="{{ form.instance.barcode_image.url }}" alt="Barcode" style="max-width: 150px; height: auto; border: 1px solid #ddd; padding: 5px;">
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
                                     <!-- Ornament Name -->
                                     <div class="col-md-3 col-sm-6">
                                         <label class="form-label mb-1">Ornament Name</label>

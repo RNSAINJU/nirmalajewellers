@@ -206,6 +206,7 @@ class Ornament(models.Model):
 
     ornament_date = NepaliDateField(null=True, blank=True)
     code = models.CharField(max_length=50, verbose_name="Code / नं.", null=True, blank=True, unique=True)
+    barcode = models.CharField(max_length=50, verbose_name="Barcode", null=True, blank=True, unique=True)
     metal_type=models.CharField(
         max_length=50,
         choices=MetalTypeCategory.choices,
@@ -299,6 +300,7 @@ class Ornament(models.Model):
     kaligar = models.ForeignKey(Kaligar, on_delete=models.CASCADE, related_name="ornaments")
     description = models.TextField(blank=True, null=True)
     image=CloudinaryField('image',folder='ornaments/', blank=True, null=True)
+    barcode_image = CloudinaryField('Barcode Image', folder='barcodes/', blank=True, null=True)
     order = models.ForeignKey(
         "order.Order",
         on_delete=models.SET_NULL,
@@ -311,6 +313,53 @@ class Ornament(models.Model):
 
     def __str__(self):
         return f"{self.code or 'NEW'} - {self.ornament_name}"
+    
+    def generate_barcode_image(self):
+        """Generate and save barcode image for this ornament."""
+        import barcode
+        from io import BytesIO
+        from django.core.files.base import ContentFile
+        import cloudinary.uploader
+        import tempfile
+        import os
+        
+        if not self.barcode:
+            return
+        
+        try:
+            # Use CODE128 barcode format (most common for products)
+            barcode_class = barcode.get_barcode_class('code128')
+            barcode_instance = barcode_class(self.barcode, writer=barcode.writer.ImageWriter())
+            
+            # Generate barcode image to BytesIO
+            buffer = BytesIO()
+            barcode_instance.write(buffer)
+            buffer.seek(0)
+            
+            # Create temporary file
+            with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
+                tmp.write(buffer.getvalue())
+                tmp_path = tmp.name
+            
+            try:
+                # Upload to Cloudinary
+                result = cloudinary.uploader.upload(
+                    tmp_path,
+                    folder='barcodes/',
+                    public_id=f"barcode_{self.barcode}",
+                    overwrite=True
+                )
+                
+                # Set the barcode_image to the Cloudinary public_id
+                self.barcode_image = result['public_id']
+            finally:
+                # Clean up temporary file
+                if os.path.exists(tmp_path):
+                    os.remove(tmp_path)
+                    
+        except Exception as e:
+            print(f"Error generating barcode image: {e}")
+            raise
     
     class Meta:
         ordering = ["id"]
