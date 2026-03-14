@@ -27,10 +27,10 @@
                                 <strong>Date:</strong> {{ current_rate.bs_date }}
                             </div>
                             <div class="col-md-3">
-                                <strong>Gold Rate:</strong> रु{{ current_rate.gold_rate|floatformat:0 }}/तोल
+                                <strong>Gold Rate:</strong> Rs {{ current_rate.gold_rate|floatformat:0 }}/Tola
                             </div>
                             <div class="col-md-3">
-                                <strong>Silver Rate:</strong> रु{{ current_rate.silver_rate|floatformat:0 }}/तोल
+                                <strong>Silver Rate:</strong> Rs{{ current_rate.silver_rate|floatformat:0 }}/Tola
                             </div>
                             <div class="col-md-3">
                                 <a href="{% url 'main:daily_rates' %}" class="btn btn-sm btn-outline-primary">Update Rates</a>
@@ -136,22 +136,22 @@
                                 <tbody>
                                     <tr class="table-light">
                                         <td class="fw-bold">Gross Weight:</td>
-                                        <td class="text-end"><strong>{{ price_breakdown.gross_weight }}</strong> तोल</td>
+                                        <td class="text-end"><strong>{{ price_breakdown.gross_weight }}</strong> Gram</td>
                                     </tr>
                                     <tr class="table-light">
                                         <td class="fw-bold">Net Weight (Metal):</td>
-                                        <td class="text-end"><strong>{{ price_breakdown.net_weight }}</strong> तोल</td>
+                                        <td class="text-end"><strong>{{ price_breakdown.net_weight }}</strong> Gram</td>
                                     </tr>
                                     {% if price_breakdown.diamond_weight > 0 %}
                                     <tr>
                                         <td class="fw-bold">Diamond Weight:</td>
-                                        <td class="text-end">{{ price_breakdown.diamond_weight }} ग्राम</td>
+                                        <td class="text-end">{{ price_breakdown.diamond_weight }} carat</td>
                                     </tr>
                                     {% endif %}
                                     {% if price_breakdown.stone_weight > 0 %}
                                     <tr>
                                         <td class="fw-bold">Stone Weight:</td>
-                                        <td class="text-end">{{ price_breakdown.stone_weight }} ग्राम</td>
+                                        <td class="text-end">{{ price_breakdown.stone_weight }} carat</td>
                                     </tr>
                                     {% endif %}
                                 </tbody>
@@ -169,7 +169,7 @@
                             <table class="table table-sm">
                                 <tbody>
                                     <!-- Metal Value -->
-                                    {% if price_breakdown.metal_type == 'Gold' or price_breakdown.metal_type == 'Silver' %}
+                                    {% if price_breakdown.metal_value > 0 %}
                                     <tr class="table-light">
                                         <td>
                                             <strong>{{ price_breakdown.metal_type }} Value</strong>

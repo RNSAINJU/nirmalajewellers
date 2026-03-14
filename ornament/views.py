@@ -1536,14 +1536,29 @@ def ornament_price_calculator(request, pk):
     
     current_rate = DailyRate.objects.first()
     
+    # Get weights
+    diamond_weight = Decimal(str(ornament.diamond_weight or 0))
+    stone_weight = Decimal(str(ornament.stone_weight or 0))
+    gross_weight = Decimal(str(ornament.gross_weight or 0))
+    
+    # Calculate net metal weight
+    # If weight field is set and > 0, use it; otherwise calculate from gross weight
+    if ornament.weight and Decimal(str(ornament.weight)) > 0:
+        net_metal_weight = Decimal(str(ornament.weight))
+    else:
+        # Calculate: Net Metal Weight = Gross Weight - Diamond Weight - Stone Weight
+        net_metal_weight = gross_weight - diamond_weight - stone_weight
+        if net_metal_weight < 0:
+            net_metal_weight = Decimal('0.00')
+    
     # Calculate prices based on current rates
     price_breakdown = {
         'metal_type': ornament.get_metal_type_display(),
         'purity': ornament.get_type_display(),
-        'gross_weight': ornament.gross_weight,
-        'net_weight': ornament.weight,
-        'diamond_weight': ornament.diamond_weight,
-        'stone_weight': ornament.stone_weight,
+        'gross_weight': gross_weight,
+        'net_weight': net_metal_weight,
+        'diamond_weight': diamond_weight,
+        'stone_weight': stone_weight,
         'jarti': ornament.jarti,
         'jyala': ornament.jyala,
     }
@@ -1553,25 +1568,45 @@ def ornament_price_calculator(request, pk):
         price_breakdown['current_rate'] = current_rate
         
         # Gold/Silver calculation (based on net metal weight)
-        if ornament.metal_type == 'Gold':
-            # Convert weight in tola to calculate (1 tola = 11.664grams)
-            weight_in_tola = Decimal(str(ornament.weight)) / Decimal('11.664')
-            price_breakdown['metal_value'] = weight_in_tola * current_rate.gold_rate
-        elif ornament.metal_type == 'Silver':
-            weight_in_tola = Decimal(str(ornament.weight)) / Decimal('11.664')
-            price_breakdown['metal_value'] = weight_in_tola * current_rate.silver_rate
+        # Convert weight from grams to tola (1 tola = 11.664 grams)
+        net_weight_in_tola = net_metal_weight / Decimal('11.664')
+        
+        # Determine the actual metal type (Gold or Silver)
+        # For diamond ornaments, assume gold as default
+        actual_metal_type = ornament.metal_type
+        if actual_metal_type == 'Diamond' or actual_metal_type == 'Others':
+            # Default to Gold for diamond ornaments
+            actual_metal_type = 'Gold'
+        
+        # Get the karat/purity factor for gold
+        karat_factor = Decimal('1.00')  # Default for 24K gold
+        if ornament.type == '22KARAT':
+            karat_factor = Decimal('0.9167')  # 22/24
+        elif ornament.type == '18KARAT':
+            karat_factor = Decimal('0.75')  # 18/24
+        elif ornament.type == '14KARAT':
+            karat_factor = Decimal('0.5833')  # 14/24
+        elif ornament.type == '23KARAT':
+            karat_factor = Decimal('0.9583')  # 23/24
+        
+        if actual_metal_type == 'Gold':
+            # Apply karat factor to gold rate
+            adjusted_gold_rate = current_rate.gold_rate * karat_factor
+            price_breakdown['metal_value'] = net_weight_in_tola * adjusted_gold_rate
+        elif actual_metal_type == 'Silver':
+            price_breakdown['metal_value'] = net_weight_in_tola * current_rate.silver_rate
         else:
             price_breakdown['metal_value'] = Decimal('0.00')
         
         # Diamond calculation
-        if ornament.diamond_weight and ornament.diamond_rate:
-            price_breakdown['diamond_value'] = Decimal(str(ornament.diamond_weight)) * Decimal(str(ornament.diamond_rate))
+        if diamond_weight > 0 and ornament.diamond_rate:
+            price_breakdown['diamond_value'] = diamond_weight * Decimal(str(60000))  # Assuming a fixed rate of 35000 per carat for diamond as per spec
         else:
             price_breakdown['diamond_value'] = Decimal('0.00')
         
         # Stone calculation
-        if ornament.stone_weight and ornament.stone_percaratprice:
-            price_breakdown['stone_value'] = Decimal(str(ornament.stone_weight)) * Decimal(str(ornament.stone_percaratprice))
+        if stone_weight > 0 and ornament.stone_percaratprice:
+            price_breakdown['stone_value'] = stone_weight * Decimal(str(ornament.stone_percaratprice))
         else:
             price_breakdown['stone_value'] = Decimal('0.00')
         

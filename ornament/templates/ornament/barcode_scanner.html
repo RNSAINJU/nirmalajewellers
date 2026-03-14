@@ -7,9 +7,14 @@
         <div class="col-lg-8 mx-auto">
             <div class="card shadow">
                 <div class="card-header bg-primary text-white">
-                    <h3 class="mb-0">
-                        <i class="bi bi-qr-code"></i> Barcode Scanner
-                    </h3>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="mb-0">
+                            <i class="bi bi-qr-code"></i> Barcode Scanner
+                        </h3>
+                        <button type="button" id="cameraToggleBtn" class="btn btn-light btn-sm">
+                            <i class="bi bi-camera"></i> Open Camera
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="card-body">
@@ -42,6 +47,17 @@
                     </div>
                     {% endif %}
 
+                    <!-- Camera Scanner Section -->
+                    <div id="cameraSection" style="display: none; margin-bottom: 20px;">
+                        <div id="reader" style="width: 100%; max-width: 500px; margin: 0 auto;"></div>
+                        <div class="mt-3 text-center">
+                            <button type="button" id="closeCamera" class="btn btn-secondary btn-sm">
+                                <i class="bi bi-x-circle"></i> Close Camera
+                            </button>
+                        </div>
+                        <div id="scannerStatus" class="alert alert-info mt-3" style="display: none;"></div>
+                    </div>
+
                     <!-- Barcode Input Form -->
                     <form method="post" class="mb-4">
                         {% csrf_token %}
@@ -52,6 +68,7 @@
                             <input 
                                 type="text" 
                                 name="barcode" 
+                                id="barcodeInput"
                                 class="form-control" 
                                 placeholder="Scan or enter barcode (e.g., ORN-0000006327)" 
                                 autofocus
@@ -123,11 +140,11 @@
                                             </tr>
                                             <tr>
                                                 <td><strong>Gross Weight:</strong></td>
-                                                <td>{{ searched_ornament.gross_weight }} तोल</td>
+                                                <td>{{ searched_ornament.gross_weight }} Gram</td>
                                             </tr>
                                             <tr>
                                                 <td><strong>Net Weight:</strong></td>
-                                                <td>{{ searched_ornament.weight }} तोल</td>
+                                                <td>{{ searched_ornament.weight }} Gram</td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -174,5 +191,114 @@
     .alert {
         border-radius: 8px;
     }
+
+    #reader {
+        border: 2px solid #007bff;
+        border-radius: 8px;
+        background: #000;
+        overflow: hidden;
+    }
+
+    #reader canvas {
+        display: block;
+        width: 100% !important;
+        height: auto !important;
+    }
+
+    #reader video {
+        display: block;
+        width: 100% !important;
+        height: auto !important;
+    }
 </style>
+
+<!-- Quagga.js for barcode scanning -->
+<script src="https://serratus.github.io/quaggaJS/examples/js/quagga.min.js"></script>
+
+<script>
+    let cameraActive = false;
+
+    // Toggle camera on/off
+    document.getElementById('cameraToggleBtn').addEventListener('click', function() {
+        if (!cameraActive) {
+            openCamera();
+        } else {
+            closeCamera();
+        }
+    });
+
+    document.getElementById('closeCamera').addEventListener('click', function() {
+        closeCamera();
+    });
+
+    function openCamera() {
+        const cameraSection = document.getElementById('cameraSection');
+        cameraSection.style.display = 'block';
+        
+        Quagga.init({
+            inputStream: {
+                name: "Live",
+                type: "LiveStream",
+                target: document.querySelector('#reader'),
+                constraints: {
+                    width: 480,
+                    height: 640,
+                    facingMode: "environment"
+                }
+            },
+            decoder: {
+                workers: 2,
+                debug: false,
+                multiple: false
+            },
+            locator: {
+                halfSample: true,
+                patchSize: "medium"
+            }
+        }, function(err) {
+            if (err) {
+                console.log("Error initializing camera:", err);
+                document.getElementById('scannerStatus').style.display = 'block';
+                document.getElementById('scannerStatus').textContent = 'Error opening camera. Please check permissions.';
+                cameraActive = false;
+                return;
+            }
+            console.log("Camera initialized");
+            Quagga.start();
+            cameraActive = true;
+            document.getElementById('cameraToggleBtn').innerHTML = '<i class="bi bi-camera-video"></i> Close Camera';
+            document.getElementById('scannerStatus').style.display = 'block';
+            document.getElementById('scannerStatus').textContent = 'Camera is ready. Point at barcode to scan.';
+        });
+
+        // Handle detected barcodes
+        Quagga.onDetected(function(result) {
+            if (result.codeResult && result.codeResult.code) {
+                const code = result.codeResult.code;
+                document.getElementById('barcodeInput').value = code;
+                
+                // Auto-submit the form
+                document.querySelector('form').submit();
+                
+                // Close camera after detection
+                closeCamera();
+            }
+        });
+    }
+
+    function closeCamera() {
+        Quagga.stop();
+        cameraActive = false;
+        document.getElementById('cameraSection').style.display = 'none';
+        document.getElementById('cameraToggleBtn').innerHTML = '<i class="bi bi-camera"></i> Open Camera';
+        document.getElementById('scannerStatus').style.display = 'none';
+    }
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', function() {
+        if (cameraActive) {
+            Quagga.stop();
+        }
+    });
+</script>
 {% endblock %}
