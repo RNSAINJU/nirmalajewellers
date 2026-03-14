@@ -225,12 +225,38 @@
     }
 </style>
 
-<!-- HTML5 QR/Barcode Scanner -->
+<!-- HTML5 QR/Barcode Scanner with BarcodeDetector API -->
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <script>
     let html5QrCode = null;
+    let barcodeDetector = null;
     let cameraActive = false;
+    let videoElement = null;
+    let canvasElement = null;
+
+    // Check BarcodeDetector API support
+    async function initBarcodeDetector() {
+        if (!('BarcodeDetector' in window)) {
+            console.log("BarcodeDetector API not supported, using fallback");
+            return null;
+        }
+        
+        try {
+            const formats = await BarcodeDetector.getSupportedFormats();
+            console.log("Supported formats:", formats);
+            
+            // Create detector supporting CODE128 and other common barcodes
+            barcodeDetector = new BarcodeDetector({
+                formats: ['code_128', 'code_39', 'ean_13', 'ean_8', 'upc_a', 'upc_e']
+            });
+            console.log("✓ BarcodeDetector ready");
+            return barcodeDetector;
+        } catch (err) {
+            console.log("BarcodeDetector error:", err);
+            return null;
+        }
+    }
 
     // Initialize camera toggle
     document.getElementById('cameraToggleBtn').addEventListener('click', function() {
@@ -250,28 +276,27 @@
         cameraSection.style.display = 'block';
         
         try {
-            // Initialize Html5QrcodeScanner
-            html5QrCode = new Html5Qrcode("reader");
+            // Try BarcodeDetector API first (faster)
+            if (!barcodeDetector) {
+                await initBarcodeDetector();
+            }
+
+            if (barcodeDetector) {
+                console.log("Using native BarcodeDetector API (FAST)");
+                document.getElementById('scannerStatus').style.display = 'block';
+                document.getElementById('scannerStatus').innerHTML = 
+                    '<strong style="color: green;">✓ Fast Scanner Ready (Native)</strong><br>Point at barcode - instant detection!';
+                await startNativeScanner();
+            } else {
+                console.log("Falling back to HTML5 QR Code scanner");
+                document.getElementById('scannerStatus').style.display = 'block';
+                document.getElementById('scannerStatus').innerHTML = 
+                    '<strong style="color: orange;">⚠ Using Fallback Scanner</strong><br>Point at barcode to scan';
+                await startHtml5Scanner();
+            }
             
-            const config = { 
-                fps: 10,
-                qrbox: { width: 250, height: 250 },
-                aspectRatio: 1.33333,
-                useBarCodeDetectorIfAvailable: true
-            };
-
-            await html5QrCode.start(
-                { facingMode: "environment" },
-                config,
-                onScanSuccess,
-                onScanFailure
-            );
-
             cameraActive = true;
             document.getElementById('cameraToggleBtn').innerHTML = '<i class="bi bi-camera-video"></i> Close Camera';
-            document.getElementById('scannerStatus').style.display = 'block';
-            document.getElementById('scannerStatus').innerHTML = 
-                '<strong>✓ Camera Ready</strong><br>Point at barcode to scan (barcodes: CODE128, EAN, UPC, etc.)';
         } catch (err) {
             console.error("Camera error:", err);
             document.getElementById('scannerStatus').style.display = 'block';
@@ -281,37 +306,139 @@
         }
     }
 
+    async function startNativeScanner() {
+        // Get camera stream
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment' }
+        });
+
+        // Create video element
+        videoElement = document.createElement('video');
+        videoElement.srcObject = stream;
+        videoElement.play();
+        videoElement.style.display = 'none';
+
+        // Create canvas
+        canvasElement = document.createElement('canvas');
+        document.getElementById('reader').appendChild(videoElement);
+        document.getElementById('reader').appendChild(canvasElement);
+
+        // Display video in reader div
+        const displayCanvas = document.getElementById('reader');
+        displayCanvas.innerHTML = '';
+        
+        const displayVideo = document.createElement('video');
+        displayVideo.srcObject = stream;
+        displayVideo.autoplay = true;
+        displayVideo.playsinline = true;
+        displayVideo.style.width = '100%';
+        displayVideo.style.borderRadius = '5px';
+        displayCanvas.appendChild(displayVideo);
+
+        // Continuous detection loop
+        const detectBarcode = async () => {
+            if (!cameraActive || !videoElement || !barcodeDetector) {
+                if (stream) stream.getTracks().forEach(track => track.stop());
+                return;
+            }
+
+            try {
+                // Create canvas from video frame
+                const canvas = document.createElement('canvas');
+                canvas.width = displayVideo.videoWidth;
+                canvas.height = displayVideo.videoHeight;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(displayVideo, 0, 0);
+
+                // Detect barcodes
+                const barcodes = await barcodeDetector.detect(canvas);
+
+                if (barcodes && barcodes.length > 0) {
+                    const barcode = barcodes[0];
+                    console.log("✓ BARCODE DETECTED:", barcode.rawValue);
+                    
+                    document.getElementById('barcodeInput').value = barcode.rawValue;
+                    document.getElementById('scannerStatus').style.display = 'block';
+                    document.getElementById('scannerStatus').innerHTML = 
+                        '<strong style="color: green;">✓ Barcode Detected!</strong><br>' + barcode.rawValue;
+                    
+                    // Auto-submit
+                    setTimeout(() => {
+                        document.querySelector('form').submit();
+                    }, 300);
+                    
+                    setTimeout(closeCamera, 500);
+                    return;
+                }
+            } catch (err) {
+                console.log("Detection frame skipped");
+            }
+
+            // Continue detection
+            requestAnimationFrame(detectBarcode);
+        };
+
+        detectBarcode();
+    }
+
+    async function startHtml5Scanner() {
+        html5QrCode = new Html5Qrcode("reader");
+        
+        const config = { 
+            fps: 15,
+            qrbox: { width: 250, height: 250 },
+            aspectRatio: 1.33333,
+            useBarCodeDetectorIfAvailable: true
+        };
+
+        await html5QrCode.start(
+            { facingMode: "environment" },
+            config,
+            onScanSuccess,
+            onScanFailure
+        );
+    }
+
     function onScanSuccess(decodedText, decodedResult) {
-        // Handle successful barcode scan
         if (decodedText) {
             console.log("Barcode detected:", decodedText);
             document.getElementById('barcodeInput').value = decodedText;
+            document.getElementById('scannerStatus').style.display = 'block';
+            document.getElementById('scannerStatus').innerHTML = 
+                '<strong style="color: green;">✓ Barcode Detected!</strong><br>' + decodedText;
             
-            // Small delay to ensure value is set
             setTimeout(() => {
                 document.querySelector('form').submit();
             }, 300);
             
-            // Close camera after successful scan
             setTimeout(closeCamera, 500);
         }
     }
 
     function onScanFailure(error) {
-        // Ignore scan failures - this is normal in scanning process
-        // Only log in debug
-        // console.log("Scan attempt:", error);
+        // Ignore scan failures - this is normal
     }
 
     async function closeCamera() {
+        // Stop native scanner
+        if (videoElement && videoElement.srcObject) {
+            videoElement.srcObject.getTracks().forEach(track => track.stop());
+            videoElement = null;
+        }
+
+        // Stop HTML5 scanner
         if (html5QrCode) {
             try {
                 await html5QrCode.stop();
                 html5QrCode = null;
             } catch (err) {
-                console.log("Error stopping camera:", err);
+                console.log("Error stopping scanner:", err);
             }
         }
+
+        // Clean up
+        document.getElementById('reader').innerHTML = '';
         
         cameraActive = false;
         document.getElementById('cameraSection').style.display = 'none';
@@ -321,9 +448,14 @@
 
     // Cleanup on page unload
     window.addEventListener('beforeunload', function() {
-        if (cameraActive && html5QrCode) {
-            html5QrCode.stop().catch(e => console.log("Cleanup error:", e));
+        if (cameraActive) {
+            closeCamera();
         }
+    });
+
+    // Initialize detector on page load
+    window.addEventListener('load', function() {
+        initBarcodeDetector();
     });
 </script>
 {% endblock %}
