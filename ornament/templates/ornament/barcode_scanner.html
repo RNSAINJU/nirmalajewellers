@@ -193,32 +193,46 @@
     }
 
     #reader {
-        border: 2px solid #007bff;
+        border: 3px solid #007bff;
         border-radius: 8px;
         background: #000;
-        overflow: hidden;
+        min-height: 400px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
     }
 
+    #reader video,
     #reader canvas {
-        display: block;
+        max-width: 100% !important;
         width: 100% !important;
-        height: auto !important;
+        border-radius: 5px;
     }
 
-    #reader video {
-        display: block;
-        width: 100% !important;
-        height: auto !important;
+    #scannerStatus {
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+        font-weight: 500;
+    }
+
+    #cameraSection {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
     }
 </style>
 
-<!-- Quagga.js for barcode scanning -->
-<script src="https://serratus.github.io/quaggaJS/examples/js/quagga.min.js"></script>
+<!-- HTML5 QR/Barcode Scanner -->
+<script src="https://unpkg.com/html5-qrcode"></script>
 
 <script>
+    let html5QrCode = null;
     let cameraActive = false;
 
-    // Toggle camera on/off
+    // Initialize camera toggle
     document.getElementById('cameraToggleBtn').addEventListener('click', function() {
         if (!cameraActive) {
             openCamera();
@@ -231,63 +245,74 @@
         closeCamera();
     });
 
-    function openCamera() {
+    async function openCamera() {
         const cameraSection = document.getElementById('cameraSection');
         cameraSection.style.display = 'block';
         
-        Quagga.init({
-            inputStream: {
-                name: "Live",
-                type: "LiveStream",
-                target: document.querySelector('#reader'),
-                constraints: {
-                    width: 480,
-                    height: 640,
-                    facingMode: "environment"
-                }
-            },
-            decoder: {
-                workers: 2,
-                debug: false,
-                multiple: false
-            },
-            locator: {
-                halfSample: true,
-                patchSize: "medium"
-            }
-        }, function(err) {
-            if (err) {
-                console.log("Error initializing camera:", err);
-                document.getElementById('scannerStatus').style.display = 'block';
-                document.getElementById('scannerStatus').textContent = 'Error opening camera. Please check permissions.';
-                cameraActive = false;
-                return;
-            }
-            console.log("Camera initialized");
-            Quagga.start();
+        try {
+            // Initialize Html5QrcodeScanner
+            html5QrCode = new Html5Qrcode("reader");
+            
+            const config = { 
+                fps: 10,
+                qrbox: { width: 250, height: 250 },
+                aspectRatio: 1.33333,
+                useBarCodeDetectorIfAvailable: true
+            };
+
+            await html5QrCode.start(
+                { facingMode: "environment" },
+                config,
+                onScanSuccess,
+                onScanFailure
+            );
+
             cameraActive = true;
             document.getElementById('cameraToggleBtn').innerHTML = '<i class="bi bi-camera-video"></i> Close Camera';
             document.getElementById('scannerStatus').style.display = 'block';
-            document.getElementById('scannerStatus').textContent = 'Camera is ready. Point at barcode to scan.';
-        });
-
-        // Handle detected barcodes
-        Quagga.onDetected(function(result) {
-            if (result.codeResult && result.codeResult.code) {
-                const code = result.codeResult.code;
-                document.getElementById('barcodeInput').value = code;
-                
-                // Auto-submit the form
-                document.querySelector('form').submit();
-                
-                // Close camera after detection
-                closeCamera();
-            }
-        });
+            document.getElementById('scannerStatus').innerHTML = 
+                '<strong>✓ Camera Ready</strong><br>Point at barcode to scan (barcodes: CODE128, EAN, UPC, etc.)';
+        } catch (err) {
+            console.error("Camera error:", err);
+            document.getElementById('scannerStatus').style.display = 'block';
+            document.getElementById('scannerStatus').innerHTML = 
+                '<strong style="color: red;">✗ Camera Error:</strong> ' + err.message + 
+                '<br><small>Check camera permissions or try manual entry.</small>';
+        }
     }
 
-    function closeCamera() {
-        Quagga.stop();
+    function onScanSuccess(decodedText, decodedResult) {
+        // Handle successful barcode scan
+        if (decodedText) {
+            console.log("Barcode detected:", decodedText);
+            document.getElementById('barcodeInput').value = decodedText;
+            
+            // Small delay to ensure value is set
+            setTimeout(() => {
+                document.querySelector('form').submit();
+            }, 300);
+            
+            // Close camera after successful scan
+            setTimeout(closeCamera, 500);
+        }
+    }
+
+    function onScanFailure(error) {
+        // Ignore scan failures - this is normal in scanning process
+        // Only log in debug
+        // console.log("Scan attempt:", error);
+    }
+
+    async function closeCamera() {
+        if (html5QrCode) {
+            try {
+                await html5QrCode.stop();
+                html5QrCode = null;
+            } catch (err) {
+                console.log("Error stopping camera:", err);
+            }
+        }
+        
         cameraActive = false;
         document.getElementById('cameraSection').style.display = 'none';
         document.getElementById('cameraToggleBtn').innerHTML = '<i class="bi bi-camera"></i> Open Camera';
@@ -296,8 +321,8 @@
 
     // Cleanup on page unload
     window.addEventListener('beforeunload', function() {
-        if (cameraActive) {
-            Quagga.stop();
+        if (cameraActive && html5QrCode) {
+            html5QrCode.stop().catch(e => console.log("Cleanup error:", e));
         }
     });
 </script>
