@@ -58,3 +58,4 @@ build/
 .DS_Store
 Thumbs.db.env
 .env
+datadump.json
