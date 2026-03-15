@@ -29,6 +29,7 @@ from .views import (
     ornament_stock_export_excel,
     barcode_scanner,
     ornament_price_calculator,
+    detect_barcode_from_image,
 )
 
 app_name = 'ornament'
@@ -36,6 +37,7 @@ app_name = 'ornament'
 urlpatterns = [
     path('', OrnamentListView.as_view(), name='list'),
     path('barcode-scanner/', barcode_scanner, name='barcode_scanner'),
+    path('barcode-scanner/detect/', detect_barcode_from_image, name='detect_barcode'),
     path('<int:pk>/price-calculator/', ornament_price_calculator, name='price_calculator'),
     path('admin-inventory/', OrnamentAdminInventoryView.as_view(), name='admin_inventory'),
     path('create/', OrnamentCreateView.as_view(), name='create'),

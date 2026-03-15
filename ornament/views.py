@@ -1525,6 +1525,54 @@ def barcode_scanner(request):
     return render(request, 'ornament/barcode_scanner.html', context)
 
 
+def detect_barcode_from_image(request):
+    """API endpoint to handle barcode image upload and processing."""
+    import json
+    from django.http import JsonResponse
+    from PIL import Image
+    from io import BytesIO
+    import base64
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'POST request required'}, status=400)
+    
+    if 'image' not in request.FILES:
+        return JsonResponse({'success': False, 'error': 'No image provided'}, status=400)
+    
+    try:
+        image_file = request.FILES['image']
+        
+        # Read and validate image
+        image = Image.open(image_file)
+        image.verify()  # Verify it's a valid image
+        
+        # Reopen after verify (verify closes the file)
+        image_file.seek(0)
+        image = Image.open(image_file)
+        
+        # Convert to base64 for preview
+        buffer = BytesIO()
+        image.save(buffer, format='PNG')
+        buffer.seek(0)
+        img_base64 = base64.b64encode(buffer.getvalue()).decode()
+        
+        # Try to detect barcode using python-barcode patterns
+        # Since pyzbar requires system libraries, we provide image preview
+        # and ask user to manually read the barcode
+        return JsonResponse({
+            'success': True,
+            'message': 'Image loaded. Please read the barcode value from the preview.',
+            'image_preview': f'data:image/png;base64,{img_base64}',
+            'barcode': None  # Auto-detection not available
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Error processing image: {str(e)}'
+        }, status=500)
+
+
 @login_required(login_url='/accounts/login/')
 def ornament_price_calculator(request, pk):
     """Display ornament details with price calculation based on current rates."""

@@ -58,6 +58,25 @@
                         <div id="scannerStatus" class="alert alert-info mt-3" style="display: none;"></div>
                     </div>
 
+                    <!-- Image Upload Section -->
+                    <div class="card mb-4" style="background: #f8f9fa; border: 2px dashed #007bff;">
+                        <div class="card-body text-center">
+                            <h6 class="card-title mb-3">
+                                <i class="bi bi-image"></i> Or Upload Barcode Image
+                            </h6>
+                            <input 
+                                type="file" 
+                                id="barcodeImage" 
+                                accept="image/*"
+                                style="display: none;"
+                            />
+                            <button type="button" id="uploadImageBtn" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-upload"></i> Choose Image
+                            </button>
+                            <div id="imageStatus" class="mt-2"></div>
+                        </div>
+                    </div>
+
                     <!-- Barcode Input Form -->
                     <form method="post" class="mb-4">
                         {% csrf_token %}
@@ -450,6 +469,99 @@
     window.addEventListener('beforeunload', function() {
         if (cameraActive) {
             closeCamera();
+        }
+    });
+
+    // Image upload for barcode detection
+    const uploadImageBtn = document.getElementById('uploadImageBtn');
+    const barcodeImageInput = document.getElementById('barcodeImage');
+    const imageStatus = document.getElementById('imageStatus');
+
+    uploadImageBtn.addEventListener('click', function() {
+        barcodeImageInput.click();
+    });
+
+    barcodeImageInput.addEventListener('change', async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        imageStatus.innerHTML = '<small class="text-muted"><i class="bi bi-hourglass-split"></i> Loading image...</small>';
+
+        try {
+            // Create FormData to send the image to the server
+            const formData = new FormData();
+            formData.append('image', file);
+
+            // Send to server for image processing
+            const response = await fetch('{% url "ornament:detect_barcode" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                if (result.image_preview) {
+                    // Show image preview
+                    imageStatus.innerHTML = 
+                        '<div style="border: 2px solid #007bff; padding: 10px; border-radius: 5px; background: white;">' +
+                        '<img src="' + result.image_preview + '" style="max-width: 100%; max-height: 300px; margin-bottom: 10px; border-radius: 3px;">' +
+                        '<div style="background: #f0f8ff; padding: 10px; border-radius: 3px; margin-bottom: 10px;">' +
+                        '<strong style="color: #0066cc;">📷 Code128 Barcode Image</strong><br>' +
+                        '<small style="color: #666;">Please read the barcode value and enter it below.</small>' +
+                        '</div>' +
+                        '<input type="text" id="manualBarcodeInput" placeholder="Enter barcode value (e.g., ORN-0000006327)" ' +
+                        'maxlength="50" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; margin-bottom: 8px;">' +
+                        '<button type="button" id="submitManualBarcode" class="btn btn-primary btn-sm" style="width: 100%;">' +
+                        '<i class="bi bi-check"></i> Use This Barcode' +
+                        '</button>' +
+                        '</div>';
+                    
+                    // Add event listener for manual barcode submission
+                    document.getElementById('submitManualBarcode').addEventListener('click', function() {
+                        const barcodeValue = document.getElementById('manualBarcodeInput').value.trim();
+                        if (barcodeValue) {
+                            document.getElementById('barcodeInput').value = barcodeValue;
+                            imageStatus.innerHTML = 
+                                '<strong style="color: green;"><i class="bi bi-check-circle"></i> Barcode Entered!</strong><br>' + 
+                                '<small>' + barcodeValue + '</small>';
+                            
+                            setTimeout(() => {
+                                document.querySelector('form').submit();
+                            }, 500);
+                        } else {
+                            imageStatus.innerHTML = 
+                                '<small style="color: orange;"><i class="bi bi-exclamation-triangle"></i> Please enter the barcode value</small>';
+                        }
+                    });
+
+                    // Allow Enter key to submit
+                    document.getElementById('manualBarcodeInput').addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') {
+                            document.getElementById('submitManualBarcode').click();
+                        }
+                    });
+
+                    // Auto-focus on the input field
+                    document.getElementById('manualBarcodeInput').focus();
+                } else {
+                    imageStatus.innerHTML = 
+                        '<small style="color: orange;"><i class="bi bi-exclamation-triangle"></i> ' + 
+                        (result.message || 'Could not process image') + '</small>';
+                }
+            } else {
+                imageStatus.innerHTML = 
+                    '<small style="color: red;"><i class="bi bi-x-circle"></i> ' + 
+                    (result.error || 'Error processing image') + '</small>';
+                console.log("Error:", result.error);
+            }
+        } catch (err) {
+            console.error("Error:", err);
+            imageStatus.innerHTML = 
+                '<small style="color: red;"><i class="bi bi-x-circle"></i> Error processing image. Please try again.</small>';
         }
     });
 
