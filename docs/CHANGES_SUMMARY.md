@@ -71,7 +71,7 @@ Added comprehensive debugging instrumentation to trace payment data from fronten
 [DEBUG ORDER CREATE] After recompute: payment_amount=1000.00, payment_mode=cash
 ```
 
-### 4. `/home/aryan/nirmalajewellers/test_payment_submission.py` (New)
+### 4. `/home/aryan/nirmalajewellers/nirmalajewellers/tests/test_payment_submission.py` (New)
 **Purpose**: Test script to verify form.clean() works correctly
 **Status**: ✓ Verified - form receives and parses payment_lines_json correctly
 

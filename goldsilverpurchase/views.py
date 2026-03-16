@@ -817,21 +817,9 @@ def data_settings(request):
 
 @login_required(login_url='/accounts/login/')
 def export_full_db_dump(request):
-    """Export a full database dump as JSON (Django dumpdata)."""
+    """Export a full database dump as JSON using Django dumpdata."""
     from django.core.management import call_command
     import io
-    from django.conf import settings
-    import os
-
-    default_db = settings.DATABASES.get("default", {})
-    engine = default_db.get("ENGINE", "")
-    if engine.endswith("sqlite3"):
-        db_path = default_db.get("NAME")
-        if db_path and os.path.exists(db_path):
-            with open(db_path, "rb") as db_file:
-                response = HttpResponse(db_file.read(), content_type="application/x-sqlite3")
-            response["Content-Disposition"] = "attachment; filename=db_backup.sqlite3"
-            return response
 
     out = io.StringIO()
     call_command(
@@ -850,7 +838,7 @@ def export_full_db_dump(request):
 
 @login_required(login_url='/accounts/login/')
 def import_full_db_dump(request):
-    """Import a full database dump from SQLite or JSON (wipe then restore)."""
+    """Import a full JSON database dump after wiping existing data."""
     if request.method != "POST" or "import_file" not in request.FILES:
         return redirect("gsp:data_settings")
 
@@ -861,61 +849,83 @@ def import_full_db_dump(request):
 
     file = request.FILES.get("import_file")
     if not file:
-        messages.error(request, "Please upload a SQLite or JSON dump file.")
+        messages.error(request, "Please upload a JSON dump file.")
         return redirect("gsp:data_settings")
 
     from django.core.management import call_command
-    from django.db import transaction, connections
-    from django.conf import settings
+    from django.db import transaction
     import tempfile
-    import shutil
     import os
 
     tmp_path = None
+    cleaned_path = None
     try:
-        # Detect file type by extension
-        filename = file.name.lower()
-        is_sqlite = filename.endswith(('.sqlite3', '.db', '.sqlite'))
-        
-        if is_sqlite:
-            # Handle SQLite database file
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".sqlite3") as tmp:
-                for chunk in file.chunks():
-                    tmp.write(chunk)
-                tmp_path = tmp.name
-            
-            # Close all database connections
-            connections.close_all()
-            
-            # Get current database path
-            default_db = settings.DATABASES.get("default", {})
-            db_path = default_db.get("NAME")
-            
-            if db_path and os.path.exists(db_path):
-                # Backup current database
-                backup_path = f"{db_path}.bak"
-                shutil.copy2(str(db_path), backup_path)
-                
-                # Replace database with uploaded file
-                shutil.copy2(tmp_path, db_path)
-                
-                # Reconnect to database
-                connections.close_all()
-                connections['default'].ensure_connection()
-            
-            messages.success(request, "Full database restore completed from SQLite file.")
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as tmp:
+            for chunk in file.chunks():
+                tmp.write(chunk)
+            tmp_path = tmp.name
+
+        # Sanitize invalid Nepali dates before loading
+        import json as _json
+        import nepali_datetime as _ndt
+        from nepali_datetime_field.models import NepaliDateField as _NDF
+        from django.apps import apps as _apps
+
+        _nepali_fields_map = {}
+        for _model in _apps.get_models():
+            _label = _model._meta.label_lower
+            _nfields = [f.name for f in _model._meta.get_fields() if isinstance(f, _NDF)]
+            if _nfields:
+                _nepali_fields_map[_label] = _nfields
+
+        with open(tmp_path, 'r', encoding='utf-8') as _fj:
+            _fixture_data = _json.load(_fj)
+
+        _fixed_count = 0
+        for _obj in _fixture_data:
+            _mlabel = _obj.get('model', '').lower()
+            if _mlabel not in _nepali_fields_map:
+                continue
+            _fields = _obj.get('fields', {})
+            for _fname in _nepali_fields_map[_mlabel]:
+                _val = _fields.get(_fname)
+                if not _val or not isinstance(_val, str) or len(_val) != 10:
+                    continue
+                _parts = _val.split('-')
+                if len(_parts) != 3:
+                    continue
+                try:
+                    _y, _m, _d = int(_parts[0]), int(_parts[1]), int(_parts[2])
+                except ValueError:
+                    continue
+                if _y < 2000:
+                    continue
+                try:
+                    _ndt.date(_y, _m, _d)
+                except Exception:
+                    for _ld in range(_d - 1, 0, -1):
+                        try:
+                            _ndt.date(_y, _m, _ld)
+                            _fields[_fname] = f"{_y:04d}-{_m:02d}-{_ld:02d}"
+                            _fixed_count += 1
+                            break
+                        except Exception:
+                            continue
+
+        if _fixed_count:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".json", mode='w', encoding='utf-8') as _fc:
+                _json.dump(_fixture_data, _fc, ensure_ascii=False)
+                cleaned_path = _fc.name
+            load_path = cleaned_path
         else:
-            # Handle JSON dump file
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as tmp:
-                for chunk in file.chunks():
-                    tmp.write(chunk)
-                tmp_path = tmp.name
+            load_path = tmp_path
 
-            with transaction.atomic():
-                call_command("flush", "--noinput")
-                call_command("loaddata", tmp_path)
+        with transaction.atomic():
+            call_command("flush", "--noinput")
+            call_command("loaddata", load_path)
 
-            messages.success(request, "Full database restore completed from JSON file.")
+        suffix = f" ({_fixed_count} invalid Nepali date(s) auto-corrected)" if _fixed_count else ""
+        messages.success(request, f"Full database restore completed from JSON file.{suffix}")
         
         return redirect("gsp:data_settings")
     except Exception as e:
@@ -924,6 +934,8 @@ def import_full_db_dump(request):
     finally:
         if tmp_path and os.path.exists(tmp_path):
             os.unlink(tmp_path)
+        if cleaned_path and os.path.exists(cleaned_path):
+            os.unlink(cleaned_path)
 
 
 @login_required(login_url='/accounts/login/')

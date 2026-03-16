@@ -313,6 +313,43 @@ class Ornament(models.Model):
 
     def __str__(self):
         return f"{self.code or 'NEW'} - {self.ornament_name}"
+
+    def get_purity_factor(self):
+        return {
+            self.TypeCategory.TWENTYFOURKARAT: Decimal('1.00'),
+            self.TypeCategory.TWENTHREEKARAT: Decimal('0.9583'),
+            self.TypeCategory.TWENTYTWOKARAT: Decimal('0.9167'),
+            self.TypeCategory.EIGHTEENKARAT: Decimal('0.75'),
+            self.TypeCategory.FOURTEENKARAT: Decimal('0.5833'),
+        }.get(self.type, Decimal('1.00'))
+
+    @property
+    def net_metal_weight(self):
+        stored_weight = self.weight or Decimal('0.000')
+        if stored_weight > 0:
+            return stored_weight
+
+        gross_weight = self.gross_weight or Decimal('0.000')
+        diamond_weight = self.diamond_weight or Decimal('0.000')
+        stone_weight = self.stone_weight or Decimal('0.000')
+        calculated_weight = gross_weight - diamond_weight - stone_weight
+        return calculated_weight if calculated_weight > 0 else Decimal('0.000')
+
+    @property
+    def net_metal_weight_24k_equivalent(self):
+        return self.net_metal_weight * self.get_purity_factor()
+
+    @property
+    def gold_net_weight(self):
+        if self.metal_type in {self.MetalTypeCategory.GOLD, self.MetalTypeCategory.DIAMOND}:
+            return self.net_metal_weight
+        return Decimal('0.000')
+
+    @property
+    def silver_net_weight(self):
+        if self.metal_type == self.MetalTypeCategory.SILVER:
+            return self.net_metal_weight
+        return Decimal('0.000')
     
     def generate_barcode_image(self):
         """Generate and save barcode image for this ornament."""

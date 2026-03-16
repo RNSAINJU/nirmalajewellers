@@ -229,7 +229,7 @@ The dashboard displays:
 **Language**: Python 3
 **Framework**: Django 5.2
 **Frontend**: Bootstrap 5, jQuery
-**Database**: Django ORM (SQLite/PostgreSQL)
+**Database**: Django ORM on PostgreSQL
 **Security**: Django's auth system
 
 ## 📚 Documentation

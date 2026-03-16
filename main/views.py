@@ -170,7 +170,7 @@ def calculate_daily_ornament_totals(target_date, gold_rate=None, silver_rate=Non
             weight = ornament.weight or Decimal('0')
             factor = purity_factors.get(ornament.type, Decimal('1.00'))
             diamond_24k_equivalent += weight * factor
-            diamond_metal_weight_for_display = diamond_24k_equivalent
+            diamond_metal_weight_for_display += weight
         
         result['diamond_weight'] = diamond_metal_weight_for_display
         

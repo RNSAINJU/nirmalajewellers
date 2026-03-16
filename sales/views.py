@@ -165,6 +165,10 @@ class SalesListView(LoginRequiredMixin, ListView):
                     weighted = weight * factor
                     sale_gold_24 += weighted
                     gold_24_weight += weighted
+                elif metal_type == str(getattr(Ornament.MetalTypeCategory, 'DIAMOND', 'diamond')).lower():
+                    weighted = weight * factor
+                    sale_gold_24 += weighted
+                    gold_24_weight += weighted
                 elif metal_type == str(silver_metal).lower():
                     weighted = weight * factor
                     sale_silver_24 += weighted
@@ -1579,6 +1583,8 @@ class SalesByMonthView(LoginRequiredMixin, ListView):
                     weight = line.ornament.weight or Decimal("0")
                     factor = purity_factors.get(getattr(line.ornament, 'type', None), Decimal("1.00"))
                     if getattr(line.ornament, 'metal_type', None) == getattr(Ornament.MetalTypeCategory, 'GOLD', 'gold'):
+                        gold_24_weight += weight * factor
+                    elif getattr(line.ornament, 'metal_type', None) == getattr(Ornament.MetalTypeCategory, 'DIAMOND', 'diamond'):
                         gold_24_weight += weight * factor
                     elif getattr(line.ornament, 'metal_type', None) == getattr(Ornament.MetalTypeCategory, 'SILVER', 'silver'):
                         silver_weight += weight

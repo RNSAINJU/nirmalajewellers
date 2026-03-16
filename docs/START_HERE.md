@@ -154,7 +154,7 @@ Created 5 detailed guides:
 | `DEBUG_PAYMENT_GUIDE.md` | Detailed guide | 6.4K |
 | `CHANGES_SUMMARY.md` | Change summary | 5.9K |
 | `DEBUG_SESSION_REPORT.md` | Session report | 6.1K |
-| `test_payment_submission.py` | Form test (verified ✅) | 2.2K |
+| `nirmalajewellers/tests/test_payment_submission.py` | Form test (verified ✅) | 2.2K |
 | `DEBUG_README.md` (this file) | Summary | 3.5K |
 
 ---

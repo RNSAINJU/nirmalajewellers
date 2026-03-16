@@ -39,7 +39,7 @@ Instead of guessing where data is lost, I added logging at EVERY step:
 - **CHANGES_SUMMARY.md**: Detailed summary of all changes and data flow diagram
 
 ### 4. Verified Form Works Correctly
-Created and ran `test_payment_submission.py` which confirms:
+Created and ran `nirmalajewellers/tests/test_payment_submission.py` which confirms:
 - ✅ Form receives payment_lines_json correctly
 - ✅ Form clean() parses JSON correctly
 - ✅ Cleaned data includes payment_lines_json with correct values
@@ -114,7 +114,7 @@ Share:
 | `order/forms.py` | Added `clean()` method | Log when form receives payment data |
 | `order/templates/order/order_form.html` | Added 12+ console.log statements | Trace JavaScript payment collection |
 | `order/views.py` | Enhanced `form_valid()` with 20+ print statements | Trace backend payment processing |
-| `test_payment_submission.py` | Created new | Verify form works (already ran - ✅ passes) |
+| `nirmalajewellers/tests/test_payment_submission.py` | Created new | Verify form works (already ran - ✅ passes) |
 | `DEBUG_PAYMENT_GUIDE.md` | Created new | Comprehensive debugging guide |
 | `CHANGES_SUMMARY.md` | Created new | Summary of all changes |
 | `QUICK_DEBUG_TEST.md` | Created new | Quick start guide |
