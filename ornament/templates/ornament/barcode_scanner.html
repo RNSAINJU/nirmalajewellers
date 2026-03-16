@@ -326,75 +326,63 @@
     }
 
     async function startNativeScanner() {
-        // Get camera stream
         const stream = await navigator.mediaDevices.getUserMedia({
             video: { facingMode: 'environment' }
         });
 
-        // Create video element
-        videoElement = document.createElement('video');
-        videoElement.srcObject = stream;
-        videoElement.play();
-        videoElement.style.display = 'none';
+        // Set up display video in reader div
+        const readerDiv = document.getElementById('reader');
+        readerDiv.innerHTML = '';
 
-        // Create canvas
-        canvasElement = document.createElement('canvas');
-        document.getElementById('reader').appendChild(videoElement);
-        document.getElementById('reader').appendChild(canvasElement);
-
-        // Display video in reader div
-        const displayCanvas = document.getElementById('reader');
-        displayCanvas.innerHTML = '';
-        
         const displayVideo = document.createElement('video');
         displayVideo.srcObject = stream;
         displayVideo.autoplay = true;
         displayVideo.playsinline = true;
         displayVideo.style.width = '100%';
         displayVideo.style.borderRadius = '5px';
-        displayCanvas.appendChild(displayVideo);
+        readerDiv.appendChild(displayVideo);
+
+        // Track for cleanup
+        videoElement = displayVideo;
+
+        // Reuse a single canvas for every frame
+        const detectionCanvas = document.createElement('canvas');
+        const ctx = detectionCanvas.getContext('2d');
 
         // Continuous detection loop
         const detectBarcode = async () => {
             if (!cameraActive || !videoElement || !barcodeDetector) {
-                if (stream) stream.getTracks().forEach(track => track.stop());
+                stream.getTracks().forEach(track => track.stop());
                 return;
             }
 
-            try {
-                // Create canvas from video frame
-                const canvas = document.createElement('canvas');
-                canvas.width = displayVideo.videoWidth;
-                canvas.height = displayVideo.videoHeight;
-                
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(displayVideo, 0, 0);
+            // Wait until video has actual frame data
+            if (displayVideo.readyState >= displayVideo.HAVE_ENOUGH_DATA && displayVideo.videoWidth > 0) {
+                try {
+                    detectionCanvas.width = displayVideo.videoWidth;
+                    detectionCanvas.height = displayVideo.videoHeight;
+                    ctx.drawImage(displayVideo, 0, 0);
 
-                // Detect barcodes
-                const barcodes = await barcodeDetector.detect(canvas);
+                    const barcodes = await barcodeDetector.detect(detectionCanvas);
 
-                if (barcodes && barcodes.length > 0) {
-                    const barcode = barcodes[0];
-                    console.log("✓ BARCODE DETECTED:", barcode.rawValue);
-                    
-                    document.getElementById('barcodeInput').value = barcode.rawValue;
-                    document.getElementById('scannerStatus').style.display = 'block';
-                    document.getElementById('scannerStatus').innerHTML = 
-                        '<strong style="color: green;">✓ Barcode Detected!</strong><br>' + barcode.rawValue;
-                    
-                    // Auto-submit
-                    setTimeout(() => {
-                        document.querySelector('form').submit();
-                    }, 300);
-                    
-                    setTimeout(closeCamera, 500);
-                    return;
+                    if (barcodes && barcodes.length > 0) {
+                        const barcode = barcodes[0];
+                        console.log("✓ BARCODE DETECTED:", barcode.rawValue);
+
+                        document.getElementById('barcodeInput').value = barcode.rawValue;
+                        document.getElementById('scannerStatus').style.display = 'block';
+                        document.getElementById('scannerStatus').innerHTML =
+                            '<strong style="color: green;">✓ Barcode Detected!</strong><br>' + barcode.rawValue;
+
+                        setTimeout(() => document.querySelector('form').submit(), 300);
+                        closeCamera();
+                        return;
+                    }
+                } catch (err) {
+                    // Frame skipped
                 }
-            } catch (err) {
-                console.log("Detection frame skipped");
             }
 
-            // Continue detection
             requestAnimationFrame(detectBarcode);
         };
 
@@ -402,12 +390,25 @@
     }
 
     async function startHtml5Scanner() {
-        html5QrCode = new Html5Qrcode("reader");
-        
-        const config = { 
+        // Explicitly support CODE128 and other linear barcodes if the enum is available
+        const formatsToSupport = typeof Html5QrcodeSupportedFormats !== 'undefined' ? [
+            Html5QrcodeSupportedFormats.CODE_128,
+            Html5QrcodeSupportedFormats.CODE_39,
+            Html5QrcodeSupportedFormats.QR_CODE,
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.EAN_8,
+        ] : undefined;
+
+        html5QrCode = new Html5Qrcode(
+            "reader",
+            formatsToSupport ? { formatsToSupport } : undefined
+        );
+
+        // Wide rectangular qrbox works much better for linear (1D) CODE128 barcodes
+        const config = {
             fps: 15,
-            qrbox: { width: 250, height: 250 },
-            aspectRatio: 1.33333,
+            qrbox: { width: 350, height: 150 },
+            aspectRatio: 1.7778,
             useBarCodeDetectorIfAvailable: true
         };
 
