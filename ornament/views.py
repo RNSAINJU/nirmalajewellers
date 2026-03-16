@@ -1506,19 +1506,22 @@ def barcode_scanner(request):
     searched_ornament = None
     current_rate = None
     error_message = None
-    
+
+    barcode = ''
     if request.method == 'POST':
         barcode = request.POST.get('barcode', '').strip()
-        
-        if barcode:
-            # Try to find ornament by barcode or code
+    else:
+        barcode = request.GET.get('barcode', '').strip()
+
+    if barcode:
+        # Try to find ornament by barcode or code
+        try:
+            searched_ornament = Ornament.objects.get(barcode=barcode)
+        except Ornament.DoesNotExist:
             try:
-                searched_ornament = Ornament.objects.get(barcode=barcode)
+                searched_ornament = Ornament.objects.get(code=barcode)
             except Ornament.DoesNotExist:
-                try:
-                    searched_ornament = Ornament.objects.get(code=barcode)
-                except Ornament.DoesNotExist:
-                    error_message = f"Ornament with barcode '{barcode}' not found."
+                error_message = f"Ornament with barcode '{barcode}' not found."
     
     # Get the latest rate
     from main.models import DailyRate
