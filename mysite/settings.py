@@ -128,7 +128,7 @@ WSGI_APPLICATION = 'mysite.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# Use PostgreSQL in production, SQLite in development
+# Use PostgreSQL as the primary application database
 
 DATABASES = {
     'default': {

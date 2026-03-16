@@ -297,7 +297,7 @@ nirmalajewellers/
 - **Frontend**: HTML5, CSS3, JavaScript (Vanilla)
 - **Image Hosting**: Cloudinary
 - **Icons**: Bootstrap Icons
-- **Database**: SQLite (development) / PostgreSQL (production)
+- **Database**: PostgreSQL
 
 ## Support & Troubleshooting
 

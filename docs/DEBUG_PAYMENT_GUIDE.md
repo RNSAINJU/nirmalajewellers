@@ -117,7 +117,7 @@ If you see:
 - `/home/aryan/nirmalajewellers/order/forms.py` - Added clean() method with logging
 - `/home/aryan/nirmalajewellers/order/templates/order/order_form.html` - Added extensive console.log() statements
 - `/home/aryan/nirmalajewellers/order/views.py` - Added detailed payment processing logs
-- `/home/aryan/nirmalajewellers/test_payment_submission.py` - Test script (verified form clean() works)
+- `/home/aryan/nirmalajewellers/nirmalajewellers/tests/test_payment_submission.py` - Test script (verified form clean() works)
 
 ## Next Steps After Testing
 Once you provide the debug output, I will:

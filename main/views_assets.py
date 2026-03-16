@@ -94,10 +94,17 @@ def total_assets(request):
     
     total_silver_amount = (silver_24k_equivalent / Decimal('11.664')) * silver_rate
     
-    # Diamond ornaments calculation (gold content in diamond ornaments)
+    # Diamond ornaments calculation (weight stores net gold weight)
     diamond_qs = ornaments.filter(metal_type='Diamond')
-    total_diamond_weight = diamond_qs.aggregate(total=Sum('weight'))['total'] or Decimal('0')
-    diamond_24k_equivalent = total_diamond_weight * Decimal('0.59')
+    diamond_karats = diamond_qs.values('type').annotate(weight_sum=Sum('weight'))
+    diamond_karat_dict = {k['type']: k['weight_sum'] or Decimal('0') for k in diamond_karats}
+    total_diamond_weight = sum(diamond_karat_dict.values(), Decimal('0'))
+    diamond_24k_equivalent = (
+        diamond_karat_dict.get('24KARAT', Decimal('0')) * KARAT_FACTORS['24KARAT']
+        + diamond_karat_dict.get('22KARAT', Decimal('0')) * KARAT_FACTORS['22KARAT']
+        + diamond_karat_dict.get('18KARAT', Decimal('0')) * KARAT_FACTORS['18KARAT']
+        + diamond_karat_dict.get('14KARAT', Decimal('0')) * KARAT_FACTORS['14KARAT']
+    )
     diamond_gold_amount = (diamond_24k_equivalent / Decimal('11.664')) * gold_rate
     
     # Diamond weight amount (diamond stones in diamond ornaments)

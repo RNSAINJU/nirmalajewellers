@@ -88,7 +88,7 @@ Nothing yet - this is a debugging session. The ground work has been laid:
 ### Test Files
 | File | Purpose | Status |
 |------|---------|--------|
-| `test_payment_submission.py` | Form validation test | ✅ Verified - works |
+| `nirmalajewellers/tests/test_payment_submission.py` | Form validation test | ✅ Verified - works |
 
 ---
 

@@ -7,8 +7,12 @@ This simulates what happens when the form is submitted with payment data.
 import os
 import django
 import json
+import sys
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mysite.settings')
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+APP_ROOT = os.path.join(REPO_ROOT, 'nirmalajewellers')
+sys.path.insert(0, APP_ROOT)
 django.setup()
 
 from django.test import RequestFactory

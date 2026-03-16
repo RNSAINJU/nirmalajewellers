@@ -3,7 +3,12 @@
 Test script to verify web form submission with metals works correctly.
 """
 import os
+import sys
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mysite.settings')
+
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+APP_ROOT = os.path.join(REPO_ROOT, 'nirmalajewellers')
+sys.path.insert(0, APP_ROOT)
 
 import django
 django.setup()
