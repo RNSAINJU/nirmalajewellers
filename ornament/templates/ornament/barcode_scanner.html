@@ -244,331 +244,129 @@
     }
 </style>
 
-<!-- HTML5 QR/Barcode Scanner with BarcodeDetector API -->
-<script src="https://unpkg.com/html5-qrcode"></script>
+<!-- ZXing barcode library — reads CODE128, QR, EAN from camera AND images -->
+<script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
 
 <script>
-    let html5QrCode = null;
-    let barcodeDetector = null;
+    const codeReader = new ZXing.BrowserMultiFormatReader();
     let cameraActive = false;
-    let videoElement = null;
-    let canvasElement = null;
 
-    // Check BarcodeDetector API support
-    async function initBarcodeDetector() {
-        if (!('BarcodeDetector' in window)) {
-            console.log("BarcodeDetector API not supported, using fallback");
-            return null;
-        }
-        
-        try {
-            const formats = await BarcodeDetector.getSupportedFormats();
-            console.log("Supported formats:", formats);
-            
-            // Create detector supporting CODE128 and other common barcodes
-            barcodeDetector = new BarcodeDetector({
-                formats: ['code_128', 'code_39', 'ean_13', 'ean_8', 'upc_a', 'upc_e']
-            });
-            console.log("✓ BarcodeDetector ready");
-            return barcodeDetector;
-        } catch (err) {
-            console.log("BarcodeDetector error:", err);
-            return null;
-        }
-    }
-
-    // Initialize camera toggle
-    document.getElementById('cameraToggleBtn').addEventListener('click', function() {
-        if (!cameraActive) {
-            openCamera();
-        } else {
-            closeCamera();
-        }
+    // ── Camera toggle ─────────────────────────────────────────────────────────
+    document.getElementById('cameraToggleBtn').addEventListener('click', function () {
+        cameraActive ? closeCamera() : openCamera();
     });
-
-    document.getElementById('closeCamera').addEventListener('click', function() {
-        closeCamera();
-    });
+    document.getElementById('closeCamera').addEventListener('click', closeCamera);
 
     async function openCamera() {
         const cameraSection = document.getElementById('cameraSection');
         cameraSection.style.display = 'block';
-        
-        try {
-            // Try BarcodeDetector API first (faster)
-            if (!barcodeDetector) {
-                await initBarcodeDetector();
-            }
 
-            if (barcodeDetector) {
-                console.log("Using native BarcodeDetector API (FAST)");
-                document.getElementById('scannerStatus').style.display = 'block';
-                document.getElementById('scannerStatus').innerHTML = 
-                    '<strong style="color: green;">✓ Fast Scanner Ready (Native)</strong><br>Point at barcode - instant detection!';
-                await startNativeScanner();
-            } else {
-                console.log("Falling back to HTML5 QR Code scanner");
-                document.getElementById('scannerStatus').style.display = 'block';
-                document.getElementById('scannerStatus').innerHTML = 
-                    '<strong style="color: orange;">⚠ Using Fallback Scanner</strong><br>Point at barcode to scan';
-                await startHtml5Scanner();
-            }
-            
-            cameraActive = true;
-            document.getElementById('cameraToggleBtn').innerHTML = '<i class="bi bi-camera-video"></i> Close Camera';
-        } catch (err) {
-            console.error("Camera error:", err);
-            document.getElementById('scannerStatus').style.display = 'block';
-            document.getElementById('scannerStatus').innerHTML = 
-                '<strong style="color: red;">✗ Camera Error:</strong> ' + err.message + 
-                '<br><small>Check camera permissions or try manual entry.</small>';
-        }
-    }
-
-    async function startNativeScanner() {
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'environment' }
-        });
-
-        // Set up display video in reader div
+        // Put a <video> element inside #reader for ZXing to use
         const readerDiv = document.getElementById('reader');
-        readerDiv.innerHTML = '';
+        readerDiv.innerHTML = '<video id="zxingVideo" style="width:100%; border-radius:5px;" muted playsinline></video>';
 
-        const displayVideo = document.createElement('video');
-        displayVideo.srcObject = stream;
-        displayVideo.autoplay = true;
-        displayVideo.playsinline = true;
-        displayVideo.style.width = '100%';
-        displayVideo.style.borderRadius = '5px';
-        readerDiv.appendChild(displayVideo);
+        const statusEl = document.getElementById('scannerStatus');
+        statusEl.style.display = 'block';
+        statusEl.innerHTML = '<strong>📷 Camera active — point at barcode</strong>';
 
-        // Track for cleanup
-        videoElement = displayVideo;
+        document.getElementById('cameraToggleBtn').innerHTML = '<i class="bi bi-camera-video"></i> Close Camera';
+        cameraActive = true;
 
-        // Reuse a single canvas for every frame
-        const detectionCanvas = document.createElement('canvas');
-        const ctx = detectionCanvas.getContext('2d');
-
-        // Continuous detection loop
-        const detectBarcode = async () => {
-            if (!cameraActive || !videoElement || !barcodeDetector) {
-                stream.getTracks().forEach(track => track.stop());
-                return;
-            }
-
-            // Wait until video has actual frame data
-            if (displayVideo.readyState >= displayVideo.HAVE_ENOUGH_DATA && displayVideo.videoWidth > 0) {
-                try {
-                    detectionCanvas.width = displayVideo.videoWidth;
-                    detectionCanvas.height = displayVideo.videoHeight;
-                    ctx.drawImage(displayVideo, 0, 0);
-
-                    const barcodes = await barcodeDetector.detect(detectionCanvas);
-
-                    if (barcodes && barcodes.length > 0) {
-                        const barcode = barcodes[0];
-                        console.log("✓ BARCODE DETECTED:", barcode.rawValue);
-
-                        document.getElementById('barcodeInput').value = barcode.rawValue;
-                        document.getElementById('scannerStatus').style.display = 'block';
-                        document.getElementById('scannerStatus').innerHTML =
-                            '<strong style="color: green;">✓ Barcode Detected!</strong><br>' + barcode.rawValue;
-
-                        setTimeout(() => document.querySelector('form').submit(), 300);
-                        closeCamera();
-                        return;
-                    }
-                } catch (err) {
-                    // Frame skipped
+        try {
+            // null = default/back camera; ZXing handles environment facing automatically
+            await codeReader.decodeFromVideoDevice(null, 'zxingVideo', function (result, err) {
+                if (result) {
+                    const text = result.getText();
+                    document.getElementById('barcodeInput').value = text;
+                    statusEl.innerHTML = '<strong style="color:green;">✓ Barcode Detected!</strong><br>' + text;
+                    closeCamera();
+                    setTimeout(function () { document.querySelector('form').submit(); }, 400);
                 }
-            }
-
-            requestAnimationFrame(detectBarcode);
-        };
-
-        detectBarcode();
-    }
-
-    async function startHtml5Scanner() {
-        // Explicitly support CODE128 and other linear barcodes if the enum is available
-        const formatsToSupport = typeof Html5QrcodeSupportedFormats !== 'undefined' ? [
-            Html5QrcodeSupportedFormats.CODE_128,
-            Html5QrcodeSupportedFormats.CODE_39,
-            Html5QrcodeSupportedFormats.QR_CODE,
-            Html5QrcodeSupportedFormats.EAN_13,
-            Html5QrcodeSupportedFormats.EAN_8,
-        ] : undefined;
-
-        html5QrCode = new Html5Qrcode(
-            "reader",
-            formatsToSupport ? { formatsToSupport } : undefined
-        );
-
-        // Wide rectangular qrbox works much better for linear (1D) CODE128 barcodes
-        const config = {
-            fps: 15,
-            qrbox: { width: 350, height: 150 },
-            aspectRatio: 1.7778,
-            useBarCodeDetectorIfAvailable: true
-        };
-
-        await html5QrCode.start(
-            { facingMode: "environment" },
-            config,
-            onScanSuccess,
-            onScanFailure
-        );
-    }
-
-    function onScanSuccess(decodedText, decodedResult) {
-        if (decodedText) {
-            console.log("Barcode detected:", decodedText);
-            document.getElementById('barcodeInput').value = decodedText;
-            document.getElementById('scannerStatus').style.display = 'block';
-            document.getElementById('scannerStatus').innerHTML = 
-                '<strong style="color: green;">✓ Barcode Detected!</strong><br>' + decodedText;
-            
-            setTimeout(() => {
-                document.querySelector('form').submit();
-            }, 300);
-            
-            setTimeout(closeCamera, 500);
+                // err here is per-frame "not found" — normal, ignore it
+            });
+        } catch (err) {
+            statusEl.innerHTML = '<strong style="color:red;">✗ Camera Error:</strong> ' + err.message +
+                '<br><small>Allow camera permission or enter barcode manually.</small>';
+            cameraActive = false;
         }
     }
 
-    function onScanFailure(error) {
-        // Ignore scan failures - this is normal
-    }
-
-    async function closeCamera() {
-        // Stop native scanner
-        if (videoElement && videoElement.srcObject) {
-            videoElement.srcObject.getTracks().forEach(track => track.stop());
-            videoElement = null;
-        }
-
-        // Stop HTML5 scanner
-        if (html5QrCode) {
-            try {
-                await html5QrCode.stop();
-                html5QrCode = null;
-            } catch (err) {
-                console.log("Error stopping scanner:", err);
-            }
-        }
-
-        // Clean up
+    function closeCamera() {
+        codeReader.reset();
         document.getElementById('reader').innerHTML = '';
-        
         cameraActive = false;
         document.getElementById('cameraSection').style.display = 'none';
         document.getElementById('cameraToggleBtn').innerHTML = '<i class="bi bi-camera"></i> Open Camera';
         document.getElementById('scannerStatus').style.display = 'none';
     }
 
-    // Cleanup on page unload
-    window.addEventListener('beforeunload', function() {
-        if (cameraActive) {
-            closeCamera();
-        }
+    window.addEventListener('beforeunload', function () { if (cameraActive) closeCamera(); });
+
+    // ── Image upload — actually decodes the barcode ───────────────────────────
+    document.getElementById('uploadImageBtn').addEventListener('click', function () {
+        document.getElementById('barcodeImage').click();
     });
 
-    // Image upload for barcode detection
-    const uploadImageBtn = document.getElementById('uploadImageBtn');
-    const barcodeImageInput = document.getElementById('barcodeImage');
-    const imageStatus = document.getElementById('imageStatus');
-
-    uploadImageBtn.addEventListener('click', function() {
-        barcodeImageInput.click();
-    });
-
-    barcodeImageInput.addEventListener('change', async function(e) {
+    document.getElementById('barcodeImage').addEventListener('change', async function (e) {
         const file = e.target.files[0];
         if (!file) return;
 
-        imageStatus.innerHTML = '<small class="text-muted"><i class="bi bi-hourglass-split"></i> Loading image...</small>';
+        const imageStatus = document.getElementById('imageStatus');
+        const objectUrl = URL.createObjectURL(file);
+
+        // Show preview first
+        imageStatus.innerHTML =
+            '<div style="border:2px solid #007bff; padding:10px; border-radius:5px; background:white;">' +
+            '<img id="uploadedBarcodeImg" src="' + objectUrl + '" style="max-width:100%; max-height:300px; margin-bottom:10px; border-radius:3px; display:block;">' +
+            '<div id="decodeResult"><small class="text-muted"><i class="bi bi-hourglass-split"></i> Reading barcode…</small></div>' +
+            '</div>';
 
         try {
-            // Create FormData to send the image to the server
-            const formData = new FormData();
-            formData.append('image', file);
+            // ZXing decodes the barcode directly from the image element
+            const imgEl = document.getElementById('uploadedBarcodeImg');
 
-            // Send to server for image processing
-            const response = await fetch('{% url "ornament:detect_barcode" %}', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                }
+            // Wait for image to fully load if needed
+            await new Promise(function (resolve) {
+                if (imgEl.complete) { resolve(); } else { imgEl.onload = resolve; }
             });
 
-            const result = await response.json();
+            const result = await codeReader.decodeFromImageElement(imgEl);
+            const text = result.getText();
 
-            if (result.success) {
-                if (result.image_preview) {
-                    // Show image preview
-                    imageStatus.innerHTML = 
-                        '<div style="border: 2px solid #007bff; padding: 10px; border-radius: 5px; background: white;">' +
-                        '<img src="' + result.image_preview + '" style="max-width: 100%; max-height: 300px; margin-bottom: 10px; border-radius: 3px;">' +
-                        '<div style="background: #f0f8ff; padding: 10px; border-radius: 3px; margin-bottom: 10px;">' +
-                        '<strong style="color: #0066cc;">📷 Code128 Barcode Image</strong><br>' +
-                        '<small style="color: #666;">Please read the barcode value and enter it below.</small>' +
-                        '</div>' +
-                        '<input type="text" id="manualBarcodeInput" placeholder="Enter barcode value (e.g., ORN-0000006327)" ' +
-                        'maxlength="50" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; margin-bottom: 8px;">' +
-                        '<button type="button" id="submitManualBarcode" class="btn btn-primary btn-sm" style="width: 100%;">' +
-                        '<i class="bi bi-check"></i> Use This Barcode' +
-                        '</button>' +
-                        '</div>';
-                    
-                    // Add event listener for manual barcode submission
-                    document.getElementById('submitManualBarcode').addEventListener('click', function() {
-                        const barcodeValue = document.getElementById('manualBarcodeInput').value.trim();
-                        if (barcodeValue) {
-                            document.getElementById('barcodeInput').value = barcodeValue;
-                            imageStatus.innerHTML = 
-                                '<strong style="color: green;"><i class="bi bi-check-circle"></i> Barcode Entered!</strong><br>' + 
-                                '<small>' + barcodeValue + '</small>';
-                            
-                            setTimeout(() => {
-                                document.querySelector('form').submit();
-                            }, 500);
-                        } else {
-                            imageStatus.innerHTML = 
-                                '<small style="color: orange;"><i class="bi bi-exclamation-triangle"></i> Please enter the barcode value</small>';
-                        }
-                    });
+            document.getElementById('decodeResult').innerHTML =
+                '<div style="background:#d4edda; padding:8px; border-radius:4px; color:#155724; margin-top:6px;">' +
+                '<strong>✓ Barcode Read: ' + text + '</strong>' +
+                '</div>';
 
-                    // Allow Enter key to submit
-                    document.getElementById('manualBarcodeInput').addEventListener('keypress', function(e) {
-                        if (e.key === 'Enter') {
-                            document.getElementById('submitManualBarcode').click();
-                        }
-                    });
+            document.getElementById('barcodeInput').value = text;
+            setTimeout(function () { document.querySelector('form').submit(); }, 800);
 
-                    // Auto-focus on the input field
-                    document.getElementById('manualBarcodeInput').focus();
-                } else {
-                    imageStatus.innerHTML = 
-                        '<small style="color: orange;"><i class="bi bi-exclamation-triangle"></i> ' + 
-                        (result.message || 'Could not process image') + '</small>';
-                }
-            } else {
-                imageStatus.innerHTML = 
-                    '<small style="color: red;"><i class="bi bi-x-circle"></i> ' + 
-                    (result.error || 'Error processing image') + '</small>';
-                console.log("Error:", result.error);
-            }
         } catch (err) {
-            console.error("Error:", err);
-            imageStatus.innerHTML = 
-                '<small style="color: red;"><i class="bi bi-x-circle"></i> Error processing image. Please try again.</small>';
-        }
-    });
+            // Could not auto-decode — show manual fallback
+            document.getElementById('decodeResult').innerHTML =
+                '<div style="background:#fff3cd; padding:8px; border-radius:4px; color:#856404; margin-top:6px;">' +
+                '<strong>⚠ Could not auto-read barcode from this image.</strong><br>' +
+                '<small>Tip: use a clear, well-lit photo cropped close to the barcode. Or enter code below manually.</small>' +
+                '</div>' +
+                '<input type="text" id="manualBarcodeInput" placeholder="e.g. ORN-0000006327" maxlength="50" ' +
+                'style="width:100%; padding:8px; border:1px solid #ddd; border-radius:3px; box-sizing:border-box; margin-top:8px;">' +
+                '<button type="button" id="submitManualBarcode" class="btn btn-primary btn-sm mt-2" style="width:100%;">' +
+                '<i class="bi bi-check"></i> Use This Barcode</button>';
 
-    // Initialize detector on page load
-    window.addEventListener('load', function() {
-        initBarcodeDetector();
+            document.getElementById('submitManualBarcode').addEventListener('click', function () {
+                const val = document.getElementById('manualBarcodeInput').value.trim();
+                if (val) {
+                    document.getElementById('barcodeInput').value = val;
+                    setTimeout(function () { document.querySelector('form').submit(); }, 300);
+                }
+            });
+            document.getElementById('manualBarcodeInput').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') document.getElementById('submitManualBarcode').click();
+            });
+            document.getElementById('manualBarcodeInput').focus();
+        }
+
+        URL.revokeObjectURL(objectUrl);
     });
 </script>
 {% endblock %}
