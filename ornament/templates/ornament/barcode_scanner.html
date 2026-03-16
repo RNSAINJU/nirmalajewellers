@@ -78,7 +78,7 @@
                     </div>
 
                     <!-- Barcode Input Form -->
-                    <form method="get" class="mb-4">
+                    <form id="barcodeSearchForm" method="get" class="mb-4">
                         <div class="input-group input-group-lg">
                             <span class="input-group-text">
                                 <i class="bi bi-barcode"></i>
@@ -249,6 +249,8 @@
 <script>
     const codeReader = new ZXing.BrowserMultiFormatReader();
     let cameraActive = false;
+    const searchParams = new URLSearchParams(window.location.search);
+    const shouldAutoScan = searchParams.get('auto_scan') === '1' && !searchParams.get('barcode');
 
     // ── Camera toggle ─────────────────────────────────────────────────────────
     document.getElementById('cameraToggleBtn').addEventListener('click', function () {
@@ -279,7 +281,9 @@
                     document.getElementById('barcodeInput').value = text;
                     statusEl.innerHTML = '<strong style="color:green;">✓ Barcode Detected!</strong><br>' + text;
                     closeCamera();
-                    setTimeout(function () { document.querySelector('form').submit(); }, 400);
+                    setTimeout(function () {
+                        document.getElementById('barcodeSearchForm').submit();
+                    }, 400);
                 }
                 // err here is per-frame "not found" — normal, ignore it
             });
@@ -338,7 +342,9 @@
                 '</div>';
 
             document.getElementById('barcodeInput').value = text;
-            setTimeout(function () { document.querySelector('form').submit(); }, 800);
+            setTimeout(function () {
+                document.getElementById('barcodeSearchForm').submit();
+            }, 800);
 
         } catch (err) {
             // Could not auto-decode — show manual fallback
@@ -356,7 +362,9 @@
                 const val = document.getElementById('manualBarcodeInput').value.trim();
                 if (val) {
                     document.getElementById('barcodeInput').value = val;
-                    setTimeout(function () { document.querySelector('form').submit(); }, 300);
+                    setTimeout(function () {
+                        document.getElementById('barcodeSearchForm').submit();
+                    }, 300);
                 }
             });
             document.getElementById('manualBarcodeInput').addEventListener('keypress', function (e) {
@@ -366,6 +374,14 @@
         }
 
         URL.revokeObjectURL(objectUrl);
+    });
+
+    window.addEventListener('load', function () {
+        if (shouldAutoScan) {
+            setTimeout(function () {
+                openCamera();
+            }, 250);
+        }
     });
 </script>
 {% endblock %}

@@ -1028,6 +1028,12 @@
                 <span class="ms-2">Silver: रु{{ latest_rate.silver_rate|floatformat:0 }}</span>
             </div>
             {% endif %}
+            {% if user.is_authenticated %}
+            <a href="{% url 'ornament:barcode_scanner' %}?auto_scan=1" class="btn btn-outline-light btn-sm d-flex align-items-center gap-2" aria-label="Scan barcode" title="Scan barcode">
+                <i class="bi bi-qr-code-scan"></i>
+                <span class="d-none d-md-inline">Scan</span>
+            </a>
+            {% endif %}
             <button class="btn btn-outline-light btn-sm d-flex align-items-center gap-2" onclick="toggleTheme()" aria-label="Toggle theme">
                 <i class="bi bi-moon-fill" id="themeIcon"></i>
                 <span class="d-none d-md-inline" id="themeLabel">Dark</span>
