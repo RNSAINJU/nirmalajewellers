@@ -24,11 +24,11 @@ DEBUG = os.getenv('DEBUG', 'False') == 'True'
 # Local: leave unset or set DJANGO_ENV=local — runserver works over plain HTTP.
 IS_PRODUCTION = os.getenv('DJANGO_ENV', 'local').lower() == 'production'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'nirmalajewellers.store,www.nirmalajewellers.store,localhost,127.0.0.1,5.189.164.193,.ngrok-free.app,.ngrok.io').split(',')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'nirmalajewellers.net,www.nirmalajewellers.net,localhost,127.0.0.1,5.189.164.193,.ngrok-free.app,.ngrok.io').split(',')
 
 CSRF_TRUSTED_ORIGINS = os.getenv(
     'CSRF_TRUSTED_ORIGINS',
-    'https://nirmalajewellers.store,https://www.nirmalajewellers.store,https://*.ngrok-free.app,https://*.ngrok.io'
+    'https://nirmalajewellers.net,https://www.nirmalajewellers.net,https://*.ngrok-free.app,https://*.ngrok.io'
 ).split(',')
 
 # API Tokens loaded from .env file (see .env file in project root)
@@ -56,8 +56,8 @@ if IS_PRODUCTION:
     USE_X_FORWARDED_HOST = True
 
     # Share cookies across apex + www when redirects switch hosts.
-    SESSION_COOKIE_DOMAIN = os.getenv('SESSION_COOKIE_DOMAIN', '.nirmalajewellers.store')
-    CSRF_COOKIE_DOMAIN = os.getenv('CSRF_COOKIE_DOMAIN', '.nirmalajewellers.store')
+    SESSION_COOKIE_DOMAIN = os.getenv('SESSION_COOKIE_DOMAIN', '.nirmalajewellers.net')
+    CSRF_COOKIE_DOMAIN = os.getenv('CSRF_COOKIE_DOMAIN', '.nirmalajewellers.net')
 
 
 # Application definition
