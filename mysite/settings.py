@@ -20,27 +20,34 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-nk_sd$(^2bzq3^9p3@e12d+=(=
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
+# DJANGO_ENV=production enables HTTPS-only security settings.
+# Local: leave unset or set DJANGO_ENV=local — runserver works over plain HTTP.
+IS_PRODUCTION = os.getenv('DJANGO_ENV', 'local').lower() == 'production'
+
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'nirmalajewellers.store,www.nirmalajewellers.store,localhost,127.0.0.1,5.189.164.193,.ngrok-free.app,.ngrok.io').split(',')
 
 CSRF_TRUSTED_ORIGINS = os.getenv(
     'CSRF_TRUSTED_ORIGINS',
     'https://nirmalajewellers.store,https://www.nirmalajewellers.store,https://*.ngrok-free.app,https://*.ngrok.io'
 ).split(',')
+
 # API Tokens loaded from .env file (see .env file in project root)
 
-# Security hardening (applies in production only)
-if not DEBUG:
-    SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'True') == 'True'
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-    SESSION_COOKIE_HTTPONLY = True
-    CSRF_COOKIE_HTTPONLY = True
+# Security hardening — only applied when DJANGO_ENV=production.
+# Local runs (including runserver with DEBUG=False) are never forced to HTTPS.
+SECURE_SSL_REDIRECT = IS_PRODUCTION
+SESSION_COOKIE_SECURE = IS_PRODUCTION
+CSRF_COOKIE_SECURE = IS_PRODUCTION
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+X_FRAME_OPTIONS = "DENY"
+
+if IS_PRODUCTION:
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
-    SECURE_CONTENT_TYPE_NOSNIFF = True
-    SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
-    X_FRAME_OPTIONS = "DENY"
 
 
 # Application definition
@@ -122,24 +129,17 @@ WSGI_APPLICATION = 'mysite.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 # Use PostgreSQL in production, SQLite in development
-if DEBUG:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DATABASE_NAME'),
+        'USER': os.getenv('DATABASE_USER'),
+        'PASSWORD': os.getenv('DATABASE_PASSWORD'),
+        'HOST': os.getenv('DATABASE_HOST'),
+        'PORT': os.getenv('DATABASE_PORT'),
     }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.getenv('DATABASE_NAME'),
-            'USER': os.getenv('DATABASE_USER'),
-            'PASSWORD': os.getenv('DATABASE_PASSWORD'),
-            'HOST': os.getenv('DATABASE_HOST'),
-            'PORT': os.getenv('DATABASE_PORT'),
-        }
-    }
+}
 
 
 # Password validation
