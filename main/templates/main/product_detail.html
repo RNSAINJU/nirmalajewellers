@@ -251,6 +251,12 @@
                 <span class="spec-value">{{ product.stone_weight }} grams</span>
             </div>
             {% endif %}
+            {% if total_selling_amount %}
+            <div class="spec-item">
+                <span class="spec-label">Total Selling Amount</span>
+                <span class="spec-value">रू {{ total_selling_amount|floatformat:2 }}</span>
+            </div>
+            {% endif %}
         </div>
 
         <!-- Action Buttons -->
