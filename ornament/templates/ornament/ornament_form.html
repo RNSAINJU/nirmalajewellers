@@ -115,6 +115,7 @@
                                     <!-- Ornament Code -->
                                     <div class="col-md-3 col-sm-6">
                                         <label class="form-label mb-1">Ornament Code</label>
+                                        {{ form.code.as_hidden }}
                                         <input
                                             type="text"
                                             id="id_code_preview"
@@ -129,6 +130,7 @@
                                     <!-- Barcode -->
                                     <div class="col-md-3 col-sm-6">
                                         <label class="form-label mb-1">Barcode</label>
+                                        {{ form.barcode.as_hidden }}
                                         <input
                                             type="text"
                                             id="id_barcode_preview"
