@@ -84,6 +84,23 @@ class OrnamentForm(forms.ModelForm):
 
         instance = super().save(commit=False)
 
+        # Preserve immutable identifiers on updates if not posted by the form.
+        # The template displays code/barcode as readonly previews, so these
+        # fields may be omitted from POST and arrive here as empty.
+        original_instance = None
+        if instance.pk:
+            original_instance = (
+                Ornament.objects.filter(pk=instance.pk)
+                .only('code', 'barcode')
+                .first()
+            )
+
+            if original_instance:
+                if not instance.code and original_instance.code:
+                    instance.code = original_instance.code
+                if not instance.barcode and original_instance.barcode:
+                    instance.barcode = original_instance.barcode
+
         # For existing objects, ensure they have a code
         if instance.pk:
             if not instance.code:
@@ -103,7 +120,12 @@ class OrnamentForm(forms.ModelForm):
                 # If editing existing ornament and no new image uploaded, preserve existing image
                 if instance.pk and 'image' not in self.changed_data:
                     # No new image uploaded, save without touching image field
-                    instance.save(update_fields=[f for f in self.changed_data if f != 'image'])
+                    update_fields = [f for f in self.changed_data if f != 'image']
+                    if update_fields:
+                        instance.save(update_fields=update_fields)
+                    else:
+                        # No changed form fields; keep existing data untouched.
+                        instance.save()
                 else:
                     # New ornament or new image uploaded
                     instance.save()
