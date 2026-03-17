@@ -231,6 +231,35 @@ def customer_home(request):
     
     # Get categories
     categories = MainCategory.objects.all()
+
+    # Group categories by metal type for sidebar navigation
+    categories_by_metal = []
+    metal_type_pages = []
+    for metal_key, metal_label in Ornament.MetalTypeCategory.choices:
+        metal_products = Ornament.objects.filter(
+            ornament_type='stock',
+            status='active',
+            metal_type=metal_key,
+        )
+
+        if metal_products.exists():
+            metal_type_pages.append({
+                'value': metal_key,
+                'label': metal_label,
+            })
+
+        metal_categories = MainCategory.objects.filter(
+            ornament__ornament_type='stock',
+            ornament__status='active',
+            ornament__metal_type=metal_key,
+            ornament__maincategory__isnull=False,
+        ).distinct().order_by('name')
+
+        if metal_categories.exists():
+            categories_by_metal.append({
+                'metal_type': metal_label,
+                'categories': metal_categories,
+            })
     
     # Get latest gold and silver rates
     latest_rate = DailyRate.objects.order_by('-created_at').first()
@@ -239,6 +268,8 @@ def customer_home(request):
         'featured_products': featured_products,
         'new_arrivals': new_arrivals,
         'categories': categories,
+        'metal_type_pages': metal_type_pages,
+        'categories_by_metal': categories_by_metal,
         'total_products': featured_products.count(),
         'latest_rate': latest_rate,
     }
@@ -314,6 +345,8 @@ def product_detail(request, product_id):
 def category_products(request, category_id=None):
     """Display products filtered by category."""
     from ornament.models import Ornament, MainCategory
+
+    selected_metal_type = request.GET.get('metal_type')
     
     category = None
     if category_id:
@@ -328,6 +361,9 @@ def category_products(request, category_id=None):
             ornament_type='stock',
             status='active'
         ).order_by('-created_at')
+
+    if selected_metal_type in dict(Ornament.MetalTypeCategory.choices):
+        products = products.filter(metal_type=selected_metal_type)
     
     # Get latest gold and silver rates
     latest_rate = DailyRate.objects.order_by('-created_at').first()
@@ -335,6 +371,7 @@ def category_products(request, category_id=None):
     context = {
         'category': category,
         'products': products,
+        'selected_metal_type': selected_metal_type,
         'latest_rate': latest_rate,
     }
     

@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load form_filters %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/admin_ornament_inventory.css' %}">
@@ -293,10 +294,10 @@
     {% if is_paginated %}
     <div class="pagination-section">
         {% if page_obj.has_previous %}
-            <a href="?page=1{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" class="pagination-btn">
+            <a href="{% querystring request page=1 %}" class="pagination-btn">
                 <i class="bi bi-chevron-double-left"></i>
             </a>
-            <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" class="pagination-btn">
+            <a href="{% querystring request page=page_obj.previous_page_number %}" class="pagination-btn">
                 <i class="bi bi-chevron-left"></i> Previous
             </a>
         {% endif %}
@@ -305,17 +306,17 @@
             {% if page_num == page_obj.number %}
                 <button class="pagination-btn active">{{ page_num }}</button>
             {% elif page_num > page_obj.number|add:'-3' and page_num < page_obj.number|add:'3' %}
-                <a href="?page={{ page_num }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" class="pagination-btn">
+                <a href="{% querystring request page=page_num %}" class="pagination-btn">
                     {{ page_num }}
                 </a>
             {% endif %}
         {% endfor %}
 
         {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" class="pagination-btn">
+            <a href="{% querystring request page=page_obj.next_page_number %}" class="pagination-btn">
                 Next <i class="bi bi-chevron-right"></i>
             </a>
-            <a href="?page={{ paginator.num_pages }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" class="pagination-btn">
+            <a href="{% querystring request page=paginator.num_pages %}" class="pagination-btn">
                 <i class="bi bi-chevron-double-right"></i>
             </a>
         {% endif %}

@@ -35,6 +35,10 @@
         body { font-family: 'Manrope', sans-serif; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .sidebar-scroll {
+          -webkit-overflow-scrolling: touch;
+          overscroll-behavior: contain;
+        }
         body {
           min-height: max(884px, 100dvh);
         }
@@ -87,7 +91,7 @@
 </head>
 <body class="bg-background-light dark:bg-background-dark text-stone-900 dark:text-stone-200 min-h-screen pb-24">
 <!-- Sticky Header -->
-<header class="sticky top-0 z-50 bg-background-light dark:bg-background-dark/80 backdrop-blur-md border-b border-primary/10">
+<header id="topHeader" class="sticky top-0 z-50 bg-background-light dark:bg-background-dark/80 backdrop-blur-md border-b border-primary/10 transition-transform duration-300">
 <div class="px-4 py-3 flex flex-col gap-3">
 <div class="flex justify-between items-center">
 <button class="p-2 -ml-2" onclick="toggleMenu()">
@@ -197,7 +201,7 @@ Shop Collection
 </main>
 
 <!-- Bottom Navigation Bar -->
-<nav class="fixed bottom-0 left-0 right-0 bg-background-light dark:bg-background-dark/95 backdrop-blur-lg border-t border-primary/10">
+<nav id="bottomNav" class="fixed bottom-0 left-0 right-0 bg-background-light dark:bg-background-dark/95 backdrop-blur-lg border-t border-primary/10 transition-transform duration-300">
 <div class="flex justify-around items-center py-3 px-2">
 <button class="flex flex-col items-center gap-1 text-primary" onclick="window.location.href='{% url 'main:customer_home' %}'">
 <span class="material-icons-outlined">home</span>
@@ -222,20 +226,46 @@ Shop Collection
 <div class="fixed inset-0 bg-black/70 z-40 hidden" id="sidebarOverlay" onclick="closeMenu()"></div>
 
 <!-- Mobile Sidebar -->
-<aside class="fixed top-0 left-0 w-64 h-screen bg-background-light dark:bg-background-dark border-r border-primary/10 z-50 transform -translate-x-full transition-transform duration-300" id="mobileSidebar">
+<aside class="fixed top-0 left-0 w-64 h-screen overflow-y-auto sidebar-scroll bg-background-light dark:bg-background-dark border-r border-primary/10 z-50 transform -translate-x-full transition-transform duration-300" id="mobileSidebar">
 <button class="p-2 absolute top-3 right-3 text-stone-600 dark:text-stone-400 hover:text-primary" onclick="closeMenu()">
 <span class="material-icons-outlined">close</span>
 </button>
-<div class="p-6 pt-12">
+<div class="p-6 pt-12 pb-24">
 <h3 class="text-primary text-xs uppercase tracking-widest mb-4 font-bold">Menu</h3>
 <ul class="flex flex-col gap-2">
 <li><a href="{% url 'main:customer_home' %}" class="text-primary hover:text-primary text-sm" onclick="closeMenu()">Home</a></li>
+{% for metal in metal_type_pages %}
+<li><a href="{% url 'main:shop' %}?metal_type={{ metal.value|urlencode }}" class="text-primary hover:text-primary text-sm" onclick="closeMenu()">{{ metal.label }}</a></li>
+{% endfor %}
 <li><a href="{% url 'main:shop' %}" class="text-primary hover:text-primary text-sm" onclick="closeMenu()">Shop All</a></li>
 <li><hr class="my-2 border-stone-300 dark:border-stone-700"/></li>
-<li><a href="#" class="text-primary hover:text-primary text-sm" onclick="closeMenu()">Necklaces</a></li>
-<li><a href="#" class="text-primary hover:text-primary text-sm" onclick="closeMenu()">Earrings</a></li>
-<li><a href="#" class="text-primary hover:text-primary text-sm" onclick="closeMenu()">Rings</a></li>
-<li><a href="#" class="text-primary hover:text-primary text-sm" onclick="closeMenu()">Bangles</a></li>
+<li>
+<details class="group">
+<summary class="list-none cursor-pointer text-primary hover:text-primary text-sm flex items-center justify-between">
+Categories
+<span class="material-icons-outlined text-base transition-transform group-open:rotate-180">expand_more</span>
+</summary>
+<ul class="mt-2 ml-3 flex flex-col gap-2">
+{% for group in categories_by_metal %}
+<li>
+<details class="group/metal">
+<summary class="list-none cursor-pointer text-primary/90 hover:text-primary text-sm flex items-center justify-between font-medium">
+{{ group.metal_type }}
+<span class="material-icons-outlined text-base transition-transform group-open/metal:rotate-180">expand_more</span>
+</summary>
+<ul class="mt-1 ml-3 flex flex-col gap-1">
+{% for category in group.categories %}
+<li><a href="/shop/category/{{ category.id }}/" class="text-primary hover:text-primary text-sm" onclick="closeMenu()">{{ category.name }}</a></li>
+{% endfor %}
+</ul>
+</details>
+</li>
+{% empty %}
+<li class="text-stone-500 text-sm">No categories available</li>
+{% endfor %}
+</ul>
+</details>
+</li>
 </ul>
 </div>
 </aside>
@@ -314,6 +344,35 @@ function filterByCategory(element) {
     const categoryId = element.getAttribute('data-category-id');
     window.location.href = `/shop/category/${categoryId}/`;
 }
+
+let lastScrollY = window.scrollY;
+const bottomNav = document.getElementById('bottomNav');
+const topHeader = document.getElementById('topHeader');
+
+window.addEventListener('scroll', function() {
+  const currentScrollY = window.scrollY;
+
+  if (currentScrollY <= 0) {
+    bottomNav.classList.remove('translate-y-full');
+    topHeader.classList.remove('-translate-y-full');
+    lastScrollY = currentScrollY;
+    return;
+  }
+
+  if (Math.abs(currentScrollY - lastScrollY) < 8) {
+    return;
+  }
+
+  if (currentScrollY > lastScrollY) {
+    bottomNav.classList.add('translate-y-full');
+    topHeader.classList.add('-translate-y-full');
+  } else {
+    bottomNav.classList.remove('translate-y-full');
+    topHeader.classList.remove('-translate-y-full');
+  }
+
+  lastScrollY = currentScrollY;
+});
 
 // Search functionality
 document.getElementById('searchInput').addEventListener('input', function(e) {
