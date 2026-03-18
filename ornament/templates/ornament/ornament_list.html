@@ -574,7 +574,7 @@
             {% if page_obj.has_previous %}
                 <li class="page-item">
                     <a class="page-link"
-                       href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}">
+                       href="{% querystring request page=page_obj.previous_page_number %}">
                        Previous
                     </a>
                 </li>
@@ -587,7 +587,7 @@
                     </li>
                 {% else %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ page }}&{{ request.GET.urlencode }}">
+                        <a class="page-link" href="{% querystring request page=page %}">
                             {{ page }}
                         </a>
                     </li>
@@ -597,7 +597,7 @@
             {% if page_obj.has_next %}
                 <li class="page-item">
                     <a class="page-link"
-                       href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}">
+                       href="{% querystring request page=page_obj.next_page_number %}">
                        Next
                     </a>
                 </li>

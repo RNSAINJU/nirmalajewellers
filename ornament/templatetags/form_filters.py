@@ -11,3 +11,15 @@ def get_item(dictionary, key):
     if isinstance(dictionary, dict):
         return dictionary.get(key)
     return None
+
+
+@register.simple_tag
+def querystring(request, **kwargs):
+    query = request.GET.copy()
+    for key, value in kwargs.items():
+        if value in (None, ""):
+            query.pop(key, None)
+        else:
+            query[key] = value
+    encoded = query.urlencode()
+    return f"?{encoded}" if encoded else "?"
