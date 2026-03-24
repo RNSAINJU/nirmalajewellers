@@ -425,6 +425,13 @@
                                        title="Edit Ornament">
                                         <i class="bi bi-pencil-square me-1"></i>Edit
                                     </a>
+
+                                    <a href="{% url 'ornament:print_label' o.pk %}" 
+                                       class="btn btn-sm" 
+                                       style="background:#f59e0b; border-color:#f59e0b; color:#fff;"
+                                       title="Print Label" target="_blank">
+                                        <i class="bi bi-printer-fill me-1"></i>Label
+                                    </a>
                             
                                     <a href="{% url 'ornament:delete' o.pk %}" 
                                        class="btn btn-sm btn-action-delete"
@@ -544,6 +551,12 @@
                             <a href="{% url 'ornament:update' o.pk %}" class="btn btn-sm btn-action-edit" title="Edit">
                                 <i class="bi bi-pencil-square me-1"></i>Edit
                             </a>
+                            <a href="{% url 'ornament:print_label' o.pk %}" 
+                               class="btn btn-sm" 
+                               style="background:#f59e0b; border-color:#f59e0b; color:#fff;"
+                               title="Print Label" target="_blank">
+                                <i class="bi bi-printer-fill me-1"></i>Label
+                            </a>
                             <a href="{% url 'ornament:delete' o.pk %}" class="btn btn-sm btn-action-delete" title="Delete">
                                 <i class="bi bi-trash-fill me-1"></i>Delete
                             </a>
@@ -574,7 +587,7 @@
             {% if page_obj.has_previous %}
                 <li class="page-item">
                     <a class="page-link"
-                       href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}">
+                       href="{% querystring request page=page_obj.previous_page_number %}">
                        Previous
                     </a>
                 </li>
@@ -587,7 +600,7 @@
                     </li>
                 {% else %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ page }}&{{ request.GET.urlencode }}">
+                        <a class="page-link" href="{% querystring request page=page %}">
                             {{ page }}
                         </a>
                     </li>
@@ -597,7 +610,7 @@
             {% if page_obj.has_next %}
                 <li class="page-item">
                     <a class="page-link"
-                       href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}">
+                       href="{% querystring request page=page_obj.next_page_number %}">
                        Next
                     </a>
                 </li>

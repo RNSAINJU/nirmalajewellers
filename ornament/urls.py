@@ -30,6 +30,7 @@ from .views import (
     barcode_scanner,
     ornament_price_calculator,
     detect_barcode_from_image,
+    ornament_label_print,
 )
 
 app_name = 'ornament'
@@ -71,5 +72,6 @@ urlpatterns = [
     path('kaligar/<int:kaligar_id>/create-gold-account/', create_kaligar_gold_account, name='create_kaligar_gold_account'),
     path('stock/', OrnamentStockReport.as_view(), name='ornament_stock_report'),
     path('stock/export/', ornament_stock_export_excel, name='ornament_stock_export'),
+    path('<int:pk>/print-label/', ornament_label_print, name='print_label'),
 ]
 

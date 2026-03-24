@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Label – {{ ornament.ornament_name }}</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .no-print {
+            margin-bottom: 12px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-print,
+        .btn-back {
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: 600;
+            padding: 8px 16px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-print { background: #4f46e5; }
+        .btn-print:hover { background: #3730a3; }
+        .btn-back { background: #6b7280; }
+        .btn-back:hover { background: #374151; color: #fff; }
+
+        .label-card {
+            width: 100mm;
+            height: 13mm;
+            background: #fff;
+            border: 1px solid #000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            overflow: hidden;
+            padding: 0.8mm 1mm;
+            gap: 1mm;
+        }
+
+        .label-left {
+            width: 63mm;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 0.5mm;
+            line-height: 1.05;
+        }
+
+        .line-main {
+            font-size: 2.9mm;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .line-meta {
+            font-size: 2.2mm;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .line-code {
+            font-size: 2.0mm;
+            font-family: monospace;
+            color: #111;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .label-right {
+            width: 33mm;
+            min-width: 33mm;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+
+        .barcode-img {
+            width: 33mm;
+            height: 7mm;
+            object-fit: contain;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        .barcode-text {
+            margin-top: 0.3mm;
+            font-size: 1.9mm;
+            font-family: monospace;
+            letter-spacing: 0.1mm;
+            white-space: nowrap;
+            max-width: 33mm;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        @page {
+            size: 100mm 13mm;
+            margin: 0;
+        }
+
+        @media print {
+            html,
+            body {
+                width: 100mm !important;
+                height: 13mm !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: hidden !important;
+            }
+
+            body {
+                background: #fff;
+                display: block !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .no-print { display: none !important; }
+
+            .label-card {
+                width: 100mm !important;
+                height: 13mm !important;
+                margin: 0 !important;
+                padding: 0.8mm 1mm !important;
+                box-shadow: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                page-break-inside: avoid;
+                page-break-after: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="no-print">
+        <a href="javascript:history.back()" class="btn-back">← Back</a>
+        <button class="btn-print" onclick="window.print()">🖨 Print Label</button>
+    </div>
+
+    <div class="label-card">
+        <div class="label-left">
+            <div class="line-main">{{ ornament.ornament_name }}</div>
+            <div class="line-meta">
+                {{ ornament.get_metal_type_display }} {{ ornament.get_type_display }} |
+                GW: {{ ornament.gross_weight|floatformat:3 }}g |
+                NW: {{ ornament.weight|floatformat:3 }}g
+            </div>
+            <div class="line-code">
+                {% if ornament.code %}{{ ornament.code }}{% endif %}
+                {% if ornament.maincategory %} | {{ ornament.maincategory.name }}{% endif %}
+            </div>
+        </div>
+
+        <div class="label-right">
+            {% if barcode_base64 %}
+                <img class="barcode-img" src="data:image/png;base64,{{ barcode_base64 }}" alt="Barcode">
+            {% elif ornament.barcode_image %}
+                <img class="barcode-img" src="{{ ornament.barcode_image.url }}" alt="Barcode">
+            {% endif %}
+            {% if ornament.barcode %}
+                <div class="barcode-text">{{ ornament.barcode }}</div>
+            {% endif %}
+        </div>
+    </div>
+
+</body>
+</html>
