@@ -8,7 +8,7 @@
 
         body {
             font-family: Arial, sans-serif;
-            background: #f5f5f5;
+            background: #bcd1ea;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -40,91 +40,103 @@
         .btn-back:hover { background: #374151; color: #fff; }
 
         .label-card {
-            width: 100mm;
-            height: 13mm;
-            background: #fff;
-            border: 1px solid #000;
+            width: 130mm;
+            min-height: 36mm;
+            background: #efefef;
+            border: 1px solid #b5b5b5;
+            border-radius: 9mm;
             display: flex;
-            align-items: center;
+            align-items: stretch;
             justify-content: space-between;
             overflow: hidden;
-            padding: 0.8mm 1mm;
-            gap: 1mm;
+            padding: 3.8mm 4.5mm;
+            gap: 4mm;
+            box-shadow: 0 1.2mm 2.2mm rgba(0, 0, 0, 0.22);
         }
 
         .label-left {
-            width: 63mm;
+            flex: 1;
             min-width: 0;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            gap: 0.5mm;
-            line-height: 1.05;
+            gap: 1.8mm;
+            line-height: 1.08;
         }
 
         .line-main {
-            font-size: 2.9mm;
+            font-size: 5.1mm;
             font-weight: 700;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
-        .line-meta {
-            font-size: 2.2mm;
+        .line-code {
+            font-size: 5.4mm;
+            font-weight: 700;
+            letter-spacing: 0.08mm;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
-        .line-code {
-            font-size: 2.0mm;
-            font-family: monospace;
-            color: #111;
+        .line-meta {
+            font-size: 5.2mm;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .line-stone {
+            font-size: 5.2mm;
+            font-weight: 700;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
         .label-right {
-            width: 33mm;
-            min-width: 33mm;
+            width: 52mm;
+            min-width: 52mm;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             line-height: 1;
         }
 
         .barcode-img {
-            width: 33mm;
-            height: 7mm;
-            object-fit: contain;
+            width: 52mm;
+            height: 20mm;
+            object-fit: fill;
             image-rendering: pixelated;
             image-rendering: crisp-edges;
         }
 
         .barcode-text {
-            margin-top: 0.3mm;
-            font-size: 1.9mm;
+            margin-top: 1.2mm;
+            font-size: 5.3mm;
+            font-weight: 700;
             font-family: monospace;
-            letter-spacing: 0.1mm;
+            letter-spacing: 0.12mm;
             white-space: nowrap;
-            max-width: 33mm;
+            max-width: 52mm;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
         @page {
-            size: 100mm 13mm;
+            size: 130mm 36mm;
             margin: 0;
         }
 
         @media print {
             html,
             body {
-                width: 100mm !important;
-                height: 13mm !important;
+                width: 130mm !important;
+                height: 36mm !important;
                 margin: 0 !important;
                 padding: 0 !important;
                 overflow: hidden !important;
@@ -140,11 +152,12 @@
             .no-print { display: none !important; }
 
             .label-card {
-                width: 100mm !important;
-                height: 13mm !important;
+                width: 130mm !important;
+                min-height: 36mm !important;
                 margin: 0 !important;
-                padding: 0.8mm 1mm !important;
+                padding: 3.8mm 4.5mm !important;
                 box-shadow: none;
+                border-radius: 9mm !important;
                 position: fixed;
                 top: 0;
                 left: 0;
@@ -163,15 +176,26 @@
 
     <div class="label-card">
         <div class="label-left">
-            <div class="line-main">{{ ornament.ornament_name }}</div>
-            <div class="line-meta">
-                {{ ornament.get_metal_type_display }} {{ ornament.get_type_display }} |
-                GW: {{ ornament.gross_weight|floatformat:3 }}g |
-                NW: {{ ornament.weight|floatformat:3 }}g
+            <div class="line-main">{{ ornament.ornament_name }}
+                {% if ornament.type == '24KARAT' %} 24K
+                {% elif ornament.type == '23KARAT' %} 23K
+                {% elif ornament.type == '22KARAT' %} 22K
+                {% elif ornament.type == '18KARAT' %} 18K
+                {% elif ornament.type == '14KARAT' %} 14K
+                {% endif %}
             </div>
-            <div class="line-code">
-                {% if ornament.code %}{{ ornament.code }}{% endif %}
-                {% if ornament.maincategory %} | {{ ornament.maincategory.name }}{% endif %}
+            <div class="line-code">{% if ornament.code %}{{ ornament.code }}{% endif %}</div>
+            <div class="line-meta">
+                NW: {{ ornament.weight|floatformat:3 }} GW: {{ ornament.gross_weight|floatformat:3 }}
+            </div>
+            <div class="line-stone">
+                {% if ornament.diamond_weight and ornament.diamond_weight > 0 %}
+                    Diamond: {{ ornament.diamond_weight|floatformat:2 }} ct
+                {% elif ornament.stone_weight and ornament.stone_weight > 0 %}
+                    Stone: {{ ornament.stone_weight|floatformat:2 }} ct
+                {% else %}
+                    Diamond: 0.00 ct
+                {% endif %}
             </div>
         </div>
 

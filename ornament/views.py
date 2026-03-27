@@ -1508,9 +1508,9 @@ def ornament_label_print(request, pk):
 
     default_profiles = {
         'tl240': {
-            'module_width': 0.17,
-            'module_height': 6.2,
-            'quiet_zone': 0.8,
+            'module_width': 0.22,
+            'module_height': 10.0,
+            'quiet_zone': 1.8,
             'font_size': 0,
             'text_distance': 0,
             'background': 'white',
@@ -1750,14 +1750,19 @@ def ornament_price_calculator(request, pk):
             price_breakdown.get('total_material_value', Decimal('0.00'))
             + price_breakdown.get('jarti_value', Decimal('0.00'))
         )
-        
-        # Final price
-        price_breakdown['final_price'] = (
+
+        # Final subtotal before tax
+        price_breakdown['final_price_without_tax'] = (
             price_breakdown.get('base_price_without_dynamic', Decimal('0.00'))
             + price_breakdown.get('diamond_value', Decimal('0.00'))
             + price_breakdown.get('calculated_jarti_value', Decimal('0.00'))
             + price_breakdown.get('calculated_jyala_value', Decimal('0.00'))
         )
+
+        # Apply 2% tax so all displayed selling prices use the same with-tax value.
+        price_breakdown['tax_rate'] = Decimal('0.02')
+        price_breakdown['tax_amount'] = price_breakdown['final_price_without_tax'] * price_breakdown['tax_rate']
+        price_breakdown['final_price'] = price_breakdown['final_price_without_tax'] + price_breakdown['tax_amount']
     
     context = {
         'ornament': ornament,

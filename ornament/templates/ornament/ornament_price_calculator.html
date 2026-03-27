@@ -279,7 +279,7 @@
 
                                     <!-- Total Price -->
                                     <tr class="table-success" style="font-size: 1.1rem;">
-                                        <td class="fw-bold">TOTAL PRICE</td>
+                                        <td class="fw-bold">TOTAL PRICE (With Tax)</td>
                                         <td class="text-end fw-bold text-success">
                                             रु<span id="tableFinalPrice">{{ price_breakdown.final_price|floatformat:0 }}</span>
                                         </td>
@@ -290,7 +290,7 @@
                             <!-- Price Summary Box -->
                             <div class="alert alert-success mt-3 mb-0">
                                 <div class="text-center">
-                                    <p class="mb-2 text-muted">Estimated Selling Price</p>
+                                    <p class="mb-2 text-muted">Estimated Selling Price (Including 2% Tax)</p>
                                     <h2 class="mb-0 text-success">
                                         रु<span id="finalPrice">{{ price_breakdown.final_price|floatformat:0 }}</span>
                                     </h2>
@@ -306,6 +306,7 @@
                             <span id="diamondRateData" class="d-none">{{ price_breakdown.diamond_rate_used|floatformat:8 }}</span>
                             <span id="netWeightGramData" class="d-none">{{ price_breakdown.net_weight_gram|floatformat:8 }}</span>
                             <span id="jyalaRateData" class="d-none">{{ price_breakdown.selected_jyala_rate_per_gram|floatformat:8 }}</span>
+                            <span id="taxRateData" class="d-none">{{ price_breakdown.tax_rate|floatformat:8 }}</span>
                             {% endif %}
 
                             {% else %}
@@ -377,6 +378,7 @@
         const netWeightGram = parseFloat(document.getElementById('netWeightGramData').textContent) || 0;
         let selectedDiamondRate = parseFloat(document.getElementById('diamondRateData').textContent) || 0;
         let selectedJyalaRate = parseFloat(document.getElementById('jyalaRateData').textContent) || 2500;
+        const taxRate = parseFloat(document.getElementById('taxRateData').textContent) || 0.02;
 
         function recalculatePrice() {
             let percent = 0;
@@ -397,7 +399,8 @@
 
             const updatedDiamondValue = diamondWeight * selectedDiamondRate;
             const updatedJyalaValue = netWeightGram * selectedJyalaRate;
-            const updatedFinal = basePriceWithoutDynamic + updatedDiamondValue + jartiAmount + updatedJyalaValue;
+            const updatedSubtotal = basePriceWithoutDynamic + updatedDiamondValue + jartiAmount + updatedJyalaValue;
+            const updatedFinalWithTax = updatedSubtotal * (1 + taxRate);
 
             if (diamondValue) {
                 diamondValue.textContent = Math.round(updatedDiamondValue).toLocaleString('en-IN');
@@ -425,8 +428,8 @@
                     recalcJyala2000.textContent = 'Recalculate @ 2000/gram';
                 }
             }
-            tableFinalPrice.textContent = Math.round(updatedFinal).toLocaleString('en-IN');
-            finalPrice.textContent = Math.round(updatedFinal).toLocaleString('en-IN');
+            tableFinalPrice.textContent = Math.round(updatedFinalWithTax).toLocaleString('en-IN');
+            finalPrice.textContent = Math.round(updatedFinalWithTax).toLocaleString('en-IN');
         }
 
         if (jartiPercentSelect) {
