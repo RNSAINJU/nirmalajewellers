@@ -425,6 +425,13 @@
                                        title="Edit Ornament">
                                         <i class="bi bi-pencil-square me-1"></i>Edit
                                     </a>
+
+                                    <a href="{% url 'ornament:print_label' o.pk %}" 
+                                       class="btn btn-sm" 
+                                       style="background:#f59e0b; border-color:#f59e0b; color:#fff;"
+                                       title="Print Label" target="_blank">
+                                        <i class="bi bi-printer-fill me-1"></i>Label
+                                    </a>
                             
                                     <a href="{% url 'ornament:delete' o.pk %}" 
                                        class="btn btn-sm btn-action-delete"
@@ -543,6 +550,12 @@
                         <div class="card-actions">
                             <a href="{% url 'ornament:update' o.pk %}" class="btn btn-sm btn-action-edit" title="Edit">
                                 <i class="bi bi-pencil-square me-1"></i>Edit
+                            </a>
+                            <a href="{% url 'ornament:print_label' o.pk %}" 
+                               class="btn btn-sm" 
+                               style="background:#f59e0b; border-color:#f59e0b; color:#fff;"
+                               title="Print Label" target="_blank">
+                                <i class="bi bi-printer-fill me-1"></i>Label
                             </a>
                             <a href="{% url 'ornament:delete' o.pk %}" class="btn btn-sm btn-action-delete" title="Delete">
                                 <i class="bi bi-trash-fill me-1"></i>Delete

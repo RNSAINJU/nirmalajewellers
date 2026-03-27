@@ -113,6 +113,7 @@ from openpyxl.utils import get_column_letter
 import nepali_datetime as ndt
 from main.models import Stock
 from django.db import IntegrityError
+from django.conf import settings
 
 class MainCategoryCreateView(CreateView):
     model = MainCategory
@@ -1499,6 +1500,53 @@ def kaligar_list(request):
     return render(request, 'ornament/kaligar_list.html', context)
 
 
+# ===== Ornament Label Print View =====
+@login_required(login_url='/accounts/login/')
+def ornament_label_print(request, pk):
+    """Render a printable label for a single ornament with details and barcode."""
+    ornament = get_object_or_404(Ornament, pk=pk)
+
+    default_profiles = {
+        'tl240': {
+            'module_width': 0.17,
+            'module_height': 6.2,
+            'quiet_zone': 0.8,
+            'font_size': 0,
+            'text_distance': 0,
+            'background': 'white',
+            'foreground': 'black',
+            'write_text': False,
+            'dpi': 203,
+            'format': 'PNG',
+        }
+    }
+    configured_profiles = getattr(settings, 'LABEL_PRINTER_PROFILES', default_profiles)
+    profile_name = getattr(settings, 'LABEL_PRINT_PROFILE', 'tl240')
+    writer_options = configured_profiles.get(profile_name, configured_profiles.get('tl240', default_profiles['tl240']))
+
+    barcode_base64 = None
+    if ornament.barcode:
+        try:
+            import barcode as barcode_lib
+            from io import BytesIO
+            import base64
+
+            barcode_class = barcode_lib.get_barcode_class('code128')
+            barcode_instance = barcode_class(ornament.barcode, writer=barcode_lib.writer.ImageWriter())
+
+            buffer = BytesIO()
+            barcode_instance.write(buffer, options=writer_options)
+            buffer.seek(0)
+            barcode_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+        except Exception:
+            pass
+
+    return render(request, 'ornament/ornament_label_print.html', {
+        'ornament': ornament,
+        'barcode_base64': barcode_base64,
+    })
+
+
 # ===== Barcode Scanner Views =====
 @login_required(login_url='/accounts/login/')
 def barcode_scanner(request):
@@ -1710,6 +1758,11 @@ def ornament_price_calculator(request, pk):
             + price_breakdown.get('calculated_jarti_value', Decimal('0.00'))
             + price_breakdown.get('calculated_jyala_value', Decimal('0.00'))
         )
+        
+        # Calculate 2% tax on final price
+        price_breakdown['tax_rate'] = Decimal('0.02')
+        price_breakdown['tax_amount'] = price_breakdown['final_price'] * price_breakdown['tax_rate']
+        price_breakdown['final_price_with_tax'] = price_breakdown['final_price'] + price_breakdown['tax_amount']
     
     context = {
         'ornament': ornament,
