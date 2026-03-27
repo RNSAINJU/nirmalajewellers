@@ -372,10 +372,12 @@
                                             step="0.001"
                                             value="{{ form.jyala.value|default:'0.0' }}"
                                             placeholder="Jyala"
-                                            readonly
                                         />
                                         <button class="btn btn-outline-secondary" id="calculateButton" type="button">Calculate</button>
                                     </div>
+                                    <small class="text-muted d-block mt-1">
+                                        Gold only: auto-calculate from net metal weight using रु1000 per tola, with minimum Jyala रु1000.
+                                    </small>
                                     {% if form.jyala.errors %}
                                         <div class="text-danger small">{{ form.jyala.errors }}</div>
                                     {% endif %}
@@ -462,17 +464,49 @@ document.addEventListener("DOMContentLoaded", function() {
 
     <!-- Jyala javascript -->
 <script>
-document.getElementById("calculateButton").addEventListener("click", function() {
-    // Get the value from the Gross Weight input
-    const grossWeight = parseFloat(document.getElementById("weight").value) || 0;
+document.addEventListener("DOMContentLoaded", function() {
+    const calculateButton = document.getElementById("calculateButton");
+    const metalTypeInput = document.getElementById("id_metal_type");
+    const metalWeightInput = document.getElementById("weight");
+    const grossWeightInput = document.getElementById("gross_weight");
+    const diamondWeightInput = document.getElementById("diamond_weight");
+    const stoneWeightInput = document.getElementById("stone_weight");
+    const jyalaInput = document.getElementById("id_jyala");
 
-    // Calculate Jyala
-    const jyala = grossWeight * 1800;
+    function getNetMetalWeight() {
+        const storedMetalWeight = parseFloat(metalWeightInput.value) || 0;
+        if (storedMetalWeight > 0) {
+            return storedMetalWeight;
+        }
 
-    // Set the calculated value to the Jyala input field
-    document.getElementById("id_jyala").value = jyala.toFixed(3); // Set to 3 decimal places
+        const grossWeight = parseFloat(grossWeightInput.value) || 0;
+        const diamondWeight = parseFloat(diamondWeightInput.value) || 0;
+        const stoneWeight = parseFloat(stoneWeightInput.value) || 0;
+        return Math.max(0, grossWeight - diamondWeight - stoneWeight);
+    }
+
+    function calculateJyalaValue() {
+        const metalType = metalTypeInput.value;
+        if (metalType !== "Gold") {
+            return 0;
+        }
+
+        const netMetalWeight = getNetMetalWeight();
+        if (netMetalWeight <= 0) {
+            return 0;
+        }
+
+        const tola = netMetalWeight / 11.664;
+        const calculated = tola * 1000;
+        return Math.max(1000, calculated);
+    }
+
+    if (calculateButton) {
+        calculateButton.addEventListener("click", function() {
+            jyalaInput.value = calculateJyalaValue().toFixed(3);
+        });
+    }
 });
-
 </script>
 
 <script>

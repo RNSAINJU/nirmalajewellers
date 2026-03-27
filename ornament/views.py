@@ -1194,7 +1194,7 @@ def ornament_weight_report(request):
         k22 = karat_dict.get('22KARAT', Decimal('0'))
         k18 = karat_dict.get('18KARAT', Decimal('0'))
         k14 = karat_dict.get('14KARAT', Decimal('0'))
-        eq_24k = k24 + (k22 * Decimal('0.92')) + (k18 * Decimal('0.75')) + (k14 * Decimal('0.58'))
+        eq_24k = k24 + (k22 * Decimal('0.92')) + (k18 * Decimal('0.75')) + (k14 * Decimal('0.60'))
         # Stone price
         stone_total = mqs.aggregate(total=Sum('stone_totalprice'))['total'] or Decimal('0')
         # Jarti/Jyala
@@ -1287,7 +1287,7 @@ def ornament_weight_report(request):
     gold_22k_total = gold_karat_dict.get('22KARAT', Decimal('0'))
     gold_18k_total = gold_karat_dict.get('18KARAT', Decimal('0'))
     gold_14k_total = gold_karat_dict.get('14KARAT', Decimal('0'))
-    total_gold_24k_equivalent = gold_24k_total + (gold_22k_total * Decimal('0.92')) + (gold_18k_total * Decimal('0.75')) + (gold_14k_total * Decimal('0.58'))
+    total_gold_24k_equivalent = gold_24k_total + (gold_22k_total * Decimal('0.92')) + (gold_18k_total * Decimal('0.75')) + (gold_14k_total * Decimal('0.60'))
     
     # Overall 24k equivalent for Silver
     silver_qs = base_qs.filter(metal_type='Silver')
@@ -1297,7 +1297,7 @@ def ornament_weight_report(request):
     silver_22k_total = silver_karat_dict.get('22KARAT', Decimal('0'))
     silver_18k_total = silver_karat_dict.get('18KARAT', Decimal('0'))
     silver_14k_total = silver_karat_dict.get('14KARAT', Decimal('0'))
-    total_silver_24k_equivalent = silver_24k_total + (silver_22k_total * Decimal('0.92')) + (silver_18k_total * Decimal('0.75')) + (silver_14k_total * Decimal('0.58'))
+    total_silver_24k_equivalent = silver_24k_total + (silver_22k_total * Decimal('0.92')) + (silver_18k_total * Decimal('0.75')) + (silver_14k_total * Decimal('0.60'))
     
     # Overall 24k equivalent for Diamond (gold content in diamond ornaments)
     diamond_qs = base_qs.filter(metal_type='Diamond')
@@ -1311,7 +1311,7 @@ def ornament_weight_report(request):
         diamond_24k_total
         + (diamond_22k_total * Decimal('0.92'))
         + (diamond_18k_total * Decimal('0.75'))
-        + (diamond_14k_total * Decimal('0.58'))
+        + (diamond_14k_total * Decimal('0.60'))
     )
 
     context = {
@@ -1696,8 +1696,8 @@ def ornament_price_calculator(request, pk):
             price_breakdown['adjusted_gold_rate'] = Decimal('0.00')
         
         # Diamond calculation
-        # Default calculator diamond rate: Rs 60000 per carat
-        diamond_rate_used = Decimal('60000')
+        # Default calculator diamond rate: Rs 65000 per carat
+        diamond_rate_used = Decimal('65000')
         if diamond_weight > 0:
             price_breakdown['diamond_rate_used'] = diamond_rate_used
             price_breakdown['diamond_value'] = diamond_weight * diamond_rate_used
@@ -1707,8 +1707,11 @@ def ornament_price_calculator(request, pk):
         
         # Stone calculation
         if stone_weight > 0 and ornament.stone_percaratprice:
-            price_breakdown['stone_value'] = stone_weight * Decimal(str(ornament.stone_percaratprice))
+            stone_rate_used = Decimal(str(ornament.stone_percaratprice))
+            price_breakdown['stone_rate_used'] = stone_rate_used
+            price_breakdown['stone_value'] = stone_weight * stone_rate_used
         else:
+            price_breakdown['stone_rate_used'] = Decimal('0.00')
             price_breakdown['stone_value'] = Decimal('0.00')
         
         # Total material value
@@ -1733,8 +1736,9 @@ def ornament_price_calculator(request, pk):
         price_breakdown['calculated_jarti_weight_tola'] = calculated_jarti_weight_tola
         price_breakdown['calculated_jarti_value'] = calculated_jarti_value
 
-        # Configurable jyala based on net weight in grams (default 2500/g)
-        default_jyala_rate_per_gram = Decimal('2500')
+        # Configurable jyala based on net weight in grams.
+        # Gold ornaments default to 1000/g as requested.
+        default_jyala_rate_per_gram = Decimal('1000') if effective_metal_type == 'Gold' else Decimal('3500')
         calculated_jyala_value = net_metal_weight * default_jyala_rate_per_gram
 
         price_breakdown['net_weight_gram'] = net_metal_weight
