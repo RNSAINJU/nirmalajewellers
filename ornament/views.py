@@ -1758,6 +1758,11 @@ def ornament_price_calculator(request, pk):
             + price_breakdown.get('calculated_jarti_value', Decimal('0.00'))
             + price_breakdown.get('calculated_jyala_value', Decimal('0.00'))
         )
+        
+        # Calculate 2% tax on final price
+        price_breakdown['tax_rate'] = Decimal('0.02')
+        price_breakdown['tax_amount'] = price_breakdown['final_price'] * price_breakdown['tax_rate']
+        price_breakdown['final_price_with_tax'] = price_breakdown['final_price'] + price_breakdown['tax_amount']
     
     context = {
         'ornament': ornament,
