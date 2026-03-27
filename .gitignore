@@ -55,3 +55,4 @@ build/
 .DS_Store
 Thumbs.db.env
 .env
+fetch_rates.log

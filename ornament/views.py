@@ -1759,10 +1759,11 @@ def ornament_price_calculator(request, pk):
             + price_breakdown.get('calculated_jyala_value', Decimal('0.00'))
         )
 
-        # Apply 2% tax so all displayed selling prices use the same with-tax value.
+        # Apply 2% tax and keep a compatibility alias for existing template usage.
         price_breakdown['tax_rate'] = Decimal('0.02')
         price_breakdown['tax_amount'] = price_breakdown['final_price_without_tax'] * price_breakdown['tax_rate']
-        price_breakdown['final_price'] = price_breakdown['final_price_without_tax'] + price_breakdown['tax_amount']
+        price_breakdown['final_price_with_tax'] = price_breakdown['final_price_without_tax'] + price_breakdown['tax_amount']
+        price_breakdown['final_price'] = price_breakdown['final_price_with_tax']
     
     context = {
         'ornament': ornament,

@@ -277,11 +277,27 @@
                                     </tr>
                                     {% endif %}
 
-                                    <!-- Total Price -->
+                                    <!-- Subtotal before tax -->
+                                    <tr class="table-info">
+                                        <td class="fw-bold">Price Before Tax</td>
+                                        <td class="text-end fw-bold text-info">
+                                            रु<span id="tableFinalPrice">{{ price_breakdown.final_price_without_tax|floatformat:0 }}</span>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 2% Tax -->
+                                    <tr class="table-warning">
+                                        <td class="fw-bold">2% Tax</td>
+                                        <td class="text-end fw-bold text-warning">
+                                            रु<span id="taxAmount">{{ price_breakdown.tax_amount|floatformat:0 }}</span>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Total Price with Tax -->
                                     <tr class="table-success" style="font-size: 1.1rem;">
                                         <td class="fw-bold">TOTAL PRICE (With Tax)</td>
                                         <td class="text-end fw-bold text-success">
-                                            रु<span id="tableFinalPrice">{{ price_breakdown.final_price|floatformat:0 }}</span>
+                                            रु<span id="finalPriceWithTax">{{ price_breakdown.final_price_with_tax|floatformat:0 }}</span>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -292,7 +308,7 @@
                                 <div class="text-center">
                                     <p class="mb-2 text-muted">Estimated Selling Price (Including 2% Tax)</p>
                                     <h2 class="mb-0 text-success">
-                                        रु<span id="finalPrice">{{ price_breakdown.final_price|floatformat:0 }}</span>
+                                        रु<span id="finalPrice">{{ price_breakdown.final_price_with_tax|floatformat:0 }}</span>
                                     </h2>
                                 </div>
                             </div>
@@ -370,6 +386,8 @@
         const calculatedJartiValue = document.getElementById('calculatedJartiValue');
         const tableFinalPrice = document.getElementById('tableFinalPrice');
         const finalPrice = document.getElementById('finalPrice');
+        const taxAmount = document.getElementById('taxAmount');
+        const finalPriceWithTax = document.getElementById('finalPriceWithTax');
 
         const goldNetWeightTola = parseFloat(document.getElementById('goldNetWeightTolaData').textContent) || 0;
         const goldAdjustedRate = parseFloat(document.getElementById('goldAdjustedRateData').textContent) || 0;
@@ -400,7 +418,8 @@
             const updatedDiamondValue = diamondWeight * selectedDiamondRate;
             const updatedJyalaValue = netWeightGram * selectedJyalaRate;
             const updatedSubtotal = basePriceWithoutDynamic + updatedDiamondValue + jartiAmount + updatedJyalaValue;
-            const updatedFinalWithTax = updatedSubtotal * (1 + taxRate);
+            const updatedTax = updatedSubtotal * taxRate;
+            const updatedFinalWithTax = updatedSubtotal + updatedTax;
 
             if (diamondValue) {
                 diamondValue.textContent = Math.round(updatedDiamondValue).toLocaleString('en-IN');
@@ -428,8 +447,14 @@
                     recalcJyala2000.textContent = 'Recalculate @ 2000/gram';
                 }
             }
-            tableFinalPrice.textContent = Math.round(updatedFinalWithTax).toLocaleString('en-IN');
+            tableFinalPrice.textContent = Math.round(updatedSubtotal).toLocaleString('en-IN');
             finalPrice.textContent = Math.round(updatedFinalWithTax).toLocaleString('en-IN');
+            if (taxAmount) {
+                taxAmount.textContent = Math.round(updatedTax).toLocaleString('en-IN');
+            }
+            if (finalPriceWithTax) {
+                finalPriceWithTax.textContent = Math.round(updatedFinalWithTax).toLocaleString('en-IN');
+            }
         }
 
         if (jartiPercentSelect) {
