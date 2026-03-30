@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load bs_filters %}
 {% block content %}
 
 <style>
@@ -147,7 +148,7 @@
               <input form="rate-form-{{ r.id }}" type="number" step="0.01" name="silver_rate" class="form-control form-control-sm" value="{{ r.silver_rate|floatformat:2 }}" aria-label="Silver rate per tola">
             </td>
             <td><span class="rate-pill rate-silver">{{ r.silver_rate_10g|floatformat:2 }}</span></td>
-            <td>{{ r.updated_at|date:"Y-m-d H:i" }}</td>
+            <td>{{ r.updated_at|nepal_time }}</td>
             <td>
               <button type="submit" form="rate-form-{{ r.id }}" class="btn btn-sm btn-action-settle">Save</button>
               <a href="{% url 'main:edit_daily_rate' r.id %}" class="btn btn-sm btn-action-edit">Edit</a>
