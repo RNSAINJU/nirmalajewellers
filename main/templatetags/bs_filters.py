@@ -1,6 +1,9 @@
+from datetime import timezone, timedelta
 from django import template
 
 register = template.Library()
+
+NPT = timezone(timedelta(hours=5, minutes=45), name='NPT')
 
 
 try:
@@ -28,6 +31,21 @@ def bs_date(value):
 @register.filter
 def bs_datetime(value):
     return ad_to_bs_datetime_str(value)
+
+
+@register.filter
+def nepal_time(value):
+    """Convert a datetime to Nepal Time (UTC+5:45) and format as 'YYYY-MM-DD HH:MM AM/PM'."""
+    if not value:
+        return ''
+    try:
+        if hasattr(value, 'tzinfo') and value.tzinfo is not None:
+            npt_dt = value.astimezone(NPT)
+        else:
+            npt_dt = value.replace(tzinfo=timezone.utc).astimezone(NPT)
+        return npt_dt.strftime('%Y-%m-%d %I:%M %p')
+    except Exception:
+        return str(value)
 
 
 @register.filter(name="split")
