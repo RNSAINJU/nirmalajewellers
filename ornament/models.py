@@ -318,9 +318,9 @@ class Ornament(models.Model):
         return {
             self.TypeCategory.TWENTYFOURKARAT: Decimal('1.00'),
             self.TypeCategory.TWENTHREEKARAT: Decimal('0.9583'),
-            self.TypeCategory.TWENTYTWOKARAT: Decimal('0.9167'),
+            self.TypeCategory.TWENTYTWOKARAT: Decimal('0.92'),
             self.TypeCategory.EIGHTEENKARAT: Decimal('0.75'),
-            self.TypeCategory.FOURTEENKARAT: Decimal('0.5833'),
+            self.TypeCategory.FOURTEENKARAT: Decimal('0.60'),
         }.get(self.type, Decimal('1.00'))
 
     @property

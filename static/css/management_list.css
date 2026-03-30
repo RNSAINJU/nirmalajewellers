@@ -405,8 +405,17 @@
         padding: 10px 16px;
     }
     .stats-card { margin-bottom: 1rem; }
-    .d-flex.gap-2 { flex-direction: column; gap: 0.5rem !important; }
-    .d-flex.gap-2 .btn { width: 100%; }
+    .action-buttons.d-flex.gap-2,
+    .filter-section .d-flex.gap-2,
+    .search-section .d-flex.gap-2 {
+        flex-direction: column;
+        gap: 0.5rem !important;
+    }
+    .action-buttons.d-flex.gap-2 .btn,
+    .filter-section .d-flex.gap-2 .btn,
+    .search-section .d-flex.gap-2 .btn {
+        width: 100%;
+    }
 }
 @media (max-width: 576px) {
     .filter-section,

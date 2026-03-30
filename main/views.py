@@ -277,6 +277,12 @@ def customer_home(request):
     return render(request, 'main/customer_home.html', context)
 
 
+@login_required(login_url='/accounts/login/')
+def stock_hub(request):
+    """Stock hub page for quick navigation to stock-related sections."""
+    return render(request, 'main/stock_hub.html')
+
+
 def api_products_by_category(request, category_id):
     """API endpoint to fetch products by category."""
     from ornament.models import Ornament

@@ -200,8 +200,8 @@
                                             <small class="d-block text-muted">
                                                 @ रु<span id="diamondRateLabel">{{ price_breakdown.diamond_rate_used|floatformat:0 }}</span>/carat
                                             </small>
-                                            <button type="button" id="recalcDiamond55000" class="btn btn-outline-primary btn-sm mt-1">
-                                                Recalculate @ 55000/carat
+                                            <button type="button" id="recalcDiamond65000" class="btn btn-outline-primary btn-sm mt-1">
+                                                Recalculate @ 60000/carat
                                             </button>
                                         </td>
                                         <td class="text-end">
@@ -216,11 +216,16 @@
                                         <td>
                                             <strong>Stone Value</strong>
                                             <small class="d-block text-muted">
-                                                @ रु{{ ornament.stone_percaratprice }}/ग्राम
+                                                @ रु<span id="stoneRateLabel">{{ price_breakdown.stone_rate_used|floatformat:0 }}</span>/carat
                                             </small>
+                                            <div class="input-group input-group-sm mt-1" style="max-width: 220px;">
+                                                <span class="input-group-text">Rate</span>
+                                                <input type="number" min="0" step="1" id="stoneRateInput" class="form-control" value="{{ price_breakdown.stone_rate_used|floatformat:0 }}">
+                                                <button type="button" id="applyStoneRate" class="btn btn-outline-secondary">Apply</button>
+                                            </div>
                                         </td>
                                         <td class="text-end">
-                                            <strong class="text-primary">रु{{ price_breakdown.stone_value|floatformat:0 }}</strong>
+                                            <strong class="text-primary">रु<span id="stoneValue">{{ price_breakdown.stone_value|floatformat:0 }}</span></strong>
                                         </td>
                                     </tr>
                                     {% endif %}
@@ -267,9 +272,11 @@
                                             <small class="d-block text-muted">
                                                 @ रु<span id="jyalaRateLabel">{{ price_breakdown.selected_jyala_rate_per_gram|floatformat:0 }}</span>/gram
                                             </small>
-                                            <button type="button" id="recalcJyala2000" class="btn btn-outline-warning btn-sm mt-1">
-                                                Recalculate @ 2000/gram
-                                            </button>
+                                            <div class="input-group input-group-sm mt-1" style="max-width: 220px;">
+                                                <span class="input-group-text">Rate</span>
+                                                <input type="number" min="0" step="1" id="jyalaRateInput" class="form-control" value="{{ price_breakdown.selected_jyala_rate_per_gram|floatformat:0 }}">
+                                                <button type="button" id="applyJyalaRate" class="btn btn-outline-warning">Apply</button>
+                                            </div>
                                         </td>
                                         <td class="text-end">
                                             <strong class="text-warning">रु<span id="calculatedJyalaValue">{{ price_breakdown.calculated_jyala_value|floatformat:0 }}</span></strong>
@@ -281,7 +288,7 @@
                                     <tr class="table-info">
                                         <td class="fw-bold">Price Before Tax</td>
                                         <td class="text-end fw-bold text-info">
-                                            रु<span id="tableFinalPrice">{{ price_breakdown.final_price|floatformat:0 }}</span>
+                                            रु<span id="tableFinalPrice">{{ price_breakdown.final_price_without_tax|floatformat:0 }}</span>
                                         </td>
                                     </tr>
 
@@ -320,8 +327,12 @@
                             <span id="basePriceWithoutDynamicData" class="d-none">{{ price_breakdown.base_price_without_dynamic|floatformat:8 }}</span>
                             <span id="diamondWeightData" class="d-none">{{ price_breakdown.diamond_weight|floatformat:8 }}</span>
                             <span id="diamondRateData" class="d-none">{{ price_breakdown.diamond_rate_used|floatformat:8 }}</span>
+                            <span id="stoneWeightData" class="d-none">{{ price_breakdown.stone_weight|floatformat:8 }}</span>
+                            <span id="stoneRateData" class="d-none">{{ price_breakdown.stone_rate_used|floatformat:8 }}</span>
+                            <span id="stoneValueData" class="d-none">{{ price_breakdown.stone_value|floatformat:8 }}</span>
                             <span id="netWeightGramData" class="d-none">{{ price_breakdown.net_weight_gram|floatformat:8 }}</span>
                             <span id="jyalaRateData" class="d-none">{{ price_breakdown.selected_jyala_rate_per_gram|floatformat:8 }}</span>
+                            <span id="taxRateData" class="d-none">{{ price_breakdown.tax_rate|floatformat:8 }}</span>
                             {% endif %}
 
                             {% else %}
@@ -371,14 +382,19 @@
     }
 </style>
 
-{% if current_rate and price_breakdown.effective_metal_type == 'Gold' or price_breakdown.diamond_weight > 0 %}
+{% if current_rate %}
 <script>
     (function () {
         const jartiPercentSelect = document.getElementById('jartiPercentSelect');
-        const recalcDiamond55000 = document.getElementById('recalcDiamond55000');
-        const recalcJyala2000 = document.getElementById('recalcJyala2000');
+        const recalcDiamond65000 = document.getElementById('recalcDiamond65000');
+        const jyalaRateInput = document.getElementById('jyalaRateInput');
+        const applyJyalaRate = document.getElementById('applyJyalaRate');
+        const stoneRateInput = document.getElementById('stoneRateInput');
+        const applyStoneRate = document.getElementById('applyStoneRate');
         const diamondRateLabel = document.getElementById('diamondRateLabel');
         const diamondValue = document.getElementById('diamondValue');
+        const stoneRateLabel = document.getElementById('stoneRateLabel');
+        const stoneValue = document.getElementById('stoneValue');
         const jyalaRateLabel = document.getElementById('jyalaRateLabel');
         const calculatedJyalaValue = document.getElementById('calculatedJyalaValue');
         const calculatedJartiWeight = document.getElementById('calculatedJartiWeight');
@@ -392,10 +408,13 @@
         const goldAdjustedRate = parseFloat(document.getElementById('goldAdjustedRateData').textContent) || 0;
         const basePriceWithoutDynamic = parseFloat(document.getElementById('basePriceWithoutDynamicData').textContent) || 0;
         const diamondWeight = parseFloat(document.getElementById('diamondWeightData').textContent) || 0;
+        const stoneWeight = parseFloat(document.getElementById('stoneWeightData').textContent) || 0;
+        const initialStoneValue = parseFloat(document.getElementById('stoneValueData').textContent) || 0;
         const netWeightGram = parseFloat(document.getElementById('netWeightGramData').textContent) || 0;
         let selectedDiamondRate = parseFloat(document.getElementById('diamondRateData').textContent) || 0;
-        let selectedJyalaRate = parseFloat(document.getElementById('jyalaRateData').textContent) || 2500;
-        const TAX_RATE = 0.02; // 2% tax
+        let selectedStoneRate = parseFloat(document.getElementById('stoneRateData').textContent) || 0;
+        let selectedJyalaRate = parseFloat(document.getElementById('jyalaRateData').textContent) || 3500;
+        const taxRate = parseFloat(document.getElementById('taxRateData').textContent) || 0.02;
 
         function recalculatePrice() {
             let percent = 0;
@@ -415,10 +434,11 @@
             }
 
             const updatedDiamondValue = diamondWeight * selectedDiamondRate;
+            const updatedStoneValue = stoneWeight * selectedStoneRate;
             const updatedJyalaValue = netWeightGram * selectedJyalaRate;
-            const updatedFinal = basePriceWithoutDynamic + updatedDiamondValue + jartiAmount + updatedJyalaValue;
-            const updatedTax = updatedFinal * TAX_RATE;
-            const updatedFinalWithTax = updatedFinal + updatedTax;
+            const updatedSubtotal = (basePriceWithoutDynamic - initialStoneValue) + updatedStoneValue + updatedDiamondValue + jartiAmount + updatedJyalaValue;
+            const updatedTax = updatedSubtotal * taxRate;
+            const updatedFinalWithTax = updatedSubtotal + updatedTax;
 
             if (diamondValue) {
                 diamondValue.textContent = Math.round(updatedDiamondValue).toLocaleString('en-IN');
@@ -426,28 +446,27 @@
             if (diamondRateLabel) {
                 diamondRateLabel.textContent = Math.round(selectedDiamondRate).toLocaleString('en-IN');
             }
+            if (stoneValue) {
+                stoneValue.textContent = Math.round(updatedStoneValue).toLocaleString('en-IN');
+            }
+            if (stoneRateLabel) {
+                stoneRateLabel.textContent = Math.round(selectedStoneRate).toLocaleString('en-IN');
+            }
             if (calculatedJyalaValue) {
                 calculatedJyalaValue.textContent = Math.round(updatedJyalaValue).toLocaleString('en-IN');
             }
             if (jyalaRateLabel) {
                 jyalaRateLabel.textContent = Math.round(selectedJyalaRate).toLocaleString('en-IN');
             }
-            if (recalcDiamond55000) {
-                if (Math.round(selectedDiamondRate) === 55000) {
-                    recalcDiamond55000.textContent = 'Recalculate @ 60000/carat';
+            if (recalcDiamond65000) {
+                if (Math.round(selectedDiamondRate) === 65000) {
+                    recalcDiamond65000.textContent = 'Recalculate @ 60000/carat';
                 } else {
-                    recalcDiamond55000.textContent = 'Recalculate @ 55000/carat';
+                    recalcDiamond65000.textContent = 'Recalculate @ 65000/carat';
                 }
             }
-            if (recalcJyala2000) {
-                if (Math.round(selectedJyalaRate) === 2000) {
-                    recalcJyala2000.textContent = 'Recalculate @ 2500/gram';
-                } else {
-                    recalcJyala2000.textContent = 'Recalculate @ 2000/gram';
-                }
-            }
-            tableFinalPrice.textContent = Math.round(updatedFinal).toLocaleString('en-IN');
-            finalPrice.textContent = Math.round(updatedFinal).toLocaleString('en-IN');
+            tableFinalPrice.textContent = Math.round(updatedSubtotal).toLocaleString('en-IN');
+            finalPrice.textContent = Math.round(updatedFinalWithTax).toLocaleString('en-IN');
             if (taxAmount) {
                 taxAmount.textContent = Math.round(updatedTax).toLocaleString('en-IN');
             }
@@ -460,25 +479,47 @@
             jartiPercentSelect.addEventListener('change', recalculatePrice);
         }
 
-        if (recalcDiamond55000) {
-            recalcDiamond55000.addEventListener('click', function () {
-                if (Math.round(selectedDiamondRate) === 55000) {
+        if (recalcDiamond65000) {
+            recalcDiamond65000.addEventListener('click', function () {
+                if (Math.round(selectedDiamondRate) === 65000) {
                     selectedDiamondRate = 60000;
                 } else {
-                    selectedDiamondRate = 55000;
+                    selectedDiamondRate = 65000;
                 }
                 recalculatePrice();
             });
         }
 
-        if (recalcJyala2000) {
-            recalcJyala2000.addEventListener('click', function () {
-                if (Math.round(selectedJyalaRate) === 2000) {
-                    selectedJyalaRate = 2500;
-                } else {
-                    selectedJyalaRate = 2000;
+        if (applyJyalaRate) {
+            applyJyalaRate.addEventListener('click', function () {
+                const enteredRate = parseFloat(jyalaRateInput ? jyalaRateInput.value : '0');
+                if (!Number.isNaN(enteredRate) && enteredRate >= 0) {
+                    selectedJyalaRate = enteredRate;
+                    recalculatePrice();
                 }
-                recalculatePrice();
+            });
+        }
+
+        if (jyalaRateInput) {
+            jyalaRateInput.addEventListener('keydown', function (event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    const enteredRate = parseFloat(jyalaRateInput.value);
+                    if (!Number.isNaN(enteredRate) && enteredRate >= 0) {
+                        selectedJyalaRate = enteredRate;
+                        recalculatePrice();
+                    }
+                }
+            });
+        }
+
+        if (applyStoneRate) {
+            applyStoneRate.addEventListener('click', function () {
+                const enteredRate = parseFloat(stoneRateInput ? stoneRateInput.value : '0');
+                if (!Number.isNaN(enteredRate) && enteredRate >= 0) {
+                    selectedStoneRate = enteredRate;
+                    recalculatePrice();
+                }
             });
         }
 

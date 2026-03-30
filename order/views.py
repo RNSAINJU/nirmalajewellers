@@ -215,7 +215,7 @@ class OrderListView(LoginRequiredMixin, ListView):
             '23KARAT': Decimal('0.99'),
             '22KARAT': Decimal('0.98'),
             '18KARAT': Decimal('0.75'),
-            '14KARAT': Decimal('0.58'),
+            '14KARAT': Decimal('0.60'),
         }
 
         gold_lines = (
