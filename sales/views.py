@@ -16,8 +16,9 @@ from django.contrib import messages
 import openpyxl
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font, PatternFill, Alignment
-from django.db.models import Sum, Q, Count
+from django.db.models import Sum, Q, Count, Case, When, Value, IntegerField
 from django.db import transaction
+from django.db.models.functions import Cast
 from django.core.files.storage import default_storage
 from django.conf import settings
 
@@ -101,7 +102,17 @@ class SalesListView(LoginRequiredMixin, ListView):
                 | Q(order__phone_number__icontains=search)
             )
 
-        return queryset.distinct()
+        # Sort by numeric bill number descending when possible.
+        # Non-numeric bill numbers are treated as 0 and then ordered by latest id.
+        queryset = queryset.annotate(
+            bill_no_num=Case(
+                When(bill_no__regex=r'^\d+$', then=Cast('bill_no', IntegerField())),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        )
+
+        return queryset.distinct().order_by('-bill_no_num', '-id')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1702,7 +1713,15 @@ class SalesByMonthView(LoginRequiredMixin, ListView):
         except (ValueError, TypeError):
             pass
         
-        return queryset.order_by("bill_no")
+        queryset = queryset.annotate(
+            bill_no_num=Case(
+                When(bill_no__regex=r'^\d+$', then=Cast('bill_no', IntegerField())),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        )
+
+        return queryset.order_by("bill_no_num", "id")
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
