@@ -19,6 +19,7 @@ from django.utils.decorators import method_decorator
 
 import openpyxl
 from openpyxl.utils import get_column_letter
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 
 from common.nepali_utils import ndt
 from .forms import CustomerPurchaseForm, MetalStockForm
@@ -40,17 +41,176 @@ D = Decimal
 @login_required(login_url='/accounts/login/')
 def export_metalstock_xlsx(request):
     wb = openpyxl.Workbook()
-    ws_stock = wb.active
-    ws_stock.title = 'MetalStock'
+    ws_summary = wb.active
+    ws_summary.title = 'MovementSheet'
+    ws_stock = wb.create_sheet(title='MetalStock')
     ws_movement = wb.create_sheet(title='MetalStockMovement')
 
-    # MetalStock sheet
+    # OPTIMIZED: Load once and reuse for all sheets
+    stocks = list(MetalStock.objects.select_related('stock_type').all())
+    movements = list(MetalStockMovement.objects.select_related('metal_stock').all())
+
+    # -------- Consolidated Movement Sheet --------
+    ws_summary.merge_cells('A1:Q1')
+    ws_summary['A1'] = 'Annex-viii Inventory Movement Sheet'
+    ws_summary['A1'].font = Font(bold=True, size=16)
+    ws_summary['A1'].alignment = Alignment(horizontal='center')
+
+    ws_summary.merge_cells('A2:Q2')
+    ws_summary['A2'] = f'Generated on {ndt.date.today() if ndt else ""}'
+    ws_summary['A2'].alignment = Alignment(horizontal='center')
+
+    ws_summary.merge_cells('C3:E3')
+    ws_summary['C3'] = 'Opening'
+    ws_summary.merge_cells('F3:I3')
+    ws_summary['F3'] = 'Purchase/Inwards'
+    ws_summary.merge_cells('J3:N3')
+    ws_summary['J3'] = 'Sales/Outwards'
+    ws_summary.merge_cells('O3:Q3')
+    ws_summary['O3'] = 'Closing'
+
+    summary_headers = [
+        'S.N',
+        'Product Name',
+        'Quantity',
+        'Rate',
+        'Value',
+        'Quantity',
+        'Rate',
+        'Wages',
+        'Value',
+        'Quantity',
+        'Rate',
+        'Jarti',
+        'Jyala',
+        'Value',
+        'Quantity',
+        'Rate',
+        'Value',
+    ]
+
+    for col_index, title in enumerate(summary_headers, start=1):
+        ws_summary.cell(row=4, column=col_index, value=title)
+
+    bold_font = Font(bold=True)
+    section_fill = PatternFill(start_color='D9E1F2', end_color='D9E1F2', fill_type='solid')
+    header_fill = PatternFill(start_color='F2F2F2', end_color='F2F2F2', fill_type='solid')
+    thin_border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin'),
+    )
+
+    for col in range(1, 18):
+        for row in (3, 4):
+            cell = ws_summary.cell(row=row, column=col)
+            cell.font = bold_font
+            cell.alignment = Alignment(horizontal='center', vertical='center')
+            cell.border = thin_border
+            cell.fill = section_fill if row == 3 else header_fill
+
+    # Product set from current stock + any movement rows
+    preferred_order = {'gold': 0, 'silver': 1, 'diamond': 2, 'platinum': 3}
+    product_names = {
+        (s.metal_type or '').lower() for s in stocks if s.metal_type
+    }
+    product_names.update(
+        (m.metal_stock.metal_type or '').lower()
+        for m in movements
+        if m.metal_stock and m.metal_stock.metal_type
+    )
+    ordered_products = sorted(
+        [name for name in product_names if name],
+        key=lambda name: (preferred_order.get(name, 99), name),
+    )
+
+    def dec(value):
+        return value if isinstance(value, Decimal) else Decimal(str(value or 0))
+
+    summary_row = 5
+    for idx, metal_name in enumerate(ordered_products, start=1):
+        metal_stocks = [s for s in stocks if (s.metal_type or '').lower() == metal_name]
+        metal_movements = [
+            m for m in movements if m.metal_stock and (m.metal_stock.metal_type or '').lower() == metal_name
+        ]
+
+        in_movements = [m for m in metal_movements if m.movement_type == 'in']
+        out_movements = [m for m in metal_movements if m.movement_type == 'out']
+
+        in_qty = sum((dec(m.quantity) for m in in_movements), Decimal('0'))
+        in_value = sum((dec(m.quantity) * dec(m.rate) for m in in_movements), Decimal('0'))
+        out_qty = sum((dec(m.quantity) for m in out_movements), Decimal('0'))
+        out_value = sum((dec(m.quantity) * dec(m.rate) for m in out_movements), Decimal('0'))
+
+        closing_qty = sum((dec(s.quantity) for s in metal_stocks), Decimal('0'))
+        closing_value = sum((dec(s.total_cost) for s in metal_stocks), Decimal('0'))
+        closing_rate = (closing_value / closing_qty) if closing_qty else Decimal('0')
+
+        opening_qty = closing_qty - in_qty + out_qty
+        opening_value = closing_value - in_value + out_value
+        opening_rate = (opening_value / opening_qty) if opening_qty else Decimal('0')
+
+        in_rate = (in_value / in_qty) if in_qty else Decimal('0')
+        out_rate = (out_value / out_qty) if out_qty else Decimal('0')
+
+        ws_summary.append([
+            idx,
+            metal_name.capitalize(),
+            float(opening_qty),
+            float(opening_rate),
+            float(opening_value),
+            float(in_qty),
+            float(in_rate),
+            0,
+            float(in_value),
+            float(out_qty),
+            float(out_rate),
+            0,
+            0,
+            float(out_value),
+            float(closing_qty),
+            float(closing_rate),
+            float(closing_value),
+        ])
+
+        for col in range(1, 18):
+            data_cell = ws_summary.cell(row=summary_row, column=col)
+            data_cell.border = thin_border
+            if col != 2:
+                data_cell.alignment = Alignment(horizontal='right')
+        summary_row += 1
+
+    total_row = summary_row
+    ws_summary.cell(row=total_row, column=2, value='Total').font = bold_font
+
+    # Quantity and value totals
+    for col in [3, 5, 6, 9, 10, 14, 15, 17]:
+        col_letter = get_column_letter(col)
+        ws_summary.cell(row=total_row, column=col, value=f'=SUM({col_letter}5:{col_letter}{total_row-1})')
+        ws_summary.cell(row=total_row, column=col).font = bold_font
+
+    for col in range(1, 18):
+        total_cell = ws_summary.cell(row=total_row, column=col)
+        total_cell.border = thin_border
+        total_cell.fill = header_fill
+
+    column_widths = {
+        1: 6, 2: 20,
+        3: 10, 4: 12, 5: 13,
+        6: 10, 7: 12, 8: 10, 9: 13,
+        10: 10, 11: 12, 12: 10, 13: 10, 14: 13,
+        15: 10, 16: 12, 17: 13,
+    }
+    for col_idx, width in column_widths.items():
+        ws_summary.column_dimensions[get_column_letter(col_idx)].width = width
+
+    # -------- Existing raw sheets (kept for import/traceability) --------
     stock_headers = [
         'StockID', 'MetalType', 'StockType', 'Purity', 'Quantity', 'UnitCost', 'RateUnit', 'TotalCost', 'Location', 'Remarks', 'CreatedAt', 'LastUpdated'
     ]
     ws_stock.append(stock_headers)
-    # OPTIMIZED: Add select_related to avoid N+1 queries
-    for stock in MetalStock.objects.select_related('stock_type').all():
+    for stock in stocks:
         ws_stock.append([
             stock.id,
             stock.metal_type,
@@ -66,13 +226,11 @@ def export_metalstock_xlsx(request):
             str(stock.last_updated) if stock.last_updated else ''
         ])
 
-    # MetalStockMovement sheet
     movement_headers = [
         'MovementID', 'MetalStockID', 'MovementType', 'Quantity', 'Rate', 'ReferenceType', 'ReferenceID', 'Notes', 'MovementDate', 'CreatedAt'
     ]
     ws_movement.append(movement_headers)
-    # OPTIMIZED: Add select_related to avoid N+1 queries
-    for m in MetalStockMovement.objects.select_related('metal_stock').all():
+    for m in movements:
         ws_movement.append([
             m.id,
             m.metal_stock.id if m.metal_stock else '',
@@ -86,7 +244,7 @@ def export_metalstock_xlsx(request):
             str(m.created_at) if m.created_at else ''
         ])
 
-    # Auto-size columns for both sheets
+    # Auto-size columns for raw sheets
     for ws in [ws_stock, ws_movement]:
         for col in ws.columns:
             max_length = 0
@@ -95,11 +253,10 @@ def export_metalstock_xlsx(request):
                 try:
                     if cell.value:
                         max_length = max(max_length, len(str(cell.value)))
-                except:
+                except Exception:
                     pass
             ws.column_dimensions[column].width = max_length + 2
 
-    from io import BytesIO
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = 'attachment; filename=metalstock_export.xlsx'
     wb.save(response)
