@@ -4,6 +4,12 @@ from django.dispatch import receiver
 from .models import Ornament
 
 
+def _first_char(value, default='X'):
+    """Return first uppercase character for non-empty strings, else default."""
+    text = str(value or '').strip()
+    return text[0].upper() if text else default
+
+
 @receiver(post_save, sender=Ornament)
 def generate_ornament_code(sender, instance, created, **kwargs):
     """Generate ornament.code and barcode after initial save (so `pk` is available).
@@ -23,11 +29,11 @@ def generate_ornament_code(sender, instance, created, **kwargs):
 
     # Generate code if not already set
     if not instance.code:
-        name_letter = instance.ornament_name[0].upper() if instance.ornament_name else 'X'
-        sub_category = instance.subcategory.name[0].upper() if instance.subcategory else 'X'
-        main_category = instance.maincategory.name[0].upper() if instance.maincategory else 'X'
-        kaligar_letter = instance.kaligar.name[0].upper() if instance.kaligar else 'X'
-        ornament_type_letter = instance.ornament_type[0].upper() if instance.ornament_type else 'X'
+        name_letter = _first_char(instance.ornament_name)
+        sub_category = _first_char(instance.subcategory.name if instance.subcategory else '')
+        main_category = _first_char(instance.maincategory.name if instance.maincategory else '')
+        kaligar_letter = _first_char(instance.kaligar.name if instance.kaligar else '')
+        ornament_type_letter = _first_char(instance.ornament_type)
 
         instance.code = f"{name_letter}{sub_category}{main_category}{kaligar_letter}{ornament_type_letter}{instance.pk}"
         should_update = True
