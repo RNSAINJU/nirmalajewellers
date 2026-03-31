@@ -101,6 +101,9 @@
                 <div class="action-buttons">
                     <h6 class="mb-3 fw-bold"><i class="bi bi-gear-fill me-2"></i>Actions</h6>
                     <div class="d-flex gap-2 flex-wrap justify-content-center">
+                        <a href="{% url 'sales:import_wizard_step1' %}" class="btn btn-create btn-action">
+                            <i class="bi bi-magic me-1"></i> Import Wizard
+                        </a>
                         <a href="{% url 'sales:import_excel' %}" class="btn btn-import btn-action">
                             <i class="bi bi-file-earmark-arrow-up me-1"></i> Import Excel
                         </a>
@@ -183,7 +186,10 @@
                                             </td>
                                             <td>
                                                 <a href="{% url 'sales:sale_update' sale.pk %}" class="btn btn-sm btn-action-edit">Edit</a>
-                                                <a href="{% url 'sales:sale_delete_with_order' sale.pk %}" class="btn btn-sm btn-action-delete">Delete</a>
+                                                <form method="post" action="{% url 'sales:sale_delete_with_order' sale.pk %}" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-sm btn-action-delete" onclick="return confirm('Delete this sale and its order? This cannot be undone.');">Delete</button>
+                                                </form>
                                             </td>
                                         </tr>
                                         {% endwith %}
@@ -284,7 +290,10 @@
                                             </td>
                                             <td>
                                                 <a href="{% url 'sales:sale_update' sale.pk %}" class="btn btn-sm btn-action-edit">Edit</a>
-                                                <a href="{% url 'sales:sale_delete_with_order' sale.pk %}" class="btn btn-sm btn-action-delete">Delete</a>
+                                                <form method="post" action="{% url 'sales:sale_delete_with_order' sale.pk %}" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-sm btn-action-delete" onclick="return confirm('Delete this sale and its order? This cannot be undone.');">Delete</button>
+                                                </form>
                                             </td>
                                         </tr>
                                         {% endwith %}
@@ -391,9 +400,12 @@
                                                     <a href="{% url 'sales:sale_update' sale.pk %}" class="btn btn-sm btn-action-edit" title="Edit">
                                                             <i class="bi bi-pencil-square"></i>Edit
                                                     </a>
-                                                    <a href="{% url 'sales:sale_delete_with_order' sale.pk %}" class="btn btn-sm btn-action-delete" title="Delete">
+                                                    <form method="post" action="{% url 'sales:sale_delete_with_order' sale.pk %}" class="d-inline">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="btn btn-sm btn-action-delete" title="Delete" onclick="return confirm('Delete this sale and its order? This cannot be undone.');">
                                                             <i class="bi bi-trash-fill"></i>Delete
-                                                    </a>
+                                                        </button>
+                                                    </form>
                                             </div>
                                             </td>
 
@@ -499,7 +511,10 @@
                                             </td>
                                             <td>
                                                 <a href="{% url 'sales:sale_update' sale.pk %}" class="btn btn-sm btn-action-edit">Edit</a>
-                                                <a href="{% url 'sales:sale_delete_with_order' sale.pk %}" class="btn btn-sm btn-action-delete">Delete</a>
+                                                <form method="post" action="{% url 'sales:sale_delete_with_order' sale.pk %}" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-sm btn-action-delete" onclick="return confirm('Delete this sale and its order? This cannot be undone.');">Delete</button>
+                                                </form>
                                             </td>
                                         </tr>
                                         {% endwith %}

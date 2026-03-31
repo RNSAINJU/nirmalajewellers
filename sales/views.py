@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.utils.decorators import method_decorator
 from decimal import Decimal
-from datetime import timedelta
+from datetime import timedelta, date as py_date, datetime as py_datetime
 from io import BytesIO
 import json
 import math
@@ -17,6 +17,7 @@ import openpyxl
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font, PatternFill, Alignment
 from django.db.models import Sum, Q, Count
+from django.db import transaction
 from django.core.files.storage import default_storage
 from django.conf import settings
 
@@ -867,33 +868,36 @@ def download_import_template(request):
     ws = wb.active
     ws.title = "Sales Import"
     
-    # Define columns matching the user's format
+    # Define columns matching the sales wizard import pattern
     columns = [
-        'SN',
+        'Bill no',
         'Order Date',
-        'Purchase Date',
+        'Sale Date(BS)',
         'Customer name',
-        'PAN',
-        'ठेगाना',
-        'Taxable sales',
+        'Address',
         'Phone no',
-        'Ornament',
+        'PAN NO',
+        'Status',
+        'Order type',
+        'Description',
+        'Ornament Name',
         'Metal Type',
         'Type',
-        'Weight',
+        'Metal Weight',
+        'Diamond Weight',
+        'Stone Weight',
         'Jarti',
         'Total weight',
         'Own gold (tola)',
-        'Rate (tola)',
+        'Rate',
         'Jyala',
         'Stones',
-        'Total',
+        'Amount',
         'Discount',
+        'Taxable',
         'Tax',
         'All total',
         'Payment',
-        'Status',
-        'Kaligar'
     ]
     
     # Add headers
@@ -910,9 +914,8 @@ def download_import_template(request):
     
     # Add sample data rows
     sample_data = [
-        ['207', '2082-09-01', '2082-09-01', 'Sandhya Nagarkoti', 'Gundu', 'Kathmandu', '4710', '9841234567', 'Diamond Nosepin', 'Diamond', '14KARAT', '0.08', '0', '0.08', '0', '15230', '702', '2960', '4710', '0', '94.2', '4807.2', 'Fonepay', 'Complete', 'Ritu Gems'],
-        ['208', '2082-09-02', '2082-09-02', 'Ram Prasad', '', 'Pokhara', '8500', '9845678901', 'Gold Ring', 'Gold', '22K', '5.5', '500', '6', '0', '60000', '1500', '5000', '8500', '1000', '170', '8670', 'cash', 'delivered', 'Ramesh'],
-        ['209', '2082-09-03', '2082-09-03', 'Sita Devi', 'PAN12345', 'Lalitpur', '12000', '9801234567', 'Silver Necklace', 'Silver', '92.5', '25', '0', '25', '0', '900', '0', '0', '12000', '500', '240', '12240', 'bank', 'pending', 'Ashok'],
+        ['5001', '2082-12-14', '2082-12-14', 'Kala', 'Suryabinayak', '9812345678', '', 'delivered', 'custom', 'Custom order', 'Naugedi with potey', 'Gold', '24k', '1.003', '0.000', '0.050', '0.35', '1.353', '0', '193700', '800', '1800', '25069', '68.80', '25000', '500', '25001', 'cash'],
+        ['5002', '2082-12-14', '2082-12-14', 'Laxmi', 'Bhaktapur', '9800000000', '', 'delivered', 'custom', 'Diamond ring order', 'Diamond Ladies ring', 'Diamond', '14k', '3.95', '0.79', '0.120', '4.74', '4.74', '0', '116270', '5080', '1800', '52330', '39.64', '55300', '1106', '52290', 'cash'],
     ]
     
     for row_data in sample_data:
@@ -1061,6 +1064,7 @@ class ImportWizardStepThreeView(LoginRequiredMixin, View):
             
             # Group orders by Bill No
             orders_data = {}
+            last_bill_no = None
             
             for row_num, row in enumerate(ws.iter_rows(min_row=2, values_only=False), start=2):
                 try:
@@ -1073,8 +1077,16 @@ class ImportWizardStepThreeView(LoginRequiredMixin, View):
                     if not any(row_data.values()):
                         continue
                     
-                    # Get bill_no, use auto-generated if empty
-                    bill_no = row_data.get('bill_no') or f'AUTO_{row_num}'
+                    # Normalize bill_no and carry forward for multi-line bills where
+                    # Excel keeps bill number only on the first row.
+                    bill_no = self._normalize_bill_no(row_data.get('bill_no'))
+                    if bill_no:
+                        last_bill_no = bill_no
+                    elif last_bill_no:
+                        bill_no = last_bill_no
+                    else:
+                        bill_no = f'AUTO_{row_num}'
+
                     if bill_no not in orders_data:
                         orders_data[bill_no] = {'order_info': {}, 'ornaments': []}
                     
@@ -1082,26 +1094,32 @@ class ImportWizardStepThreeView(LoginRequiredMixin, View):
                         orders_data[bill_no]['order_info'] = {
                             'customer_name': row_data.get('customer_name', ''),
                             'phone_number': row_data.get('phone_number', ''),
+                            'pan_number': row_data.get('pan_number', ''),
+                            'address': row_data.get('address', ''),
+                            'description': row_data.get('description', ''),
                             'order_date': row_data.get('order_date'),
-                            'deliver_date': row_data.get('deliver_date'),
+                            'sale_date': row_data.get('sale_date'),
                             'discount': self._parse_decimal(row_data.get('discount', 0)),
                             'tax': self._parse_decimal(row_data.get('tax', 0)),
+                            'all_total': self._parse_decimal(row_data.get('all_total', 0)),
                             'payment_mode': row_data.get('payment_mode', 'cash'),
+                            'order_type': row_data.get('order_type', 'custom'),
                             'status': row_data.get('status', 'delivered'),
                         }
                     
                     ornament_data = {
                         'ornament_name': row_data.get('ornament_name', ''),
-                        'ornament_type': row_data.get('ornament_type', ''),
                         'metal_type': row_data.get('metal_type', ''),
-                        'purity_type': row_data.get('purity_type', 'twentyfourkarat'),
-                        'weight': self._parse_decimal(row_data.get('weight', 0)),
-                        'gold_rate': self._parse_decimal(row_data.get('rate', 0)),
+                        'type': row_data.get('type', '24k'),
+                        'metal_weight': self._parse_decimal(row_data.get('metal_weight', 0)),
+                        'diamond_weight': self._parse_decimal(row_data.get('diamond_weight', 0)),
+                        'stone_weight': self._parse_decimal(row_data.get('stone_weight', 0)),
+                        'own_gold': self._parse_decimal(row_data.get('own_gold', 0)),
+                        'rate': self._parse_decimal(row_data.get('rate', 0)),
+                        'amount': self._parse_decimal(row_data.get('amount', 0)),
                         'jarti': self._parse_decimal(row_data.get('jarti', 0)),
                         'jyala': self._parse_decimal(row_data.get('jyala', 0)),
-                        'stone_rate': self._parse_decimal(row_data.get('stones', 0)),
-                        'line_amount': self._parse_decimal(row_data.get('total', 0)),
-                        'kaligar': row_data.get('kaligar', ''),
+                        'stones': self._parse_decimal(row_data.get('stones', 0)),
                     }
                     orders_data[bill_no]['ornaments'].append(ornament_data)
                 
@@ -1163,6 +1181,31 @@ class ImportWizardStepThreeView(LoginRequiredMixin, View):
         processor = ExcelImportProcessor(self.request)
         return processor.parse_decimal(value)
 
+    def _normalize_bill_no(self, value):
+        """Normalize bill numbers from Excel cells (e.g. 1.0 -> '1')."""
+        if value is None:
+            return ''
+
+        if isinstance(value, int):
+            return str(value)
+
+        if isinstance(value, float):
+            return str(int(value)) if value.is_integer() else str(value).strip()
+
+        text = str(value).strip()
+        if not text:
+            return ''
+
+        # Handle stringified numeric values like "1.0"
+        try:
+            as_float = float(text)
+            if as_float.is_integer():
+                return str(int(as_float))
+        except Exception:
+            pass
+
+        return text
+
 
 class ExcelImportProcessor:
     """Helper class for Excel import processing."""
@@ -1175,15 +1218,22 @@ class ExcelImportProcessor:
         col_map = {
             'bill_no': None,
             'order_date': None,
-            'deliver_date': None,
+            'sale_date': None,
             'customer_name': None,
             'phone_number': None,
+            'pan_number': None,
+            'address': None,
+            'description': None,
+            'order_type': None,
             'ornament_name': None,
-            'ornament_type': None,
             'metal_type': None,
-            'purity_type': None,
-            'weight': None,
-            'total': None,
+            'type': None,
+            'metal_weight': None,
+            'diamond_weight': None,
+            'stone_weight': None,
+            'own_gold': None,
+            'amount': None,
+            'all_total': None,
             'discount': None,
             'tax': None,
             'payment_mode': None,
@@ -1192,7 +1242,6 @@ class ExcelImportProcessor:
             'jarti': None,
             'jyala': None,
             'stones': None,
-            'kaligar': None,
         }
         
         for idx, header in enumerate(headers):
@@ -1202,42 +1251,54 @@ class ExcelImportProcessor:
                 col_map['bill_no'] = idx
             elif 'order' in header_lower and 'date' in header_lower and 'deliver' not in header_lower:
                 col_map['order_date'] = idx
-            elif 'deliver' in header_lower and 'date' in header_lower:
-                col_map['deliver_date'] = idx
+            elif ('sale' in header_lower and 'date' in header_lower) or ('deliver' in header_lower and 'date' in header_lower):
+                col_map['sale_date'] = idx
             elif 'customer' in header_lower or (header_lower == 'name' and col_map['customer_name'] is None):
                 col_map['customer_name'] = idx
+            elif 'address' in header_lower or 'thegana' in header_lower or 'ठेगाना' in header_lower:
+                col_map['address'] = idx
             elif 'phone' in header_lower or 'contact' in header_lower or 'tel' in header_lower:
                 col_map['phone_number'] = idx
+            elif 'pan' in header_lower:
+                col_map['pan_number'] = idx
+            elif 'status' in header_lower or 'state' in header_lower:
+                col_map['status'] = idx
+            elif ('order' in header_lower and 'type' in header_lower) or ('drder' in header_lower and 'type' in header_lower):
+                col_map['order_type'] = idx
+            elif 'description' in header_lower or 'remarks' in header_lower:
+                col_map['description'] = idx
             elif 'ornament' in header_lower and 'name' in header_lower:
                 col_map['ornament_name'] = idx
-            elif 'ornament' in header_lower and 'type' in header_lower:
-                col_map['ornament_type'] = idx
             elif 'metal' in header_lower and 'type' in header_lower:
                 col_map['metal_type'] = idx
-            elif 'purity' in header_lower or 'karat' in header_lower or 'carat' in header_lower:
-                col_map['purity_type'] = idx
-            elif any(w in header_lower for w in ('weight', 'total weight', 'wt', 'gm')):
-                col_map['weight'] = idx
-            elif any(w in header_lower for w in ('total', 'all total', 'final total', 'sum', 'grand total')):
-                col_map['total'] = idx
+            elif header_lower == 'type' or 'karat' in header_lower or 'carat' in header_lower or 'purity' in header_lower:
+                col_map['type'] = idx
+            elif 'metal weight' in header_lower:
+                col_map['metal_weight'] = idx
+            elif 'diamond weight' in header_lower:
+                col_map['diamond_weight'] = idx
+            elif 'stone weight' in header_lower:
+                col_map['stone_weight'] = idx
+            elif 'own gold' in header_lower:
+                col_map['own_gold'] = idx
+            elif header_lower == 'amount' or 'total amount' in header_lower:
+                col_map['amount'] = idx
+            elif 'all total' in header_lower or 'grand total' in header_lower or 'final total' in header_lower:
+                col_map['all_total'] = idx
             elif 'discount' in header_lower or 'deduction' in header_lower:
                 col_map['discount'] = idx
             elif 'tax' in header_lower or 'vat' in header_lower:
                 col_map['tax'] = idx
             elif 'payment' in header_lower and 'mode' in header_lower:
                 col_map['payment_mode'] = idx
-            elif 'status' in header_lower or 'state' in header_lower:
-                col_map['status'] = idx
             elif 'rate' in header_lower and col_map['rate'] is None:
                 col_map['rate'] = idx
             elif 'jarti' in header_lower or 'jatti' in header_lower:
                 col_map['jarti'] = idx
             elif 'jyala' in header_lower or 'jala' in header_lower:
                 col_map['jyala'] = idx
-            elif 'stone' in header_lower or 'zircon' in header_lower or 'diamond' in header_lower:
+            elif 'stone' in header_lower or ('diamond' in header_lower and 'weight' not in header_lower):
                 col_map['stones'] = idx
-            elif 'kaligar' in header_lower or 'kalegar' in header_lower:
-                col_map['kaligar'] = idx
         
         return col_map
     
@@ -1263,141 +1324,208 @@ class ExcelImportProcessor:
         try:
             customer_name = str(order_info.get('customer_name') or '').strip()
             phone_number = str(order_info.get('phone_number') or '').strip()
-            
+            bill_no = str(bill_no or '').strip()
+
             if not customer_name:
                 return {'success': False, 'error': 'Customer name is required'}
-            
-            # Parse dates
+
+            if bill_no and Sale.objects.filter(bill_no=bill_no).exists():
+                return {'success': False, 'error': f'Sale with bill no {bill_no} already exists'}
+
             order_date = self._parse_nepali_date(order_info.get('order_date'))
-            deliver_date = self._parse_nepali_date(order_info.get('deliver_date'))
-            
+            sale_date = self._parse_nepali_date(order_info.get('sale_date'))
+
+            if not order_date:
+                order_date = sale_date
             if not order_date:
                 try:
                     order_date = ndt.date.today()
-                except:
-                    pass
-            
-            if not deliver_date and order_date:
-                try:
-                    deliver_date = order_date + timedelta(days=7)
-                except:
-                    deliver_date = order_date
-            
-            # Create order
-            order = Order.objects.create(
-                customer_name=customer_name,
-                phone_number=phone_number if phone_number and len(phone_number) >= 7 else '1234567',
-                order_date=order_date,
-                deliver_date=deliver_date,
-                status=order_info.get('status', 'delivered'),
-                discount=order_info.get('discount', Decimal('0')),
-                tax=order_info.get('tax', Decimal('0')),
-            )
-            
-            # Create ornaments
-            total_line_amount = Decimal('0')
-            
-            for ornament_data in ornaments_list:
-                if not (ornament_data.get('weight') or ornament_data.get('line_amount')):
-                    continue
-                
-                ornament_name = ornament_data.get('ornament_name') or (
-                    f"{ornament_data.get('ornament_type', 'Item')} - "
-                    f"{ornament_data.get('metal_type', 'Gold')}"
+                except Exception:
+                    order_date = None
+
+            if not sale_date:
+                sale_date = order_date
+
+            discount = self.parse_decimal(order_info.get('discount'))
+            tax = self.parse_decimal(order_info.get('tax'))
+            all_total_override = self.parse_decimal(order_info.get('all_total'))
+            payment_mode = self._normalize_payment_mode(order_info.get('payment_mode'))
+
+            with transaction.atomic():
+                order = Order.objects.create(
+                    customer_name=customer_name,
+                    phone_number=phone_number if phone_number and len(phone_number) >= 7 else '1234567',
+                    order_date=order_date,
+                    deliver_date=sale_date,
+                    pan_number=str(order_info.get('pan_number') or '').strip() or None,
+                    address=str(order_info.get('address') or '').strip() or None,
+                    status=self._normalize_status(order_info.get('status')),
+                    order_type=self._normalize_order_type(order_info.get('order_type')),
+                    description=str(order_info.get('description') or '').strip(),
+                    discount=discount,
+                    tax=tax,
                 )
-                
-                purity_type = self._get_purity_type(ornament_data.get('purity_type', 'twentyfourkarat'))
-                metal_type = self._get_metal_type(ornament_data.get('metal_type'))
-                
-                # Get or create kaligar
-                kaligar_name = ornament_data.get('kaligar', 'Default')
-                kaligar, _ = Kaligar.objects.get_or_create(
-                    name=kaligar_name,
-                    defaults={'panno': '000000000'}  # Default PAN as placeholder
-                )
-                
-                ornament, _ = Ornament.objects.get_or_create(
-                    ornament_name=ornament_name,
-                    metal_type=metal_type,
-                    type=purity_type,
-                    defaults={
-                        'weight': ornament_data.get('weight', Decimal('0')),
-                        'ornament_type': 'sales',
-                        'kaligar': kaligar,
-                    }
-                )
-                
-                line_amount = ornament_data.get('line_amount', Decimal('0'))
-                total_line_amount += line_amount
-                
-                OrderOrnament.objects.create(
-                    order=order,
-                    ornament=ornament,
-                    gold_rate=ornament_data.get('gold_rate', Decimal('0')),
-                    jarti=ornament_data.get('jarti', Decimal('0')),
-                    jyala=ornament_data.get('jyala', Decimal('0')),
-                    stone_rate=ornament_data.get('stone_rate', Decimal('0')),
-                    line_amount=line_amount,
-                )
-                
-                ornament.order = order
-                ornament.ornament_type = 'sales'
-                ornament.save(update_fields=['order', 'ornament_type', 'updated_at'])
-            
-            # Calculate order totals first
-            payment_mode = order_info.get('payment_mode', 'cash')
-            discount = order_info.get('discount', Decimal('0'))
-            tax = order_info.get('tax', Decimal('0'))
-            
-            total_amount = total_line_amount if total_line_amount > 0 else Decimal('0')
-            
-            order.amount = total_line_amount or total_amount
-            order.subtotal = max(Decimal('0'), order.amount - discount)
-            order.total = order.subtotal + tax
-            paid_amount = min(total_amount, order.total)
-            order.remaining_amount = max(Decimal('0'), order.total - paid_amount)
-            order.save(update_fields=[
-                'amount', 'subtotal', 'total', 'remaining_amount'
-            ])
-            
-            # Create payment
-            if paid_amount > 0:
-                OrderPayment.objects.create(
-                    order=order,
-                    payment_mode=payment_mode,
-                    amount=paid_amount,
-                )
-                
-                if payment_mode == 'sundry_debtor':
-                    debtor, created = SundryDebtor.objects.get_or_create(
-                        name=customer_name,
-                        defaults={
-                            'credit_limit': paid_amount,
-                            'current_balance': paid_amount,
-                        }
+
+                default_kaligar = self._get_import_blank_kaligar()
+                total_line_amount = Decimal('0')
+                gold_payment_total = Decimal('0')
+                created_lines = 0
+
+                for ornament_data in ornaments_list:
+                    ornament_name = str(ornament_data.get('ornament_name') or '').strip()
+                    if not ornament_name:
+                        continue
+
+                    metal_weight = self.parse_decimal(ornament_data.get('metal_weight'))
+                    diamond_weight = self.parse_decimal(ornament_data.get('diamond_weight'))
+                    stone_weight = self.parse_decimal(ornament_data.get('stone_weight'))
+                    stones_value = self.parse_decimal(ornament_data.get('stones'))
+                    rate_value = self.parse_decimal(ornament_data.get('rate'))
+                    own_gold = self.parse_decimal(ornament_data.get('own_gold'))
+                    excel_amount = self.parse_decimal(ornament_data.get('amount'))
+                    line_jarti = self.parse_decimal(ornament_data.get('jarti'))
+                    line_jyala = self.parse_decimal(ornament_data.get('jyala'))
+
+                    if metal_weight <= 0 and diamond_weight <= 0 and stone_weight <= 0 and stones_value <= 0:
+                        continue
+
+                    metal_type = self._get_metal_type(ornament_data.get('metal_type'))
+                    purity_type = self._get_purity_type(ornament_data.get('type'))
+
+                    auto_jarti = (metal_weight * Decimal('0.05')).quantize(Decimal('0.001'))
+                    auto_jyala = Decimal('2000') if metal_type == Ornament.MetalTypeCategory.DIAMOND else Decimal('0')
+
+                    ornament = Ornament.objects.create(
+                        ornament_date=sale_date,
+                        ornament_name=ornament_name,
+                        ornament_type=Ornament.OrnamentCategory.SALES,
+                        metal_type=metal_type,
+                        type=purity_type,
+                        maincategory=None,
+                        subcategory=None,
+                        gross_weight=Decimal('0.000'),
+                        weight=metal_weight,
+                        diamond_weight=diamond_weight,
+                        diamond_rate=Decimal('35000'),
+                        stone_weight=stone_weight,
+                        stone_totalprice=stones_value,
+                        jarti=auto_jarti,
+                        jyala=auto_jyala,
+                        kaligar=default_kaligar,
+                        order=order,
                     )
-                    
-                    if not created:
-                        debtor.current_balance = debtor.current_balance + paid_amount
-                        debtor.save(update_fields=['current_balance', 'updated_at'])
-                    
-                    payment = order.payments.first()
-                    if payment:
-                        DebtorPayment.objects.create(
-                            order_payment=payment,
-                            debtor=debtor,
+
+                    diamond_component = diamond_weight * Decimal('35000')
+                    computed_line_amount = (metal_weight * rate_value) + line_jarti + line_jyala + stones_value + diamond_component
+                    line_amount = excel_amount if excel_amount > 0 else computed_line_amount
+
+                    if own_gold > 0 and rate_value > 0:
+                        gold_amount = (own_gold / Decimal('11.664')) * rate_value
+                        gold_payment_total += gold_amount
+
+                    OrderOrnament.objects.create(
+                        order=order,
+                        ornament=ornament,
+                        gold_rate=rate_value,
+                        diamond_rate=Decimal('35000'),
+                        stone_rate=stones_value,
+                        jarti=line_jarti,
+                        jyala=line_jyala,
+                        line_amount=line_amount,
+                    )
+
+                    total_line_amount += line_amount
+                    created_lines += 1
+
+                if created_lines == 0:
+                    raise ValueError('No valid ornament rows found for this bill')
+
+                order.amount = total_line_amount
+                order.subtotal = max(Decimal('0'), total_line_amount - discount)
+                order.total = order.subtotal + tax
+
+                # Use explicit bill total from Excel when provided.
+                if all_total_override > 0:
+                    order.total = all_total_override
+                    # Keep subtotal internally coherent with tax.
+                    order.subtotal = max(Decimal('0'), order.total - tax)
+
+                order.remaining_amount = Decimal('0')
+                order.save(update_fields=['amount', 'subtotal', 'total', 'remaining_amount', 'updated_at'])
+
+                created_payments = []
+                if order.total > 0:
+                    gold_paid = min(order.total, gold_payment_total.quantize(Decimal('0.01')))
+                    if gold_paid > 0:
+                        created_payments.append(
+                            OrderPayment.objects.create(
+                                order=order,
+                                payment_mode='gold',
+                                amount=gold_paid,
+                            )
                         )
-            
-            # Create Sale
-            sale_date = deliver_date or order_date
-            
-            Sale.objects.create(
-                order=order,
-                sale_date=sale_date,
-                bill_no=bill_no,
-            )
-            
-            return {'success': True, 'order_id': order.sn}
+
+                    remaining_to_pay = max(Decimal('0'), order.total - gold_paid)
+
+                    if payment_mode == 'gold':
+                        if gold_paid <= 0 and remaining_to_pay > 0:
+                            created_payments.append(
+                                OrderPayment.objects.create(
+                                    order=order,
+                                    payment_mode='gold',
+                                    amount=remaining_to_pay,
+                                )
+                            )
+                            remaining_to_pay = Decimal('0')
+                    elif remaining_to_pay > 0:
+                        created_payments.append(
+                            OrderPayment.objects.create(
+                                order=order,
+                                payment_mode=payment_mode,
+                                amount=remaining_to_pay,
+                            )
+                        )
+
+                    if payment_mode == 'sundry_debtor':
+                        debtor_amount = remaining_to_pay
+                        if debtor_amount <= 0:
+                            debtor_amount = Decimal('0')
+
+                        debtor, created = SundryDebtor.objects.get_or_create(
+                            name=customer_name,
+                            defaults={
+                                'credit_limit': debtor_amount,
+                                'current_balance': debtor_amount,
+                            }
+                        )
+
+                        if not created:
+                            debtor.current_balance = debtor.current_balance + debtor_amount
+                            debtor.save(update_fields=['current_balance', 'updated_at'])
+
+                        debtor_payment = next(
+                            (p for p in created_payments if p.payment_mode == 'sundry_debtor'),
+                            None,
+                        )
+                        if debtor_payment:
+                            DebtorPayment.objects.create(
+                                order_payment=debtor_payment,
+                                debtor=debtor,
+                            )
+
+                    total_paid = sum((p.amount or Decimal('0')) for p in created_payments)
+                    order.remaining_amount = max(Decimal('0'), order.total - total_paid)
+                    order.save(update_fields=['remaining_amount', 'updated_at'])
+
+                Sale.objects.create(
+                    order=order,
+                    sale_date=sale_date,
+                    bill_no=bill_no,
+                    pan_number=order.pan_number,
+                    address=order.address,
+                )
+
+                return {'success': True, 'order_id': order.sn}
         
         except Exception as e:
             return {'success': False, 'error': str(e)}
@@ -1417,11 +1545,49 @@ class ExcelImportProcessor:
                         year, month, day = int(parts[0]), int(parts[1]), int(parts[2])
                         try:
                             return ndt.date(year, month, day)
-                        except:
+                        except Exception:
                             pass
+
+                # Handle common sheet format like 4/5/2082
+                if '/' in date_str:
+                    parts = [p.strip() for p in date_str.split('/') if p.strip()]
+                    if len(parts) == 3 and all(p.isdigit() for p in parts):
+                        p1, p2, p3 = int(parts[0]), int(parts[1]), int(parts[2])
+
+                        # year-first: 2082/04/05
+                        if p1 > 1900:
+                            year, month, day = p1, p2, p3
+                            try:
+                                return ndt.date(year, month, day)
+                            except Exception:
+                                pass
+
+                        # month/day/year: 4/5/2082
+                        if p3 > 1900:
+                            year, month, day = p3, p1, p2
+                            try:
+                                return ndt.date(year, month, day)
+                            except Exception:
+                                pass
+
+                            # fallback day/month/year: 5/4/2082
+                            year, month, day = p3, p2, p1
+                            try:
+                                return ndt.date(year, month, day)
+                            except Exception:
+                                pass
             
-            if hasattr(date_value, 'year'):
-                return date_value
+            if isinstance(date_value, py_datetime):
+                try:
+                    return ndt.date(date_value.year, date_value.month, date_value.day)
+                except Exception:
+                    return None
+
+            if isinstance(date_value, py_date):
+                try:
+                    return ndt.date(date_value.year, date_value.month, date_value.day)
+                except Exception:
+                    return None
         
         except Exception:
             pass
@@ -1431,35 +1597,61 @@ class ExcelImportProcessor:
     def _get_metal_type(self, metal_type_str):
         """Convert metal type string."""
         if not metal_type_str:
-            return 'gold'
+            return Ornament.MetalTypeCategory.GOLD
         
         metal_lower = str(metal_type_str).lower().strip()
+        if 'diamond' in metal_lower:
+            return Ornament.MetalTypeCategory.DIAMOND
         if 'silver' in metal_lower:
-            return 'silver'
-        elif 'platinum' in metal_lower:
-            return 'platinum'
-        else:
-            return 'gold'
+            return Ornament.MetalTypeCategory.SILVER
+        if 'other' in metal_lower:
+            return Ornament.MetalTypeCategory.OTHERS
+        return Ornament.MetalTypeCategory.GOLD
     
     def _get_purity_type(self, purity_str):
         """Convert purity string."""
         if not purity_str:
-            return 'twentyfourkarat'
+            return Ornament.TypeCategory.TWENTYFOURKARAT
         
-        purity_lower = str(purity_str).lower().strip().replace(' ', '').replace('k', '')
+        purity_lower = str(purity_str).upper().strip().replace(' ', '')
         
-        if '24' in purity_lower or purity_lower == 'twentyfourkarat':
-            return 'twentyfourkarat'
-        elif '23' in purity_lower or purity_lower == 'twenthreekarat':
-            return 'twenthreekarat'
-        elif '22' in purity_lower or purity_lower == 'twentytwokarat':
-            return 'twentytwokarat'
-        elif '18' in purity_lower or purity_lower == 'eighteenkarat':
-            return 'eighteenkarat'
-        elif '14' in purity_lower or purity_lower == 'fourteenkarat':
-            return 'fourteenkarat'
-        else:
-            return 'twentyfourkarat'
+        if '24' in purity_lower:
+            return Ornament.TypeCategory.TWENTYFOURKARAT
+        if '23' in purity_lower:
+            return Ornament.TypeCategory.TWENTHREEKARAT
+        if '22' in purity_lower:
+            return Ornament.TypeCategory.TWENTYTWOKARAT
+        if '18' in purity_lower:
+            return Ornament.TypeCategory.EIGHTEENKARAT
+        if '14' in purity_lower:
+            return Ornament.TypeCategory.FOURTEENKARAT
+        return Ornament.TypeCategory.TWENTYFOURKARAT
+
+    def _normalize_status(self, status_str):
+        value = str(status_str or '').strip().lower().replace(' ', '_')
+        allowed = {choice[0] for choice in Order.STATUS_CHOICES}
+        return value if value in allowed else 'delivered'
+
+    def _normalize_order_type(self, order_type_str):
+        value = str(order_type_str or '').strip().lower().replace(' ', '_')
+        allowed = {choice[0] for choice in Order.ORDER_TYPE_CHOICES}
+        return value if value in allowed else 'custom'
+
+    def _normalize_payment_mode(self, payment_mode_str):
+        value = str(payment_mode_str or '').strip().lower().replace(' ', '_')
+        allowed = {choice[0] for choice in Order.PAYMENT_CHOICES}
+        return value if value in allowed else 'cash'
+
+    def _get_import_blank_kaligar(self):
+        """Get/create a placeholder Kaligar that displays as blank for imports.
+
+        The Ornament model requires a non-null Kaligar FK, so imports cannot
+        store true NULL here without a schema change.
+        """
+        kaligar = Kaligar.objects.filter(name='').first()
+        if kaligar:
+            return kaligar
+        return Kaligar.objects.create(name='', panno='000000000')
 
 
 class SalesByMonthView(LoginRequiredMixin, ListView):
