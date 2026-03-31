@@ -332,19 +332,18 @@ class Command(BaseCommand):
                 )
             else:
                 # If today's rates not found, try to use yesterday's rates as fallback
+                if options.get('dry_run'):
+                    snippet = page_text[:800]
+                    self.stdout.write(self.style.WARNING(
+                        f'Could not extract live rates. Gold tola: {gold_tola_str}, Silver tola: {silver_tola_str}\nSnippet:\n{snippet}'
+                    ))
+                    return
                 if self._save_latest_rate_as_fallback(bs_date=bs_date, reason='rate extraction failure'):
                     return
                 else:
-                    # In dry-run, show a snippet of the page to aid debugging patterns
-                    if options.get('dry_run'):
-                        snippet = page_text[:800]
-                        self.stdout.write(self.style.WARNING(
-                            f'Could not extract rates. Gold tola: {gold_tola_str}, Silver tola: {silver_tola_str}\nSnippet:\n{snippet}'
-                        ))
-                    else:
-                        self.stdout.write(self.style.WARNING(
-                            f'Could not extract rates and no yesterday\'s rate found. Gold tola: {gold_tola_str}, Silver tola: {silver_tola_str}'
-                        ))
+                    self.stdout.write(self.style.WARNING(
+                        f'Could not extract rates and no stored fallback was found. Gold tola: {gold_tola_str}, Silver tola: {silver_tola_str}'
+                    ))
             
         except urllib.error.URLError as e:
             self.stdout.write(
