@@ -4,6 +4,7 @@ from main.models import DailyRate
 from datetime import date
 from decimal import Decimal, InvalidOperation
 import re
+import time
 import urllib.request
 import urllib.error
 import logging
@@ -22,6 +23,81 @@ logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
     help = 'Fetch gold and silver rates from FENEGOSIDA'
+
+    def _save_latest_rate_as_fallback(self, bs_date=None, reason='fallback'):
+        latest_rate = DailyRate.objects.order_by('-created_at').first()
+        if not latest_rate:
+            return False
+
+        today = date.today()
+        rate, created = DailyRate.objects.update_or_create(
+            bs_date=bs_date or today.isoformat(),
+            defaults={
+                'gold_rate': latest_rate.gold_rate,
+                'silver_rate': latest_rate.silver_rate,
+                'gold_rate_10g': latest_rate.gold_rate_10g,
+                'silver_rate_10g': latest_rate.silver_rate_10g,
+            }
+        )
+
+        action = "Created" if created else "Updated"
+        self.stdout.write(
+            self.style.WARNING(
+                f'{action} today\'s rates using latest stored data due to {reason}: Gold (tola) रु{latest_rate.gold_rate}, Silver (tola) रु{latest_rate.silver_rate}'
+            )
+        )
+        return True
+
+    def _fetch_page_content(self, url, headers, proxies, ca_bundle):
+        req = urllib.request.Request(url, headers=headers)
+        last_error = None
+
+        for attempt in range(1, 4):
+            page_text = None
+            soup = None
+
+            if HAS_SOUP:
+                try:
+                    verify_arg = ca_bundle if ca_bundle else True
+                    resp = requests.get(
+                        url,
+                        headers=headers,
+                        timeout=10,
+                        proxies=proxies or None,
+                        verify=verify_arg,
+                    )
+                    resp.raise_for_status()
+                    page_text = resp.text
+                    soup = BeautifulSoup(page_text, 'html.parser')
+                    return page_text, soup
+                except requests.exceptions.RequestException as error:
+                    last_error = error
+                    logger.warning(
+                        "Requests fetch failed on attempt %s/3: %s. Falling back to urllib.",
+                        attempt,
+                        error,
+                    )
+
+            try:
+                # urllib respects *_PROXY env vars automatically. If explicit proxies provided, use an opener.
+                if proxies:
+                    proxy_handler = urllib.request.ProxyHandler(proxies)
+                    opener = urllib.request.build_opener(proxy_handler)
+                    with opener.open(req, timeout=10) as response:
+                        page_text = response.read().decode('utf-8', errors='ignore')
+                else:
+                    with urllib.request.urlopen(req, timeout=10) as response:
+                        page_text = response.read().decode('utf-8', errors='ignore')
+
+                return page_text, soup
+            except (urllib.error.HTTPError, urllib.error.URLError) as error:
+                last_error = error
+                logger.warning("urllib fetch failed on attempt %s/3: %s", attempt, error)
+
+            if attempt < 3:
+                time.sleep(5)
+
+        raise last_error or urllib.error.URLError('Unknown network error')
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -55,41 +131,16 @@ class Command(BaseCommand):
                 proxies['http'] = proxy_http
             ca_bundle = os.environ.get('REQUESTS_CA_BUNDLE') or os.environ.get('SSL_CERT_FILE')
 
-            req = urllib.request.Request(url, headers=headers)
-            
-            page_text = None
-            soup = None
-
-            if HAS_SOUP:
-                try:
-                    verify_arg = ca_bundle if ca_bundle else True
-                    resp = requests.get(url, headers=headers, timeout=10, proxies=proxies or None, verify=verify_arg)
-                    resp.raise_for_status()
-                    page_text = resp.text
-                    soup = BeautifulSoup(page_text, 'html.parser')
-                except requests.exceptions.RequestException as e:
-                    logger.warning(f"Requests failed: {e}. Falling back to urllib...")
-                    pass
-            
-            if page_text is None:
-                try:
-                    # urllib respects *_PROXY env vars automatically. If explicit proxies provided, use an opener.
-                    if proxies:
-                        proxy_handler = urllib.request.ProxyHandler(proxies)
-                        opener = urllib.request.build_opener(proxy_handler)
-                        with opener.open(req, timeout=10) as response:
-                            page_text = response.read().decode('utf-8', errors='ignore')
-                    else:
-                        with urllib.request.urlopen(req, timeout=10) as response:
-                            page_text = response.read().decode('utf-8', errors='ignore')
-                except urllib.error.HTTPError as e:
-                    logger.error(f"HTTP Error {e.code}: {e.reason} - Network error")
+            try:
+                page_text, soup = self._fetch_page_content(url, headers, proxies, ca_bundle)
+            except (urllib.error.HTTPError, urllib.error.URLError) as e:
+                logger.error("Network error after retries: %s", e)
+                if options.get('dry_run'):
                     self.stdout.write(self.style.ERROR(f"Error fetching rates: Network error - {e}"))
                     return
-                except urllib.error.URLError as e:
-                    logger.error(f"URL Error: {e.reason}")
+                if not self._save_latest_rate_as_fallback(reason='network failure'):
                     self.stdout.write(self.style.ERROR(f"Error fetching rates: Network error - {e}"))
-                    return
+                return
             
             # Normalize whitespace and Devanagari digits
             page_text = page_text.replace('\xa0', ' ')
@@ -281,28 +332,8 @@ class Command(BaseCommand):
                 )
             else:
                 # If today's rates not found, try to use yesterday's rates as fallback
-                from datetime import timedelta
-                yesterday = date.today() - timedelta(days=1)
-                yesterday_rate = DailyRate.objects.order_by('-created_at').first()
-                
-                if yesterday_rate:
-                    today = date.today()
-                    rate, created = DailyRate.objects.update_or_create(
-                        bs_date=bs_date or today.isoformat(),
-                        defaults={
-                            'gold_rate': yesterday_rate.gold_rate,
-                            'silver_rate': yesterday_rate.silver_rate,
-                            'gold_rate_10g': yesterday_rate.gold_rate_10g,
-                            'silver_rate_10g': yesterday_rate.silver_rate_10g,
-                        }
-                    )
-                    
-                    action = "Created" if created else "Updated"
-                    self.stdout.write(
-                        self.style.SUCCESS(
-                            f'{action} today\'s rates using yesterday\'s data: Gold (tola) रु{yesterday_rate.gold_rate}, Silver (tola) रु{yesterday_rate.silver_rate}'
-                        )
-                    )
+                if self._save_latest_rate_as_fallback(bs_date=bs_date, reason='rate extraction failure'):
+                    return
                 else:
                     # In dry-run, show a snippet of the page to aid debugging patterns
                     if options.get('dry_run'):
