@@ -1131,6 +1131,7 @@ class ImportWizardStepThreeView(LoginRequiredMixin, View):
                         'jarti': self._parse_decimal(row_data.get('jarti', 0)),
                         'jyala': self._parse_decimal(row_data.get('jyala', 0)),
                         'stones': self._parse_decimal(row_data.get('stones', 0)),
+                        'kaligar_name': row_data.get('kaligar_name', ''),
                     }
                     orders_data[bill_no]['ornaments'].append(ornament_data)
                 
@@ -1253,6 +1254,7 @@ class ExcelImportProcessor:
             'jarti': None,
             'jyala': None,
             'stones': None,
+            'kaligar_name': None,
         }
         
         for idx, header in enumerate(headers):
@@ -1300,7 +1302,7 @@ class ExcelImportProcessor:
                 col_map['discount'] = idx
             elif 'tax' in header_lower or 'vat' in header_lower:
                 col_map['tax'] = idx
-            elif 'payment' in header_lower and 'mode' in header_lower:
+            elif 'payment' in header_lower:
                 col_map['payment_mode'] = idx
             elif 'rate' in header_lower and col_map['rate'] is None:
                 col_map['rate'] = idx
@@ -1310,6 +1312,8 @@ class ExcelImportProcessor:
                 col_map['jyala'] = idx
             elif 'stone' in header_lower or ('diamond' in header_lower and 'weight' not in header_lower):
                 col_map['stones'] = idx
+            elif 'kaligar' in header_lower:
+                col_map['kaligar_name'] = idx
         
         return col_map
     
@@ -1387,6 +1391,12 @@ class ExcelImportProcessor:
                     if not ornament_name:
                         continue
 
+                    kaligar_name_raw = str(ornament_data.get('kaligar_name') or '').strip()
+                    if kaligar_name_raw:
+                        ornament_kaligar, _ = Kaligar.objects.get_or_create(name=kaligar_name_raw)
+                    else:
+                        ornament_kaligar = default_kaligar
+
                     metal_weight = self.parse_decimal(ornament_data.get('metal_weight'))
                     diamond_weight = self.parse_decimal(ornament_data.get('diamond_weight'))
                     stone_weight = self.parse_decimal(ornament_data.get('stone_weight'))
@@ -1422,7 +1432,7 @@ class ExcelImportProcessor:
                         stone_totalprice=stones_value,
                         jarti=auto_jarti,
                         jyala=auto_jyala,
-                        kaligar=default_kaligar,
+                        kaligar=ornament_kaligar,
                         order=order,
                     )
 
