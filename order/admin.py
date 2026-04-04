@@ -8,7 +8,7 @@ class OrderOrnamentInline(admin.TabularInline):
     fields = (
         'ornament',
         'gold_rate', 'diamond_rate', 'zircon_rate', 'stone_rate',
-        'jarti', 'jyala', 'line_amount',
+        'jarti', 'own_gold', 'jyala', 'line_amount',
     )
     readonly_fields = ('line_amount',)
 
@@ -55,7 +55,7 @@ class OrderOrnamentAdmin(admin.ModelAdmin):
     list_display = (
         'order', 'ornament',
         'gold_rate', 'diamond_rate', 'zircon_rate', 'stone_rate',
-        'jarti', 'jyala', 'line_amount',
+        'jarti', 'own_gold', 'jyala', 'line_amount',
     )
     search_fields = (
         'order__sn', 'order__customer_name',

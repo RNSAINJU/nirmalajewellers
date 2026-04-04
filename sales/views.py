@@ -503,6 +503,7 @@ class DirectSaleCreateView(LoginRequiredMixin, CreateView):
                 zircon_rate=Decimal(str(line.get("zircon_rate", 0) or 0)),
                 stone_rate=Decimal(str(line.get("stone_rate", 0) or 0)),
                 jarti=Decimal(str(line.get("jarti", 0) or 0)),
+                own_gold=Decimal(str(line.get("own_gold", 0) or 0)),
                 jyala=Decimal(str(line.get("jyala", 0) or 0)),
                 line_amount=Decimal(str(line.get("line_amount", 0) or 0)),
             )
@@ -1437,7 +1438,8 @@ class ExcelImportProcessor:
                     )
 
                     diamond_component = diamond_weight * Decimal('35000')
-                    computed_line_amount = (metal_weight * rate_value) + line_jarti + line_jyala + stones_value + diamond_component
+                    net_metal_weight = max(Decimal('0'), (metal_weight + line_jarti) - own_gold)
+                    computed_line_amount = (net_metal_weight * rate_value) + diamond_component + stones_value + line_jyala
                     line_amount = excel_amount if excel_amount > 0 else computed_line_amount
 
                     if own_gold > 0 and rate_value > 0:
@@ -1451,6 +1453,7 @@ class ExcelImportProcessor:
                         diamond_rate=Decimal('35000'),
                         stone_rate=stones_value,
                         jarti=line_jarti,
+                        own_gold=own_gold,
                         jyala=line_jyala,
                         line_amount=line_amount,
                     )

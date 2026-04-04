@@ -347,6 +347,7 @@ class OrderCreateView(LoginRequiredMixin, CreateView):
                 zircon_rate=Decimal(str(line.get('zircon_rate', 0) or 0)),
                 stone_rate=Decimal(str(line.get('stone_rate', 0) or 0)),
                 jarti=Decimal(str(line.get('jarti', 0) or 0)),
+                own_gold=Decimal(str(line.get('own_gold', 0) or 0)),
                 jyala=Decimal(str(line.get('jyala', 0) or 0)),
                 line_amount=Decimal(str(line.get('line_amount', 0) or 0)),
             )
@@ -625,6 +626,7 @@ class OrderUpdateView(LoginRequiredMixin, UpdateView):
                 zircon_rate=Decimal(str(line.get('zircon_rate', 0) or 0)),
                 stone_rate=Decimal(str(line.get('stone_rate', 0) or 0)),
                 jarti=Decimal(str(line.get('jarti', 0) or 0)),
+                own_gold=Decimal(str(line.get('own_gold', 0) or 0)),
                 jyala=Decimal(str(line.get('jyala', 0) or 0)),
                 line_amount=Decimal(str(line.get('line_amount', 0) or 0)),
             )
@@ -935,6 +937,7 @@ def order_export_excel(request):
         "Zircon Rate",
         "Stone Rate",
         "Jarti",
+        "Own Gold",
         "Jyala",
         "Line Amount",
     ]
@@ -958,6 +961,7 @@ def order_export_excel(request):
                 line.zircon_rate,
                 line.stone_rate,
                 line.jarti,
+                line.own_gold,
                 line.jyala,
                 line.line_amount,
             ])
@@ -1037,6 +1041,7 @@ def order_ornaments_export_excel(request):
         "Zircon Rate",
         "Stone Rate",
         "Jarti",
+        "Own Gold",
         "Jyala",
         "Line Amount",
     ]
@@ -1060,6 +1065,7 @@ def order_ornaments_export_excel(request):
                 line.zircon_rate,
                 line.stone_rate,
                 line.jarti,
+                line.own_gold,
                 line.jyala,
                 line.line_amount,
             ])
@@ -1139,7 +1145,7 @@ def order_ornaments_import_excel(request):
     """Import order ornament lines from an Excel file.
 
     Expected columns (matching export):
-    Order No | Customer | Ornament Code | Ornament Name | Metal | Weight | Diamond Wt | Zircon Wt | Stone Wt | Gold Rate | Diamond Rate | Zircon Rate | Stone Rate | Jarti | Jyala | Line Amount
+    Order No | Customer | Ornament Code | Ornament Name | Metal | Weight | Diamond Wt | Zircon Wt | Stone Wt | Gold Rate | Diamond Rate | Zircon Rate | Stone Rate | Jarti | Own Gold | Jyala | Line Amount
     """
     if request.method == "POST":
         file = request.FILES.get("file")
@@ -1173,6 +1179,7 @@ def order_ornaments_import_excel(request):
                         zircon_rate,
                         stone_rate,
                         jarti,
+                        own_gold,
                         jyala,
                         line_amount,
                     ) = row
@@ -1206,6 +1213,7 @@ def order_ornaments_import_excel(request):
                     zircon_rate=Decimal(str(zircon_rate or 0)),
                     stone_rate=Decimal(str(stone_rate or 0)),
                     jarti=Decimal(str(jarti or 0)),
+                    own_gold=Decimal(str(own_gold or 0)),
                     jyala=Decimal(str(jyala or 0)),
                     line_amount=Decimal(str(line_amount or 0)),
                 )

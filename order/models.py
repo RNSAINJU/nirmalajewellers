@@ -304,6 +304,13 @@ class OrderOrnament(models.Model):
         help_text="Jarti amount",
     )
 
+    own_gold = models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        default=Decimal("0.000"),
+        help_text="Customer provided own gold to deduct from net weight",
+    )
+
     jyala = models.DecimalField(
         max_digits=10,
         decimal_places=3,

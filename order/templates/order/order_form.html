@@ -12,6 +12,108 @@
         text-decoration: underline;
         color: #0a58ca;
     }
+
+    #selected-ornaments-table {
+        min-width: 1900px;
+        table-layout: auto;
+    }
+
+    #selected-ornaments-table th,
+    #selected-ornaments-table td {
+        white-space: nowrap;
+        vertical-align: middle;
+        padding: 0.4rem;
+    }
+
+    #selected-ornaments-table .group-diamond,
+    #selected-ornaments-table .group-zircon,
+    #selected-ornaments-table .group-stone {
+        background-color: #f8fbff;
+    }
+
+    #selected-ornaments-table .diamond-rate-input,
+    #selected-ornaments-table .zircon-rate-input,
+    #selected-ornaments-table .stone-rate-input {
+        min-width: 96px;
+    }
+
+    #selected-ornaments-table .weight-highlight {
+        font-weight: 600;
+        color: #1f4f7a;
+    }
+
+    #selected-ornaments-table .gem-toggle-btn {
+        min-width: 90px;
+    }
+
+    #selected-ornaments-table .gold-weight-col {
+        min-width: 80px;
+        width: 80px;
+    }
+
+    #selected-ornaments-table .jarti-col {
+        min-width: 190px;
+        width: 190px;
+    }
+
+    #selected-ornaments-table .own-gold-col {
+        min-width: 115px;
+        width: 115px;
+    }
+
+    #selected-ornaments-table .gold-rate-col {
+        min-width: 110px;
+        width: 110px;
+    }
+
+    #selected-ornaments-table .code-col {
+        min-width: 72px;
+        width: 72px;
+    }
+
+    #selected-ornaments-table .jyala-col {
+        min-width: 145px;
+        width: 145px;
+    }
+
+    #selected-ornaments-table .amount-col {
+        min-width: 110px;
+        width: 110px;
+    }
+
+    #selected-ornaments-table .stone-rate-col {
+        min-width: 100px;
+        width: 100px;
+    }
+
+    #selected-ornaments-table .stone-weight-col {
+        min-width: 70px;
+        width: 70px;
+    }
+
+    #selected-ornaments-table .gem-weight-col {
+        min-width: 70px;
+        width: 70px;
+    }
+
+    #selected-ornaments-table .gem-rate-col {
+        min-width: 100px;
+        width: 100px;
+    }
+
+    #selected-ornaments-table .jarti-cell .d-flex {
+        gap: 0.3rem !important;
+    }
+
+    #selected-ornaments-table .sn-col,
+    #selected-ornaments-table .serial-col {
+        width: 2rem;
+        min-width: 2rem;
+        max-width: 2rem;
+        text-align: center;
+        padding-left: 0.2rem;
+        padding-right: 0.2rem;
+    }
 </style>
 
 <h1 class="text-center mb-4">{{ form_title }}</h1>
@@ -400,31 +502,37 @@
             <!-- Selected Ornaments Details Table with Rate Inputs -->
             <div class="mb-3">
                 <h6 class="mb-2">Selected Ornaments Details & Rates:</h6>
+                <div class="d-flex gap-2 mb-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary gem-toggle-btn" data-gem-group="diamond">Diamond</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary gem-toggle-btn" data-gem-group="zircon">Zircon</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary gem-toggle-btn" data-gem-group="stone">Stone</button>
+                </div>
                 
                 <div style="overflow-x: auto;">
                     <table class="table table-bordered table-sm" id="selected-ornaments-table">
                         <thead class="table-light">
                             <tr>
-                                <th rowspan="2">#</th>
-                                <th rowspan="2">Code</th>
-                                <th colspan="3" class="text-center">Gold</th>
-                                <th rowspan="2">Jyala</th>
-                                <th colspan="2" class="text-center">Diamond</th>
-                                <th colspan="2" class="text-center">Zircon</th>
-                                <th colspan="2" class="text-center">Stone</th>
-                                <th rowspan="2">Amount</th>
+                                <th rowspan="2" class="sn-col">SN</th>
+                                <th rowspan="2" class="code-col">Code</th>
+                                <th colspan="4" class="text-center">Gold</th>
+                                <th rowspan="2" class="jyala-col">Jyala</th>
+                                <th colspan="2" class="text-center col-diamond">Diamond</th>
+                                <th colspan="2" class="text-center col-zircon">Zircon</th>
+                                <th colspan="2" class="text-center col-stone">Stone</th>
+                                <th rowspan="2" class="amount-col">Amount</th>
                                 <th rowspan="2">Action</th>
                             </tr>
                             <tr>
-                                <th>Weight</th>
-                                <th>Jarti</th>
-                                <th>Rate</th>
-                                <th>Weight</th>
-                                <th>Rate</th>
-                                <th>Weight</th>
-                                <th>Rate</th>
-                                <th>Weight</th>
-                                <th>Rate</th>
+                                <th class="gold-weight-col">Weight</th>
+                                <th class="jarti-col">Jarti</th>
+                                <th class="own-gold-col">Own Gold</th>
+                                <th class="gold-rate-col">Rate</th>
+                                <th class="group-diamond col-diamond gem-weight-col">Weight</th>
+                                <th class="group-diamond col-diamond gem-rate-col">Rate</th>
+                                <th class="group-zircon col-zircon gem-weight-col">Weight</th>
+                                <th class="group-zircon col-zircon gem-rate-col">Rate</th>
+                                <th class="group-stone col-stone gem-weight-col">Weight</th>
+                                <th class="group-stone col-stone gem-rate-col">Rate</th>
                             </tr>
                         </thead>
                         <tbody id="selected-ornaments-body">
@@ -651,6 +759,65 @@ const isSaleCreate = "{{ is_sale_create|default:'False'|yesno:'true,false' }}" =
 const paymentModeOptionsHtml = `{% for key, value in payment_choices %}{% if key != 'mixed' %}<option value="{{ key }}">{{ value }}</option>{% endif %}{% endfor %}`;
 const initialPayments = JSON.parse('{{ initial_payments_json|escapejs }}');
 const ornamentEditTemplate = "{% url 'ornament:update' 0 %}"; // replace 0 with ID in JS
+const gemColumnManualVisibility = {
+    diamond: false,
+    zircon: false,
+    stone: false,
+};
+
+function hasGemData(group) {
+    const ids = Object.keys(selectedOrnaments);
+    for (const id of ids) {
+        const ornament = selectedOrnaments[id] || {};
+        let weightVal = 0;
+        let rateInput = null;
+
+        if (group === 'diamond') {
+            weightVal = parseFloat(ornament.diamond_weight) || 0;
+            rateInput = document.querySelector(`.diamond-rate-input[data-id="${id}"]`);
+        } else if (group === 'zircon') {
+            weightVal = parseFloat(ornament.zircon_weight) || 0;
+            rateInput = document.querySelector(`.zircon-rate-input[data-id="${id}"]`);
+        } else if (group === 'stone') {
+            weightVal = parseFloat(ornament.stone_weight) || 0;
+            rateInput = document.querySelector(`.stone-rate-input[data-id="${id}"]`);
+        }
+
+        const rateVal = parseFloat(rateInput?.value) || 0;
+        if (weightVal > 0 || rateVal > 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function applyGemColumnVisibility(group, visible) {
+    document.querySelectorAll(`.col-${group}`).forEach(el => {
+        if (visible) {
+            el.classList.remove('d-none');
+        } else {
+            el.classList.add('d-none');
+        }
+    });
+
+    const btn = document.querySelector(`.gem-toggle-btn[data-gem-group="${group}"]`);
+    if (btn) {
+        btn.classList.toggle('btn-primary', visible);
+        btn.classList.toggle('btn-outline-secondary', !visible);
+    }
+}
+
+function refreshGemColumnsVisibility() {
+    ['diamond', 'zircon', 'stone'].forEach(group => {
+        const visible = gemColumnManualVisibility[group] || hasGemData(group);
+        applyGemColumnVisibility(group, visible);
+    });
+}
+
+function toggleGemColumn(group) {
+    gemColumnManualVisibility[group] = !gemColumnManualVisibility[group];
+    refreshGemColumnsVisibility();
+}
 
 // Search ornaments
 // Debounced ornament search
@@ -862,6 +1029,7 @@ function addOrnamentToTable(ornament) {
     const zirconRateVal = ornament.zircon_rate ?? '';
     const stoneRateVal = ornament.stone_rate ?? '';
     const jartiVal = ornament.jarti ?? '';
+    const ownGoldVal = ornament.own_gold ?? '';
     const jyalaVal = ornament.jyala ?? '';
     const lineAmountVal = (() => {
         const v = ornament.line_amount ?? 0;
@@ -871,12 +1039,12 @@ function addOrnamentToTable(ornament) {
 
     row.innerHTML = `
         <td class="serial-col"></td>
-        <td><a href="${editUrl}" target="_blank" rel="noopener" class="ornament-link">${codeDisplay}</a></td>
-        <td>${ornament.weight.toFixed(3)}</td>
-        <td>
+        <td class="code-col"><a href="${editUrl}" target="_blank" rel="noopener" class="ornament-link">${codeDisplay}</a></td>
+        <td class="gold-weight-col">${ornament.weight.toFixed(3)}</td>
+        <td class="jarti-col jarti-cell">
             <div class="d-flex gap-1 align-items-center">
-                <input type="number" class="form-control form-control-sm jarti-input" step="0.001" data-id="${ornament.id}" placeholder="Jarti" value="${jartiVal}" style="min-width: 70px; width: 90px;">
-                <select class="form-select form-select-sm jarti-percentage-dropdown" data-id="${ornament.id}" style="width: 80px;">
+                <input type="number" class="form-control form-control-sm jarti-input" step="0.001" data-id="${ornament.id}" placeholder="Jarti" value="${jartiVal}" style="min-width: 76px; width: 76px;">
+                <select class="form-select form-select-sm jarti-percentage-dropdown" data-id="${ornament.id}" style="min-width: 72px; width: 72px;">
                     <option value="">% Jarti</option>
                     <option value="8">8%</option>
                     <option value="10">10%</option>
@@ -885,26 +1053,28 @@ function addOrnamentToTable(ornament) {
                 </select>
             </div>
         </td>
-        <td><input type="number" class="form-control form-control-sm gold-rate-input" step="0.01" data-id="${ornament.id}" placeholder="Rate" value="${goldRateVal}" style="min-width: 80px; width: 100px;"></td>
-        <td>
+        <td class="own-gold-col"><input type="number" class="form-control form-control-sm own-gold-input" step="0.001" data-id="${ornament.id}" placeholder="Own Gold" value="${ownGoldVal}" style="min-width: 100px; width: 100px;"></td>
+        <td class="gold-rate-col"><input type="number" class="form-control form-control-sm gold-rate-input" step="0.01" data-id="${ornament.id}" placeholder="Rate" value="${goldRateVal}" style="min-width: 100px; width: 100px;"></td>
+        <td class="jyala-col">
             <div class="d-flex gap-1 align-items-center">
-                <input type="number" class="form-control form-control-sm jyala-input" step="0.01" data-id="${ornament.id}" placeholder="Jyala" value="${jyalaVal}" style="min-width: 70px; width: 90px;">
+                <input type="number" class="form-control form-control-sm jyala-input" step="0.01" data-id="${ornament.id}" placeholder="Jyala" value="${jyalaVal}" style="min-width: 68px; width: 78px;">
                 <button type="button" class="btn btn-outline-secondary btn-sm jyala-auto-btn" data-id="${ornament.id}" title="Auto: weight × 2000">Auto</button>
             </div>
         </td>
-        <td>${ornament.diamond_weight.toFixed(3)}</td>
-        <td><input type="number" class="form-control form-control-sm diamond-rate-input" step="0.01" data-id="${ornament.id}" placeholder="Rate" value="${diamondRateVal}"></td>
-        <td>${(ornament.zircon_weight || 0).toFixed(3)}</td>
-        <td><input type="number" class="form-control form-control-sm zircon-rate-input" step="0.01" data-id="${ornament.id}" placeholder="Rate" value="${zirconRateVal}"></td>
-        <td>${ornament.stone_weight.toFixed(3)}</td>
-        <td><input type="number" class="form-control form-control-sm stone-rate-input" step="0.01" data-id="${ornament.id}" placeholder="Rate" value="${stoneRateVal}"></td>
-        <td><input type="number" class="form-control form-control-sm subtotal-display" readonly style="background-color: #f0f0f0; border: 1px solid #ccc; min-width: 120px; width: 140px; font-size: 1.1em; font-weight: 600;" data-id="${ornament.id}" value="${lineAmountVal}"></td>
+        <td class="group-diamond col-diamond gem-weight-col"><span class="weight-highlight">${ornament.diamond_weight.toFixed(3)}</span></td>
+        <td class="group-diamond col-diamond gem-rate-col"><input type="number" class="form-control form-control-sm diamond-rate-input" step="0.01" data-id="${ornament.id}" placeholder="Rate" value="${diamondRateVal}" style="min-width: 96px; width: 96px;"></td>
+        <td class="group-zircon col-zircon gem-weight-col"><span class="weight-highlight">${(ornament.zircon_weight || 0).toFixed(3)}</span></td>
+        <td class="group-zircon col-zircon gem-rate-col"><input type="number" class="form-control form-control-sm zircon-rate-input" step="0.01" data-id="${ornament.id}" placeholder="Rate" value="${zirconRateVal}" style="min-width: 96px; width: 96px;"></td>
+        <td class="group-stone col-stone gem-weight-col"><span class="weight-highlight">${ornament.stone_weight.toFixed(3)}</span></td>
+        <td class="group-stone col-stone gem-rate-col"><input type="number" class="form-control form-control-sm stone-rate-input" step="0.01" data-id="${ornament.id}" placeholder="Rate" value="${stoneRateVal}" style="min-width: 96px; width: 96px;"></td>
+        <td class="amount-col"><input type="number" class="form-control form-control-sm subtotal-display" readonly style="background-color: #f0f0f0; border: 1px solid #ccc; min-width: 108px; width: 118px; font-size: 1.1em; font-weight: 600;" data-id="${ornament.id}" value="${lineAmountVal}"></td>
         <td><button type="button" class="btn btn-sm btn-danger" onclick="removeOrnament(${ornament.id})">Remove</button></td>
     `;
     tbody.appendChild(row);
     
     // Attach calculation listeners
     attachOrnamentCalculationListeners(ornament.id, ornament);
+    refreshGemColumnsVisibility();
 
     refreshSerialNumbers();
 }
@@ -938,6 +1108,7 @@ function initExistingOrnaments() {
             diamond_rate: {{ line.diamond_rate|default:'0' }},
             zircon_rate: {{ line.zircon_rate|default:'0' }},
             stone_rate: {{ line.stone_rate|default:'0' }},
+            own_gold: {{ line.own_gold|default:'0' }},
             line_amount: {{ line.line_amount|default:'0' }},
         },
         {% endfor %}
@@ -959,6 +1130,7 @@ function attachOrnamentCalculationListeners(ornamentId, ornament) {
     const zirconRateInput = document.querySelector(`.zircon-rate-input[data-id="${ornamentId}"]`);
     const stoneRateInput = document.querySelector(`.stone-rate-input[data-id="${ornamentId}"]`);
     const jartiInput = document.querySelector(`.jarti-input[data-id="${ornamentId}"]`);
+    const ownGoldInput = document.querySelector(`.own-gold-input[data-id="${ornamentId}"]`);
     const jyalaInput = document.querySelector(`.jyala-input[data-id="${ornamentId}"]`);
     const discountInput = document.getElementById('order-discount');
     const subtotalDisplay = document.querySelector(`.subtotal-display[data-id="${ornamentId}"]`);
@@ -970,11 +1142,13 @@ function attachOrnamentCalculationListeners(ornamentId, ornament) {
         const zirconRate = parseFloat(zirconRateInput?.value) || 0;
         const stoneRate = parseFloat(stoneRateInput?.value) || 0;
         const jarti = parseFloat(jartiInput?.value) || 0;
+        const ownGold = parseFloat(ownGoldInput?.value) || 0;
         const jyala = parseFloat(jyalaInput?.value) || 0;
         
-        // Formula: subtotal = ((weight + jarti) / 11.664 * goldRate) + (diamondWeight * diamondRate) + (zirconWeight * zirconRate) + (stoneWeight * stoneRate) + jyala
+        // Formula: subtotal = (max(0, (weight + jarti - own_gold)) / 11.664 * goldRate) + diamond/zircon/stone + jyala
         // Do NOT include discount here - discount is applied at order level only
-        const goldComponent = ((ornament.weight + jarti) / 11.664) * goldRate;
+        const netGoldWeight = Math.max(0, (ornament.weight + jarti) - ownGold);
+        const goldComponent = (netGoldWeight / 11.664) * goldRate;
         const diamondComponent = ornament.diamond_weight * diamondRate;
         const zirconComponent = (ornament.zircon_weight || 0) * zirconRate;
         const stoneComponent = ornament.stone_weight * stoneRate;
@@ -984,6 +1158,8 @@ function attachOrnamentCalculationListeners(ornamentId, ornament) {
         if (subtotalDisplay) {
             subtotalDisplay.value = Math.max(0, subtotal).toFixed(2);
         }
+
+        refreshGemColumnsVisibility();
         
         // Update order total
         updateOrderTotal();
@@ -994,6 +1170,7 @@ function attachOrnamentCalculationListeners(ornamentId, ornament) {
     zirconRateInput?.addEventListener('input', calculateSubtotal);
     stoneRateInput?.addEventListener('input', calculateSubtotal);
     jartiInput?.addEventListener('input', calculateSubtotal);
+    ownGoldInput?.addEventListener('input', calculateSubtotal);
     jyalaInput?.addEventListener('input', calculateSubtotal);
 
     // Jarti percentage dropdown
@@ -1172,6 +1349,7 @@ function removeOrnament(ornamentId) {
     if (row) row.remove();
     updateHiddenField();
     refreshSerialNumbers();
+    refreshGemColumnsVisibility();
     // Recalculate totals after removing an ornament
     updateOrderTotal();
 }
@@ -1208,6 +1386,7 @@ function buildOrderLinesPayload() {
         const zirconRateInput = document.querySelector(`.zircon-rate-input[data-id="${id}"]`);
         const stoneRateInput = document.querySelector(`.stone-rate-input[data-id="${id}"]`);
         const jartiInput = document.querySelector(`.jarti-input[data-id="${id}"]`);
+        const ownGoldInput = document.querySelector(`.own-gold-input[data-id="${id}"]`);
         const jyalaInput = document.querySelector(`.jyala-input[data-id="${id}"]`);
         const subtotalDisplay = document.querySelector(`.subtotal-display[data-id="${id}"]`);
 
@@ -1218,6 +1397,7 @@ function buildOrderLinesPayload() {
             zircon_rate: parseFloat(zirconRateInput?.value) || 0,
             stone_rate: parseFloat(stoneRateInput?.value) || 0,
             jarti: parseFloat(jartiInput?.value) || 0,
+            own_gold: parseFloat(ownGoldInput?.value) || 0,
             jyala: parseFloat(jyalaInput?.value) || 0,
             line_amount: parseFloat(subtotalDisplay?.value) || 0,
         };
@@ -1545,8 +1725,18 @@ function initFinancialFromHidden() {
 
 // Attach listeners to existing rows on page load
 document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.gem-toggle-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const group = this.getAttribute('data-gem-group');
+            if (group) {
+                toggleGemColumn(group);
+            }
+        });
+    });
+
     // For edit view, load ornaments already attached to this order
     initExistingOrnaments();
+    refreshGemColumnsVisibility();
 
     // Initialize payment rows
     initPaymentRows();
