@@ -679,12 +679,8 @@ def sales_monthly_tax_report(request):
 
     for sale in sales:
         order = sale.order
-        # Use taxable_amount field (gold/diamond only, excluding silver)
-        # If not available, calculate from subtotal
-        if order.taxable_amount:
-            taxable = order.taxable_amount
-        else:
-            taxable = (order.subtotal or 0)
+        # Use taxable_amount (gold/diamond only, discount already deducted)
+        taxable = order.taxable_amount if order.taxable_amount is not None else 0
         ws.append([
             sale.bill_no,
             order.customer_name,
