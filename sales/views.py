@@ -661,7 +661,19 @@ def sales_monthly_tax_report(request):
             sale_date__lte=end_date,
             order__tax__gt=0,
         )
-        .order_by("bill_no")
+        .annotate(
+            bill_no_is_non_numeric=Case(
+                When(bill_no__regex=r"^\d+$", then=Value(0)),
+                default=Value(1),
+                output_field=IntegerField(),
+            ),
+            bill_no_num=Case(
+                When(bill_no__regex=r"^\d+$", then=Cast("bill_no", IntegerField())),
+                default=Value(0),
+                output_field=IntegerField(),
+            ),
+        )
+        .order_by("bill_no_is_non_numeric", "bill_no_num", "id")
     )
 
     wb = openpyxl.Workbook()
