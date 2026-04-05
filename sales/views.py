@@ -674,17 +674,20 @@ def sales_monthly_tax_report(request):
     ws = wb.active
     ws.title = "Monthly Tax Report"
 
-    headers = ["Bill No", "Customer Name", "PAN", "Address", "Total Amount", "Tax"]
+    headers = ["Bill No", "Customer Name", "PAN", "Address", "Taxable Amount", "Tax"]
     ws.append(headers)
 
     for sale in sales:
         order = sale.order
+        taxable_amount = order.subtotal
+        if taxable_amount is None:
+            taxable_amount = (order.total or 0) - (order.tax or 0)
         ws.append([
             sale.bill_no,
             order.customer_name,
             order.pan_number or "",
             order.address or "",
-            order.total,
+            taxable_amount,
             order.tax,
         ])
 
