@@ -654,27 +654,21 @@ def sales_monthly_tax_report(request):
         messages.error(request, "Invalid month or year provided for the tax report.")
         return redirect("sales:sales_by_month")
 
-    sales = (
-        Sale.objects.select_related("order")
-        .filter(
+    sales = list(
+        Sale.objects.select_related("order").filter(
             sale_date__gte=start_date,
             sale_date__lte=end_date,
             order__tax__gt=0,
         )
-        .annotate(
-            bill_no_is_non_numeric=Case(
-                When(bill_no__regex=r"^\d+$", then=Value(0)),
-                default=Value(1),
-                output_field=IntegerField(),
-            ),
-            bill_no_num=Case(
-                When(bill_no__regex=r"^\d+$", then=Cast("bill_no", IntegerField())),
-                default=Value(0),
-                output_field=IntegerField(),
-            ),
-        )
-        .order_by("bill_no_is_non_numeric", "bill_no_num", "id")
     )
+
+    def _bill_no_sort_key(sale):
+        bill_no = str(sale.bill_no or "").strip()
+        if bill_no.isdigit():
+            return (0, int(bill_no), sale.id)
+        return (1, bill_no.lower(), sale.id)
+
+    sales.sort(key=_bill_no_sort_key)
 
     wb = openpyxl.Workbook()
     ws = wb.active
