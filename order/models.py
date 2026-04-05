@@ -83,6 +83,14 @@ class Order(models.Model):
         help_text='Amount of all ornaments before discount'
     )
 
+    # Taxable Amount: sum of gold and diamond ornaments only (excluding silver)
+    taxable_amount = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        default=0,
+        help_text='Taxable amount (gold and diamond ornaments only, excluding silver)'
+    )
+
     # Subtotal: amount minus discount (before tax)
     subtotal = models.DecimalField(
         max_digits=15,
@@ -135,6 +143,7 @@ class Order(models.Model):
         """Recalculate amount/subtotal/total/remaining based on lines and payments.
 
         - amount = sum of line_amount from all related order_ornaments and order_metals
+        - taxable_amount = sum of gold and diamond ornaments/metals only (exclude silver)
         - subtotal = max(0, amount - discount)
         - total = subtotal + tax
         - remaining_amount = max(0, total - payment_amount from OrderPayment)
@@ -150,10 +159,22 @@ class Order(models.Model):
         )
         line_sum = ornament_sum + metal_sum
 
+        # Calculate taxable amount (gold and diamond only, exclude silver)
+        taxable_ornament_sum = sum(
+            (line.line_amount or _D("0")) for line in self.order_ornaments.all()
+            if line.ornament.metal_type.lower() in ('gold', 'diamond')
+        )
+        taxable_metal_sum = sum(
+            (line.line_amount or _D("0")) for line in self.order_metals.all()
+            if (line.metal_type or '').lower() in ('gold', 'diamond')
+        )
+        taxable_sum = taxable_ornament_sum + taxable_metal_sum
+
         payment_entries = list(self.payments.all()) if hasattr(self, "payments") else []
         payment_sum = sum((p.amount or _D("0")) for p in payment_entries)
 
         self.amount = line_sum
+        self.taxable_amount = taxable_sum
 
         discount = self.discount or _D("0")
         tax = self.tax or _D("0")
@@ -166,6 +187,7 @@ class Order(models.Model):
 
         super().save(update_fields=[
             "amount",
+            "taxable_amount",
             "subtotal",
             "total",
             "remaining_amount",

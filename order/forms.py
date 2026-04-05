@@ -49,10 +49,11 @@ class OrderForm(forms.ModelForm):
         model = Order
         fields = [
             'order_date', 'deliver_date', 'customer_name', 'pan_number', 'address', 'phone_number', 'status',
-            'order_type', 'description', 'amount', 'subtotal', 'discount', 'tax', 'total',
+            'order_type', 'description', 'amount', 'taxable_amount', 'subtotal', 'discount', 'tax', 'total',
         ]
         widgets = {
             'amount': forms.HiddenInput(),
+            'taxable_amount': forms.HiddenInput(),
             'subtotal': forms.HiddenInput(),
             'discount': forms.HiddenInput(),
             'tax': forms.HiddenInput(),
