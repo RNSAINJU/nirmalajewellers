@@ -562,6 +562,10 @@
                                         <input type="number" id="order-discounted-amount" class="form-control form-control-sm" step="0.01" value="0" readonly style="background-color: #f0f0f0;">
                                     </div>
                                     <div class="col-6">
+                                        <label class="form-label fw-bold mb-1">Taxable Amount <small class="text-muted fw-normal">(Gold &amp; Diamond only)</small></label>
+                                        <input type="number" id="order-taxable-amount" class="form-control form-control-sm" step="0.01" value="0" readonly style="background-color: #fff3cd; border: 1px solid #ffc107;">
+                                    </div>
+                                    <div class="col-6">
                                         <label class="form-label fw-bold mb-1">Tax (2%)</label>
                                         <input type="number" id="order-tax" class="form-control form-control-sm" step="0.01" value="0.00" placeholder="Auto or custom">
                                     </div>
@@ -1306,39 +1310,52 @@ function updateDerivedFields(amount) {
         hiddenSubtotalField.value = discountedAmount.toFixed(2);
     }
 
-    // Sync hidden taxable_amount field (gold/diamond amounts only for tax calculation)
-    const hiddenTaxableField = document.querySelector('input[name="taxable_amount"]');
-    if (hiddenTaxableField) {
-        let goldDiamondAmount = 0;
-        document.querySelectorAll('.subtotal-display').forEach(field => {
-            const ornamentId = parseInt(field.getAttribute('data-id'));
+    // Calculate taxable amount (gold/diamond only)
+    let goldDiamondAmount = 0;
+    document.querySelectorAll('.subtotal-display').forEach(field => {
+        const ornamentId = parseInt(field.getAttribute('data-id'));
+        const ornament = selectedOrnaments[ornamentId];
+        if (ornament && (ornament.metal_type === 'Gold' || ornament.metal_type === 'Diamond')) {
+            goldDiamondAmount += parseFloat(field.value) || 0;
+        }
+    });
+    document.querySelectorAll('.subtotal-field').forEach(field => {
+        const ornamentId = parseInt(field.getAttribute('data-ornament-id'));
+        if (ornamentId) {
             const ornament = selectedOrnaments[ornamentId];
             if (ornament && (ornament.metal_type === 'Gold' || ornament.metal_type === 'Diamond')) {
                 goldDiamondAmount += parseFloat(field.value) || 0;
             }
-        });
-        document.querySelectorAll('.subtotal-field').forEach(field => {
-            const ornamentId = parseInt(field.getAttribute('data-ornament-id'));
-            if (ornamentId) {
-                const ornament = selectedOrnaments[ornamentId];
-                if (ornament && (ornament.metal_type === 'Gold' || ornament.metal_type === 'Diamond')) {
-                    goldDiamondAmount += parseFloat(field.value) || 0;
-                }
-            } else {
-                goldDiamondAmount += parseFloat(field.value) || 0;
-            }
-        });
-        let metalAmount = 0;
-        document.querySelectorAll('.metal-stock-row:not([data-deleted])').forEach(row => {
-            const metalType = row.querySelector('.metal-type')?.value;
-            if (metalType && metalType.toLowerCase() === 'silver') {
-                return;
-            }
-            const lineAmountField = row.querySelector('.line-amount');
-            metalAmount += parseFloat(lineAmountField?.value) || 0;
-        });
-        const taxableAmount = goldDiamondAmount + metalAmount;
+        } else {
+            goldDiamondAmount += parseFloat(field.value) || 0;
+        }
+    });
+    let metalTaxableAmount = 0;
+    document.querySelectorAll('.metal-stock-row:not([data-deleted])').forEach(row => {
+        const metalType = row.querySelector('.metal-type')?.value;
+        if (metalType && metalType.toLowerCase() === 'silver') {
+            return;
+        }
+        const lineAmountField = row.querySelector('.line-amount');
+        metalTaxableAmount += parseFloat(lineAmountField?.value) || 0;
+    });
+    const taxableAmountBeforeDiscount = goldDiamondAmount + metalTaxableAmount;
+
+    // Deduct discount proportionally: discount × (taxable / total_amount)
+    const taxableDiscountFraction = amount > 0 ? taxableAmountBeforeDiscount / amount : 0;
+    const taxableDiscount = discount * taxableDiscountFraction;
+    const taxableAmount = Math.max(0, taxableAmountBeforeDiscount - taxableDiscount);
+
+    // Sync hidden taxable_amount field
+    const hiddenTaxableField = document.querySelector('input[name="taxable_amount"]');
+    if (hiddenTaxableField) {
         hiddenTaxableField.value = taxableAmount.toFixed(2);
+    }
+
+    // Update visible Taxable Amount display
+    const taxableDisplayField = document.getElementById('order-taxable-amount');
+    if (taxableDisplayField) {
+        taxableDisplayField.value = taxableAmount.toFixed(2);
     }
 
     // Calculate final total: (amount - discount) + tax
@@ -1750,6 +1767,12 @@ function initFinancialFromHidden() {
 
         const discountedField = document.getElementById('order-discounted-amount');
         if (discountedField) discountedField.value = (amountVal - discountVal).toFixed(2);
+
+        // Populate taxable amount display from hidden field
+        const hiddenTaxable = document.querySelector('input[name="taxable_amount"]');
+        const taxableVal = parseFloat(hiddenTaxable?.value) || 0;
+        const taxableDisplayField = document.getElementById('order-taxable-amount');
+        if (taxableDisplayField) taxableDisplayField.value = taxableVal.toFixed(2);
 
         // Update remaining based on current payment rows
         const baseTotal = totalVal || (amountVal - discountVal + taxVal);

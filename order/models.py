@@ -168,13 +168,17 @@ class Order(models.Model):
             (line.line_amount or _D("0")) for line in self.order_metals.all()
             if (line.metal_type or '').lower() in ('gold', 'diamond')
         )
-        taxable_sum = taxable_ornament_sum + taxable_metal_sum
+        taxable_before_discount = taxable_ornament_sum + taxable_metal_sum
 
         payment_entries = list(self.payments.all()) if hasattr(self, "payments") else []
         payment_sum = sum((p.amount or _D("0")) for p in payment_entries)
 
         self.amount = line_sum
-        self.taxable_amount = taxable_sum
+
+        discount = self.discount or _D("0")
+        # Deduct discount proportionally from taxable amount
+        taxable_discount = (discount * taxable_before_discount / line_sum) if line_sum else _D("0")
+        self.taxable_amount = max(_D("0"), taxable_before_discount - taxable_discount)
 
         discount = self.discount or _D("0")
         tax = self.tax or _D("0")
