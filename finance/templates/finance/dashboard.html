@@ -11,8 +11,9 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
-                            <p class="text-muted mb-0" style="font-size: 0.85rem;">Total Expenses</p>
+                            <p class="text-muted mb-0" style="font-size: 0.85rem;">Total Expenses (Incl. Salary Paid)</p>
                             <h3 class="mb-0 mt-2" style="color: #e74c3c;">रु{{ total_expenses|floatformat:2 }}</h3>
+                            <small class="text-muted">Salary paid: रु{{ salary_paid_to_date|floatformat:2 }}</small>
                         </div>
                         <i class="bi bi-cash-flow" style="font-size: 2rem; color: #e74c3c; opacity: 0.3;"></i>
                     </div>

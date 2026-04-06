@@ -81,7 +81,9 @@ def finance_dashboard(request):
     """Finance dashboard with key metrics and summaries"""
     
     # Expenses metrics
-    total_expenses = Expense.objects.aggregate(Sum('amount'))['amount__sum'] or 0
+    direct_expenses_total = Expense.objects.aggregate(Sum('amount'))['amount__sum'] or 0
+    salary_paid_to_date = EmployeeSalary.objects.aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0
+    total_expenses = direct_expenses_total + salary_paid_to_date
     expenses_by_category = Expense.objects.values('category').annotate(total=Sum('amount')).order_by('-total')
     recent_expenses = Expense.objects.all().order_by('-expense_date')[:5]
     
@@ -130,6 +132,8 @@ def finance_dashboard(request):
     
     context = {
         'total_expenses': total_expenses,
+        'direct_expenses_total': direct_expenses_total,
+        'salary_paid_to_date': salary_paid_to_date,
         'expenses_by_category': expenses_by_category,
         'recent_expenses': recent_expenses,
         'total_employees': total_employees,
@@ -151,12 +155,16 @@ def expense_list(request):
     if category:
         expenses = expenses.filter(category=category)
     
-    total_expenses = expenses.aggregate(Sum('amount'))['amount__sum'] or 0
+    direct_expenses_total = expenses.aggregate(Sum('amount'))['amount__sum'] or 0
+    salary_paid_to_date = EmployeeSalary.objects.aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0
+    total_expenses = direct_expenses_total + salary_paid_to_date
     
     context = {
         'expenses': expenses,
         'categories': Expense.CATEGORY_CHOICES,
         'total_expenses': total_expenses,
+        'direct_expenses_total': direct_expenses_total,
+        'salary_paid_to_date': salary_paid_to_date,
     }
     return render(request, 'finance/expense_list.html', context)
 
