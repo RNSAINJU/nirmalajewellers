@@ -6,7 +6,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .models import Ornament, Stone, Motimala, Potey
 # Import ListView and CreateView for generic class-based views
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
-from .forms import OrnamentForm, KaligarCashAccountForm, KaligarGoldAccountForm
+from .forms import OrnamentForm, KaligarCashAccountForm, KaligarGoldAccountForm, KaligarLossReturnForm
 # Create Kaligar_CashAccount for a Kaligar
 @login_required(login_url='/accounts/login/')
 def create_kaligar_cash_account(request, kaligar_id=None):
@@ -32,6 +32,20 @@ def create_kaligar_gold_account(request, kaligar_id=None):
     else:
         form = KaligarGoldAccountForm(initial={'kaligar': kaligar})
     return render(request, 'ornament/kaligar_goldaccount_form.html', {'form': form, 'kaligar': kaligar})
+
+# Create Kaligar_LossReturn for a Kaligar
+@login_required(login_url='/accounts/login/')
+def create_kaligar_loss_return(request, kaligar_id=None):
+    from .models import Kaligar
+    kaligar = get_object_or_404(Kaligar, id=kaligar_id) if kaligar_id else None
+    if request.method == 'POST':
+        form = KaligarLossReturnForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect(f"{'/ornament/kaligars/'}?kaligar_id={kaligar_id}")
+    else:
+        form = KaligarLossReturnForm(initial={'kaligar': kaligar})
+    return render(request, 'ornament/kaligar_lossreturn_form.html', {'form': form, 'kaligar': kaligar})
 # Stones List and Create Views
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
@@ -1422,6 +1436,7 @@ def kaligar_list(request):
     
     kaligar_cash_accounts = None
     kaligar_gold_accounts = None
+    kaligar_loss_returns = None
     if selected_kaligar_id:
         try:
             selected_kaligar = Kaligar.objects.get(id=selected_kaligar_id)
@@ -1463,6 +1478,7 @@ def kaligar_list(request):
             # Add related accounts
             kaligar_cash_accounts = selected_kaligar.cash_accounts.all().order_by('-date')
             kaligar_gold_accounts = selected_kaligar.gold_accounts.all().order_by('-date')
+            kaligar_loss_returns = selected_kaligar.loss_returns.all().order_by('-date')
         except Kaligar.DoesNotExist:
             pass
     
@@ -1495,6 +1511,7 @@ def kaligar_list(request):
         'total_ornament_count': total_ornament_count,
         'kaligar_cash_accounts': kaligar_cash_accounts,
         'kaligar_gold_accounts': kaligar_gold_accounts,
+        'kaligar_loss_returns': kaligar_loss_returns,
     }
     
     return render(request, 'ornament/kaligar_list.html', context)

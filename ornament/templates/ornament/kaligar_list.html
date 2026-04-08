@@ -91,8 +91,11 @@
                         <a href="{% url 'ornament:create_kaligar_cash_account' selected_kaligar.id %}" class="btn btn-success btn-sm me-2">
                             <i class="bi bi-cash-coin"></i> Add Cash Account
                         </a>
-                        <a href="{% url 'ornament:create_kaligar_gold_account' selected_kaligar.id %}" class="btn btn-warning btn-sm">
+                        <a href="{% url 'ornament:create_kaligar_gold_account' selected_kaligar.id %}" class="btn btn-warning btn-sm me-2">
                             <i class="bi bi-coin"></i> Add Gold Account
+                        </a>
+                        <a href="{% url 'ornament:create_kaligar_loss_return' selected_kaligar.id %}" class="btn btn-danger btn-sm">
+                            <i class="bi bi-arrow-left-right"></i> Add Loss & Return
                         </a>
                     </div>
                     <div class="row">
@@ -198,6 +201,39 @@
                             </div>
                             {% else %}
                                 <div class="text-muted small">No gold account records.</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Kaligar Loss & Return Table -->
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <h5 class="mb-2"><i class="bi bi-arrow-left-right"></i> Loss & Return</h5>
+                            {% if kaligar_loss_returns and kaligar_loss_returns|length > 0 %}
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-sm mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Gold Loss</th>
+                                            <th>Gold Return</th>
+                                            <th>Remark</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for lr in kaligar_loss_returns %}
+                                        <tr>
+                                            <td>{{ lr.date }}</td>
+                                            <td>{{ lr.gold_loss }}</td>
+                                            <td>{{ lr.gold_return }}</td>
+                                            <td>{{ lr.remark|default:"-" }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                                <div class="text-muted small">No loss & return records.</div>
                             {% endif %}
                         </div>
                     </div>

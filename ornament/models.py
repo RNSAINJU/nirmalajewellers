@@ -178,6 +178,24 @@ class Kaligar_GoldAccount(models.Model):
     kaligar = models.ForeignKey(Kaligar, on_delete=models.CASCADE, related_name="gold_accounts")
 
 
+class Kaligar_LossReturn(models.Model):
+    date = NepaliDateField(null=True, blank=True)
+    gold_loss = models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        validators=[MinValueValidator(0)],
+        default=0
+    )
+    gold_return = models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        validators=[MinValueValidator(0)],
+        default=0
+    )
+    remark = models.CharField(max_length=255, blank=True, null=True)
+    kaligar = models.ForeignKey(Kaligar, on_delete=models.CASCADE, related_name="loss_returns")
+
+
 class Ornament(models.Model):
     """Ornament master for stock/order tracking."""
 
