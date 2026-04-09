@@ -2,7 +2,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from nepali_datetime_field.forms import NepaliDateField
 from decimal import Decimal
-from .models import Ornament, Kaligar_CashAccount, Kaligar_GoldAccount, Kaligar_LossReturn
+from .models import Ornament, Kaligar_Ornaments, Kaligar_CashAccount, Kaligar_GoldAccount, Kaligar_LossReturn
 
 # Form for Kaligar_CashAccount
 class KaligarCashAccountForm(forms.ModelForm):
@@ -21,6 +21,44 @@ class KaligarLossReturnForm(forms.ModelForm):
     class Meta:
         model = Kaligar_LossReturn
         fields = ['date', 'gold_loss', 'gold_return', 'remark', 'kaligar']
+
+
+class KaligarWorkRecordForm(forms.ModelForm):
+    class Meta:
+        model = Kaligar_Ornaments
+        fields = [
+            'date',
+            'gold_given',
+            'ornament_weight',
+            'jarti',
+            'gold_return',
+            'gold_loss',
+            'gold_purity',
+            'kaligar',
+        ]
+
+    def clean(self):
+        cleaned_data = super().clean()
+        for field_name in ['gold_given', 'ornament_weight', 'jarti', 'gold_return', 'gold_loss']:
+            value = cleaned_data.get(field_name)
+            if value in [None, '']:
+                cleaned_data[field_name] = Decimal('0.000')
+        return cleaned_data
+
+
+class OrnamentWorkGoldForm(forms.ModelForm):
+    class Meta:
+        model = Kaligar_Ornaments
+        fields = ['date', 'gold_given', 'gold_return', 'gold_loss']
+
+    def clean(self):
+        cleaned_data = super().clean()
+        for field_name in ['gold_given', 'gold_return', 'gold_loss']:
+            value = cleaned_data.get(field_name)
+            if value in [None, '']:
+                cleaned_data[field_name] = Decimal('0.000')
+        return cleaned_data
+
 import nepali_datetime as ndt
 
 

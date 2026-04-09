@@ -145,6 +145,7 @@ class Kaligar_Ornaments(models.Model):
         verbose_name="किसिम",
     )
     kaligar = models.ForeignKey(Kaligar, on_delete=models.CASCADE, related_name="kaligar_ornaments")
+    ornament = models.ForeignKey('Ornament', on_delete=models.SET_NULL, null=True, blank=True, related_name='kaligar_work_records')
 
 class Kaligar_CashAccount(models.Model):
     date=NepaliDateField(null=True, blank=True)

@@ -97,6 +97,9 @@
                         <a href="{% url 'ornament:create_kaligar_loss_return' selected_kaligar.id %}" class="btn btn-danger btn-sm">
                             <i class="bi bi-arrow-left-right"></i> Add Loss & Return
                         </a>
+                        <a href="{% url 'ornament:create_kaligar_work_record' selected_kaligar.id %}" class="btn btn-primary btn-sm ms-2">
+                            <i class="bi bi-pencil-square"></i> Add Work Record
+                        </a>
                     </div>
                     <div class="row">
                         <div class="col-md-6">
@@ -129,11 +132,70 @@
                                     <td><strong>गहना संख्या:</strong></td>
                                     <td>
                                         <span class="badge bg-primary">
-                                            {{ selected_kaligar_ornaments|length }}
+                                            {{ selected_ornament_count }}
                                         </span>
                                     </td>
                                 </tr>
                             </table>
+                        </div>
+                    </div>
+
+                    <!-- Kaligar Work Records (Kaligar_Ornaments) -->
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <h5 class="mb-2"><i class="bi bi-tools"></i> काम रेकर्डहरु (Work Records)</h5>
+                            {% if combined_work_records and combined_work_records|length > 0 %}
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-sm mb-0">
+                                    <thead class="table-warning">
+                                        <tr>
+                                            <th>मिति (Date)</th>
+                                            <th>रेकर्ड प्रकार (Type)</th>
+                                            <th>कोड (Code)</th>
+                                            <th>गहना (Ornament)</th>
+                                            <th class="text-end">सुन दिएको (Gold Given)</th>
+                                            <th class="text-end">गहना वजन (Ornament Wt)</th>
+                                            <th class="text-end">जर्ती (Jarti)</th>
+                                            <th class="text-end">सुन फर्काएको (Gold Return)</th>
+                                            <th class="text-end">सुन घाटा (Gold Loss)</th>
+                                            <th>किसिम (Purity)</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for rec in combined_work_records %}
+                                        <tr>
+                                            <td>{{ rec.date|default:"-" }}</td>
+                                            <td>
+                                                {% if rec.record_type == 'ornament' %}
+                                                    <span class="badge bg-info text-dark">Ornament</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Ledger</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ rec.code|default:"-" }}</td>
+                                            <td>{{ rec.ornament_name|default:"-" }}</td>
+                                            <td class="text-end">{{ rec.gold_given|default:"-"|floatformat:3 }}</td>
+                                            <td class="text-end">{{ rec.ornament_weight|default:"-"|floatformat:3 }}</td>
+                                            <td class="text-end">{{ rec.jarti|default:"-"|floatformat:3 }}</td>
+                                            <td class="text-end">{{ rec.gold_return|default:"-"|floatformat:3 }}</td>
+                                            <td class="text-end">{{ rec.gold_loss|default:"-"|floatformat:3 }}</td>
+                                            <td>{{ rec.purity_label|default:"-" }}</td>
+                                            <td>
+                                                {% if rec.record_type == 'ornament' %}
+                                                    <a href="{% url 'ornament:edit_ornament_work_record' rec.record_id %}" class="btn btn-outline-primary btn-sm">Input Gold</a>
+                                                {% else %}
+                                                    <a href="{% url 'ornament:update_kaligar_work_record' rec.record_id %}" class="btn btn-outline-secondary btn-sm">Edit</a>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                                <div class="text-muted small">No work records found.</div>
+                            {% endif %}
                         </div>
                     </div>
 
@@ -266,13 +328,16 @@
                                     <thead class="table-light sticky-top">
                                         <tr>
                                             <th width="5%">कोड</th>
-                                            <th width="20%">गहना</th>
-                                            <th width="12%" class="text-end">वजन (g)</th>
-                                            <th width="10%" class="text-end">जर्ती</th>
-                                            <th width="10%" class="text-end">जयाला</th>
-                                            <th width="12%" class="text-end">ग्रास वजन</th>
-                                            <th width="12%" class="text-end">हीरा वजन</th>
-                                            <th width="9%">किसिम</th>
+                                            <th width="15%">गहना</th>
+                                            <th width="9%">मिति</th>
+                                            <th width="8%" class="text-end">वजन (g)</th>
+                                            <th width="8%" class="text-end">जर्ती</th>
+                                            <th width="8%" class="text-end">जयाला</th>
+                                            <th width="9%" class="text-end">ग्रास वजन</th>
+                                            <th width="9%" class="text-end">हीरा वजन</th>
+                                            <th width="8%">किसिम</th>
+                                            <th width="8%">प्रकार</th>
+                                            <th width="7%">स्थिति</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -289,6 +354,9 @@
                                                     <br><small class="text-muted">{{ ornament.maincategory }}</small>
                                                 {% endif %}
                                             </td>
+                                            <td>
+                                                <small>{{ ornament.ornament_date|default:"-" }}</small>
+                                            </td>
                                             <td class="text-end">
                                                 <strong class="text-primary">{{ ornament.weight|floatformat:3 }}</strong>
                                             </td>
@@ -301,18 +369,34 @@
                                                     {{ ornament.get_type_display }}
                                                 </span>
                                             </td>
+                                            <td>
+                                                <span class="badge bg-info text-dark">
+                                                    {{ ornament.get_ornament_type_display }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% if ornament.status == 'active' %}
+                                                    <span class="badge bg-success">Active</span>
+                                                {% elif ornament.status == 'deleted' %}
+                                                    <span class="badge bg-danger">Deleted</span>
+                                                {% elif ornament.status == 'destroyed' %}
+                                                    <span class="badge bg-dark">Destroyed</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">{{ ornament.status }}</span>
+                                                {% endif %}
+                                            </td>
                                         </tr>
                                         {% endfor %}
                                     </tbody>
                                     <tfoot class="table-light border-top fw-bold small">
                                         <tr>
-                                            <td colspan="2" class="text-end">{{ metal_type }} Total:</td>
+                                            <td colspan="3" class="text-end">{{ metal_type }} Total:</td>
                                             <td class="text-end text-primary">{{ metal_type_totals|get_item:metal_type|get_item:'weight'|floatformat:3 }}</td>
                                             <td class="text-end">{{ metal_type_totals|get_item:metal_type|get_item:'jarti'|floatformat:3 }}</td>
                                             <td class="text-end">{{ metal_type_totals|get_item:metal_type|get_item:'jyala'|floatformat:3 }}</td>
                                             <td class="text-end">{{ metal_type_totals|get_item:metal_type|get_item:'gross_weight'|floatformat:3 }}</td>
                                             <td class="text-end">{{ metal_type_totals|get_item:metal_type|get_item:'diamond_weight'|floatformat:3 }}</td>
-                                            <td></td>
+                                            <td colspan="3"></td>
                                         </tr>
                                     </tfoot>
                                 </table>

@@ -40,18 +40,18 @@
         .btn-back:hover { background: #374151; color: #fff; }
 
         .label-card {
-            width: 130mm;
-            min-height: 36mm;
+            width: 100mm;
+            min-height: 26mm;
             background: #efefef;
             border: 1px solid #b5b5b5;
-            border-radius: 9mm;
+            border-radius: 5mm;
             display: flex;
             align-items: stretch;
             justify-content: space-between;
             overflow: hidden;
-            padding: 3.8mm 4.5mm;
-            gap: 4mm;
-            box-shadow: 0 1.2mm 2.2mm rgba(0, 0, 0, 0.22);
+            padding: 1.8mm 2.8mm;
+            gap: 1.6mm;
+            box-shadow: 0 1.1mm 2mm rgba(0, 0, 0, 0.24);
         }
 
         .label-left {
@@ -60,83 +60,71 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
-            gap: 1.8mm;
-            line-height: 1.08;
-        }
-
-        .line-main {
-            font-size: 5.1mm;
-            font-weight: 700;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .line-code {
-            font-size: 5.4mm;
-            font-weight: 700;
-            letter-spacing: 0.08mm;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .line-meta {
-            font-size: 5.2mm;
-            font-weight: 700;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .line-stone {
-            font-size: 5.2mm;
-            font-weight: 700;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .label-right {
-            width: 52mm;
-            min-width: 52mm;
-            display: flex;
-            flex-direction: column;
             align-items: center;
-            justify-content: flex-start;
+            gap: 0.7mm;
             line-height: 1;
+            padding-right: 0.8mm;
+            border-right: 1px solid #c7c7c7;
+        }
+
+        .label-title {
+            font-size: 2.7mm;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+            text-align: center;
         }
 
         .barcode-img {
-            width: 52mm;
-            height: 20mm;
+            width: 100%;
+            max-width: 24.8mm;
+            height: 9.8mm;
             object-fit: fill;
             image-rendering: pixelated;
             image-rendering: crisp-edges;
         }
 
-        .barcode-text {
-            margin-top: 1.2mm;
-            font-size: 5.3mm;
+        .label-right {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 0.65mm;
+            line-height: 1.04;
+            padding-left: 0.8mm;
+        }
+
+        .line-code {
+            font-size: 6.1mm;
             font-weight: 700;
-            font-family: monospace;
-            letter-spacing: 0.12mm;
+            letter-spacing: 0.04mm;
             white-space: nowrap;
-            max-width: 52mm;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .line-meta,
+        .line-stone {
+            font-size: 4.45mm;
+            font-weight: 700;
+            white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
         @page {
-            size: 130mm 36mm;
+            size: 100mm 26mm;
             margin: 0;
         }
 
         @media print {
             html,
             body {
-                width: 130mm !important;
-                height: 36mm !important;
+                width: auto !important;
+                height: auto !important;
                 margin: 0 !important;
                 padding: 0 !important;
                 overflow: hidden !important;
@@ -152,17 +140,17 @@
             .no-print { display: none !important; }
 
             .label-card {
-                width: 130mm !important;
-                min-height: 36mm !important;
+                width: 100mm !important;
+                height: 26mm !important;
+                min-height: 26mm !important;
                 margin: 0 !important;
-                padding: 3.8mm 4.5mm !important;
+                padding: 1.8mm 2.8mm !important;
                 box-shadow: none;
-                border-radius: 9mm !important;
-                position: fixed;
-                top: 0;
-                left: 0;
+                border-radius: 5mm !important;
+                position: static !important;
                 page-break-inside: avoid;
                 page-break-after: avoid;
+                break-inside: avoid;
             }
         }
     </style>
@@ -176,7 +164,7 @@
 
     <div class="label-card">
         <div class="label-left">
-            <div class="line-main">{{ ornament.ornament_name }}
+            <div class="label-title">{{ ornament.ornament_name }}
                 {% if ornament.type == '24KARAT' %} 24K
                 {% elif ornament.type == '23KARAT' %} 23K
                 {% elif ornament.type == '22KARAT' %} 22K
@@ -184,30 +172,29 @@
                 {% elif ornament.type == '14KARAT' %} 14K
                 {% endif %}
             </div>
-            <div class="line-code">{% if ornament.code %}{{ ornament.code }}{% endif %}</div>
-            <div class="line-meta">
-                NW: {{ ornament.weight|floatformat:3 }} GW: {{ ornament.gross_weight|floatformat:3 }}
-            </div>
-            <div class="line-stone">
-                {% if ornament.diamond_weight and ornament.diamond_weight > 0 %}
-                    Diamond: {{ ornament.diamond_weight|floatformat:2 }} ct
-                {% elif ornament.stone_weight and ornament.stone_weight > 0 %}
-                    Stone: {{ ornament.stone_weight|floatformat:2 }} ct
-                {% else %}
-                    Diamond: 0.00 ct
-                {% endif %}
-            </div>
-        </div>
-
-        <div class="label-right">
             {% if barcode_base64 %}
                 <img class="barcode-img" src="data:image/png;base64,{{ barcode_base64 }}" alt="Barcode">
             {% elif ornament.barcode_image %}
                 <img class="barcode-img" src="{{ ornament.barcode_image.url }}" alt="Barcode">
             {% endif %}
-            {% if ornament.barcode %}
-                <div class="barcode-text">{{ ornament.barcode }}</div>
-            {% endif %}
+        </div>
+
+        <div class="label-right">
+            <div class="line-code">{% if ornament.code %}{{ ornament.code }}{% endif %}</div>
+            <div class="line-meta">
+                Gw: {{ ornament.gross_weight|floatformat:2 }}&nbsp;&nbsp; Nw: {{ ornament.weight|floatformat:2 }}
+            </div>
+            <div class="line-stone">
+                {% if ornament.zircon_weight and ornament.zircon_weight > 0 %}
+                    Z: {{ ornament.zircon_weight|floatformat:2 }} ct
+                {% elif ornament.diamond_weight and ornament.diamond_weight > 0 %}
+                    D: {{ ornament.diamond_weight|floatformat:2 }} ct
+                {% elif ornament.stone_weight and ornament.stone_weight > 0 %}
+                    S: {{ ornament.stone_weight|floatformat:2 }} ct
+                {% else %}
+                    Z: 0.00 ct
+                {% endif %}
+            </div>
         </div>
     </div>
 

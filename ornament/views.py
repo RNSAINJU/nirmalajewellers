@@ -6,7 +6,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .models import Ornament, Stone, Motimala, Potey
 # Import ListView and CreateView for generic class-based views
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
-from .forms import OrnamentForm, KaligarCashAccountForm, KaligarGoldAccountForm, KaligarLossReturnForm
+from .forms import OrnamentForm, KaligarCashAccountForm, KaligarGoldAccountForm, KaligarLossReturnForm, KaligarWorkRecordForm, OrnamentWorkGoldForm
 # Create Kaligar_CashAccount for a Kaligar
 @login_required(login_url='/accounts/login/')
 def create_kaligar_cash_account(request, kaligar_id=None):
@@ -46,6 +46,88 @@ def create_kaligar_loss_return(request, kaligar_id=None):
     else:
         form = KaligarLossReturnForm(initial={'kaligar': kaligar})
     return render(request, 'ornament/kaligar_lossreturn_form.html', {'form': form, 'kaligar': kaligar})
+
+
+@login_required(login_url='/accounts/login/')
+def create_kaligar_work_record(request, kaligar_id=None):
+    kaligar = get_object_or_404(Kaligar, id=kaligar_id) if kaligar_id else None
+    if request.method == 'POST':
+        form = KaligarWorkRecordForm(request.POST)
+        if form.is_valid():
+            record = form.save()
+            return redirect(f"{'/ornament/kaligars/'}?kaligar_id={record.kaligar_id}")
+    else:
+        form = KaligarWorkRecordForm(initial={'kaligar': kaligar})
+    return render(request, 'ornament/kaligar_workrecord_form.html', {'form': form, 'kaligar': kaligar, 'is_edit': False})
+
+
+@login_required(login_url='/accounts/login/')
+def update_kaligar_work_record(request, pk):
+    record = get_object_or_404(Kaligar_Ornaments, pk=pk)
+    if request.method == 'POST':
+        form = KaligarWorkRecordForm(request.POST, instance=record)
+        if form.is_valid():
+            updated = form.save()
+            return redirect(f"{'/ornament/kaligars/'}?kaligar_id={updated.kaligar_id}")
+    else:
+        form = KaligarWorkRecordForm(instance=record)
+    return render(request, 'ornament/kaligar_workrecord_form.html', {'form': form, 'kaligar': record.kaligar, 'is_edit': True, 'record': record})
+
+
+@login_required(login_url='/accounts/login/')
+def edit_ornament_work_record(request, ornament_id):
+    ornament = get_object_or_404(Ornament, pk=ornament_id)
+    work_record = Kaligar_Ornaments.objects.filter(ornament=ornament).order_by('-id').first()
+
+    initial_data = {
+        'kaligar': ornament.kaligar,
+        'ornament': ornament,
+        'date': ornament.ornament_date,
+        'ornament_weight': ornament.weight,
+        'jarti': ornament.jarti,
+        'gold_purity': ornament.type if ornament.type in {
+            Kaligar_Ornaments.TypeCategory.TWENTYFOURKARAT,
+            Kaligar_Ornaments.TypeCategory.TWENTYTWOKARAT,
+            Kaligar_Ornaments.TypeCategory.EIGHTEENKARAT,
+            Kaligar_Ornaments.TypeCategory.FOURTEENKARAT,
+        } else Kaligar_Ornaments.TypeCategory.TWENTYFOURKARAT,
+    }
+
+    if request.method == 'POST':
+        if work_record:
+            form = OrnamentWorkGoldForm(request.POST, instance=work_record)
+        else:
+            form = OrnamentWorkGoldForm(request.POST, initial=initial_data)
+        if form.is_valid():
+            saved = form.save(commit=False)
+            saved.kaligar = ornament.kaligar
+            saved.ornament = ornament
+            saved.ornament_weight = ornament.weight
+            saved.jarti = ornament.jarti
+            if saved.gold_purity not in {
+                Kaligar_Ornaments.TypeCategory.TWENTYFOURKARAT,
+                Kaligar_Ornaments.TypeCategory.TWENTYTWOKARAT,
+                Kaligar_Ornaments.TypeCategory.EIGHTEENKARAT,
+                Kaligar_Ornaments.TypeCategory.FOURTEENKARAT,
+            }:
+                saved.gold_purity = Kaligar_Ornaments.TypeCategory.TWENTYFOURKARAT
+            saved.save()
+            return redirect(f"{'/ornament/kaligars/'}?kaligar_id={ornament.kaligar_id}")
+    else:
+        form = OrnamentWorkGoldForm(instance=work_record, initial=initial_data)
+
+    return render(
+        request,
+        'ornament/kaligar_workrecord_form.html',
+        {
+            'form': form,
+            'kaligar': ornament.kaligar,
+            'is_edit': bool(work_record),
+            'record': work_record,
+            'ornament': ornament,
+            'for_ornament_entry': True,
+        },
+    )
 # Stones List and Create Views
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
@@ -112,7 +194,7 @@ from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.db.models import Sum, F, DecimalField
 from django.db.models.functions import Coalesce
-from .models import Kaligar, Ornament, MainCategory, SubCategory
+from .models import Kaligar, Kaligar_Ornaments, Ornament, MainCategory, SubCategory
 from order.models import Order, OrderOrnament
 from .forms import OrnamentForm
 from django.http import HttpResponse
@@ -1437,10 +1519,12 @@ def kaligar_list(request):
     kaligar_cash_accounts = None
     kaligar_gold_accounts = None
     kaligar_loss_returns = None
+    kaligar_work_records = None
+    combined_work_records = []
     if selected_kaligar_id:
         try:
             selected_kaligar = Kaligar.objects.get(id=selected_kaligar_id)
-            all_ornaments = selected_kaligar.ornaments.all().order_by('-ornament_date')
+            all_ornaments = selected_kaligar.ornaments.all().select_related('maincategory', 'subcategory').order_by('-ornament_date')
             # Group ornaments by metal type and calculate totals
             for ornament in all_ornaments:
                 metal_type = ornament.get_metal_type_display()
@@ -1479,6 +1563,48 @@ def kaligar_list(request):
             kaligar_cash_accounts = selected_kaligar.cash_accounts.all().order_by('-date')
             kaligar_gold_accounts = selected_kaligar.gold_accounts.all().order_by('-date')
             kaligar_loss_returns = selected_kaligar.loss_returns.all().order_by('-date')
+            kaligar_work_records = selected_kaligar.kaligar_ornaments.select_related('ornament').all().order_by('-date', '-id')
+            ornament_record_map = {}
+            for rec in kaligar_work_records:
+                if rec.ornament_id and rec.ornament_id not in ornament_record_map:
+                    ornament_record_map[rec.ornament_id] = rec
+
+            # Build combined work records that include all ornaments made by this kaligar
+            for ornament in all_ornaments:
+                linked_record = ornament_record_map.get(ornament.id)
+                combined_work_records.append({
+                    'date': ornament.ornament_date,
+                    'record_type': 'ornament',
+                    'record_type_label': 'Ornament',
+                    'record_id': ornament.id,
+                    'work_record_id': linked_record.id if linked_record else None,
+                    'code': ornament.code,
+                    'ornament_name': ornament.ornament_name,
+                    'gold_given': linked_record.gold_given if linked_record else None,
+                    'ornament_weight': ornament.weight,
+                    'jarti': ornament.jarti,
+                    'gold_return': linked_record.gold_return if linked_record else None,
+                    'gold_loss': linked_record.gold_loss if linked_record else None,
+                    'purity_label': ornament.get_type_display(),
+                })
+
+            for rec in kaligar_work_records:
+                if rec.ornament_id:
+                    continue
+                combined_work_records.append({
+                    'date': rec.date,
+                    'record_type': 'ledger',
+                    'record_type_label': 'Ledger',
+                    'record_id': rec.id,
+                    'code': None,
+                    'ornament_name': None,
+                    'gold_given': rec.gold_given,
+                    'ornament_weight': rec.ornament_weight,
+                    'jarti': rec.jarti,
+                    'gold_return': rec.gold_return,
+                    'gold_loss': rec.gold_loss,
+                    'purity_label': rec.get_gold_purity_display(),
+                })
         except Kaligar.DoesNotExist:
             pass
     
@@ -1501,10 +1627,14 @@ def kaligar_list(request):
             'ornament_count': ornament_count
         })
     
+    # Total count of ornaments for the selected kaligar
+    selected_ornament_count = sum(len(v) for v in ornaments_by_metal_type.values()) if ornaments_by_metal_type else 0
+
     context = {
         'kaligars': kaligars_with_weights,
         'selected_kaligar': selected_kaligar,
         'selected_kaligar_ornaments': selected_kaligar_ornaments,
+        'selected_ornament_count': selected_ornament_count,
         'ornaments_by_metal_type': ornaments_by_metal_type,
         'metal_type_totals': metal_type_totals,
         'overall_totals': overall_totals,
@@ -1512,6 +1642,8 @@ def kaligar_list(request):
         'kaligar_cash_accounts': kaligar_cash_accounts,
         'kaligar_gold_accounts': kaligar_gold_accounts,
         'kaligar_loss_returns': kaligar_loss_returns,
+        'kaligar_work_records': kaligar_work_records,
+        'combined_work_records': combined_work_records,
     }
     
     return render(request, 'ornament/kaligar_list.html', context)
