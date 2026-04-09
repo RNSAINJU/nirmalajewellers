@@ -1585,6 +1585,7 @@ def kaligar_list(request):
                     'jarti': ornament.jarti,
                     'gold_return': linked_record.gold_return if linked_record else None,
                     'gold_loss': linked_record.gold_loss if linked_record else None,
+                    'final_jarti': (ornament.jarti or Decimal('0')) - ((linked_record.gold_loss if linked_record else Decimal('0')) or Decimal('0')),
                     'purity_label': ornament.get_type_display(),
                 })
 
@@ -1603,6 +1604,7 @@ def kaligar_list(request):
                     'jarti': rec.jarti,
                     'gold_return': rec.gold_return,
                     'gold_loss': rec.gold_loss,
+                    'final_jarti': (rec.jarti or Decimal('0')) - (rec.gold_loss or Decimal('0')),
                     'purity_label': rec.get_gold_purity_display(),
                 })
         except Kaligar.DoesNotExist:

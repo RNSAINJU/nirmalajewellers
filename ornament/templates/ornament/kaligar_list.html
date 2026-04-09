@@ -158,6 +158,7 @@
                                             <th class="text-end">जर्ती (Jarti)</th>
                                             <th class="text-end">सुन फर्काएको (Gold Return)</th>
                                             <th class="text-end">सुन घाटा (Gold Loss)</th>
+                                            <th class="text-end">Final Jarti</th>
                                             <th>किसिम (Purity)</th>
                                             <th>Action</th>
                                         </tr>
@@ -180,6 +181,7 @@
                                             <td class="text-end">{{ rec.jarti|default:"-"|floatformat:3 }}</td>
                                             <td class="text-end">{{ rec.gold_return|default:"-"|floatformat:3 }}</td>
                                             <td class="text-end">{{ rec.gold_loss|default:"-"|floatformat:3 }}</td>
+                                            <td class="text-end fw-semibold">{{ rec.final_jarti|floatformat:3 }}</td>
                                             <td>{{ rec.purity_label|default:"-" }}</td>
                                             <td>
                                                 {% if rec.record_type == 'ornament' %}
