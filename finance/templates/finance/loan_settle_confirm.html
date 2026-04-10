@@ -9,7 +9,7 @@
 {% block main_content %}
 <div class="container-fluid">
     <div class="row justify-content-center">
-        <div class="col-md-7 col-lg-5">
+        <div class="col-md-7 col-lg-6">
             <div class="card shadow-sm border-success">
                 <div class="card-header bg-success text-white">
                     <h5 class="mb-0">
@@ -34,7 +34,7 @@
                             <td>रु{{ loan.amount|floatformat:2 }}</td>
                         </tr>
                         <tr>
-                            <th class="table-light">Interest Rate</th>
+                            <th class="table-light">Interest Rate (Stated)</th>
                             <td>{{ loan.interest_rate }}% p.a.</td>
                         </tr>
                         <tr>
@@ -42,7 +42,7 @@
                             <td>{{ loan.start_date }}</td>
                         </tr>
                         <tr>
-                            <th class="table-light">Total Interest Paid</th>
+                            <th class="table-light">Total Interest Paid (Recorded)</th>
                             <td>
                                 {% if loan.total_interest_paid > 0 %}
                                 रु{{ loan.total_interest_paid|floatformat:2 }}
@@ -61,11 +61,43 @@
 
                     <form method="post">
                         {% csrf_token %}
-                        <div class="mb-4">
-                            <label class="form-label fw-semibold">Settlement Date (BS)</label>
+
+                        <!-- Settlement Date -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Settlement Date (BS) <span class="text-danger">*</span></label>
                             <input type="text" name="settled_date" class="form-control"
                                    placeholder="e.g. 2082-01-15" required>
                             <div class="form-text">Enter the date when the loan was fully paid off (BS format: YYYY-MM-DD).</div>
+                        </div>
+
+                        <!-- Final Interest Paid -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Final Interest Paid (रु) <span class="text-muted">(Optional)</span></label>
+                            <input type="number" name="final_interest_paid" class="form-control"
+                                   placeholder="e.g. 50000" step="0.01" min="0" id="finalInterestField">
+                            <div class="form-text">Enter the actual total interest paid. Leave blank if using recorded payments above.</div>
+                        </div>
+
+                        <!-- Settlement Months -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Loan Duration (Months) <span class="text-muted">(Optional)</span></label>
+                            <input type="number" name="settlement_months" class="form-control"
+                                   placeholder="e.g. 12" min="1" max="600" id="settlementMonthsField">
+                            <div class="form-text">Number of months the loan was active (used to calculate effective interest rate).</div>
+                        </div>
+
+                        <!-- Calculated Metrics (Display Only) -->
+                        <div class="alert alert-info mb-4">
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Final Int. as % of Loan</small>
+                                    <strong id="finalInterestPercentage">—</strong>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Effective Rate (p.a.)</small>
+                                    <strong id="effectiveRate">—</strong>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="d-flex gap-2">
@@ -82,4 +114,46 @@
         </div>
     </div>
 </div>
+
+<script>
+(function () {
+    const loanAmount = {{ loan.amount|floatformat:2 }};
+    const finalInterestField = document.getElementById('finalInterestField');
+    const settlementMonthsField = document.getElementById('settlementMonthsField');
+    const finalInterestPercentageDisplay = document.getElementById('finalInterestPercentage');
+    const effectiveRateDisplay = document.getElementById('effectiveRate');
+
+    function updateMetrics() {
+        const finalInterest = parseFloat(finalInterestField.value) || 0;
+        const months = parseInt(settlementMonthsField.value) || 0;
+
+        // Calculate final interest percentage: (Interest / Loan) * 100
+        if (finalInterest > 0) {
+            const interestPercentage = (finalInterest / loanAmount) * 100;
+            finalInterestPercentageDisplay.textContent = interestPercentage.toFixed(2) + '%';
+        } else {
+            finalInterestPercentageDisplay.textContent = '—';
+        }
+
+        // Calculate effective rate: (Interest / Loan) * (12 / Months) * 100
+        if (finalInterest > 0 && months > 0) {
+            const effectiveRate = (finalInterest / loanAmount) * (12 / months) * 100;
+            effectiveRateDisplay.textContent = effectiveRate.toFixed(2) + '%';
+        } else {
+            effectiveRateDisplay.textContent = '—';
+        }
+    }
+
+    finalInterestField.addEventListener('input', updateMetrics);
+    settlementMonthsField.addEventListener('input', updateMetrics);
+
+    // Initial calculation if pre-populated
+    updateMetrics();
+})();
+</script>
+
+<style>
+    .alert-info { background-color: #cfe2ff; border-color: #b6d4fe; }
+    .form-text { font-size: 0.85rem; }
+</style>
 {% endblock %}

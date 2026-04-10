@@ -12,6 +12,8 @@ class Loan(models.Model):
     notes = models.TextField(blank=True, null=True)
     is_settled = models.BooleanField(default=False, help_text="Mark as settled/fully paid")
     settled_date = NepaliDateField(blank=True, null=True, help_text="Date when loan was settled")
+    final_interest_paid = models.DecimalField(max_digits=14, decimal_places=2, blank=True, null=True, help_text="Final interest paid at settlement")
+    settlement_months = models.PositiveSmallIntegerField(blank=True, null=True, help_text="Number of months the loan was active")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -43,6 +45,27 @@ class Loan(models.Model):
         from django.db.models import Sum
         result = self.interest_payments.aggregate(Sum('amount'))['amount__sum']
         return result or Decimal('0')
+
+    @property
+    def effective_interest_rate(self):
+        """Calculate effective interest rate based on final interest paid and settlement months"""
+        if not self.final_interest_paid or not self.settlement_months or self.amount == 0:
+            return None
+        
+        # Formula: (Final Interest / Loan Amount) * (12 / Months) * 100
+        # This converts the actual interest to an annualized percentage
+        rate = (self.final_interest_paid / self.amount) * (Decimal('12') / Decimal(str(self.settlement_months))) * Decimal('100')
+        return rate
+
+    @property
+    def final_interest_percentage(self):
+        """Calculate final interest as percentage of loan amount"""
+        if not self.final_interest_paid or self.amount == 0:
+            return None
+        
+        # (Final Interest / Loan Amount) * 100
+        percentage = (self.final_interest_paid / self.amount) * Decimal('100')
+        return percentage
 
 
 class LoanInterestPayment(models.Model):
