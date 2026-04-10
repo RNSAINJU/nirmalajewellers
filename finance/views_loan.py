@@ -257,15 +257,39 @@ def loan_settle(request, pk):
 
     if request.method == 'POST':
         settled_date = request.POST.get('settled_date', '')
+        final_interest_paid = request.POST.get('final_interest_paid', '')
+        settlement_months = request.POST.get('settlement_months', '')
+
         if not settled_date:
-            messages.error(request, 'Settled date is required.')
+            messages.error(request, 'Settlement date is required.')
             return render(request, 'finance/loan_settle_confirm.html', {'loan': loan})
 
-        loan.is_settled = True
-        loan.settled_date = settled_date
-        loan.save()
-        messages.success(request, f'Loan from {loan.bank_name} (रु{loan.amount}) has been marked as settled.')
-        return redirect('finance:loan_list')
+        try:
+            loan.is_settled = True
+            loan.settled_date = settled_date
+            
+            # Update final interest paid if provided
+            if final_interest_paid:
+                loan.final_interest_paid = Decimal(final_interest_paid)
+            
+            # Update settlement months if provided
+            if settlement_months:
+                loan.settlement_months = int(settlement_months)
+            
+            loan.save()
+            
+            # Build success message with calculated metrics
+            message = f'Loan from {loan.bank_name} (रु{loan.amount}) has been marked as settled.'
+            if loan.final_interest_paid:
+                message += f' Final interest: रु{loan.final_interest_paid}.'
+                if loan.effective_interest_rate:
+                    message += f' Effective rate: {loan.effective_interest_rate:.2f}% p.a.'
+            
+            messages.success(request, message)
+            return redirect('finance:loan_list')
+        except (ValueError, TypeError) as e:
+            messages.error(request, f'Error processing settlement: {str(e)}')
+            return render(request, 'finance/loan_settle_confirm.html', {'loan': loan})
 
     return render(request, 'finance/loan_settle_confirm.html', {'loan': loan})
 

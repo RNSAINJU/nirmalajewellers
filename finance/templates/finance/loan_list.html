@@ -230,6 +230,28 @@
                                         </div>
                                     </td>
                                 </tr>
+                                {% if loan.is_settled and loan.final_interest_paid %}
+                                <tr class="bg-light">
+                                    <td colspan="10" class="py-2 ps-4 border-top-0">
+                                        <small class="text-muted fw-semibold me-3">
+                                            <i class="bi bi-check-circle-fill text-success"></i> Settlement Details:
+                                        </small>
+                                        <span class="badge bg-success me-2">
+                                            Final Interest: रु{{ loan.final_interest_paid|floatformat:2 }}
+                                        </span>
+                                        {% if loan.final_interest_percentage %}
+                                        <span class="badge bg-info me-2">
+                                            Interest %: {{ loan.final_interest_percentage|floatformat:2 }}%
+                                        </span>
+                                        {% endif %}
+                                        {% if loan.effective_interest_rate %}
+                                        <span class="badge bg-warning text-dark">
+                                            Effective Rate: {{ loan.effective_interest_rate|floatformat:2 }}% p.a.
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endif %}
                                 {% if loan.interest_payments.all %}
                                 <tr class="bg-light">
                                     <td colspan="10" class="py-2 ps-4 border-top-0">
