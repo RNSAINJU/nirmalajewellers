@@ -1,0 +1,231 @@
+{% extends 'finance/base_finance.html' %}
+
+{% block action_buttons %}
+<a href="{% url 'finance:loan_list' %}" class="btn btn-secondary">
+    <i class="bi bi-arrow-left"></i> Back to Loans
+</a>
+{% endblock %}
+
+{% block main_content %}
+<div class="container-fluid">
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-calculator"></i> Dhukuti Payment Calculator</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="mb-3">
+                        <label class="form-label fw-semibold">Load Saved Dhukuti Record</label>
+                        <select name="dhukuti" class="form-select" onchange="this.form.submit()">
+                            <option value="">-- Select Saved Record --</option>
+                            {% for dloan in dhukuti_loans %}
+                            <option value="{{ dloan.pk }}" {% if selected_dhukuti and selected_dhukuti.pk == dloan.pk %}selected{% endif %}>
+                                {{ dloan.name }} - रु{{ dloan.received_amount|floatformat:2 }} ({{ dloan.paid_kista_count }}/{{ dloan.total_kista }} paid)
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">These are separate saved Dhukuti loans, not regular Loans.</div>
+                    </form>
+
+                    <form method="get" class="mb-3">
+                        <label class="form-label fw-semibold">Select Existing Loan (Optional)</label>
+                        <select name="loan" class="form-select" onchange="this.form.submit()">
+                            <option value="">-- Manual Entry --</option>
+                            {% for loan in loans %}
+                            <option value="{{ loan.pk }}" {% if selected_loan and selected_loan.pk == loan.pk %}selected{% endif %}>
+                                {{ loan.bank_name }} - रु{{ loan.amount|floatformat:2 }} @ {{ loan.interest_rate }}%
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Choosing a loan auto-fills received amount and total kista when available.</div>
+                    </form>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="loan_id" value="{% if selected_loan %}{{ selected_loan.pk }}{% endif %}">
+                        <input type="hidden" name="dhukuti_id" value="{% if selected_dhukuti %}{{ selected_dhukuti.pk }}{% endif %}">
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Dhukuti Name</label>
+                            <input type="text" name="name" class="form-control"
+                                   value="{{ initial.name }}" placeholder="e.g. Gyan mama">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Khayeko / Received Amount (रु)</label>
+                            <input type="number" step="0.01" min="0.01" name="received_amount" class="form-control"
+                                   value="{{ initial.received_amount }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Total Kista</label>
+                            <input type="number" min="1" max="200" name="total_kista" class="form-control"
+                                   value="{{ initial.total_kista }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Paid Kista Amounts (one per line)</label>
+                            <textarea name="paid_amounts_text" class="form-control" rows="8"
+                                      placeholder="139000&#10;106500&#10;109000&#10;...">{{ initial.paid_amounts_text }}</textarea>
+                            <div class="form-text">Paste monthly paid values exactly like your Dhukuti sheet.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">To Pay Remaining (Base) (रु)</label>
+                            <input type="number" step="0.01" min="0" name="remaining_base_payment" class="form-control"
+                                   value="{{ initial.remaining_base_payment }}" placeholder="e.g. 277000">
+                            <div class="form-text">Optional. If empty, system uses average paid kista x remaining kista.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Notes</label>
+                            <textarea name="notes" class="form-control" rows="2" placeholder="Optional notes">{{ initial.notes }}</textarea>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary fw-semibold flex-fill">
+                                <i class="bi bi-lightning-charge"></i> Calculate
+                            </button>
+                            <button type="submit" name="save_record" value="1" class="btn btn-success fw-semibold flex-fill">
+                                <i class="bi bi-save"></i> Save Record
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            {% if result %}
+            <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                    <div class="card border-success">
+                        <div class="card-body">
+                            <small class="text-muted d-block">Total (Paid)</small>
+                            <h4 class="mb-0 text-success">रु{{ result.total_paid|floatformat:2 }}</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-warning">
+                        <div class="card-body">
+                            <small class="text-muted d-block">Total Interest</small>
+                            <h4 class="mb-0 text-warning">रु{{ result.total_interest|floatformat:2 }}</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-info">
+                        <div class="card-body">
+                            <small class="text-muted d-block">Monthly Interest (Avg)</small>
+                            <h4 class="mb-0 text-info">रु{{ result.monthly_interest|floatformat:6 }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-3">
+                    <div class="card border-secondary">
+                        <div class="card-body">
+                            <small class="text-muted d-block">Remaining Kista</small>
+                            <h5 class="mb-0">{{ result.remaining_kista }}</h5>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-secondary">
+                        <div class="card-body">
+                            <small class="text-muted d-block">Remaining Interest</small>
+                            <h5 class="mb-0">रु{{ result.remaining_interest|floatformat:2 }}</h5>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-secondary">
+                        <div class="card-body">
+                            <small class="text-muted d-block">To Pay Remaining</small>
+                            <h5 class="mb-0">रु{{ result.remaining_base_payment|floatformat:2 }}</h5>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-danger">
+                        <div class="card-body">
+                            <small class="text-muted d-block">To Pay With Interest Adj.</small>
+                            <h5 class="mb-0 text-danger">रु{{ result.to_pay_with_interest_adjustment|floatformat:2 }}</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="bi bi-table"></i> Paid Kista Details</h6>
+                    <small class="text-light">{{ result.paid_kista }} paid</small>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Kista #</th>
+                                <th class="text-end">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in result.paid_rows %}
+                            <tr>
+                                <td>{{ row.month }}</td>
+                                <td class="text-end fw-semibold">{{ row.amount|floatformat:2 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mt-3">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0"><i class="bi bi-archive"></i> Saved Dhukuti Loans</h6>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Name</th>
+                                <th class="text-end">Received</th>
+                                <th class="text-end">Paid</th>
+                                <th class="text-center">Kista</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dloan in dhukuti_loans %}
+                            <tr>
+                                <td>{{ dloan.name }}</td>
+                                <td class="text-end">{{ dloan.received_amount|floatformat:2 }}</td>
+                                <td class="text-end">{{ dloan.total_paid|floatformat:2 }}</td>
+                                <td class="text-center">{{ dloan.paid_kista_count }}/{{ dloan.total_kista }}</td>
+                                <td>
+                                    <a href="?dhukuti={{ dloan.pk }}" class="btn btn-sm btn-outline-primary">Load</a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-3">No saved Dhukuti records yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info mb-0">
+                Enter Dhukuti values from your sheet and click <strong>Calculate Dhukuti Payment</strong>.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

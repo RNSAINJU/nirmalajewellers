@@ -104,6 +104,57 @@ class LoanInterestPayment(models.Model):
         return f"{self.loan.bank_name} - रु{self.amount} ({self.months_covered} months) on {self.payment_date}"
 
 
+class DhukutiLoan(models.Model):
+    """Separate model for Dhukuti-style loans (kept distinct from standard loans)."""
+    name = models.CharField(max_length=255)
+    received_amount = models.DecimalField(max_digits=14, decimal_places=2)
+    total_kista = models.PositiveSmallIntegerField(default=20)
+    remaining_base_payment = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Dhukuti Loan"
+        verbose_name_plural = "Dhukuti Loans"
+
+    def __str__(self):
+        return f"{self.name} - रु{self.received_amount}"
+
+    @property
+    def total_paid(self):
+        from django.db.models import Sum
+        result = self.paid_kistas.aggregate(Sum('amount'))['amount__sum']
+        return result or Decimal('0')
+
+    @property
+    def paid_kista_count(self):
+        return self.paid_kistas.count()
+
+    @property
+    def remaining_kista(self):
+        remaining = self.total_kista - self.paid_kista_count
+        return remaining if remaining > 0 else 0
+
+
+class DhukutiKistaPayment(models.Model):
+    """Paid kista entries for a Dhukuti loan."""
+    loan = models.ForeignKey(DhukutiLoan, on_delete=models.CASCADE, related_name='paid_kistas')
+    month_number = models.PositiveSmallIntegerField()
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['month_number', 'created_at']
+        unique_together = ['loan', 'month_number']
+        verbose_name = "Dhukuti Kista Payment"
+        verbose_name_plural = "Dhukuti Kista Payments"
+
+    def __str__(self):
+        return f"{self.loan.name} - Kista {self.month_number} - रु{self.amount}"
+
+
 class Expense(models.Model):
     """Model for managing business expenses"""
     

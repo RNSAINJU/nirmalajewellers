@@ -9,7 +9,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db.models import Sum
 from django.http import HttpResponse
-from .models import Loan, LoanInterestPayment
+from .models import Loan, LoanInterestPayment, DhukutiLoan, DhukutiKistaPayment
 from .forms import LoanForm
 
 
@@ -33,6 +33,56 @@ def _extract_date(val):
         return date_str
     except Exception:
         return None
+
+
+def _compute_dhukuti_summary(received_amount, total_kista, paid_amounts, remaining_base_payment=None):
+    """Compute Dhukuti-style payment summary from variable monthly kista amounts."""
+    if received_amount <= 0:
+        raise ValueError('Received amount must be greater than zero.')
+    if total_kista <= 0:
+        raise ValueError('Total kista must be greater than zero.')
+
+    paid_rows = []
+    total_paid = Decimal('0.00')
+    for idx, amount in enumerate(paid_amounts, start=1):
+        amt = Decimal(str(amount)).quantize(Decimal('0.01'))
+        if amt <= 0:
+            continue
+        paid_rows.append({'month': idx, 'amount': amt})
+        total_paid += amt
+
+    paid_kista = len(paid_rows)
+    remaining_kista = max(total_kista - paid_kista, 0)
+    total_interest = (received_amount - total_paid).quantize(Decimal('0.01'))
+
+    monthly_interest = Decimal('0.00')
+    if paid_kista > 0:
+        monthly_interest = (total_interest / Decimal(str(paid_kista))).quantize(Decimal('0.000001'))
+
+    remaining_interest = (monthly_interest * Decimal(str(remaining_kista))).quantize(Decimal('0.01'))
+
+    if remaining_base_payment is None or remaining_base_payment == Decimal('0'):
+        avg_paid = Decimal('0.00')
+        if paid_kista > 0:
+            avg_paid = (total_paid / Decimal(str(paid_kista))).quantize(Decimal('0.01'))
+        remaining_base_payment = (avg_paid * Decimal(str(remaining_kista))).quantize(Decimal('0.01'))
+    else:
+        remaining_base_payment = Decimal(str(remaining_base_payment)).quantize(Decimal('0.01'))
+
+    to_pay_with_interest_adj = (remaining_base_payment - remaining_interest).quantize(Decimal('0.01'))
+
+    return {
+        'paid_rows': paid_rows,
+        'paid_kista': paid_kista,
+        'remaining_kista': remaining_kista,
+        'total_paid': total_paid.quantize(Decimal('0.01')),
+        'received_amount': received_amount.quantize(Decimal('0.01')),
+        'total_interest': total_interest,
+        'monthly_interest': monthly_interest,
+        'remaining_interest': remaining_interest,
+        'remaining_base_payment': remaining_base_payment,
+        'to_pay_with_interest_adjustment': to_pay_with_interest_adj,
+    }
 
 
 @login_required
@@ -346,3 +396,114 @@ def loan_interest_payment_delete(request, pk):
         messages.success(request, 'Interest payment deleted.')
         return redirect('finance:loan_list')
     return render(request, 'finance/loan_interest_payment_confirm_delete.html', {'payment': payment})
+
+
+@login_required
+def loan_emi_calculator(request):
+    """Finance page to calculate Dhukuti-style payment summary."""
+    loans = Loan.objects.all().order_by('bank_name', '-start_date')
+    dhukuti_loans = DhukutiLoan.objects.prefetch_related('paid_kistas').all()
+    selected_loan = None
+    selected_dhukuti = None
+    result = None
+
+    initial = {
+        'name': '',
+        'received_amount': '',
+        'total_kista': '20',
+        'remaining_base_payment': '',
+        'paid_amounts_text': '',
+        'notes': '',
+    }
+
+    selected_loan_id = request.GET.get('loan') or request.POST.get('loan_id')
+    if selected_loan_id:
+        selected_loan = Loan.objects.filter(pk=selected_loan_id).first()
+        if selected_loan:
+            initial['name'] = selected_loan.bank_name
+            initial['received_amount'] = str(selected_loan.amount)
+            if selected_loan.settlement_months:
+                initial['total_kista'] = str(selected_loan.settlement_months)
+
+    selected_dhukuti_id = request.GET.get('dhukuti') or request.POST.get('dhukuti_id')
+    if selected_dhukuti_id:
+        selected_dhukuti = DhukutiLoan.objects.filter(pk=selected_dhukuti_id).first()
+        if selected_dhukuti:
+            initial['name'] = selected_dhukuti.name
+            initial['received_amount'] = str(selected_dhukuti.received_amount)
+            initial['total_kista'] = str(selected_dhukuti.total_kista)
+            initial['remaining_base_payment'] = str(selected_dhukuti.remaining_base_payment)
+            initial['notes'] = selected_dhukuti.notes or ''
+            initial['paid_amounts_text'] = '\n'.join(
+                str(p.amount) for p in selected_dhukuti.paid_kistas.all().order_by('month_number')
+            )
+            result = _compute_dhukuti_summary(
+                received_amount=selected_dhukuti.received_amount,
+                total_kista=selected_dhukuti.total_kista,
+                paid_amounts=[p.amount for p in selected_dhukuti.paid_kistas.all().order_by('month_number')],
+                remaining_base_payment=selected_dhukuti.remaining_base_payment,
+            )
+
+    if request.method == 'POST':
+        initial['name'] = request.POST.get('name', '').strip()
+        initial['received_amount'] = request.POST.get('received_amount', '').strip()
+        initial['total_kista'] = request.POST.get('total_kista', '').strip()
+        initial['remaining_base_payment'] = request.POST.get('remaining_base_payment', '').strip()
+        initial['paid_amounts_text'] = request.POST.get('paid_amounts_text', '').strip()
+        initial['notes'] = request.POST.get('notes', '').strip()
+
+        try:
+            received_amount = Decimal(initial['received_amount'])
+            total_kista = int(initial['total_kista'])
+
+            paid_amounts = []
+            for line in initial['paid_amounts_text'].splitlines():
+                normalized = line.replace(',', '').strip()
+                if not normalized:
+                    continue
+                paid_amounts.append(Decimal(normalized))
+
+            remaining_base_payment = None
+            if initial['remaining_base_payment']:
+                remaining_base_payment = Decimal(initial['remaining_base_payment'])
+
+            result = _compute_dhukuti_summary(
+                received_amount=received_amount,
+                total_kista=total_kista,
+                paid_amounts=paid_amounts,
+                remaining_base_payment=remaining_base_payment,
+            )
+
+            if request.POST.get('save_record') == '1':
+                record_name = initial['name'] or f"Dhukuti Loan {received_amount}"
+                dhukuti_loan = DhukutiLoan.objects.create(
+                    name=record_name,
+                    received_amount=received_amount,
+                    total_kista=total_kista,
+                    remaining_base_payment=result['remaining_base_payment'],
+                    notes=initial['notes'],
+                )
+                for row in result['paid_rows']:
+                    DhukutiKistaPayment.objects.create(
+                        loan=dhukuti_loan,
+                        month_number=row['month'],
+                        amount=row['amount'],
+                    )
+
+                messages.success(request, f'Dhukuti loan record "{dhukuti_loan.name}" saved successfully.')
+                selected_dhukuti = dhukuti_loan
+                dhukuti_loans = DhukutiLoan.objects.prefetch_related('paid_kistas').all()
+        except Exception as exc:
+            messages.error(request, f'Unable to calculate Dhukuti payment: {exc}')
+
+    context = {
+        'title': 'Dhukuti Loans',
+        'page_title': 'Dhukuti Loans',
+        'loans': loans,
+        'dhukuti_loans': dhukuti_loans,
+        'selected_loan': selected_loan,
+        'selected_dhukuti': selected_dhukuti,
+        'initial': initial,
+        'result': result,
+    }
+    return render(request, 'finance/loan_emi_calculator.html', context)
