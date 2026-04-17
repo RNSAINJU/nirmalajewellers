@@ -1,4 +1,5 @@
 {% extends 'finance/base_finance.html' %}
+{% load bs_filters %}
 
 {% block action_buttons %}
 <a href="{% url 'finance:loan_list' %}" class="btn btn-secondary">
@@ -33,7 +34,14 @@
                         </tr>
                         <tr>
                             <th class="table-light">Payment Date</th>
-                            <td>{{ payment.payment_date }}</td>
+                            <td>
+                                BS: {{ payment.payment_date }}
+                                {% with converted=payment.payment_date|ad_date %}
+                                {% if converted %}
+                                <br><small class="text-muted">AD: {{ converted }}</small>
+                                {% endif %}
+                                {% endwith %}
+                            </td>
                         </tr>
                         {% if payment.notes %}
                         <tr>

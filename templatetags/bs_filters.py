@@ -8,7 +8,7 @@ NPT = timezone(timedelta(hours=5, minutes=45), name='NPT')
 
 try:
     # Prefer the real Nepali date conversion utilities if available.
-    from common.nepali_utils import ad_to_bs_date_str, ad_to_bs_datetime_str  # type: ignore
+    from common.nepali_utils import ad_to_bs_date_str, ad_to_bs_datetime_str, bs_to_ad_date  # type: ignore
 except ImportError:  # pragma: no cover - graceful fallback if helper module is missing
     def ad_to_bs_date_str(value):
         """Fallback: return a simple date string if Nepali utils are unavailable."""
@@ -22,6 +22,10 @@ except ImportError:  # pragma: no cover - graceful fallback if helper module is 
             return value.strftime("%Y-%m-%d %H:%M")
         return str(value)
 
+    def bs_to_ad_date(value):
+        """Fallback: return None if BS-to-AD conversion utility is unavailable."""
+        return None
+
 
 @register.filter
 def bs_date(value):
@@ -31,6 +35,15 @@ def bs_date(value):
 @register.filter
 def bs_datetime(value):
     return ad_to_bs_datetime_str(value)
+
+
+@register.filter
+def ad_date(value):
+    """Convert a BS date string to AD (YYYY-MM-DD) for display in templates."""
+    converted = bs_to_ad_date(value)
+    if not converted:
+        return ""
+    return converted.strftime("%Y-%m-%d")
 
 
 @register.filter
