@@ -14,7 +14,7 @@
                 <div class="card-header bg-warning text-dark">
                     <h5 class="mb-0">
                         <i class="bi bi-currency-rupee"></i>
-                        Add Interest Payment &mdash; {{ loan.bank_name }}
+                        {% if payment %}Edit{% else %}Add{% endif %} Interest Payment &mdash; {{ loan.bank_name }}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -41,31 +41,53 @@
                                 <small class="text-muted d-block">Yearly Interest</small>
                                 <span class="badge bg-purple">रु{{ loan.yearly_interest|floatformat:2 }}</span>
                             </div>
+                            {% if loan.implied_interest_rate %}
+                            <div class="col-12 mt-2">
+                                <small class="text-muted d-block">Effective Rate (from payments)</small>
+                                <span class="badge bg-info text-dark">
+                                    {{ loan.implied_interest_rate }}% p.a. &mdash;
+                                    {{ loan.total_months_covered }}m covered, रु{{ loan.total_interest_paid|floatformat:2 }} total
+                                </span>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
 
-                    <form method="post">
+                    <form method="post" action="{% if payment %}{% url 'finance:loan_interest_payment_edit' payment.pk %}{% endif %}">
                         {% csrf_token %}
 
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">Months Covered</label>
-                            <select name="months_covered" class="form-select" id="monthsCovered">
-                                <option value="1">1 Month</option>
-                                <option value="2">2 Months</option>
-                                <option value="3" selected>3 Months (Quarterly)</option>
-                                <option value="6">6 Months (Half-Yearly)</option>
-                                <option value="12">12 Months (Yearly)</option>
-                            </select>
+                            <label class="form-label fw-semibold">Payment Date (BS)</label>
+                            <input type="text" name="payment_date" id="paymentDate" class="form-control"
+                                   placeholder="e.g. 2082-01-15"
+                                   value="{% if payment %}{{ payment.payment_date }}{% endif %}" required>
+                            <div class="form-text">
+                                Enter in BS format: YYYY-MM-DD &mdash;
+                                Calculating from: <strong id="fromDateDisplay">{{ from_date }}</strong>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                Months Covered
+                                <small class="text-muted fw-normal">&mdash; auto-calculated from payment date</small>
+                            </label>
+                            <input type="number" name="months_covered" id="monthsCovered"
+                                   class="form-control" step="0.01" min="0.01"
+                                   value="{% if payment %}{{ payment.months_covered }}{% else %}3{% endif %}" required>
+                            <div class="form-text" id="monthsHint">
+                                Enter payment date to auto-calculate. You can also edit manually (supports decimals e.g. 2.5).
+                            </div>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label fw-semibold">
                                 Amount Paid (रु)
-                                <small class="text-muted fw-normal">&mdash; pre-filled with tentative interest</small>
+                                <small class="text-muted fw-normal">&mdash; auto-filled based on months covered</small>
                             </label>
                             <input type="number" name="amount" id="amountField"
                                    class="form-control form-control-lg"
-                                   value="{{ quarterly_interest|floatformat:2 }}"
+                                   value="{% if payment %}{{ payment.amount|floatformat:2 }}{% else %}{{ quarterly_interest|floatformat:2 }}{% endif %}"
                                    step="0.01" min="0" required>
                             <div class="form-text">
                                 Tentative: 1M = रु{{ monthly_interest|floatformat:2 }} |
@@ -75,21 +97,14 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">Payment Date (BS)</label>
-                            <input type="text" name="payment_date" class="form-control"
-                                   placeholder="e.g. 2082-01-15" required>
-                            <div class="form-text">Enter in BS format: YYYY-MM-DD</div>
-                        </div>
-
-                        <div class="mb-3">
                             <label class="form-label fw-semibold">Notes (optional)</label>
                             <textarea name="notes" class="form-control" rows="2"
-                                      placeholder="e.g. Paid via cheque, receipt no. 1234"></textarea>
+                                      placeholder="e.g. Paid via cheque, receipt no. 1234">{% if payment %}{{ payment.notes }}{% endif %}</textarea>
                         </div>
 
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-warning text-dark fw-semibold flex-fill">
-                                <i class="bi bi-check-lg"></i> Record Payment
+                                <i class="bi bi-check-lg"></i> {% if payment %}Save Changes{% else %}Record Payment{% endif %}
                             </button>
                             <a href="{% url 'finance:loan_list' %}" class="btn btn-outline-secondary">
                                 Cancel
@@ -104,14 +119,57 @@
 
 <script>
 (function () {
-    const monthlyInterest = {{ monthly_interest|floatformat:2 }};
-    const monthsSelect = document.getElementById('monthsCovered');
+    const monthlyInterest = {{ monthly_interest|floatformat:4 }};
+    const fromDateStr = "{{ from_date }}";  // YYYY-MM-DD BS format
+    const paymentDateInput = document.getElementById('paymentDate');
+    const monthsCoveredInput = document.getElementById('monthsCovered');
     const amountField = document.getElementById('amountField');
+    const monthsHint = document.getElementById('monthsHint');
 
-    monthsSelect.addEventListener('change', function () {
-        const months = parseInt(this.value);
-        amountField.value = (monthlyInterest * months).toFixed(2);
+    /**
+     * Calculate months difference between two BS date strings (YYYY-MM-DD).
+     * Supports fractional months for mid-month payments.
+     * Formula: (toYear - fromYear) * 12 + (toMonth - fromMonth) + (toDay - fromDay) / 30
+     */
+    function calcMonths(fromStr, toStr) {
+        if (!fromStr || !toStr) return null;
+        const from = fromStr.split('-').map(Number);
+        const to = toStr.split('-').map(Number);
+        if (from.length < 3 || to.length < 3) return null;
+
+        const fromYear = from[0], fromMonth = from[1], fromDay = from[2];
+        const toYear = to[0], toMonth = to[1], toDay = to[2];
+
+        const months = (toYear - fromYear) * 12 + (toMonth - fromMonth) + (toDay - fromDay) / 30;
+        return Math.round(months * 100) / 100;  // round to 2 decimals
+    }
+
+    function updateFromPaymentDate() {
+        const toDate = paymentDateInput.value.trim();
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(toDate)) return;
+
+        const months = calcMonths(fromDateStr, toDate);
+        if (months !== null && months > 0) {
+            monthsCoveredInput.value = months;
+            amountField.value = (monthlyInterest * months).toFixed(2);
+            monthsHint.textContent = `Auto-calculated: ${months} months from ${fromDateStr} to ${toDate}`;
+            monthsHint.className = 'form-text text-success';
+        } else if (months !== null && months <= 0) {
+            monthsHint.textContent = `Payment date must be after ${fromDateStr}`;
+            monthsHint.className = 'form-text text-danger';
+        }
+    }
+
+    // Recalculate amount when months_covered is edited manually
+    monthsCoveredInput.addEventListener('input', function () {
+        const months = parseFloat(this.value);
+        if (!isNaN(months) && months > 0) {
+            amountField.value = (monthlyInterest * months).toFixed(2);
+        }
     });
+
+    paymentDateInput.addEventListener('input', updateFromPaymentDate);
+    paymentDateInput.addEventListener('blur', updateFromPaymentDate);
 })();
 </script>
 

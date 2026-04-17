@@ -209,8 +209,8 @@ def loan_import(request):
 def loan_add_interest(request, pk):
     """Add a 3-month interest payment for a loan"""
     loan = get_object_or_404(Loan, pk=pk)
-    if loan.is_settled:
-        messages.error(request, 'Cannot add interest payment to a settled loan.')
+    if loan.is_settled and loan.interest_payments.exists():
+        messages.error(request, 'Cannot add interest payment to a settled loan that already has payment records.')
         return redirect('finance:loan_list')
 
     # Pre-calculate 3-month (quarterly) interest
@@ -220,7 +220,7 @@ def loan_add_interest(request, pk):
         try:
             amount = Decimal(request.POST.get('amount', '0'))
             payment_date = request.POST.get('payment_date', '')
-            months_covered = int(request.POST.get('months_covered', 3))
+            months_covered = Decimal(request.POST.get('months_covered', '3'))
             notes = request.POST.get('notes', '')
 
             if not payment_date:
@@ -243,10 +243,16 @@ def loan_add_interest(request, pk):
         except Exception as e:
             messages.error(request, f'Error recording payment: {str(e)}')
 
+    # Determine the from_date for months_covered auto-calculation:
+    # use last payment date if exists, else loan start date
+    last_payment = loan.interest_payments.order_by('-payment_date', '-created_at').first()
+    from_date = str(last_payment.payment_date) if last_payment else str(loan.start_date)
+
     return render(request, 'finance/loan_interest_payment_form.html', {
         'loan': loan,
         'quarterly_interest': quarterly_interest,
         'monthly_interest': loan.monthly_interest,
+        'from_date': from_date,
     })
 
 
@@ -292,6 +298,42 @@ def loan_settle(request, pk):
             return render(request, 'finance/loan_settle_confirm.html', {'loan': loan})
 
     return render(request, 'finance/loan_settle_confirm.html', {'loan': loan})
+
+
+@login_required
+def loan_interest_payment_edit(request, pk):
+    """Edit a loan interest payment"""
+    payment = get_object_or_404(LoanInterestPayment, pk=pk)
+    loan = payment.loan
+
+    if request.method == 'POST':
+        try:
+            payment.amount = Decimal(request.POST.get('amount', '0'))
+            payment.payment_date = request.POST.get('payment_date', '')
+            payment.months_covered = Decimal(request.POST.get('months_covered', '3'))
+            payment.notes = request.POST.get('notes', '')
+            if not payment.payment_date:
+                messages.error(request, 'Payment date is required.')
+            else:
+                payment.save()
+                messages.success(request, f'Interest payment updated.')
+                return redirect('finance:loan_list')
+        except Exception as e:
+            messages.error(request, f'Error updating payment: {str(e)}')
+
+    # Determine from_date: use the previous payment date or loan start date
+    prev_payment = loan.interest_payments.filter(
+        payment_date__lt=payment.payment_date
+    ).order_by('-payment_date').first()
+    from_date = str(prev_payment.payment_date) if prev_payment else str(loan.start_date)
+
+    return render(request, 'finance/loan_interest_payment_form.html', {
+        'loan': loan,
+        'quarterly_interest': loan.quarterly_interest,
+        'monthly_interest': loan.monthly_interest,
+        'from_date': from_date,
+        'payment': payment,
+    })
 
 
 @login_required

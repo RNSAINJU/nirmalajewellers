@@ -47,6 +47,24 @@ class Loan(models.Model):
         return result or Decimal('0')
 
     @property
+    def total_months_covered(self):
+        """Total months covered by all interest payments"""
+        from django.db.models import Sum
+        result = self.interest_payments.aggregate(Sum('months_covered'))['months_covered__sum']
+        return result or Decimal('0')
+
+    @property
+    def implied_interest_rate(self):
+        """Effective annual interest rate implied by actual payments made.
+        Formula: (total_paid / loan_amount / total_months) * 12 * 100
+        """
+        total_months = self.total_months_covered
+        if not total_months or self.amount == 0:
+            return None
+        rate = (self.total_interest_paid / self.amount / total_months) * Decimal('12') * Decimal('100')
+        return round(rate, 2)
+
+    @property
     def effective_interest_rate(self):
         """Calculate effective interest rate based on final interest paid and settlement months"""
         if not self.final_interest_paid or not self.settlement_months or self.amount == 0:
@@ -73,7 +91,7 @@ class LoanInterestPayment(models.Model):
     loan = models.ForeignKey(Loan, on_delete=models.CASCADE, related_name='interest_payments')
     amount = models.DecimalField(max_digits=14, decimal_places=2)
     payment_date = NepaliDateField()
-    months_covered = models.PositiveSmallIntegerField(default=3, help_text="Number of months this payment covers")
+    months_covered = models.DecimalField(max_digits=5, decimal_places=2, default=3, help_text="Number of months this payment covers (supports fractions e.g. 2.5)")
     notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
