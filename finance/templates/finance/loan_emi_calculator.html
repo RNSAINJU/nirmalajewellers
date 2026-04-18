@@ -28,22 +28,8 @@
                         <div class="form-text">These are separate saved Dhukuti loans, not regular Loans.</div>
                     </form>
 
-                    <form method="get" class="mb-3">
-                        <label class="form-label fw-semibold">Select Existing Loan (Optional)</label>
-                        <select name="loan" class="form-select" onchange="this.form.submit()">
-                            <option value="">-- Manual Entry --</option>
-                            {% for loan in loans %}
-                            <option value="{{ loan.pk }}" {% if selected_loan and selected_loan.pk == loan.pk %}selected{% endif %}>
-                                {{ loan.bank_name }} - रु{{ loan.amount|floatformat:2 }} @ {{ loan.interest_rate }}%
-                            </option>
-                            {% endfor %}
-                        </select>
-                        <div class="form-text">Choosing a loan auto-fills received amount and total kista when available.</div>
-                    </form>
-
                     <form method="post">
                         {% csrf_token %}
-                        <input type="hidden" name="loan_id" value="{% if selected_loan %}{{ selected_loan.pk }}{% endif %}">
                         <input type="hidden" name="dhukuti_id" value="{% if selected_dhukuti %}{{ selected_dhukuti.pk }}{% endif %}">
 
                         <div class="mb-3">
@@ -62,6 +48,13 @@
                             <label class="form-label fw-semibold">Total Kista</label>
                             <input type="number" min="1" max="200" name="total_kista" class="form-control"
                                    value="{{ initial.total_kista }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Received At Kista #</label>
+                            <input type="number" min="1" max="200" name="received_kista_number" class="form-control"
+                                   value="{{ initial.received_kista_number }}" required>
+                            <div class="form-text">Whole khayeko amount was received in this specific kista.</div>
                         </div>
 
                         <div class="mb-3">
@@ -90,6 +83,11 @@
                             <button type="submit" name="save_record" value="1" class="btn btn-success fw-semibold flex-fill">
                                 <i class="bi bi-save"></i> Save Record
                             </button>
+                            {% if selected_dhukuti %}
+                            <button type="submit" name="update_record" value="1" class="btn btn-warning text-dark fw-semibold flex-fill">
+                                <i class="bi bi-pencil-square"></i> Update Selected
+                            </button>
+                            {% endif %}
                         </div>
                     </form>
                 </div>
@@ -99,7 +97,7 @@
         <div class="col-lg-8">
             {% if result %}
             <div class="row g-3 mb-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="card border-success">
                         <div class="card-body">
                             <small class="text-muted d-block">Total (Paid)</small>
@@ -107,7 +105,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="card border-warning">
                         <div class="card-body">
                             <small class="text-muted d-block">Total Interest</small>
@@ -115,7 +113,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="card border-info">
                         <div class="card-body">
                             <small class="text-muted d-block">Monthly Interest (Avg)</small>
@@ -123,6 +121,28 @@
                         </div>
                     </div>
                 </div>
+                <div class="col-md-3">
+                    <div class="card border-primary">
+                        <div class="card-body">
+                            <small class="text-muted d-block">Avg Interest Rate</small>
+                            <h4 class="mb-0 text-primary">{{ result.average_interest_rate_percent|floatformat:2 }}%</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mb-3 text-muted small">
+                Monthly Avg Rate: <strong>{{ result.average_monthly_interest_rate_percent|floatformat:2 }}%</strong> of received amount per paid kista.
+            </div>
+
+            {% if result.interest_on_paid_side %}
+            <div class="alert alert-info py-2 mb-3">
+                Total paid is higher than received amount, so interest metrics are shown on the paid side (not negative).
+            </div>
+            {% endif %}
+
+            <div class="mb-3 text-muted small">
+                Interest counted from kista <strong>{{ result.received_kista_number }}</strong>,
+                elapsed interest kista: <strong>{{ result.elapsed_interest_kista }}</strong>.
             </div>
 
             <div class="row g-3 mb-3">
@@ -160,6 +180,17 @@
                 </div>
             </div>
 
+            <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                    <div class="card border-primary">
+                        <div class="card-body">
+                            <small class="text-muted d-block">Remaining Amount Per Kista</small>
+                            <h5 class="mb-0 text-primary">रु{{ result.remaining_kista_amount|floatformat:2 }}</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="card shadow-sm">
                 <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
                     <h6 class="mb-0"><i class="bi bi-table"></i> Paid Kista Details</h6>
@@ -180,6 +211,10 @@
                                 <td class="text-end fw-semibold">{{ row.amount|floatformat:2 }}</td>
                             </tr>
                             {% endfor %}
+                            <tr class="table-warning">
+                                <th>Total</th>
+                                <th class="text-end">{{ result.total_paid|floatformat:2 }}</th>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -197,6 +232,8 @@
                                 <th class="text-end">Received</th>
                                 <th class="text-end">Paid</th>
                                 <th class="text-center">Kista</th>
+                                <th class="text-center">Received At</th>
+                                <th class="text-end">Avg Rate</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -207,13 +244,25 @@
                                 <td class="text-end">{{ dloan.received_amount|floatformat:2 }}</td>
                                 <td class="text-end">{{ dloan.total_paid|floatformat:2 }}</td>
                                 <td class="text-center">{{ dloan.paid_kista_count }}/{{ dloan.total_kista }}</td>
+                                <td class="text-center">{{ dloan.received_kista_number }}</td>
+                                <td class="text-end">{{ dloan.average_interest_rate_percent|floatformat:2 }}%</td>
                                 <td>
-                                    <a href="?dhukuti={{ dloan.pk }}" class="btn btn-sm btn-outline-primary">Load</a>
+                                    <div class="d-flex gap-1">
+                                        <a href="?dhukuti={{ dloan.pk }}" class="btn btn-sm btn-outline-primary" title="Edit this Dhukuti record">
+                                            <i class="bi bi-pencil-square"></i> Edit
+                                        </a>
+                                        <form method="post" action="{% url 'finance:loan_dhukuti_delete' dloan.pk %}" onsubmit="return confirm('Delete this Dhukuti record permanently?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete this Dhukuti record">
+                                                <i class="bi bi-trash"></i> Delete
+                                            </button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="5" class="text-center text-muted py-3">No saved Dhukuti records yet.</td>
+                                <td colspan="7" class="text-center text-muted py-3">No saved Dhukuti records yet.</td>
                             </tr>
                             {% endfor %}
                         </tbody>

@@ -109,6 +109,10 @@ class DhukutiLoan(models.Model):
     name = models.CharField(max_length=255)
     received_amount = models.DecimalField(max_digits=14, decimal_places=2)
     total_kista = models.PositiveSmallIntegerField(default=20)
+    received_kista_number = models.PositiveSmallIntegerField(
+        default=1,
+        help_text="Kista number in which whole amount was received."
+    )
     remaining_base_payment = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -137,6 +141,16 @@ class DhukutiLoan(models.Model):
         remaining = self.total_kista - self.paid_kista_count
         return remaining if remaining > 0 else 0
 
+    @property
+    def total_interest(self):
+        return self.received_amount - self.total_paid
+
+    @property
+    def average_interest_rate_percent(self):
+        if not self.received_amount:
+            return Decimal('0.00')
+        return ((self.total_interest / self.received_amount) * Decimal('100')).quantize(Decimal('0.01'))
+
 
 class DhukutiKistaPayment(models.Model):
     """Paid kista entries for a Dhukuti loan."""
@@ -153,6 +167,26 @@ class DhukutiKistaPayment(models.Model):
 
     def __str__(self):
         return f"{self.loan.name} - Kista {self.month_number} - रु{self.amount}"
+
+
+class EmiLoan(models.Model):
+    """Separate model for EMI loans (kept distinct from regular and Dhukuti loans)."""
+    name = models.CharField(max_length=255)
+    principal = models.DecimalField(max_digits=14, decimal_places=2)
+    current_principal = models.DecimalField(max_digits=14, decimal_places=2, blank=True, null=True)
+    annual_interest_rate = models.DecimalField(max_digits=7, decimal_places=4)
+    tenure_months = models.PositiveSmallIntegerField()
+    notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "EMI Loan"
+        verbose_name_plural = "EMI Loans"
+
+    def __str__(self):
+        return f"{self.name} - रु{self.principal} @ {self.annual_interest_rate}%"
 
 
 class Expense(models.Model):

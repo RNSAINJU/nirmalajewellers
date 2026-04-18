@@ -1,0 +1,204 @@
+{% extends 'finance/base_finance.html' %}
+
+{% block action_buttons %}
+<a href="{% url 'finance:loan_list' %}" class="btn btn-secondary">
+    <i class="bi bi-arrow-left"></i> Back to Loans
+</a>
+{% endblock %}
+
+{% block main_content %}
+<div class="container-fluid">
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-calculator"></i> EMI Loan Calculator</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="mb-3">
+                        <label class="form-label fw-semibold">Load Saved EMI Record</label>
+                        <select name="emi" class="form-select" onchange="this.form.submit()">
+                            <option value="">-- Select Saved Record --</option>
+                            {% for eloan in emi_loans %}
+                            <option value="{{ eloan.pk }}" {% if selected_emi and selected_emi.pk == eloan.pk %}selected{% endif %}>
+                                {{ eloan.name }} - रु{{ eloan.principal|floatformat:2 }} @ {{ eloan.annual_interest_rate }}%
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </form>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="emi_id" value="{% if selected_emi %}{{ selected_emi.pk }}{% endif %}">
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">EMI Loan Name</label>
+                            <input type="text" name="name" class="form-control" value="{{ initial.name }}" placeholder="e.g. Home Loan">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Principal Amount (रु)</label>
+                            <input type="number" step="0.01" min="0.01" name="principal" class="form-control" value="{{ initial.principal }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Current Principal Remaining (रु)</label>
+                            <input type="number" step="0.01" min="0" name="current_principal" class="form-control" value="{{ initial.current_principal }}" placeholder="Enter bank outstanding principal">
+                            <div class="form-text">Optional. If provided, EMI calculation uses this value instead of original principal.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Annual Interest Rate (%)</label>
+                            <input type="number" step="0.0001" min="0" name="annual_interest_rate" class="form-control" value="{{ initial.annual_interest_rate }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Tenure (Months)</label>
+                            <input type="number" min="1" max="600" name="tenure_months" class="form-control" value="{{ initial.tenure_months }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Notes</label>
+                            <textarea name="notes" class="form-control" rows="2" placeholder="Optional notes">{{ initial.notes }}</textarea>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary fw-semibold flex-fill">
+                                <i class="bi bi-lightning-charge"></i> Calculate
+                            </button>
+                            <button type="submit" name="save_record" value="1" class="btn btn-success fw-semibold flex-fill">
+                                <i class="bi bi-save"></i> Save Record
+                            </button>
+                            {% if selected_emi %}
+                            <button type="submit" name="update_record" value="1" class="btn btn-warning text-dark fw-semibold flex-fill">
+                                <i class="bi bi-pencil-square"></i> Update Selected
+                            </button>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            {% if result %}
+            <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                    <div class="card border-success">
+                        <div class="card-body">
+                            <small class="text-muted d-block">Monthly EMI</small>
+                            <h4 class="mb-0 text-success">रु{{ result.emi|floatformat:2 }}</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-warning">
+                        <div class="card-body">
+                            <small class="text-muted d-block">Total Interest</small>
+                            <h4 class="mb-0 text-warning">रु{{ result.total_interest|floatformat:2 }}</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-info">
+                        <div class="card-body">
+                            <small class="text-muted d-block">Total Payment</small>
+                            <h4 class="mb-0 text-info">रु{{ result.total_payment|floatformat:2 }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3 text-muted small">
+                Calculation Principal Used: <strong>रु{{ result.calculation_principal|floatformat:2 }}</strong>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="bi bi-table"></i> EMI Amortization Schedule</h6>
+                    <small class="text-light">{{ result.schedule|length }} months</small>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Month</th>
+                                <th class="text-end">Opening</th>
+                                <th class="text-end">EMI</th>
+                                <th class="text-end">Interest</th>
+                                <th class="text-end">Principal</th>
+                                <th class="text-end">Closing</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in result.schedule %}
+                            <tr>
+                                <td>{{ row.month }}</td>
+                                <td class="text-end">{{ row.opening_balance|floatformat:2 }}</td>
+                                <td class="text-end fw-semibold">{{ row.installment|floatformat:2 }}</td>
+                                <td class="text-end text-warning-emphasis">{{ row.interest_component|floatformat:2 }}</td>
+                                <td class="text-end text-success">{{ row.principal_component|floatformat:2 }}</td>
+                                <td class="text-end">{{ row.closing_balance|floatformat:2 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mt-3">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0"><i class="bi bi-archive"></i> Saved EMI Loans</h6>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Name</th>
+                                <th class="text-end">Principal</th>
+                                <th class="text-end">Current Principal</th>
+                                <th class="text-end">Rate</th>
+                                <th class="text-center">Months</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for eloan in emi_loans %}
+                            <tr>
+                                <td>{{ eloan.name }}</td>
+                                <td class="text-end">{{ eloan.principal|floatformat:2 }}</td>
+                                <td class="text-end">{% if eloan.current_principal %}{{ eloan.current_principal|floatformat:2 }}{% else %}-{% endif %}</td>
+                                <td class="text-end">{{ eloan.annual_interest_rate|floatformat:4 }}%</td>
+                                <td class="text-center">{{ eloan.tenure_months }}</td>
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        <a href="?emi={{ eloan.pk }}" class="btn btn-sm btn-outline-primary" title="Edit this EMI record">
+                                            <i class="bi bi-pencil-square"></i> Edit
+                                        </a>
+                                        <form method="post" action="{% url 'finance:loan_emi_delete' eloan.pk %}" onsubmit="return confirm('Delete this EMI record permanently?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete this EMI record">
+                                                <i class="bi bi-trash"></i> Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-3">No saved EMI records yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info mb-0">
+                Enter EMI details and click <strong>Calculate</strong>.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

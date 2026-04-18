@@ -1307,6 +1307,7 @@
         {% url 'finance:finance_dashboard' as finance_dashboard_url %}
         {% url 'finance:balance_sheet' as balance_sheet_url %}
         {% url 'finance:loan_list' as loan_list_url %}
+        {% url 'finance:loan_dhukuti_calculator' as loan_dhukuti_calculator_url %}
         {% url 'finance:loan_emi_calculator' as loan_emi_calculator_url %}
         {% url 'finance:expense_list' as expense_list_url %}
         {% url 'finance:employee_list' as employee_list_url %}
@@ -1466,8 +1467,15 @@
             <div class="collapse" id="financeMenu">
                 <a href="{{ finance_dashboard_url }}" class="nav-link">Dashboard</a>
                 <a href="{{ balance_sheet_url }}" class="nav-link">Balance Sheet</a>
-                <a href="{{ loan_list_url }}" class="nav-link">Loans</a>
-                <a href="{{ loan_emi_calculator_url }}" class="nav-link">Dhukuti Loans</a>
+                <a class="nav-link" data-bs-toggle="collapse" href="#financeLoansMenu" role="button" aria-expanded="false">
+                    <span><i class="bi bi-bank"></i> Loans</span>
+                    <i class="bi bi-chevron-down"></i>
+                </a>
+                <div class="collapse" id="financeLoansMenu">
+                    <a href="{{ loan_list_url }}" class="nav-link">Loans</a>
+                    <a href="{{ loan_dhukuti_calculator_url }}" class="nav-link">Dhukuti Loans</a>
+                    <a href="{{ loan_emi_calculator_url }}" class="nav-link">EMI Loans</a>
+                </div>
                 <a href="{{ expense_list_url }}" class="nav-link">Expenses</a>
                 <a href="{{ employee_list_url }}" class="nav-link">Employees</a>
                 <a href="{{ salary_list_url }}" class="nav-link">Salaries</a>
