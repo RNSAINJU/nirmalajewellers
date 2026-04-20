@@ -396,6 +396,107 @@ window.addEventListener('load', function() {
     initTheme(); // Initialize theme
     const cartCount = localStorage.getItem('cartCount') || '0';
     document.getElementById('cartCount').textContent = cartCount;
+
+  // Collect lightweight web performance metrics and send to report endpoint.
+  setTimeout(function() {
+    try {
+      let lcp = null;
+      let cls = 0;
+
+      if ('PerformanceObserver' in window) {
+        try {
+          const lcpObserver = new PerformanceObserver(function(entryList) {
+            const entries = entryList.getEntries();
+            if (entries.length) {
+              lcp = entries[entries.length - 1].startTime;
+            }
+          });
+          lcpObserver.observe({ type: 'largest-contentful-paint', buffered: true });
+        } catch (e) {}
+
+        try {
+          const clsObserver = new PerformanceObserver(function(entryList) {
+            entryList.getEntries().forEach(function(entry) {
+              if (!entry.hadRecentInput) {
+                cls += entry.value;
+              }
+            });
+          });
+          clsObserver.observe({ type: 'layout-shift', buffered: true });
+        } catch (e) {}
+      }
+
+      setTimeout(function() {
+        const navEntries = performance.getEntriesByType('navigation');
+        const nav = navEntries && navEntries.length ? navEntries[0] : null;
+
+        let fcp = null;
+        const paintEntries = performance.getEntriesByType('paint');
+        paintEntries.forEach(function(entry) {
+          if (entry.name === 'first-contentful-paint') {
+            fcp = entry.startTime;
+          }
+        });
+
+        const resources = performance.getEntriesByType('resource') || [];
+        let transfer = 0;
+        let imageTransfer = 0;
+        let jsTransfer = 0;
+        let cssTransfer = 0;
+        let imageCount = 0;
+
+        resources.forEach(function(resource) {
+          const size = resource.transferSize || 0;
+          transfer += size;
+
+          const initiator = resource.initiatorType || '';
+          const name = resource.name || '';
+          if (initiator === 'img' || /\.(png|jpe?g|webp|gif|svg)(\?|$)/i.test(name)) {
+            imageCount += 1;
+            imageTransfer += size;
+          } else if (initiator === 'script' || /\.js(\?|$)/i.test(name)) {
+            jsTransfer += size;
+          } else if (initiator === 'css' || /\.css(\?|$)/i.test(name)) {
+            cssTransfer += size;
+          }
+        });
+
+        const payload = {
+          source: 'customer_home',
+          page_path: window.location.pathname,
+          ttfb_ms: nav ? nav.responseStart : null,
+          fcp_ms: fcp,
+          lcp_ms: lcp,
+          cls: cls,
+          dom_content_loaded_ms: nav ? nav.domContentLoadedEventEnd : null,
+          load_event_ms: nav ? nav.loadEventEnd : null,
+          resource_count: resources.length,
+          image_count: imageCount,
+          transfer_size_kb: transfer / 1024,
+          image_transfer_size_kb: imageTransfer / 1024,
+          js_transfer_size_kb: jsTransfer / 1024,
+          css_transfer_size_kb: cssTransfer / 1024
+        };
+
+        const url = '{% url "gsp:track_home_performance" %}';
+        const jsonPayload = JSON.stringify(payload);
+
+        if (navigator.sendBeacon) {
+          const blob = new Blob([jsonPayload], { type: 'application/json' });
+          navigator.sendBeacon(url, blob);
+        } else {
+          fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: jsonPayload,
+            keepalive: true
+          }).catch(function() {});
+        }
+      }, 1200);
+    } catch (error) {
+      // Ignore telemetry errors so customer UX is never interrupted.
+    }
+  }, 0);
 });
 </script>
 

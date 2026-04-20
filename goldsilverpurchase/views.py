@@ -1,5 +1,7 @@
 from decimal import Decimal
 from io import BytesIO
+import json
+from datetime import timedelta
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -9,9 +11,10 @@ from django.core.files.storage import default_storage
 from django.db import models
 from django.db.models import IntegerField, Q, Sum, F, Case, When, DecimalField
 from django.db.models.functions import Cast
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
+from django.utils import timezone
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
@@ -26,6 +29,7 @@ from .forms import CustomerPurchaseForm, MetalStockForm
 from .models import (
     CustomerPurchase,
     GoldSilverPurchase,
+    HomePagePerformanceMetric,
     MetalStock,
     MetalStockMovement,
     MetalStockType,
@@ -970,6 +974,98 @@ def data_settings(request):
         elif "delete_customer_purchases" in request.POST:
             return delete_customer_purchases(request)
     return render(request, "goldsilverpurchase/data_settings.html")
+
+
+@login_required(login_url='/accounts/login/')
+def performance_report(request):
+    """Settings report page for customer home page performance improvements."""
+    try:
+        days = int(request.GET.get('days', 7))
+    except (TypeError, ValueError):
+        days = 7
+    days = max(1, min(days, 90))
+
+    since = timezone.now() - timedelta(days=days)
+    metrics_qs = HomePagePerformanceMetric.objects.filter(created_at__gte=since)
+
+    summary = metrics_qs.aggregate(
+        sample_count=models.Count('id'),
+        avg_ttfb_ms=models.Avg('ttfb_ms'),
+        avg_fcp_ms=models.Avg('fcp_ms'),
+        avg_lcp_ms=models.Avg('lcp_ms'),
+        avg_cls=models.Avg('cls'),
+        avg_dom_content_loaded_ms=models.Avg('dom_content_loaded_ms'),
+        avg_load_event_ms=models.Avg('load_event_ms'),
+        avg_transfer_size_kb=models.Avg('transfer_size_kb'),
+        avg_image_transfer_size_kb=models.Avg('image_transfer_size_kb'),
+        avg_js_transfer_size_kb=models.Avg('js_transfer_size_kb'),
+        avg_css_transfer_size_kb=models.Avg('css_transfer_size_kb'),
+        avg_resource_count=models.Avg('resource_count'),
+        avg_image_count=models.Avg('image_count'),
+    )
+
+    context = {
+        'days': days,
+        'summary': summary,
+        'recent_metrics': metrics_qs.order_by('-created_at')[:100],
+    }
+    return render(request, 'goldsilverpurchase/performance_report.html', context)
+
+
+@csrf_exempt
+def track_home_performance(request):
+    """Public endpoint to collect browser performance metrics from customer home page."""
+    if request.method != 'POST':
+        return JsonResponse({'detail': 'Method not allowed'}, status=405)
+
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+    except (ValueError, TypeError):
+        return JsonResponse({'detail': 'Invalid JSON payload'}, status=400)
+
+    def get_float(name, max_value=1000000):
+        value = payload.get(name)
+        if value is None or value == '':
+            return None
+        try:
+            value = float(value)
+        except (TypeError, ValueError):
+            return None
+        if value < 0:
+            return None
+        return min(value, max_value)
+
+    def get_int(name, max_value=1000000):
+        value = payload.get(name)
+        if value is None or value == '':
+            return 0
+        try:
+            value = int(value)
+        except (TypeError, ValueError):
+            return 0
+        if value < 0:
+            return 0
+        return min(value, max_value)
+
+    metric = HomePagePerformanceMetric.objects.create(
+        page_path=(payload.get('page_path') or '/customer-home')[:120],
+        source=(payload.get('source') or 'customer_home')[:60],
+        ttfb_ms=get_float('ttfb_ms'),
+        fcp_ms=get_float('fcp_ms'),
+        lcp_ms=get_float('lcp_ms'),
+        cls=get_float('cls', max_value=100),
+        dom_content_loaded_ms=get_float('dom_content_loaded_ms'),
+        load_event_ms=get_float('load_event_ms'),
+        resource_count=get_int('resource_count', max_value=10000),
+        image_count=get_int('image_count', max_value=10000),
+        transfer_size_kb=get_float('transfer_size_kb'),
+        image_transfer_size_kb=get_float('image_transfer_size_kb'),
+        js_transfer_size_kb=get_float('js_transfer_size_kb'),
+        css_transfer_size_kb=get_float('css_transfer_size_kb'),
+        user_agent=(request.META.get('HTTP_USER_AGENT') or '')[:255],
+    )
+
+    return JsonResponse({'status': 'ok', 'id': metric.id}, status=201)
 
 
 @login_required(login_url='/accounts/login/')

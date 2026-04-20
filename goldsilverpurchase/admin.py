@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import GoldSilverPurchase, Party, MetalStock, MetalStockType, MetalStockMovement, CustomerPurchase
+from .models import GoldSilverPurchase, Party, MetalStock, MetalStockType, MetalStockMovement, CustomerPurchase, HomePagePerformanceMetric
 from .forms import PurchaseForm, PartyForm, MetalStockForm
 
 @admin.register(GoldSilverPurchase)
@@ -161,3 +161,20 @@ class MetalStockMovementAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+
+@admin.register(HomePagePerformanceMetric)
+class HomePagePerformanceMetricAdmin(admin.ModelAdmin):
+    list_display = (
+        'created_at',
+        'source',
+        'page_path',
+        'fcp_ms',
+        'lcp_ms',
+        'cls',
+        'transfer_size_kb',
+        'resource_count',
+    )
+    list_filter = ('source', 'created_at')
+    search_fields = ('page_path', 'user_agent')
+    readonly_fields = [field.name for field in HomePagePerformanceMetric._meta.fields]

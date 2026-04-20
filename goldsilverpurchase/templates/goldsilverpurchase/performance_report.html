@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-speedometer2 me-2"></i>Customer Home Performance Report</span>
+        <div>
+            <a href="?days=7" class="btn btn-sm btn-outline-light {% if days == 7 %}active{% endif %}">7 Days</a>
+            <a href="?days=30" class="btn btn-sm btn-outline-light {% if days == 30 %}active{% endif %}">30 Days</a>
+            <a href="?days=90" class="btn btn-sm btn-outline-light {% if days == 90 %}active{% endif %}">90 Days</a>
+        </div>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-3">
+            Tracks browser-side performance from customer home page visits and shows trend indicators for optimization work.
+        </p>
+
+        <div class="row g-3 mb-2">
+            <div class="col-md-3 col-sm-6">
+                <div class="border rounded p-3 h-100">
+                    <div class="small text-muted">Samples</div>
+                    <div class="h4 mb-0">{{ summary.sample_count|default:0 }}</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="border rounded p-3 h-100">
+                    <div class="small text-muted">Avg FCP</div>
+                    <div class="h4 mb-0">
+                        {% if summary.avg_fcp_ms %}{{ summary.avg_fcp_ms|floatformat:0 }} ms{% else %}-{% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="border rounded p-3 h-100">
+                    <div class="small text-muted">Avg LCP</div>
+                    <div class="h4 mb-0">
+                        {% if summary.avg_lcp_ms %}{{ summary.avg_lcp_ms|floatformat:0 }} ms{% else %}-{% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="border rounded p-3 h-100">
+                    <div class="small text-muted">Avg CLS</div>
+                    <div class="h4 mb-0">
+                        {% if summary.avg_cls %}{{ summary.avg_cls|floatformat:3 }}{% else %}-{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-4 col-sm-6">
+                <div class="border rounded p-3 h-100">
+                    <div class="small text-muted">Avg Transfer Size</div>
+                    <div class="h5 mb-0">
+                        {% if summary.avg_transfer_size_kb %}{{ summary.avg_transfer_size_kb|floatformat:1 }} KB{% else %}-{% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col-sm-6">
+                <div class="border rounded p-3 h-100">
+                    <div class="small text-muted">Avg Images Payload</div>
+                    <div class="h5 mb-0">
+                        {% if summary.avg_image_transfer_size_kb %}{{ summary.avg_image_transfer_size_kb|floatformat:1 }} KB{% else %}-{% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col-sm-6">
+                <div class="border rounded p-3 h-100">
+                    <div class="small text-muted">Avg Resource Count</div>
+                    <div class="h5 mb-0">
+                        {% if summary.avg_resource_count %}{{ summary.avg_resource_count|floatformat:0 }}{% else %}-{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h5 class="mt-4 mb-3">Recent Measurements</h5>
+        <div class="table-responsive">
+            <table class="table table-sm table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>FCP (ms)</th>
+                        <th>LCP (ms)</th>
+                        <th>CLS</th>
+                        <th>TTFB (ms)</th>
+                        <th>Transfer (KB)</th>
+                        <th>Images (KB)</th>
+                        <th>Resources</th>
+                        <th>Path</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for metric in recent_metrics %}
+                    <tr>
+                        <td>{{ metric.created_at|date:"Y-m-d H:i" }}</td>
+                        <td>{% if metric.fcp_ms %}{{ metric.fcp_ms|floatformat:0 }}{% else %}-{% endif %}</td>
+                        <td>{% if metric.lcp_ms %}{{ metric.lcp_ms|floatformat:0 }}{% else %}-{% endif %}</td>
+                        <td>{% if metric.cls %}{{ metric.cls|floatformat:3 }}{% else %}-{% endif %}</td>
+                        <td>{% if metric.ttfb_ms %}{{ metric.ttfb_ms|floatformat:0 }}{% else %}-{% endif %}</td>
+                        <td>{% if metric.transfer_size_kb %}{{ metric.transfer_size_kb|floatformat:1 }}{% else %}-{% endif %}</td>
+                        <td>{% if metric.image_transfer_size_kb %}{{ metric.image_transfer_size_kb|floatformat:1 }}{% else %}-{% endif %}</td>
+                        <td>{{ metric.resource_count }}</td>
+                        <td>{{ metric.page_path }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center text-muted py-4">
+                            No metrics collected yet. Visit customer home page to start tracking.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

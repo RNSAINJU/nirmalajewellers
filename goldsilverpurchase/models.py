@@ -660,3 +660,37 @@ class MetalStockMovement(models.Model):
             return f"{self.get_movement_type_display()} - {self.metal_stock} ({float(self.quantity)}g)"
         except (TypeError, ValueError):
             return f"Movement #{self.pk or 'New'}"
+
+
+class HomePagePerformanceMetric(models.Model):
+    """Stores customer-side home page performance measurements."""
+
+    page_path = models.CharField(max_length=120, default='/')
+    source = models.CharField(max_length=60, default='customer_home')
+
+    ttfb_ms = models.FloatField(null=True, blank=True)
+    fcp_ms = models.FloatField(null=True, blank=True)
+    lcp_ms = models.FloatField(null=True, blank=True)
+    cls = models.FloatField(null=True, blank=True)
+    dom_content_loaded_ms = models.FloatField(null=True, blank=True)
+    load_event_ms = models.FloatField(null=True, blank=True)
+
+    resource_count = models.IntegerField(default=0)
+    image_count = models.IntegerField(default=0)
+    transfer_size_kb = models.FloatField(null=True, blank=True)
+    image_transfer_size_kb = models.FloatField(null=True, blank=True)
+    js_transfer_size_kb = models.FloatField(null=True, blank=True)
+    css_transfer_size_kb = models.FloatField(null=True, blank=True)
+
+    user_agent = models.CharField(max_length=255, blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['created_at']),
+            models.Index(fields=['source', 'created_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.source} at {self.created_at:%Y-%m-%d %H:%M:%S}"

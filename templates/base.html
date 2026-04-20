@@ -1278,6 +1278,7 @@
         {% url 'gsp:metal_stock_export_xlsx' as metal_stock_export_url %}
         {% url 'gsp:metal_stock_import_xlsx' as metal_stock_import_url %}
         {% url 'gsp:data_settings' as data_settings_url %}
+        {% url 'gsp:performance_report' as performance_report_url %}
         {% url 'gsp:import_wizard' as import_wizard_url %}
         {% url 'gsp:export_all_data_json' as export_all_data_json_url %}
         {% url 'gsp:import_all_data_json' as import_all_data_json_url %}
@@ -1495,6 +1496,7 @@
             </a>
             <div class="collapse" id="settingsMenu">
                 <a href="{{ data_settings_url }}" class="nav-link">Data Settings</a>
+                <a href="{{ performance_report_url }}" class="nav-link">Performance Report</a>
                 <a href="{{ account_settings_url }}" class="nav-link">Account Settings</a>
                 <a href="{{ role_list_url }}" class="nav-link">Roles</a>
             </div>
