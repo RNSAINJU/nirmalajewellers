@@ -102,3 +102,75 @@ class Stock(models.Model):
             return (silver_qty / Decimal("11.664")) * rate
         else:  # gram
             return silver_qty * rate
+
+
+class CustomerCampaignContact(models.Model):
+    """Reusable contacts for WhatsApp/SMS campaigns."""
+
+    SOURCE_CHOICES = [
+        ('manual', 'Manual'),
+        ('order', 'Order'),
+        ('import', 'Import'),
+    ]
+
+    name = models.CharField(max_length=255)
+    phone_number = models.CharField(max_length=15, unique=True)
+    birthday = models.DateField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    whatsapp_opt_in = models.BooleanField(default=True)
+    sms_opt_in = models.BooleanField(default=True)
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default='manual')
+    notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'Customer Campaign Contact'
+        verbose_name_plural = 'Customer Campaign Contacts'
+
+    def __str__(self):
+        return f"{self.name} ({self.phone_number})"
+
+
+class CampaignMessageLog(models.Model):
+    """Message delivery log for WhatsApp/SMS automations."""
+
+    CHANNEL_CHOICES = [
+        ('sms', 'SMS'),
+        ('whatsapp', 'WhatsApp'),
+    ]
+
+    CAMPAIGN_CHOICES = [
+        ('order_ready', 'Order Ready'),
+        ('due_payment', 'Due Payment Reminder'),
+        ('rate_alert', 'Rate Alert'),
+        ('birthday', 'Birthday Campaign'),
+    ]
+
+    STATUS_CHOICES = [
+        ('queued', 'Queued'),
+        ('sent', 'Sent'),
+        ('failed', 'Failed'),
+        ('skipped', 'Skipped'),
+    ]
+
+    campaign_type = models.CharField(max_length=30, choices=CAMPAIGN_CHOICES)
+    channel = models.CharField(max_length=20, choices=CHANNEL_CHOICES)
+    recipient_name = models.CharField(max_length=255, blank=True, null=True)
+    recipient_phone = models.CharField(max_length=20)
+    message_body = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='queued')
+    provider_message_id = models.CharField(max_length=255, blank=True, null=True)
+    error_message = models.TextField(blank=True, null=True)
+    related_order = models.ForeignKey('order.Order', on_delete=models.SET_NULL, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    sent_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Campaign Message Log'
+        verbose_name_plural = 'Campaign Message Logs'
+
+    def __str__(self):
+        return f"{self.campaign_type} -> {self.recipient_phone} [{self.status}]"

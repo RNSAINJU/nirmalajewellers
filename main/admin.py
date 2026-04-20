@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Stock, DailyRate
+from .models import Stock, DailyRate, CustomerCampaignContact, CampaignMessageLog
 
 @admin.register(DailyRate)
 class DailyRateAdmin(admin.ModelAdmin):
@@ -58,3 +58,18 @@ class StockAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         """Allow deletion of Stock records."""
         return True
+
+
+@admin.register(CustomerCampaignContact)
+class CustomerCampaignContactAdmin(admin.ModelAdmin):
+    list_display = ['name', 'phone_number', 'birthday', 'is_active', 'whatsapp_opt_in', 'sms_opt_in', 'source']
+    list_filter = ['is_active', 'whatsapp_opt_in', 'sms_opt_in', 'source']
+    search_fields = ['name', 'phone_number']
+
+
+@admin.register(CampaignMessageLog)
+class CampaignMessageLogAdmin(admin.ModelAdmin):
+    list_display = ['campaign_type', 'channel', 'recipient_phone', 'status', 'created_at', 'sent_at']
+    list_filter = ['campaign_type', 'channel', 'status', 'created_at']
+    search_fields = ['recipient_phone', 'recipient_name', 'provider_message_id']
+    readonly_fields = ['campaign_type', 'channel', 'recipient_name', 'recipient_phone', 'message_body', 'status', 'provider_message_id', 'error_message', 'related_order', 'created_at', 'sent_at']

@@ -47,6 +47,24 @@ class Loan(models.Model):
         return result or Decimal('0')
 
     @property
+    def total_months_covered(self):
+        """Total months covered by all interest payments"""
+        from django.db.models import Sum
+        result = self.interest_payments.aggregate(Sum('months_covered'))['months_covered__sum']
+        return result or Decimal('0')
+
+    @property
+    def implied_interest_rate(self):
+        """Effective annual interest rate implied by actual payments made.
+        Formula: (total_paid / loan_amount / total_months) * 12 * 100
+        """
+        total_months = self.total_months_covered
+        if not total_months or self.amount == 0:
+            return None
+        rate = (self.total_interest_paid / self.amount / total_months) * Decimal('12') * Decimal('100')
+        return round(rate, 2)
+
+    @property
     def effective_interest_rate(self):
         """Calculate effective interest rate based on final interest paid and settlement months"""
         if not self.final_interest_paid or not self.settlement_months or self.amount == 0:
@@ -73,7 +91,7 @@ class LoanInterestPayment(models.Model):
     loan = models.ForeignKey(Loan, on_delete=models.CASCADE, related_name='interest_payments')
     amount = models.DecimalField(max_digits=14, decimal_places=2)
     payment_date = NepaliDateField()
-    months_covered = models.PositiveSmallIntegerField(default=3, help_text="Number of months this payment covers")
+    months_covered = models.DecimalField(max_digits=5, decimal_places=2, default=3, help_text="Number of months this payment covers (supports fractions e.g. 2.5)")
     notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -84,6 +102,91 @@ class LoanInterestPayment(models.Model):
 
     def __str__(self):
         return f"{self.loan.bank_name} - रु{self.amount} ({self.months_covered} months) on {self.payment_date}"
+
+
+class DhukutiLoan(models.Model):
+    """Separate model for Dhukuti-style loans (kept distinct from standard loans)."""
+    name = models.CharField(max_length=255)
+    received_amount = models.DecimalField(max_digits=14, decimal_places=2)
+    total_kista = models.PositiveSmallIntegerField(default=20)
+    received_kista_number = models.PositiveSmallIntegerField(
+        default=1,
+        help_text="Kista number in which whole amount was received."
+    )
+    remaining_base_payment = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Dhukuti Loan"
+        verbose_name_plural = "Dhukuti Loans"
+
+    def __str__(self):
+        return f"{self.name} - रु{self.received_amount}"
+
+    @property
+    def total_paid(self):
+        from django.db.models import Sum
+        result = self.paid_kistas.aggregate(Sum('amount'))['amount__sum']
+        return result or Decimal('0')
+
+    @property
+    def paid_kista_count(self):
+        return self.paid_kistas.count()
+
+    @property
+    def remaining_kista(self):
+        remaining = self.total_kista - self.paid_kista_count
+        return remaining if remaining > 0 else 0
+
+    @property
+    def total_interest(self):
+        return self.received_amount - self.total_paid
+
+    @property
+    def average_interest_rate_percent(self):
+        if not self.received_amount:
+            return Decimal('0.00')
+        return ((self.total_interest / self.received_amount) * Decimal('100')).quantize(Decimal('0.01'))
+
+
+class DhukutiKistaPayment(models.Model):
+    """Paid kista entries for a Dhukuti loan."""
+    loan = models.ForeignKey(DhukutiLoan, on_delete=models.CASCADE, related_name='paid_kistas')
+    month_number = models.PositiveSmallIntegerField()
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['month_number', 'created_at']
+        unique_together = ['loan', 'month_number']
+        verbose_name = "Dhukuti Kista Payment"
+        verbose_name_plural = "Dhukuti Kista Payments"
+
+    def __str__(self):
+        return f"{self.loan.name} - Kista {self.month_number} - रु{self.amount}"
+
+
+class EmiLoan(models.Model):
+    """Separate model for EMI loans (kept distinct from regular and Dhukuti loans)."""
+    name = models.CharField(max_length=255)
+    principal = models.DecimalField(max_digits=14, decimal_places=2)
+    current_principal = models.DecimalField(max_digits=14, decimal_places=2, blank=True, null=True)
+    annual_interest_rate = models.DecimalField(max_digits=7, decimal_places=4)
+    tenure_months = models.PositiveSmallIntegerField()
+    notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "EMI Loan"
+        verbose_name_plural = "EMI Loans"
+
+    def __str__(self):
+        return f"{self.name} - रु{self.principal} @ {self.annual_interest_rate}%"
 
 
 class Expense(models.Model):

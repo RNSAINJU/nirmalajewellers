@@ -1,4 +1,5 @@
 {% extends 'finance/base_finance.html' %}
+{% load bs_filters %}
 
 {% block action_buttons %}
 <a href="{% url 'finance:loan_create' %}" class="btn btn-create">
@@ -192,14 +193,26 @@
                                         <span class="text-muted">—</span>
                                         {% endif %}
                                     </td>
-                                    <td class="text-nowrap">{{ loan.start_date }}</td>
+                                    <td class="text-nowrap">
+                                        {{ loan.start_date }}
+                                        {% with converted=loan.start_date|ad_date %}
+                                        {% if converted %}
+                                        <br><small class="text-muted">AD: {{ converted }}</small>
+                                        {% endif %}
+                                        {% endwith %}
+                                    </td>
                                     <td class="text-center">
                                         {% if loan.is_settled %}
                                         <span class="badge bg-success">
                                             <i class="bi bi-check-circle"></i> Settled
                                         </span>
                                         {% if loan.settled_date %}
-                                        <br><small class="text-muted">{{ loan.settled_date }}</small>
+                                        <br><small class="text-muted">BS: {{ loan.settled_date }}</small>
+                                        {% with converted=loan.settled_date|ad_date %}
+                                        {% if converted %}
+                                        <br><small class="text-muted">AD: {{ converted }}</small>
+                                        {% endif %}
+                                        {% endwith %}
                                         {% endif %}
                                         {% else %}
                                         <span class="badge bg-danger">
@@ -219,6 +232,12 @@
                                                class="btn btn-sm btn-action-settle text-nowrap"
                                                title="Mark Loan as Settled">
                                                 <i class="bi bi-check2-circle"></i> Settle
+                                            </a>
+                                            {% elif loan.is_settled and not loan.interest_payments.exists %}
+                                            <a href="{% url 'finance:loan_add_interest' loan.pk %}"
+                                               class="btn btn-sm btn-outline-secondary text-nowrap"
+                                               title="Add interest payment record for this settled loan">
+                                                <i class="bi bi-currency-rupee"></i> Add Interest Record
                                             </a>
                                             {% endif %}
                                             <a href="{% url 'finance:loan_update' loan.pk %}" class="btn btn-sm btn-action-edit" title="Edit">
@@ -260,13 +279,28 @@
                                         </small>
                                         {% for payment in loan.interest_payments.all %}
                                         <span class="badge bg-secondary me-1">
-                                            रु{{ payment.amount|floatformat:2 }} ({{ payment.months_covered }}m) on {{ payment.payment_date }}
+                                                          रु{{ payment.amount|floatformat:2 }} ({{ payment.months_covered }}m) on {{ payment.payment_date }}
+                                                          {% with converted=payment.payment_date|ad_date %}
+                                                          {% if converted %}
+                                                          [AD: {{ converted }}]
+                                                          {% endif %}
+                                                          {% endwith %}
+                                            <a href="{% url 'finance:loan_interest_payment_edit' payment.pk %}"
+                                               class="text-white text-decoration-none ms-1"
+                                               title="Edit">✎</a>
                                             <a href="{% url 'finance:loan_interest_payment_delete' payment.pk %}"
                                                class="text-white text-decoration-none ms-1"
                                                onclick="return confirm('Delete this interest payment record?')"
                                                title="Delete">×</a>
                                         </span>
                                         {% endfor %}
+                                        {% if loan.implied_interest_rate %}
+                                        <span class="badge bg-info text-dark ms-2" title="Effective rate based on total paid ÷ total months">
+                                            <i class="bi bi-graph-up"></i>
+                                            Effective Rate: {{ loan.implied_interest_rate }}% p.a.
+                                            ({{ loan.total_months_covered }}m covered, रु{{ loan.total_interest_paid|floatformat:2 }} total)
+                                        </span>
+                                        {% endif %}
                                     </td>
                                 </tr>
                                 {% endif %}
