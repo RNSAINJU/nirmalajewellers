@@ -191,36 +191,6 @@ STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
-# Label printing profile for ornament barcode labels.
-# Change LABEL_PRINT_PROFILE to switch behavior without touching app code.
-LABEL_PRINT_PROFILE = os.getenv('LABEL_PRINT_PROFILE', 'tl240_high_contrast')
-LABEL_PRINTER_PROFILES = {
-    'tl240': {
-        'module_width': 0.17,
-        'module_height': 6.2,
-        'quiet_zone': 0.8,
-        'font_size': 0,
-        'text_distance': 0,
-        'background': 'white',
-        'foreground': 'black',
-        'write_text': False,
-        'dpi': 203,
-        'format': 'PNG',
-    },
-    'tl240_high_contrast': {
-        'module_width': 0.22,
-        'module_height': 10.0,
-        'quiet_zone': 1.8,
-        'font_size': 0,
-        'text_distance': 0,
-        'background': 'white',
-        'foreground': 'black',
-        'write_text': False,
-        'dpi': 203,
-        'format': 'PNG',
-    },
-}
-
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 

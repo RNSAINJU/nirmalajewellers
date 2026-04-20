@@ -209,7 +209,6 @@ from openpyxl.utils import get_column_letter
 import nepali_datetime as ndt
 from main.models import Stock
 from django.db import IntegrityError
-from django.conf import settings
 
 class MainCategoryCreateView(CreateView):
     model = MainCategory
@@ -256,7 +255,7 @@ class OrnamentListView(ListView):
         name = self.request.GET.get("name")
         customer = self.request.GET.get("customer")
         type = self.request.GET.get("type")
-        ornament_type = self.request.GET.get("ornament_type")
+        ornament_type = self.request.GET.get("ornament_type", Ornament.OrnamentCategory.STOCK)
         metal_type = self.request.GET.get("metal_type")
         maincategory_id = self.request.GET.get("maincategory")
         start_date = self.request.GET.get("start_date")
@@ -313,7 +312,7 @@ class OrnamentListView(ListView):
 
         # Filters back to template
         context['metal_type'] = self.request.GET.get('metal_type')
-        context['ornament_type'] = self.request.GET.get('ornament_type')
+        context['ornament_type'] = self.request.GET.get('ornament_type', Ornament.OrnamentCategory.STOCK)
         context['type'] = self.request.GET.get('type')
         context['maincategory'] = self.request.GET.get('maincategory')
 
@@ -1649,53 +1648,6 @@ def kaligar_list(request):
     }
     
     return render(request, 'ornament/kaligar_list.html', context)
-
-
-# ===== Ornament Label Print View =====
-@login_required(login_url='/accounts/login/')
-def ornament_label_print(request, pk):
-    """Render a printable label for a single ornament with details and barcode."""
-    ornament = get_object_or_404(Ornament, pk=pk)
-
-    default_profiles = {
-        'tl240': {
-            'module_width': 0.22,
-            'module_height': 10.0,
-            'quiet_zone': 1.8,
-            'font_size': 0,
-            'text_distance': 0,
-            'background': 'white',
-            'foreground': 'black',
-            'write_text': False,
-            'dpi': 203,
-            'format': 'PNG',
-        }
-    }
-    configured_profiles = getattr(settings, 'LABEL_PRINTER_PROFILES', default_profiles)
-    profile_name = getattr(settings, 'LABEL_PRINT_PROFILE', 'tl240')
-    writer_options = configured_profiles.get(profile_name, configured_profiles.get('tl240', default_profiles['tl240']))
-
-    barcode_base64 = None
-    if ornament.barcode:
-        try:
-            import barcode as barcode_lib
-            from io import BytesIO
-            import base64
-
-            barcode_class = barcode_lib.get_barcode_class('code128')
-            barcode_instance = barcode_class(ornament.barcode, writer=barcode_lib.writer.ImageWriter())
-
-            buffer = BytesIO()
-            barcode_instance.write(buffer, options=writer_options)
-            buffer.seek(0)
-            barcode_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
-        except Exception:
-            pass
-
-    return render(request, 'ornament/ornament_label_print.html', {
-        'ornament': ornament,
-        'barcode_base64': barcode_base64,
-    })
 
 
 # ===== Barcode Scanner Views =====
