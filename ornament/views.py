@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 from django.urls import reverse_lazy
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -719,6 +720,75 @@ def import_excel(request):
             skipped_fetched = 0
             skipped_duplicate = 0
             errors = []
+            column_names = [
+                "ornament_date",
+                "code",
+                "metal_type",
+                "type",
+                "ornament_type",
+                "maincategory",
+                "subcategory",
+                "ornament_name",
+                "gross_weight",
+                "weight",
+                "diamond_weight",
+                "diamond_rate",
+                "zircon_weight",
+                "stone_weight",
+                "stone_percaratprice",
+                "stone_totalprice",
+                "jarti",
+                "jyala",
+                "kaligar",
+                "description",
+                "image",
+                "order",
+                "created_at",
+                "updated_at",
+                "status",
+            ]
+
+            model_to_excel_column = {
+                "ornament_date": "ornament_date",
+                "code": "code",
+                "metal_type": "metal_type",
+                "type": "type",
+                "ornament_type": "ornament_type",
+                "maincategory": "maincategory",
+                "subcategory": "subcategory",
+                "ornament_name": "ornament_name",
+                "gross_weight": "gross_weight",
+                "weight": "weight",
+                "diamond_weight": "diamond_weight",
+                "diamond_rate": "diamond_rate",
+                "zircon_weight": "zircon_weight",
+                "stone_weight": "stone_weight",
+                "stone_percaratprice": "stone_percaratprice",
+                "stone_totalprice": "stone_totalprice",
+                "jarti": "jarti",
+                "jyala": "jyala",
+                "kaligar": "kaligar",
+                "description": "description",
+                "image": "image",
+                "order": "order",
+                "status": "status",
+                "__all__": "row",
+            }
+
+            def add_column_error(row_number, column_name, message, value=None):
+                if value is not None and value != "":
+                    errors.append(f"Row {row_number} | Column '{column_name}': {message} (value: {value})")
+                else:
+                    errors.append(f"Row {row_number} | Column '{column_name}': {message}")
+
+            def parse_decimal_cell(raw_value, row_number, column_name):
+                if raw_value is None or raw_value == "":
+                    return Decimal("0")
+                try:
+                    return to_decimal(raw_value)
+                except Exception:
+                    add_column_error(row_number, column_name, "Invalid number format", raw_value)
+                    return None
 
             expected_cols = 25
             for idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
@@ -762,6 +832,8 @@ def import_excel(request):
                     errors.append(f"Row {idx}: Column mismatch or missing data. {e}")
                     skipped += 1
                     continue
+
+                row_has_error = False
 
                 # Skip duplicates only if code is not empty and already exists
                 if code and str(code).strip() and Ornament.objects.filter(code=str(code).strip()).exists():
@@ -819,21 +891,45 @@ def import_excel(request):
                     y, m, d = map(int, str(ornament_date_bs).split("-"))
                     ornament_date = ndt.date(y, m, d)
                 except Exception:
-                    ornament_date = ndt.date.today()
+                    add_column_error(idx, "ornament_date", "Invalid date. Expected YYYY-MM-DD (BS)", ornament_date_bs)
+                    row_has_error = True
+                    ornament_date = None
                 # Decimals
-                gross_weight = to_decimal(gross_weight)
-                weight = to_decimal(weight)
-                diamond_weight = to_decimal(diamond_weight)
-                diamond_rate = to_decimal(diamond_rate)
-                zircon_weight = to_decimal(zircon_weight)
-                stone_weight = to_decimal(stone_weight)
-                stone_percaratprice = to_decimal(stone_percaratprice)
-                stone_totalprice = to_decimal(stone_totalprice)
-                jarti = to_decimal(jarti)
-                jyala = to_decimal(jyala)
+                gross_weight = parse_decimal_cell(gross_weight, idx, "gross_weight")
+                weight = parse_decimal_cell(weight, idx, "weight")
+                diamond_weight = parse_decimal_cell(diamond_weight, idx, "diamond_weight")
+                diamond_rate = parse_decimal_cell(diamond_rate, idx, "diamond_rate")
+                zircon_weight = parse_decimal_cell(zircon_weight, idx, "zircon_weight")
+                stone_weight = parse_decimal_cell(stone_weight, idx, "stone_weight")
+                stone_percaratprice = parse_decimal_cell(stone_percaratprice, idx, "stone_percaratprice")
+                stone_totalprice = parse_decimal_cell(stone_totalprice, idx, "stone_totalprice")
+                jarti = parse_decimal_cell(jarti, idx, "jarti")
+                jyala = parse_decimal_cell(jyala, idx, "jyala")
+
+                if any(
+                    val is None
+                    for val in [
+                        gross_weight,
+                        weight,
+                        diamond_weight,
+                        diamond_rate,
+                        zircon_weight,
+                        stone_weight,
+                        stone_percaratprice,
+                        stone_totalprice,
+                        jarti,
+                        jyala,
+                    ]
+                ):
+                    row_has_error = True
+
+                if row_has_error:
+                    skipped += 1
+                    continue
+
                 # Create
                 try:
-                    Ornament.objects.create(
+                    ornament_obj = Ornament(
                         ornament_date=str(ornament_date),
                         code=code,
                         metal_type=metal_type,
@@ -859,7 +955,15 @@ def import_excel(request):
                         created_at=created_at,
                         updated_at=updated_at,
                     )
+                    ornament_obj.full_clean()
+                    ornament_obj.save()
                     imported += 1
+                except ValidationError as e:
+                    for field, field_errors in e.message_dict.items():
+                        column_name = model_to_excel_column.get(field, field)
+                        for field_error in field_errors:
+                            add_column_error(idx, column_name, field_error)
+                    skipped += 1
                 except Exception as e:
                     errors.append(f"Row {idx}: Failed to import. {e}")
                     skipped += 1
