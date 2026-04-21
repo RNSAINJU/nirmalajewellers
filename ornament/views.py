@@ -888,7 +888,13 @@ def import_excel(request):
                                 linked_order = None
                 # Date
                 try:
-                    y, m, d = map(int, str(ornament_date_bs).split("-"))
+                    if hasattr(ornament_date_bs, "year") and hasattr(ornament_date_bs, "month") and hasattr(ornament_date_bs, "day"):
+                        y, m, d = int(ornament_date_bs.year), int(ornament_date_bs.month), int(ornament_date_bs.day)
+                    else:
+                        date_text = str(ornament_date_bs).strip()
+                        # Accept values like "2083-01-07 00:00:00" by taking only date part.
+                        date_text = date_text.split()[0].replace("/", "-")
+                        y, m, d = map(int, date_text.split("-"))
                     ornament_date = ndt.date(y, m, d)
                 except Exception:
                     add_column_error(idx, "ornament_date", "Invalid date. Expected YYYY-MM-DD (BS)", ornament_date_bs)
