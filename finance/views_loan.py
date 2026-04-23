@@ -1,6 +1,9 @@
 
 from decimal import Decimal
 from io import BytesIO
+from datetime import date
+from datetime import timedelta
+from calendar import monthrange
 import openpyxl
 from openpyxl import Workbook
 
@@ -9,8 +12,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db.models import Sum
 from django.http import HttpResponse
-from .models import Loan, LoanInterestPayment, DhukutiLoan, DhukutiKistaPayment, EmiLoan
-from .forms import LoanForm
+from .models import Loan, LoanInterestPayment, DhukutiLoan, DhukutiKistaPayment, EmiLoan, GoldLoanAccount, GoldLoanInterestPayment
+from .forms import LoanForm, GoldLoanAccountForm
+from common.nepali_utils import ad_to_bs_date_str
 
 
 def _safe_decimal(val):
@@ -220,6 +224,228 @@ def loan_list(request):
         'settled_count': settled_count,
     }
     return render(request, 'finance/loan_list.html', context)
+
+
+@login_required
+def gold_loan_account_list(request):
+    accounts = GoldLoanAccount.objects.all().order_by('-loan_taken_date', '-created_at')
+    if request.method == 'POST':
+        form = GoldLoanAccountForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Gold loan account added successfully!')
+            return redirect('finance:gold_loan_account_list')
+    else:
+        form = GoldLoanAccountForm()
+
+    context = {
+        'accounts': accounts,
+        'form': form,
+        'title': 'Gold Loan Accounts',
+        'total_accounts': accounts.count(),
+    }
+    return render(request, 'finance/gold_loan_account_list.html', context)
+
+
+@login_required
+def gold_loan_account_detail(request, pk):
+    account = get_object_or_404(GoldLoanAccount, pk=pk)
+    monthly_interest = Decimal(str(account.effective_monthly_interest or Decimal('0.00')))
+    penalty_rate = Decimal(str(account.penalty_rate or Decimal('0.00')))
+    breakdown = []
+    total_breakdown_interest = Decimal('0.00')
+    total_paid_interest = Decimal('0.00')
+    total_penalty_interest = Decimal('0.00')
+
+    start_date = account.loan_taken_ad_date
+    today = date.today()
+    paid_periods = {
+        (entry.period_start_ad.isoformat(), entry.period_end_ad.isoformat()): entry
+        for entry in account.interest_payments.all()
+    }
+
+    def _bs_day(ad_dt):
+        bs_text = ad_to_bs_date_str(ad_dt)
+        try:
+            return int(bs_text.split('-')[2])
+        except Exception:
+            return 1
+
+    def _bs_month_start(ad_dt):
+        cursor = ad_dt
+        # Walk backward until BS day becomes 1.
+        for _ in range(35):
+            if _bs_day(cursor) == 1:
+                return cursor
+            cursor -= timedelta(days=1)
+        return ad_dt
+
+    def _bs_month_end(ad_dt):
+        cursor = ad_dt
+        # Walk forward until next BS day becomes 1.
+        for _ in range(35):
+            next_day = cursor + timedelta(days=1)
+            if _bs_day(next_day) == 1:
+                return cursor
+            cursor = next_day
+        return ad_dt
+
+    if start_date and start_date <= today and monthly_interest > 0:
+        cursor = start_date
+        index = 1
+
+        while cursor <= today:
+            month_start = _bs_month_start(cursor)
+            month_end = _bs_month_end(cursor)
+            month_total_days = (month_end - month_start).days + 1
+
+            active_start = start_date if start_date > month_start else month_start
+            active_end = today if today < month_end else month_end
+
+            if active_start <= active_end:
+                active_days = (active_end - active_start).days + 1
+
+                # Charge a full month's interest when the whole BS month is covered.
+                if active_start == month_start and active_end == month_end:
+                    month_interest = monthly_interest.quantize(Decimal('0.01'))
+                else:
+                    month_interest = (
+                        monthly_interest * Decimal(str(active_days)) / Decimal(str(month_total_days))
+                    ).quantize(Decimal('0.01'))
+
+                total_breakdown_interest += month_interest
+
+                breakdown.append({
+                    'sn': index,
+                    'month_label': ad_to_bs_date_str(month_start)[:7],
+                    'from_date': active_start,
+                    'to_date': active_end,
+                    'active_days': active_days,
+                    'month_total_days': month_total_days,
+                    'monthly_interest': monthly_interest,
+                    'interest_amount': month_interest,
+                    'period_start_iso': active_start.isoformat(),
+                    'period_end_iso': active_end.isoformat(),
+                })
+                index += 1
+
+            cursor = month_end + timedelta(days=1)
+
+    total_rows = len(breakdown)
+
+    outstanding_due_with_penalty = Decimal('0.00')
+    running_total_interest = Decimal('0.00')
+    total_active_days = 0
+    total_monthly_interest_column = Decimal('0.00')
+
+    for row in breakdown:
+        payment = paid_periods.get((row['period_start_iso'], row['period_end_iso']))
+        row['is_paid'] = payment is not None
+        row['paid_on'] = payment.paid_on if payment else None
+
+        total_active_days += int(row['active_days'])
+        total_monthly_interest_column += Decimal(str(row['monthly_interest']))
+
+        running_total_interest += row['interest_amount']
+        row['running_total_interest'] = running_total_interest.quantize(Decimal('0.01'))
+
+        # Penalty style requested: every unpaid month gets 4% of
+        # (previous outstanding with penalty + current month interest).
+        if row['is_paid']:
+            penalty_amount = Decimal('0.00')
+        else:
+            base_for_penalty = outstanding_due_with_penalty + row['interest_amount']
+            penalty_amount = (base_for_penalty * penalty_rate / Decimal('100')).quantize(Decimal('0.01'))
+            outstanding_due_with_penalty = (base_for_penalty + penalty_amount).quantize(Decimal('0.01'))
+
+        row['penalty_amount'] = penalty_amount
+        row['interest_with_penalty_cumulative'] = outstanding_due_with_penalty.quantize(Decimal('0.01'))
+
+        if payment:
+            total_paid_interest += payment.interest_amount
+        else:
+            total_penalty_interest += penalty_amount
+
+    context = {
+        'account': account,
+        'interest_breakdown': breakdown,
+        'total_active_days': total_active_days,
+        'total_monthly_interest_column': total_monthly_interest_column.quantize(Decimal('0.01')),
+        'total_breakdown_interest': total_breakdown_interest.quantize(Decimal('0.01')),
+        'total_paid_interest': total_paid_interest.quantize(Decimal('0.01')),
+        'total_unpaid_interest': (total_breakdown_interest - total_paid_interest).quantize(Decimal('0.01')),
+        'total_penalty_interest': total_penalty_interest.quantize(Decimal('0.01')),
+        'total_due_with_penalty': outstanding_due_with_penalty.quantize(Decimal('0.01')),
+        'title': 'Gold Loan Customer Details',
+    }
+    return render(request, 'finance/gold_loan_account_detail.html', context)
+
+
+@login_required
+def gold_loan_account_update(request, pk):
+    account = get_object_or_404(GoldLoanAccount, pk=pk)
+    if request.method == 'POST':
+        form = GoldLoanAccountForm(request.POST, instance=account)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Gold loan account updated successfully!')
+            return redirect('finance:gold_loan_account_detail', pk=account.pk)
+    else:
+        form = GoldLoanAccountForm(instance=account)
+
+    context = {
+        'form': form,
+        'account': account,
+        'title': 'Edit Gold Loan Account',
+    }
+    return render(request, 'finance/gold_loan_account_form.html', context)
+
+
+@login_required
+def gold_loan_interest_mark_paid(request, pk):
+    account = get_object_or_404(GoldLoanAccount, pk=pk)
+    if request.method != 'POST':
+        return redirect('finance:gold_loan_account_detail', pk=account.pk)
+
+    period_start_str = request.POST.get('period_start_ad', '')
+    period_end_str = request.POST.get('period_end_ad', '')
+    period_label_bs = request.POST.get('period_label_bs', '')
+    interest_amount_raw = request.POST.get('interest_amount', '0')
+
+    try:
+        period_start_ad = date.fromisoformat(period_start_str)
+        period_end_ad = date.fromisoformat(period_end_str)
+        interest_amount = Decimal(str(interest_amount_raw)).quantize(Decimal('0.01'))
+    except Exception:
+        messages.error(request, 'Invalid monthly period data. Could not mark as paid.')
+        return redirect('finance:gold_loan_account_detail', pk=account.pk)
+
+    payment, created = GoldLoanInterestPayment.objects.get_or_create(
+        account=account,
+        period_start_ad=period_start_ad,
+        period_end_ad=period_end_ad,
+        defaults={
+            'period_label_bs': period_label_bs,
+            'interest_amount': interest_amount,
+            'paid_on': _extract_date(ad_to_bs_date_str(date.today())),
+        },
+    )
+
+    if created:
+        messages.success(request, f'Interest for {period_label_bs} marked as paid.')
+    else:
+        messages.info(request, f'Interest for {period_label_bs} is already marked as paid.')
+
+    return redirect('finance:gold_loan_account_detail', pk=account.pk)
+
+
+@login_required
+def gold_loan_account_delete(request, pk):
+    account = get_object_or_404(GoldLoanAccount, pk=pk)
+    if request.method == 'POST':
+        account.delete()
+        messages.success(request, 'Gold loan account deleted successfully!')
+    return redirect('finance:gold_loan_account_list')
 
 
 @login_required

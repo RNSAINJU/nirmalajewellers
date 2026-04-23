@@ -8,61 +8,94 @@
    SEARCH SECTION
    ============================================================ */
 .search-section {
-    background: #f8f9fa;
+    background: linear-gradient(135deg, #ffffff 0%, #fafaf8 100%);
     border-radius: 12px;
     padding: 20px;
-    border: 2px solid #e9ecef;
+    border: 1px solid #e5e5df;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+body.dark .search-section {
+    background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+    border-color: #2a2a2a;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.35);
 }
 
 /* ============================================================
    ACTION BUTTONS SECTION
    ============================================================ */
 .action-buttons {
-    background: white;
+    background: linear-gradient(135deg, #ffffff 0%, #fafaf8 100%);
     border-radius: 12px;
     padding: 20px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border: 1px solid #e5e5df;
+}
+
+body.dark .action-buttons {
+    background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+    border-color: #2a2a2a;
 }
 
 /* ============================================================
    FILTER SECTION (collapsible)
    ============================================================ */
 .filter-section {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
     border-radius: 15px;
     padding: 25px;
-    color: white;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    color: #f5f5f5;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.35);
     margin-bottom: 20px;
+    border: 1px solid #2a2a2a;
 }
 .filter-section label {
-    color: white;
+    color: #f4c025;
     font-weight: 600;
     margin-bottom: 5px;
 }
 .filter-section .form-control,
 .filter-section .form-select {
     border-radius: 8px;
-    border: 2px solid rgba(255,255,255,0.3);
-    background: rgba(255,255,255,0.95);
+    border: 1px solid #2f2f2f;
+    background: #141414;
+    color: #f5f5f5;
+}
+
+body:not(.dark) .filter-section {
+    background: linear-gradient(135deg, #ffffff 0%, #fafaf8 100%);
+    color: #2d2d2d;
+    border-color: #e5e5df;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+body:not(.dark) .filter-section label {
+    color: #6b6b6b;
+}
+
+body:not(.dark) .filter-section .form-control,
+body:not(.dark) .filter-section .form-select {
+    border-color: #d1d5db;
+    background: #ffffff;
+    color: #111827;
 }
 
 /* ============================================================
    STANDARD BUTTONS
    ============================================================ */
 .btn-create {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border: none;
+    background: linear-gradient(135deg, #f4c025 0%, #e5a819 100%);
+    border: 1px solid #d99f12;
     border-radius: 10px;
     padding: 12px 24px;
-    font-weight: 600;
+    font-weight: 700;
     transition: all 0.3s;
-    color: white !important;
+    color: #1a1a1a !important;
 }
 .btn-create:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-    color: white !important;
+    box-shadow: 0 8px 22px rgba(244, 192, 37, 0.35);
+    color: #111827 !important;
 }
 .btn-action {
     border-radius: 10px;
@@ -76,24 +109,24 @@
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 .btn-import {
-    background: #10b981;
-    border-color: #10b981;
-    color: white !important;
-}
-.btn-import:hover {
-    background: #059669;
-    border-color: #059669;
-    color: white !important;
-}
-.btn-export {
     background: #0ea5e9;
     border-color: #0ea5e9;
-    color: white !important;
+    color: #ffffff !important;
 }
-.btn-export:hover {
+.btn-import:hover {
     background: #0284c7;
     border-color: #0284c7;
-    color: white !important;
+    color: #ffffff !important;
+}
+.btn-export {
+    background: #10b981;
+    border-color: #10b981;
+    color: #ffffff !important;
+}
+.btn-export:hover {
+    background: #059669;
+    border-color: #059669;
+    color: #ffffff !important;
 }
 .btn-print {
     background: #1f2937;
@@ -244,11 +277,17 @@
    STATS / ANALYTICS CARDS
    ============================================================ */
 .stats-tabs {
-    background: white;
+    background: linear-gradient(135deg, #ffffff 0%, #fafaf8 100%);
     border-radius: 12px;
     padding: 20px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border: 1px solid #e5e5df;
     margin-bottom: 30px;
+}
+
+body.dark .stats-tabs {
+    background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+    border-color: #2a2a2a;
 }
 /* Generic gradient stat card */
 .mgmt-stat-card {
@@ -287,10 +326,10 @@
    NAV TABS  (standard Bootstrap, override any dark themes)
    ============================================================ */
 .nav-tabs {
-    border-bottom: 2px solid #dee2e6;
+    border-bottom: 1px solid #d1d5db;
 }
 .nav-tabs .nav-link {
-    color: #495057;
+    color: #4b5563;
     font-weight: 500;
     border: none;
     border-bottom: 3px solid transparent;
@@ -300,15 +339,28 @@
     background: transparent;
 }
 .nav-tabs .nav-link:hover {
-    color: #667eea;
-    border-bottom-color: #c7d2fe;
+    color: #f4c025;
+    border-bottom-color: rgba(244, 192, 37, 0.4);
     background: transparent;
 }
 .nav-tabs .nav-link.active {
-    color: #667eea;
+    color: #f4c025;
     background: transparent;
-    border-bottom: 3px solid #667eea;
+    border-bottom: 3px solid #f4c025;
     font-weight: 600;
+}
+
+body.dark .nav-tabs {
+    border-bottom-color: #2a2a2a;
+}
+
+body.dark .nav-tabs .nav-link {
+    color: #a1a1aa;
+}
+
+body.dark .nav-tabs .nav-link:hover,
+body.dark .nav-tabs .nav-link.active {
+    color: #f4c025;
 }
 
 /* ============================================================
@@ -365,6 +417,28 @@
     background: #f3f4f6;
     color: #4b5563;
     border-color: #e5e7eb;
+}
+
+/* Dark mode readability for ornament names in table chips */
+body.dark .ornament-link {
+    color: #93c5fd;
+}
+
+body.dark .ornament-link:hover {
+    color: #bfdbfe;
+}
+
+body.dark .ornament-chip {
+    background: rgba(56, 189, 248, 0.15);
+    color: #e0f2fe;
+    border-color: rgba(125, 211, 252, 0.45);
+    font-weight: 600;
+}
+
+body.dark .ornament-chip-muted {
+    background: rgba(148, 163, 184, 0.2);
+    color: #e2e8f0;
+    border-color: rgba(148, 163, 184, 0.4);
 }
 
 /* ============================================================

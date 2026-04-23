@@ -1,0 +1,214 @@
+{% extends 'finance/base_finance.html' %}
+
+{% block action_buttons %}
+<a href="{% url 'finance:loan_list' %}" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> Back to Loans
+</a>
+{% endblock %}
+
+{% block main_content %}
+<div class="container-fluid">
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card dashboard-card" style="border-left: 4px solid #f4c025;">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Total Gold Loan Customers</p>
+                    <h3 class="mb-0">{{ total_accounts }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-person-plus me-2"></i>Add Gold Loan Customer</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Customer Name</label>
+                            {{ form.customer_name }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Phone Number</label>
+                            {{ form.phone_number }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Loan Amount (रु)</label>
+                            {{ form.loan_amount }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Loan Taken Date</label>
+                            {{ form.loan_taken_date }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Interest Rate (%)</label>
+                            {{ form.interest_rate }}
+                            <small class="text-muted">Optional if monthly interest amount is entered.</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Monthly Interest Amount (रु)</label>
+                            {{ form.monthly_interest_amount }}
+                            <small class="text-muted">Optional if interest rate is entered.</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Penalty Rate (%)</label>
+                            {{ form.penalty_rate }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Notes</label>
+                            {{ form.notes }}
+                        </div>
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-warning py-2">
+                            {{ form.non_field_errors }}
+                        </div>
+                        {% endif %}
+                        <button type="submit" class="btn btn-create w-100">
+                            <i class="bi bi-plus-circle me-1"></i> Add Account
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="bi bi-table me-2"></i>Gold Loan Customers</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped table-hover align-middle mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Customer</th>
+                                    <th>Phone</th>
+                                    <th class="text-end">Loan Amount</th>
+                                    <th>Loan Taken Date</th>
+                                    <th class="text-center">Interest Rate</th>
+                                    <th class="text-end">Monthly Interest</th>
+                                    <th class="text-end">Elapsed Months</th>
+                                    <th class="text-end">Interest Till Today</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for account in accounts %}
+                                <tr>
+                                    <td>
+                                        <strong>
+                                            <a href="{% url 'finance:gold_loan_account_detail' account.pk %}" class="text-decoration-none ornament-link">
+                                                {{ account.customer_name }}
+                                            </a>
+                                        </strong>
+                                        {% if account.notes %}
+                                        <br><small class="text-muted">{{ account.notes|truncatechars:45 }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ account.phone_number|default:'-' }}</td>
+                                    <td class="text-end">{{ account.loan_amount|floatformat:2 }}</td>
+                                    <td>{{ account.loan_taken_date }}</td>
+                                    <td class="text-center">
+                                        {% if account.interest_rate %}
+                                        <span class="badge bg-warning text-dark">{{ account.interest_rate }}%</span>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        {{ account.effective_monthly_interest|floatformat:2 }}
+                                    </td>
+                                    <td class="text-end">
+                                        {{ account.elapsed_months_to_date|floatformat:2 }}
+                                    </td>
+                                    <td class="text-end fw-semibold">
+                                        {{ account.accrued_interest_to_date|floatformat:2 }}
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="{% url 'finance:gold_loan_account_update' account.pk %}" class="btn btn-sm btn-action-edit me-1" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form method="post" action="{% url 'finance:gold_loan_account_delete' account.pk %}" class="d-inline" onsubmit="return confirm('Delete this gold loan account?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-action-delete">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="9" class="text-center text-muted py-4">No gold loan customers added yet.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const loanAmountInput = document.getElementById('id_loan_amount');
+        const interestRateInput = document.getElementById('id_interest_rate');
+        const monthlyInterestInput = document.getElementById('id_monthly_interest_amount');
+
+        if (!loanAmountInput || !interestRateInput || !monthlyInterestInput) {
+            return;
+        }
+
+        let isAutoUpdating = false;
+
+        function parseValue(input) {
+            const value = parseFloat(input.value);
+            return Number.isFinite(value) ? value : 0;
+        }
+
+        function setRounded(input, value) {
+            input.value = (Math.round(value * 100) / 100).toFixed(2);
+        }
+
+        function updateRateFromMonthly() {
+            if (isAutoUpdating) return;
+            const loanAmount = parseValue(loanAmountInput);
+            const monthlyInterest = parseValue(monthlyInterestInput);
+            if (loanAmount <= 0 || monthlyInterest <= 0) return;
+
+            const rate = (monthlyInterest * 12 * 100) / loanAmount;
+            isAutoUpdating = true;
+            setRounded(interestRateInput, rate);
+            isAutoUpdating = false;
+        }
+
+        function updateMonthlyFromRate() {
+            if (isAutoUpdating) return;
+            const loanAmount = parseValue(loanAmountInput);
+            const rate = parseValue(interestRateInput);
+            if (loanAmount <= 0 || rate <= 0) return;
+
+            const monthlyInterest = (loanAmount * rate) / 100 / 12;
+            isAutoUpdating = true;
+            setRounded(monthlyInterestInput, monthlyInterest);
+            isAutoUpdating = false;
+        }
+
+        monthlyInterestInput.addEventListener('input', updateRateFromMonthly);
+        interestRateInput.addEventListener('input', updateMonthlyFromRate);
+
+        // Recalculate counterpart when loan amount changes.
+        loanAmountInput.addEventListener('input', function () {
+            if (monthlyInterestInput.value) {
+                updateRateFromMonthly();
+            } else if (interestRateInput.value) {
+                updateMonthlyFromRate();
+            }
+        });
+    });
+    </script>
+</div>
+{% endblock %}

@@ -1,7 +1,9 @@
 from decimal import Decimal
+from datetime import date
 from django.db import models
 from django.utils import timezone
 from nepali_datetime_field.models import NepaliDateField
+from common.nepali_utils import bs_to_ad_date
 
 class Loan(models.Model):
     """Model for loans from various banks"""
@@ -102,6 +104,98 @@ class LoanInterestPayment(models.Model):
 
     def __str__(self):
         return f"{self.loan.bank_name} - रु{self.amount} ({self.months_covered} months) on {self.payment_date}"
+
+
+class GoldLoanAccount(models.Model):
+    """Customer accounts for gold loans provided by the business."""
+
+    customer_name = models.CharField(max_length=255)
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
+    loan_amount = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal('0.00'))
+    loan_taken_date = NepaliDateField()
+    interest_rate = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True, help_text="Annual interest rate (%)")
+    monthly_interest_amount = models.DecimalField(max_digits=14, decimal_places=2, blank=True, null=True, help_text="Direct monthly interest amount")
+    penalty_rate = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('4.00'), help_text='Monthly penalty rate (%)')
+    notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-loan_taken_date', '-created_at']
+        verbose_name = "Gold Loan Account"
+        verbose_name_plural = "Gold Loan Accounts"
+
+    def __str__(self):
+        return f"{self.customer_name} - रु{self.loan_amount}"
+
+    @property
+    def effective_monthly_interest(self):
+        if self.monthly_interest_amount is not None:
+            return self.monthly_interest_amount
+        if self.interest_rate is not None and self.loan_amount:
+            return (self.loan_amount * self.interest_rate) / Decimal('100') / Decimal('12')
+        return Decimal('0.00')
+
+    @property
+    def loan_taken_ad_date(self):
+        """Best-effort AD date conversion for loan_taken_date."""
+        value = self.loan_taken_date
+        if not value:
+            return None
+        if hasattr(value, 'to_datetime_date'):
+            try:
+                return value.to_datetime_date()
+            except Exception:
+                pass
+        try:
+            return bs_to_ad_date(value)
+        except Exception:
+            return None
+
+    @property
+    def elapsed_days_to_date(self):
+        start_date = self.loan_taken_ad_date
+        if not start_date:
+            return 0
+        today = date.today()
+        if start_date > today:
+            return 0
+        return (today - start_date).days
+
+    @property
+    def elapsed_months_to_date(self):
+        # Approximate month span for running-interest display.
+        return (Decimal(str(self.elapsed_days_to_date)) / Decimal('30')).quantize(Decimal('0.01'))
+
+    @property
+    def accrued_interest_to_date(self):
+        """Accrued interest from loan date till current date."""
+        monthly_interest = Decimal(str(self.effective_monthly_interest or Decimal('0.00')))
+        if monthly_interest <= 0:
+            return Decimal('0.00')
+        accrued = monthly_interest * self.elapsed_months_to_date
+        return accrued.quantize(Decimal('0.01'))
+
+
+class GoldLoanInterestPayment(models.Model):
+    """Tracks monthly interest payment confirmation rows for GoldLoanAccount."""
+
+    account = models.ForeignKey(GoldLoanAccount, on_delete=models.CASCADE, related_name='interest_payments')
+    period_label_bs = models.CharField(max_length=7, help_text='BS month label: YYYY-MM')
+    period_start_ad = models.DateField()
+    period_end_ad = models.DateField()
+    interest_amount = models.DecimalField(max_digits=14, decimal_places=2)
+    paid_on = NepaliDateField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-period_start_ad', '-created_at']
+        unique_together = ('account', 'period_start_ad', 'period_end_ad')
+        verbose_name = 'Gold Loan Interest Payment'
+        verbose_name_plural = 'Gold Loan Interest Payments'
+
+    def __str__(self):
+        return f"{self.account.customer_name} - {self.period_label_bs} - रु{self.interest_amount}"
 
 
 class DhukutiLoan(models.Model):

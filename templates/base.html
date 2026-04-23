@@ -19,8 +19,8 @@
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-    <!-- Fonts for admin theme -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Work+Sans:wght@400;500;600;700&display=swap">
+    <!-- Fonts for unified admin dashboard theme -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Manrope:wght@400;500;600;700;800&display=swap">
 
     <!-- Management List Page Shared Styles -->
     <link rel="stylesheet" href="{% static 'css/management_list.css' %}?v=20260418">
@@ -32,8 +32,8 @@
         --sidebar-width: 260px;
         --topbar-height: 56px;
         --sidebar-bg: linear-gradient(180deg, #f8f8f5 0%, #f0f0eb 100%);
-        --sidebar-hover: rgba(255, 215, 0, 0.15);
-        --sidebar-active: rgba(255, 215, 0, 0.25);
+        --sidebar-hover: rgba(244, 192, 37, 0.15);
+        --sidebar-active: rgba(244, 192, 37, 0.25);
         --admin-bg: #f8f8f5;
         --admin-panel: #ffffff;
         --admin-panel-soft: #fafaf8;
@@ -42,6 +42,8 @@
         --admin-muted: #6b6b6b;
         --admin-gold: #f4c025;
         --admin-gold-soft: rgba(244, 192, 37, 0.15);
+        --admin-charcoal: #0f0f0f;
+        --admin-charcoal-soft: #1a1a1a;
     }
 
     body {
@@ -50,7 +52,13 @@
         padding-top: var(--topbar-height);
         background: var(--admin-bg);
         color: var(--admin-text);
-        font-family: 'Work Sans', sans-serif;
+        font-family: 'Manrope', sans-serif;
+        letter-spacing: 0.1px;
+    }
+
+    h1, h2, h3, h4 {
+        font-family: 'Cinzel', serif;
+        letter-spacing: 0.3px;
     }
 
     /* Fallback action button styles (keeps UI consistent if static CSS is cached/stale) */
@@ -1311,6 +1319,7 @@
         {% url 'finance:finance_dashboard' as finance_dashboard_url %}
         {% url 'finance:balance_sheet' as balance_sheet_url %}
         {% url 'finance:loan_list' as loan_list_url %}
+        {% url 'finance:gold_loan_account_list' as gold_loan_account_list_url %}
         {% url 'finance:loan_dhukuti_calculator' as loan_dhukuti_calculator_url %}
         {% url 'finance:loan_emi_calculator' as loan_emi_calculator_url %}
         {% url 'finance:expense_list' as expense_list_url %}
@@ -1477,6 +1486,7 @@
                 </a>
                 <div class="collapse" id="financeLoansMenu">
                     <a href="{{ loan_list_url }}" class="nav-link">Loans</a>
+                    <a href="{{ gold_loan_account_list_url }}" class="nav-link">Gold Loan Accounts</a>
                     <a href="{{ loan_dhukuti_calculator_url }}" class="nav-link">Dhukuti Loans</a>
                     <a href="{{ loan_emi_calculator_url }}" class="nav-link">EMI Loans</a>
                 </div>

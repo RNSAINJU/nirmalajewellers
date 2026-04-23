@@ -1,0 +1,219 @@
+{% extends 'finance/base_finance.html' %}
+{% load bs_filters %}
+
+{% block action_buttons %}
+<a href="{% url 'finance:gold_loan_account_list' %}" class="btn btn-secondary">
+    <i class="bi bi-arrow-left"></i> Back to Gold Loan Accounts
+</a>
+<a href="{% url 'finance:gold_loan_account_update' account.pk %}" class="btn btn-warning">
+    <i class="bi bi-pencil-square"></i> Edit
+</a>
+<form method="post" action="{% url 'finance:gold_loan_account_delete' account.pk %}" class="d-inline" onsubmit="return confirm('Delete this gold loan account?');">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">
+        <i class="bi bi-trash"></i> Delete
+    </button>
+</form>
+{% endblock %}
+
+{% block main_content %}
+<div class="row g-4 mb-4">
+    <div class="col-md-3 col-sm-6">
+        <div class="card dashboard-card" style="border-left: 4px solid #f4c025;">
+            <div class="card-body">
+                <p class="text-muted mb-1">Loan Amount</p>
+                <h4 class="mb-0">रु{{ account.loan_amount|floatformat:2 }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="card dashboard-card" style="border-left: 4px solid #0ea5e9;">
+            <div class="card-body">
+                <p class="text-muted mb-1">Monthly Interest</p>
+                <h4 class="mb-0">रु{{ account.effective_monthly_interest|floatformat:2 }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="card dashboard-card" style="border-left: 4px solid #10b981;">
+            <div class="card-body">
+                <p class="text-muted mb-1">Elapsed Months</p>
+                <h4 class="mb-0">{{ account.elapsed_months_to_date|floatformat:2 }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="card dashboard-card" style="border-left: 4px solid #ef4444;">
+            <div class="card-body">
+                <p class="text-muted mb-1">Interest Till Today</p>
+                <h4 class="mb-0">रु{{ account.accrued_interest_to_date|floatformat:2 }}</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-person-vcard me-2"></i>Customer Information</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Customer Name:</strong><br>{{ account.customer_name }}</p>
+                <p><strong>Phone Number:</strong><br>{{ account.phone_number|default:'N/A' }}</p>
+                <p><strong>Loan Taken Date (BS):</strong><br>{{ account.loan_taken_date }}</p>
+                <p><strong>Loan Taken Date (AD):</strong><br>{{ account.loan_taken_ad_date|default:'N/A' }}</p>
+                <p><strong>Notes:</strong><br>{{ account.notes|default:'N/A' }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="bi bi-calculator me-2"></i>Interest Calculation Details</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Annual Interest Rate:</strong><br>
+                    {% if account.interest_rate %}
+                        {{ account.interest_rate|floatformat:2 }}%
+                    {% else %}
+                        Auto from monthly amount
+                    {% endif %}
+                </p>
+                <p><strong>Monthly Interest Amount:</strong><br>रु{{ account.effective_monthly_interest|floatformat:2 }}</p>
+                <p><strong>Penalty Rate:</strong><br>{{ account.penalty_rate|floatformat:2 }}% per month</p>
+                <p><strong>Elapsed Days:</strong><br>{{ account.elapsed_days_to_date }}</p>
+                <p><strong>Elapsed Months:</strong><br>{{ account.elapsed_months_to_date|floatformat:2 }}</p>
+                <hr>
+                <p class="mb-0"><strong>Total Interest Till Current Date:</strong><br>
+                    <span class="h4 text-danger">रु{{ account.accrued_interest_to_date|floatformat:2 }}</span>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-1">
+    <div class="col-md-3 col-sm-6">
+        <div class="card dashboard-card" style="border-left: 4px solid #10b981;">
+            <div class="card-body">
+                <p class="text-muted mb-1">Paid Interest</p>
+                <h4 class="mb-0 text-success">रु{{ total_paid_interest|floatformat:2 }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="card dashboard-card" style="border-left: 4px solid #ef4444;">
+            <div class="card-body">
+                <p class="text-muted mb-1">Unpaid Interest</p>
+                <h4 class="mb-0 text-danger">रु{{ total_unpaid_interest|floatformat:2 }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="card dashboard-card" style="border-left: 4px solid #f59e0b;">
+            <div class="card-body">
+                <p class="text-muted mb-1">Penalty ({{ account.penalty_rate|floatformat:2 }}%)</p>
+                <h4 class="mb-0 text-warning">रु{{ total_penalty_interest|floatformat:2 }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="card dashboard-card" style="border-left: 4px solid #0ea5e9;">
+            <div class="card-body">
+                <p class="text-muted mb-1">Total Due w/ Penalty</p>
+                <h4 class="mb-0 text-primary">रु{{ total_due_with_penalty|floatformat:2 }}</h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="bi bi-calendar3 me-2"></i>Monthly Interest Breakdown (Till Current Date)</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-hover align-middle mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>S.N.</th>
+                                <th>Month</th>
+                                <th>From</th>
+                                <th>To</th>
+                                <th class="text-end">Active Days</th>
+                                <th class="text-end">Monthly Interest</th>
+                                <th class="text-end">Interest for Period</th>
+                                <th class="text-end">Total Interest</th>
+                                <th class="text-end">Penalty ({{ account.penalty_rate|floatformat:2 }}%)</th>
+                                <th class="text-end">Interest with Penalty</th>
+                                <th class="text-center">Payment</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in interest_breakdown %}
+                            <tr>
+                                <td>{{ row.sn }}</td>
+                                <td>{{ row.from_date|bs_date|slice:':7' }}</td>
+                                <td>{{ row.from_date|bs_date }}</td>
+                                <td>{{ row.to_date|bs_date }}</td>
+                                <td class="text-end">{{ row.active_days }}</td>
+                                <td class="text-end">रु{{ row.monthly_interest|floatformat:2 }}</td>
+                                <td class="text-end fw-semibold">रु{{ row.interest_amount|floatformat:2 }}</td>
+                                <td class="text-end">रु{{ row.running_total_interest|floatformat:2 }}</td>
+                                <td class="text-end">
+                                    {% if row.penalty_amount > 0 %}
+                                        <span class="text-warning fw-semibold">रु{{ row.penalty_amount|floatformat:2 }}</span>
+                                    {% else %}
+                                        <span class="text-muted">0.00</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end fw-bold">रु{{ row.interest_with_penalty_cumulative|floatformat:2 }}</td>
+                                <td class="text-center">
+                                    {% if row.is_paid %}
+                                        <span class="badge bg-success">Paid</span>
+                                        {% if row.paid_on %}
+                                            <br><small class="text-muted">{{ row.paid_on }}</small>
+                                        {% endif %}
+                                    {% else %}
+                                        <form method="post" action="{% url 'finance:gold_loan_interest_mark_paid' account.pk %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="period_label_bs" value="{{ row.month_label }}">
+                                            <input type="hidden" name="period_start_ad" value="{{ row.period_start_iso }}">
+                                            <input type="hidden" name="period_end_ad" value="{{ row.period_end_iso }}">
+                                            <input type="hidden" name="interest_amount" value="{{ row.interest_amount }}">
+                                            <button type="submit" class="btn btn-sm btn-action-settle" onclick="return confirm('Confirm interest paid for {{ row.month_label }}?');">
+                                                <i class="bi bi-check2-circle"></i> Mark Paid
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="11" class="text-center text-muted py-4">No interest period to show yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-light fw-bold">
+                                <td colspan="4" class="text-end">Totals</td>
+                                <td class="text-end">{{ total_active_days }}</td>
+                                <td class="text-end">रु{{ total_monthly_interest_column|floatformat:2 }}</td>
+                                <td class="text-end text-danger">रु{{ total_breakdown_interest|floatformat:2 }}</td>
+                                <td class="text-end text-danger">रु{{ total_breakdown_interest|floatformat:2 }}</td>
+                                <td class="text-end text-warning">रु{{ total_penalty_interest|floatformat:2 }}</td>
+                                <td class="text-end text-primary">रु{{ total_due_with_penalty|floatformat:2 }}</td>
+                                <td class="text-center">
+                                    <span class="badge bg-secondary">{{ interest_breakdown|length }} months</span>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

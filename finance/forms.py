@@ -1,6 +1,7 @@
 
 from django import forms
-from .models import Loan
+from decimal import Decimal, ROUND_HALF_UP
+from .models import Loan, GoldLoanAccount
 
 class LoanForm(forms.ModelForm):
     class Meta:
@@ -13,6 +14,50 @@ class LoanForm(forms.ModelForm):
             'start_date': forms.DateInput(attrs={'class': 'form-control nepali-date', 'placeholder': 'Start Date'}),
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Notes (optional)'}),
         }
+
+
+class GoldLoanAccountForm(forms.ModelForm):
+    class Meta:
+        model = GoldLoanAccount
+        fields = ['customer_name', 'phone_number', 'loan_amount', 'loan_taken_date', 'interest_rate', 'monthly_interest_amount', 'penalty_rate', 'notes']
+        widgets = {
+            'customer_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Customer Name'}),
+            'phone_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Phone Number (optional)'}),
+            'loan_amount': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Loan Amount', 'step': '0.01'}),
+            'loan_taken_date': forms.DateInput(attrs={'class': 'form-control nepali-date', 'placeholder': 'Loan Taken Date'}),
+            'interest_rate': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Interest Rate (%) (optional)', 'step': '0.01'}),
+            'monthly_interest_amount': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Monthly Interest Amount (optional)', 'step': '0.01'}),
+            'penalty_rate': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Penalty Rate (%)', 'step': '0.01'}),
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Notes (optional)'}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        loan_amount = cleaned_data.get('loan_amount')
+        interest_rate = cleaned_data.get('interest_rate')
+        monthly_interest_amount = cleaned_data.get('monthly_interest_amount')
+
+        if loan_amount in [None, ''] or Decimal(str(loan_amount)) <= Decimal('0'):
+            raise forms.ValidationError('Loan Amount must be greater than 0.')
+
+        loan_amount = Decimal(str(loan_amount))
+
+        if interest_rate in [None, ''] and monthly_interest_amount in [None, '']:
+            raise forms.ValidationError('Please enter either Interest Rate (%) or Monthly Interest Amount.')
+
+        # Auto-calculate annual interest rate when monthly interest amount is given.
+        if (interest_rate in [None, '']) and (monthly_interest_amount not in [None, '']):
+            monthly_interest_amount = Decimal(str(monthly_interest_amount))
+            calculated_rate = (monthly_interest_amount * Decimal('12') * Decimal('100')) / loan_amount
+            cleaned_data['interest_rate'] = calculated_rate.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+        # Auto-calculate monthly interest amount when annual interest rate is given.
+        if (monthly_interest_amount in [None, '']) and (interest_rate not in [None, '']):
+            interest_rate = Decimal(str(interest_rate))
+            calculated_monthly_interest = (loan_amount * interest_rate) / Decimal('100') / Decimal('12')
+            cleaned_data['monthly_interest_amount'] = calculated_monthly_interest.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+        return cleaned_data
 
 from .models import Expense, Employee, EmployeeSalary, SundryDebtor, DebtorTransaction, SundryCreditor, CreditorTransaction, CashBank, CashBank
 
