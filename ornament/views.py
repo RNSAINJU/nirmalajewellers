@@ -266,6 +266,8 @@ class OrnamentListView(ListView):
 
         if search:
             qs = qs.filter(
+                Q(code__icontains=search) |
+                Q(barcode__icontains=search) |
                 Q(weight__icontains=search) |
                 Q(diamond_weight__icontains=search) |
                 Q(ornament_name__icontains=search) |
