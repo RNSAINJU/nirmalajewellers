@@ -271,6 +271,10 @@
                                         <th>Status</th>
                                         <th>Notes</th>
                                         <th class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for account in gold_loan_accounts %}
                                         <tr>
                                             <td>
                                                 <strong>{{ account.account_name }}</strong>
