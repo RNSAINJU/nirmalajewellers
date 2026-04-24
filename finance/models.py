@@ -201,6 +201,7 @@ class GoldLoanInterestPayment(models.Model):
 class DhukutiLoan(models.Model):
     """Separate model for Dhukuti-style loans (kept distinct from standard loans)."""
     name = models.CharField(max_length=255)
+    start_date = models.DateField(blank=True, null=True)
     received_amount = models.DecimalField(max_digits=14, decimal_places=2)
     total_kista = models.PositiveSmallIntegerField(default=20)
     received_kista_number = models.PositiveSmallIntegerField(
@@ -261,6 +262,24 @@ class DhukutiKistaPayment(models.Model):
 
     def __str__(self):
         return f"{self.loan.name} - Kista {self.month_number} - रु{self.amount}"
+
+
+class DhukutiKistaPlan(models.Model):
+    """Planned (not yet paid) kista entries for a Dhukuti loan."""
+    loan = models.ForeignKey(DhukutiLoan, on_delete=models.CASCADE, related_name='planned_kistas')
+    month_number = models.PositiveSmallIntegerField()
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['month_number', 'updated_at']
+        unique_together = ['loan', 'month_number']
+        verbose_name = "Dhukuti Kista Plan"
+        verbose_name_plural = "Dhukuti Kista Plans"
+
+    def __str__(self):
+        return f"{self.loan.name} - Planned Kista {self.month_number} - रु{self.amount}"
 
 
 class EmiLoan(models.Model):

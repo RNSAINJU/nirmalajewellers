@@ -648,6 +648,37 @@
     .table-hover tbody tr:hover {
         background: rgba(244, 192, 37, 0.08);
     }
+
+    /* Dark mode: override Bootstrap 5 CSS variables for table row variants */
+    body.dark .table-warning {
+        --bs-table-bg: rgba(244, 192, 37, 0.18) !important;
+        --bs-table-color: #f4c025 !important;
+        --bs-table-striped-bg: rgba(244, 192, 37, 0.18) !important;
+        --bs-table-hover-bg: rgba(244, 192, 37, 0.28) !important;
+    }
+    body.dark .table-warning > * {
+        background-color: rgba(244, 192, 37, 0.18) !important;
+        color: #f4c025 !important;
+    }
+
+    body.dark .table-striped > tbody > tr:nth-of-type(odd) > * {
+        --bs-table-bg: rgba(255,255,255,0.04) !important;
+        background-color: rgba(255, 255, 255, 0.04) !important;
+        color: #e5e5e5 !important;
+    }
+
+    body.dark .table-striped > tbody > tr:nth-of-type(even) > * {
+        --bs-table-bg: transparent !important;
+        background-color: transparent !important;
+        color: #e5e5e5 !important;
+    }
+
+    body.dark .table-light,
+    body.dark .table-light > * {
+        --bs-table-bg: rgba(255,255,255,0.06) !important;
+        background-color: rgba(255, 255, 255, 0.06) !important;
+        color: #c8c8c8 !important;
+    }
     
     /* Light mode form controls */
     body:not(.dark) .form-control,

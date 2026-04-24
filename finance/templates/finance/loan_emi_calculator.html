@@ -4,6 +4,9 @@
 <a href="{% url 'finance:loan_list' %}" class="btn btn-secondary">
     <i class="bi bi-arrow-left"></i> Back to Loans
 </a>
+<a href="{% url 'finance:loan_dhukuti_calculator' %}" class="btn btn-outline-primary ms-2">
+    <i class="bi bi-piggy-bank"></i> Dhukuti Loans
+</a>
 {% endblock %}
 
 {% block main_content %}
@@ -28,7 +31,7 @@
                         <div class="form-text">These are separate saved Dhukuti loans, not regular Loans.</div>
                     </form>
 
-                    <form method="post">
+                    <form method="post" id="dhukutiForm">
                         {% csrf_token %}
                         <input type="hidden" name="dhukuti_id" value="{% if selected_dhukuti %}{{ selected_dhukuti.pk }}{% endif %}">
 
@@ -39,9 +42,16 @@
                         </div>
 
                         <div class="mb-3">
+                            <label class="form-label fw-semibold">Start Date</label>
+                            <input type="date" name="start_date" class="form-control"
+                                   value="{{ initial.start_date }}">
+                        </div>
+
+                        <div class="mb-3">
                             <label class="form-label fw-semibold">Khayeko / Received Amount (रु)</label>
-                            <input type="number" step="0.01" min="0.01" name="received_amount" class="form-control"
+                            <input type="number" step="0.01" min="0" name="received_amount" class="form-control"
                                    value="{{ initial.received_amount }}" required>
+                            <div class="form-text">Enter `0` if kista are being paid now and the amount will be received in a later kista.</div>
                         </div>
 
                         <div class="mb-3">
@@ -52,16 +62,16 @@
 
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Received At Kista #</label>
-                            <input type="number" min="1" max="200" name="received_kista_number" class="form-control"
+                            <input type="number" min="0" max="200" name="received_kista_number" class="form-control"
                                    value="{{ initial.received_kista_number }}" required>
-                            <div class="form-text">Whole khayeko amount was received in this specific kista.</div>
+                            <div class="form-text">Enter `0` if the amount has not been received yet. Whole khayeko amount was received in this specific kista.</div>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Paid Kista Amounts (one per line)</label>
-                            <textarea name="paid_amounts_text" class="form-control" rows="8"
+                            <textarea name="paid_amounts_text" id="paid-amounts-textarea" class="form-control" rows="8"
                                       placeholder="139000&#10;106500&#10;109000&#10;...">{{ initial.paid_amounts_text }}</textarea>
-                            <div class="form-text">Paste monthly paid values exactly like your Dhukuti sheet.</div>
+                            <div class="form-text">Paste monthly paid values, or edit directly in the Kista Details table on the right.</div>
                         </div>
 
                         <div class="mb-3">
@@ -95,6 +105,71 @@
         </div>
 
         <div class="col-lg-8">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-dark text-white">
+                    <h6 class="mb-0"><i class="bi bi-archive"></i> Existing Dhukuti Loans</h6>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Name</th>
+                                <th class="text-center">Start Date</th>
+                                <th class="text-end">Received</th>
+                                <th class="text-end">Paid</th>
+                                <th class="text-center">Kista</th>
+                                <th class="text-center">Remaining</th>
+                                <th class="text-center">Received At</th>
+                                <th class="text-end">Avg Rate</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dloan in dhukuti_loans %}
+                            <tr {% if selected_dhukuti and selected_dhukuti.pk == dloan.pk %}class="table-warning"{% endif %}>
+                                <td>
+                                    <strong>{{ dloan.name }}</strong>
+                                    {% if dloan.notes %}
+                                    <br><small class="text-muted">{{ dloan.notes|truncatechars:45 }}</small>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">{{ dloan.start_date|default:"-" }}</td>
+                                <td class="text-end">{{ dloan.received_amount|floatformat:2 }}</td>
+                                <td class="text-end">{{ dloan.total_paid|floatformat:2 }}</td>
+                                <td class="text-center">{{ dloan.paid_kista_count }}/{{ dloan.total_kista }}</td>
+                                <td class="text-center">
+                                    {% if dloan.remaining_kista > 0 %}
+                                    <span class="badge bg-warning text-dark">{{ dloan.remaining_kista }}</span>
+                                    {% else %}
+                                    <span class="badge bg-success">Done</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">{{ dloan.received_kista_number }}</td>
+                                <td class="text-end">{{ dloan.average_interest_rate_percent|floatformat:2 }}%</td>
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        <a href="?dhukuti={{ dloan.pk }}" class="btn btn-sm btn-outline-primary" title="Edit this Dhukuti record">
+                                            <i class="bi bi-pencil-square"></i> Edit
+                                        </a>
+                                        <form method="post" action="{% url 'finance:loan_dhukuti_delete' dloan.pk %}" onsubmit="return confirm('Delete this Dhukuti record permanently?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete this Dhukuti record">
+                                                <i class="bi bi-trash"></i> Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="9" class="text-center text-muted py-3">No saved Dhukuti records yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             {% if result %}
             <div class="row g-3 mb-3">
                 <div class="col-md-3">
@@ -185,87 +260,164 @@
                     <div class="card border-primary">
                         <div class="card-body">
                             <small class="text-muted d-block">Remaining Amount Per Kista</small>
-                            <h5 class="mb-0 text-primary">रु{{ result.remaining_kista_amount|floatformat:2 }}</h5>
+                            <h5 class="mb-0 text-primary">रु{{ result.estimated_remaining_per_kista|floatformat:2 }}</h5>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="card shadow-sm">
-                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0"><i class="bi bi-table"></i> Paid Kista Details</h6>
-                    <small class="text-light">{{ result.paid_kista }} paid</small>
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <h6 class="mb-0"><i class="bi bi-list-ol"></i> Kista Details</h6>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-success">{{ result.paid_kista }} paid</span>
+                        <span class="badge bg-secondary">{{ result.remaining_kista }} remaining</span>
+                        <button type="submit" form="dhukutiForm" class="btn btn-sm btn-warning text-dark fw-semibold">
+                            <i class="bi bi-arrow-clockwise"></i> Recalculate
+                        </button>
+                    </div>
                 </div>
                 <div class="table-responsive">
-                    <table class="table table-sm table-striped table-hover mb-0 align-middle">
+                    <table class="table table-sm table-hover mb-0 align-middle">
                         <thead class="table-light">
                             <tr>
-                                <th>Kista #</th>
+                                <th class="text-center" style="width:3rem;">S.N.</th>
+                                <th class="text-center">Kista #</th>
                                 <th class="text-end">Amount</th>
+                                <th class="text-end">Increment</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-center" style="width:5rem;"></th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for row in result.paid_rows %}
-                            <tr>
-                                <td>{{ row.month }}</td>
-                                <td class="text-end fw-semibold">{{ row.amount|floatformat:2 }}</td>
-                            </tr>
-                            {% endfor %}
-                            <tr class="table-warning">
-                                <th>Total</th>
-                                <th class="text-end">{{ result.total_paid|floatformat:2 }}</th>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="card shadow-sm mt-3">
-                <div class="card-header bg-secondary text-white">
-                    <h6 class="mb-0"><i class="bi bi-archive"></i> Saved Dhukuti Loans</h6>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-sm table-striped mb-0 align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Name</th>
-                                <th class="text-end">Received</th>
-                                <th class="text-end">Paid</th>
-                                <th class="text-center">Kista</th>
-                                <th class="text-center">Received At</th>
-                                <th class="text-end">Avg Rate</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for dloan in dhukuti_loans %}
-                            <tr>
-                                <td>{{ dloan.name }}</td>
-                                <td class="text-end">{{ dloan.received_amount|floatformat:2 }}</td>
-                                <td class="text-end">{{ dloan.total_paid|floatformat:2 }}</td>
-                                <td class="text-center">{{ dloan.paid_kista_count }}/{{ dloan.total_kista }}</td>
-                                <td class="text-center">{{ dloan.received_kista_number }}</td>
-                                <td class="text-end">{{ dloan.average_interest_rate_percent|floatformat:2 }}%</td>
-                                <td>
-                                    <div class="d-flex gap-1">
-                                        <a href="?dhukuti={{ dloan.pk }}" class="btn btn-sm btn-outline-primary" title="Edit this Dhukuti record">
-                                            <i class="bi bi-pencil-square"></i> Edit
-                                        </a>
-                                        <form method="post" action="{% url 'finance:loan_dhukuti_delete' dloan.pk %}" onsubmit="return confirm('Delete this Dhukuti record permanently?');">
+                            {% for row in result.all_kista_rows %}
+                            <tr id="kista-row-{{ row.month }}">
+                                <td class="text-center text-muted">{{ forloop.counter }}</td>
+                                <td class="text-center fw-semibold">{{ row.month }}</td>
+                                <td class="text-end" style="min-width:120px;">
+                                    {# Display span (shown by default) #}
+                                    <span id="kista-display-{{ row.month }}" class="{% if row.paid %}fw-semibold{% elif row.planned %}text-info fw-semibold{% else %}text-muted fst-italic{% endif %}">
+                                        {% if not row.paid and not row.planned %}~{% endif %}रु{{ row.amount|floatformat:2 }}
+                                    </span>
+                                    {# Edit input (hidden by default) #}
+                                    <input type="number" step="0.01" min="0"
+                                           id="kista-input-{{ row.month }}"
+                                           class="form-control form-control-sm text-end kista-input d-none"
+                                           data-kista="{{ row.month }}"
+                                           data-original="{{ row.amount|floatformat:2 }}"
+                                           {% if not row.paid %}data-pending="1"{% endif %}
+                                           value="{{ row.amount|floatformat:2 }}">
+                                                                        {# Hidden form for saving updated amount (all rows) #}
+                                                                        {% if selected_dhukuti %}
+                                    <form id="kista-update-form-{{ row.month }}" method="post"
+                                          action="{% url 'finance:loan_dhukuti_kista_update_amount' selected_dhukuti.pk %}"
+                                          class="d-none">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="month_number" value="{{ row.month }}">
+                                        <input type="hidden" name="amount" id="kista-update-amount-{{ row.month }}" value="{{ row.amount|floatformat:2 }}">
+                                    </form>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    {% if row.increment is not None %}
+                                        {% if row.increment > 0 %}
+                                            <small class="text-success fw-semibold">+{{ row.increment|floatformat:2 }}</small>
+                                        {% elif row.increment < 0 %}
+                                            <small class="text-danger fw-semibold">{{ row.increment|floatformat:2 }}</small>
+                                        {% else %}
+                                            <small class="text-muted">—</small>
+                                        {% endif %}
+                                    {% else %}
+                                        <small class="text-muted">—</small>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if row.paid %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle-fill"></i> Paid
+                                        </span>
+                                        {% if selected_dhukuti %}
+                                        <form method="post" action="{% url 'finance:loan_dhukuti_kista_undo_paid' selected_dhukuti.pk %}" class="d-inline ms-1">
                                             {% csrf_token %}
-                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete this Dhukuti record">
-                                                <i class="bi bi-trash"></i> Delete
+                                            <input type="hidden" name="month_number" value="{{ row.month }}">
+                                            <button type="submit" class="btn btn-xs btn-outline-danger"
+                                                    style="font-size:0.68rem; padding:1px 5px;"
+                                                    onclick="return confirm('Undo paid for Kista {{ row.month }}?');">
+                                                <i class="bi bi-arrow-counterclockwise"></i> Undo
                                             </button>
                                         </form>
-                                    </div>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge {% if row.planned %}bg-info text-dark{% else %}bg-secondary opacity-75{% endif %}">
+                                            <i class="bi {% if row.planned %}bi-bookmark-check{% else %}bi-circle{% endif %}"></i>
+                                            {% if row.planned %}Planned{% else %}Pending{% endif %}
+                                        </span>
+                                        {% if selected_dhukuti %}
+                                        <form method="post" action="{% url 'finance:loan_dhukuti_kista_mark_paid' selected_dhukuti.pk %}" class="d-inline ms-1">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="month_number" value="{{ row.month }}">
+                                            <input type="hidden" name="amount" id="mark-paid-amount-{{ row.month }}" value="{{ row.amount|floatformat:2 }}">
+                                            <button type="submit" class="btn btn-xs btn-action-settle"
+                                                    style="font-size:0.68rem; padding:1px 5px;"
+                                                    onclick="return confirm('Mark Kista {{ row.month }} as paid (रु' + document.getElementById('mark-paid-amount-{{ row.month }}').value + ')?');">
+                                                <i class="bi bi-check2-circle"></i> Mark Paid
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    {% endif %}
                                 </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="7" class="text-center text-muted py-3">No saved Dhukuti records yet.</td>
+                                <td class="text-center">
+                                    {# Edit button (shown by default) #}
+                                    <button type="button"
+                                            id="kista-edit-btn-{{ row.month }}"
+                                            class="btn btn-xs btn-outline-secondary"
+                                            style="font-size:0.7rem; padding:1px 6px;"
+                                            onclick="kistaEditStart({{ row.month }})">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    {# Save + Cancel buttons (hidden by default) #}
+                                    <span id="kista-save-btns-{{ row.month }}" class="d-none d-inline-flex gap-1">
+                                        {% if selected_dhukuti %}
+                                        <button type="button"
+                                                class="btn btn-xs btn-success"
+                                                style="font-size:0.7rem; padding:1px 6px;"
+                                                title="Save to database"
+                                                onclick="kistaEditSavePaid({{ row.month }})">
+                                            <i class="bi bi-check2"></i>
+                                        </button>
+                                        {% else %}
+                                        <button type="button"
+                                                class="btn btn-xs btn-success"
+                                                style="font-size:0.7rem; padding:1px 6px;"
+                                                onclick="kistaEditSave({{ row.month }})">
+                                            <i class="bi bi-check2"></i>
+                                        </button>
+                                        {% endif %}
+                                        <button type="button"
+                                                class="btn btn-xs btn-outline-danger"
+                                                style="font-size:0.7rem; padding:1px 6px;"
+                                                onclick="kistaEditCancel({{ row.month }})">
+                                            <i class="bi bi-x"></i>
+                                        </button>
+                                    </span>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
+                        <tfoot>
+                            <tr class="table-warning fw-bold">
+                                <td colspan="2" class="text-end">Total Paid</td>
+                                <td class="text-end">रु{{ result.total_paid|floatformat:2 }}</td>
+                                <td colspan="2"></td>
+                            </tr>
+                            {% if result.remaining_kista > 0 %}
+                            <tr class="table-light text-muted">
+                                <td colspan="2" class="text-end fst-italic">Est. Remaining</td>
+                                <td class="text-end fst-italic">~रु{{ result.estimated_remaining_total|floatformat:2 }}</td>
+                                <td colspan="2"></td>
+                            </tr>
+                            {% endif %}
+                        </tfoot>
                     </table>
                 </div>
             </div>
@@ -277,4 +429,97 @@
         </div>
     </div>
 </div>
+
+{% block extra_js %}
+<script>
+// Track committed kista values (kista# -> amount string)
+const kistaValues = {};
+document.querySelectorAll('.kista-input').forEach(inp => {
+    kistaValues[parseInt(inp.dataset.kista)] = inp.value;
+});
+
+function kistaEditStart(month) {
+    document.getElementById('kista-display-' + month).classList.add('d-none');
+    document.getElementById('kista-input-' + month).classList.remove('d-none');
+    document.getElementById('kista-input-' + month).focus();
+    document.getElementById('kista-edit-btn-' + month).classList.add('d-none');
+    document.getElementById('kista-save-btns-' + month).classList.remove('d-none');
+}
+
+// Save for PENDING kista: only update local display + mark-paid amount (no DB write)
+function kistaEditSave(month) {
+    const inp = document.getElementById('kista-input-' + month);
+    const val = inp.value.trim() || '0';
+    kistaValues[month] = val;
+    const display = document.getElementById('kista-display-' + month);
+    display.textContent = 'रु' + parseFloat(val).toFixed(2);
+    display.classList.remove('d-none', 'text-muted', 'fst-italic');
+    display.classList.add('fw-semibold');
+    inp.classList.add('d-none');
+    const markPaidAmt = document.getElementById('mark-paid-amount-' + month);
+    if (markPaidAmt) markPaidAmt.value = parseFloat(val).toFixed(2);
+    document.getElementById('kista-edit-btn-' + month).classList.remove('d-none');
+    document.getElementById('kista-save-btns-' + month).classList.add('d-none');
+}
+
+// Save for PAID kista: update local display then submit hidden form to write to DB
+function kistaEditSavePaid(month) {
+    const inp = document.getElementById('kista-input-' + month);
+    const val = inp.value.trim() || '0';
+    kistaValues[month] = val;
+    // Update the hidden form's amount field and submit it
+    const amtField = document.getElementById('kista-update-amount-' + month);
+    if (amtField) {
+        amtField.value = parseFloat(val).toFixed(2);
+        document.getElementById('kista-update-form-' + month).submit();
+    }
+}
+
+function kistaEditCancel(month) {
+    const inp = document.getElementById('kista-input-' + month);
+    inp.value = kistaValues[month] || inp.dataset.original;
+    inp.classList.add('d-none');
+    document.getElementById('kista-display-' + month).classList.remove('d-none');
+    document.getElementById('kista-edit-btn-' + month).classList.remove('d-none');
+    document.getElementById('kista-save-btns-' + month).classList.add('d-none');
+}
+
+function syncKistaInputs() {
+    // Only sync PAID kista inputs (not pending/projected) into the textarea.
+    const paidInputs = document.querySelectorAll('.kista-input:not([data-pending])');
+    if (!paidInputs.length) return;
+    const inputMap = {};
+    paidInputs.forEach(inp => {
+        inputMap[parseInt(inp.dataset.kista)] = kistaValues[parseInt(inp.dataset.kista)] || inp.value;
+    });
+    const maxKista = Math.max(...Object.keys(inputMap).map(Number));
+    const lines = [];
+    for (let i = 1; i <= maxKista; i++) {
+        lines.push(inputMap[i] !== undefined ? inputMap[i] : '0');
+    }
+    const textarea = document.getElementById('paid-amounts-textarea');
+    if (textarea) textarea.value = lines.join('\n');
+}
+
+// Allow pressing Enter in input to save, Escape to cancel
+document.querySelectorAll('.kista-input').forEach(inp => {
+    inp.addEventListener('keydown', function(e) {
+        const month = parseInt(this.dataset.kista);
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const updateForm = document.getElementById('kista-update-form-' + month);
+            if (updateForm) { kistaEditSavePaid(month); } else { kistaEditSave(month); }
+        }
+        if (e.key === 'Escape') { kistaEditCancel(month); }
+    });
+});
+
+const dhukutiForm = document.getElementById('dhukutiForm');
+if (dhukutiForm) {
+    dhukutiForm.addEventListener('submit', function() {
+        syncKistaInputs();
+    });
+}
+</script>
+{% endblock %}
 {% endblock %}
