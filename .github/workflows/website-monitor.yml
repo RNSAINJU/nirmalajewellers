@@ -1,0 +1,346 @@
+name: Daily Website Health Monitor
+
+on:
+  schedule:
+    # Runs daily at 06:00 UTC (11:45 AM Nepal Time)
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      create_issue_on_success:
+        description: 'Create a GitHub Issue even if all checks pass'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+jobs:
+  monitor:
+    name: Check Website Health
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+
+    steps:
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run Website Health Checks
+        id: health_check
+        run: |
+          python3 << 'PYEOF'
+          import requests
+          import ssl
+          import socket
+          import datetime
+          import os
+          import sys
+
+          BASE_URL = "https://nirmalajewellers.net"
+          TIMEOUT = 30
+
+          # Pages to check: (label, path, allow_redirect)
+          # allow_redirect=True means a 3xx redirect is also OK (for auth-protected pages)
+          PAGES = [
+              ("Homepage",       "/",                  False),
+              ("Shop",           "/shop/",             False),
+              ("Daily Rates",    "/daily-rates/",      False),
+              ("Login Page",     "/accounts/login/",   False),
+              ("Admin Dashboard","/admin-dashboard/",  True),
+              ("Analytics",      "/analytics/",        True),
+              ("Finance",        "/finance/",          True),
+              ("Orders",         "/order/",            True),
+          ]
+
+          errors = []
+          warnings = []
+          rows = []
+
+          session = requests.Session()
+          session.headers.update({"User-Agent": "NirmalaJewellers-HealthBot/1.0"})
+
+          for label, path, allow_redirect in PAGES:
+              url = BASE_URL + path
+              print(f"Checking: {url}")
+              emoji = "✅"
+              note = ""
+              status_code = "—"
+              time_str = "—"
+
+              try:
+                  resp = session.get(
+                      url,
+                      timeout=TIMEOUT,
+                      allow_redirects=allow_redirect,
+                      verify=True,
+                  )
+                  status_code = str(resp.status_code)
+                  elapsed = resp.elapsed.total_seconds()
+                  time_str = f"{elapsed:.2f}s"
+
+                  ok_codes = {200, 301, 302, 303} if allow_redirect else {200}
+                  if resp.status_code not in ok_codes:
+                      emoji = "🔴"
+                      note = f"Unexpected HTTP {resp.status_code}"
+                      errors.append(f"{label} ({url}): HTTP {resp.status_code}")
+                  elif elapsed > 10:
+                      emoji = "🟡"
+                      note = f"Very slow: {elapsed:.2f}s"
+                      warnings.append(f"{label} ({url}): Very slow response {elapsed:.2f}s")
+                  elif elapsed > 5:
+                      emoji = "🟡"
+                      note = f"Slow: {elapsed:.2f}s"
+                      warnings.append(f"{label} ({url}): Slow response {elapsed:.2f}s")
+
+              except requests.exceptions.SSLError as exc:
+                  emoji = "🔴"
+                  note = f"SSL error: {exc}"
+                  errors.append(f"{label} ({url}): SSL error — {exc}")
+              except requests.exceptions.ConnectionError as exc:
+                  emoji = "🔴"
+                  note = "Connection failed / site unreachable"
+                  errors.append(f"{label} ({url}): Connection failed")
+              except requests.exceptions.Timeout:
+                  emoji = "🔴"
+                  note = f"Timed out after {TIMEOUT}s"
+                  errors.append(f"{label} ({url}): Timed out after {TIMEOUT}s")
+              except Exception as exc:
+                  emoji = "🔴"
+                  note = f"Unexpected error: {exc}"
+                  errors.append(f"{label} ({url}): {exc}")
+
+              rows.append(f"| {emoji} | {label} | `{status_code}` | {time_str} | {note} |")
+
+          # ── SSL Certificate expiry check ─────────────────────────────────
+          print("\nChecking SSL certificate expiry...")
+          ssl_emoji = "✅"
+          ssl_note = ""
+          ssl_expiry_str = "—"
+
+          try:
+              ctx = ssl.create_default_context()
+              with ctx.wrap_socket(
+                  socket.create_connection(("nirmalajewellers.net", 443), timeout=15),
+                  server_hostname="nirmalajewellers.net",
+              ) as sock:
+                  cert = sock.getpeercert()
+              not_after = cert["notAfter"]  # e.g. "May 25 12:00:00 2025 GMT"
+              expiry = datetime.datetime.strptime(not_after, "%b %d %H:%M:%S %Y GMT").replace(
+                  tzinfo=datetime.timezone.utc
+              )
+              ssl_expiry_str = expiry.strftime("%Y-%m-%d")
+              days_left = (expiry - datetime.datetime.now(datetime.timezone.utc)).days
+
+              if days_left < 7:
+                  ssl_emoji = "🔴"
+                  ssl_note = f"Expires in {days_left} days — RENEW IMMEDIATELY"
+                  errors.append(f"SSL Certificate: Expires in {days_left} days — renew immediately!")
+              elif days_left < 30:
+                  ssl_emoji = "🟡"
+                  ssl_note = f"Expires in {days_left} days — plan renewal soon"
+                  warnings.append(f"SSL Certificate: Expires in {days_left} days — plan renewal soon")
+              else:
+                  ssl_note = f"Valid for {days_left} more days (expires {ssl_expiry_str})"
+
+          except Exception as exc:
+              ssl_emoji = "🔴"
+              ssl_note = f"Could not check SSL certificate: {exc}"
+              errors.append(f"SSL Certificate: {exc}")
+
+          ssl_row = f"| {ssl_emoji} | SSL Certificate | — | — | {ssl_note} |"
+
+          # ── Write GitHub Actions outputs ─────────────────────────────────
+          results_table = "\n".join(rows)
+          errors_list   = "\n".join(f"- ❌ {e}" for e in errors) if errors else "None"
+          warnings_list = "\n".join(f"- ⚠️ {w}" for w in warnings) if warnings else "None"
+
+          output_file = os.environ["GITHUB_OUTPUT"]
+          with open(output_file, "a") as fh:
+              fh.write(f"ERRORS_COUNT={len(errors)}\n")
+              fh.write(f"WARNINGS_COUNT={len(warnings)}\n")
+              fh.write(f"RESULTS_TABLE<<EOF_RESULTS\n{results_table}\nEOF_RESULTS\n")
+              fh.write(f"SSL_ROW<<EOF_SSL\n{ssl_row}\nEOF_SSL\n")
+              fh.write(f"ERRORS_LIST<<EOF_ERRORS\n{errors_list}\nEOF_ERRORS\n")
+              fh.write(f"WARNINGS_LIST<<EOF_WARNINGS\n{warnings_list}\nEOF_WARNINGS\n")
+
+          # ── Print summary to console ─────────────────────────────────────
+          print("\n===== HEALTH CHECK SUMMARY =====")
+          for row in rows:
+              print(row)
+          print(ssl_row)
+
+          if errors:
+              print(f"\n❌ {len(errors)} error(s) found:")
+              for e in errors:
+                  print(f"  • {e}")
+              sys.exit(1)
+          elif warnings:
+              print(f"\n⚠️ {len(warnings)} warning(s) — all pages reachable")
+          else:
+              print("\n✅ All checks passed!")
+
+          PYEOF
+
+      - name: Create GitHub Issue on Failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const date = new Date().toISOString().split('T')[0];
+            const resultsTable = process.env.RESULTS_TABLE;
+            const sslRow       = process.env.SSL_ROW;
+            const errorsList   = process.env.ERRORS_LIST;
+            const warningsList = process.env.WARNINGS_LIST;
+
+            // Ensure the label exists (create if missing)
+            for (const labelName of ['website-monitor', 'bug']) {
+              try {
+                await github.rest.issues.getLabel({
+                  owner: context.repo.owner,
+                  repo:  context.repo.repo,
+                  name:  labelName,
+                });
+              } catch {
+                const colors = { 'website-monitor': 'd4c5f9', 'bug': 'd73a4a' };
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo:  context.repo.repo,
+                  name:  labelName,
+                  color: colors[labelName] || 'ededed',
+                });
+              }
+            }
+
+            const body = [
+              `## 🔴 Website Health Check Failed — ${date}`,
+              '',
+              `**One or more checks on [nirmalajewellers.net](https://nirmalajewellers.net) failed.** Please investigate immediately.`,
+              '',
+              '---',
+              '',
+              '### Page Status',
+              '',
+              '| Status | Page | HTTP Code | Response Time | Notes |',
+              '|--------|------|-----------|---------------|-------|',
+              resultsTable,
+              sslRow,
+              '',
+              '---',
+              '',
+              '### ❌ Errors',
+              errorsList,
+              '',
+              '### ⚠️ Warnings',
+              warningsList,
+              '',
+              '---',
+              '',
+              `> _Generated automatically by the [Daily Website Health Monitor](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/workflows/website-monitor.yml) workflow._`,
+              `> _Run: [#${process.env.GITHUB_RUN_NUMBER}](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID})_`,
+            ].join('\n');
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              title: `🔴 Website Health Check Failed — ${date}`,
+              body,
+              labels: ['website-monitor', 'bug'],
+            });
+        env:
+          RESULTS_TABLE: ${{ steps.health_check.outputs.RESULTS_TABLE }}
+          SSL_ROW:        ${{ steps.health_check.outputs.SSL_ROW }}
+          ERRORS_LIST:    ${{ steps.health_check.outputs.ERRORS_LIST }}
+          WARNINGS_LIST:  ${{ steps.health_check.outputs.WARNINGS_LIST }}
+
+      - name: Post Success Summary
+        if: success()
+        run: |
+          DATE=$(date -u '+%Y-%m-%d %H:%M UTC')
+          {
+            echo "## ✅ All health checks passed on $DATE"
+            echo ""
+            echo "| Status | Page | HTTP Code | Response Time | Notes |"
+            echo "|--------|------|-----------|---------------|-------|"
+            echo "$RESULTS_TABLE"
+            echo "$SSL_ROW"
+            echo ""
+            echo "⚠️ **Warnings:** $WARNINGS_COUNT"
+            if [ "$WARNINGS_COUNT" != "0" ]; then
+              echo ""
+              echo "$WARNINGS_LIST"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+        env:
+          RESULTS_TABLE:  ${{ steps.health_check.outputs.RESULTS_TABLE }}
+          SSL_ROW:        ${{ steps.health_check.outputs.SSL_ROW }}
+          WARNINGS_COUNT: ${{ steps.health_check.outputs.WARNINGS_COUNT }}
+          WARNINGS_LIST:  ${{ steps.health_check.outputs.WARNINGS_LIST }}
+
+      - name: Create GitHub Issue on Success (manual trigger only)
+        if: >
+          success() &&
+          github.event_name == 'workflow_dispatch' &&
+          github.event.inputs.create_issue_on_success == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const date = new Date().toISOString().split('T')[0];
+            const resultsTable  = process.env.RESULTS_TABLE;
+            const sslRow        = process.env.SSL_ROW;
+            const warningsList  = process.env.WARNINGS_LIST;
+            const warningsCount = parseInt(process.env.WARNINGS_COUNT, 10);
+
+            // Ensure the label exists (create if missing)
+            try {
+              await github.rest.issues.getLabel({
+                owner: context.repo.owner,
+                repo:  context.repo.repo,
+                name:  'website-monitor',
+              });
+            } catch {
+              await github.rest.issues.createLabel({
+                owner: context.repo.owner,
+                repo:  context.repo.repo,
+                name:  'website-monitor',
+                color: 'd4c5f9',
+              });
+            }
+
+            const body = [
+              `## ✅ Website Health Check Passed — ${date}`,
+              '',
+              `All checks on [nirmalajewellers.net](https://nirmalajewellers.net) passed successfully.`,
+              '',
+              '---',
+              '',
+              '### Page Status',
+              '',
+              '| Status | Page | HTTP Code | Response Time | Notes |',
+              '|--------|------|-----------|---------------|-------|',
+              resultsTable,
+              sslRow,
+              '',
+              '---',
+              '',
+              `### ⚠️ Warnings (${warningsCount})`,
+              warningsList,
+              '',
+              '---',
+              '',
+              `> _Generated automatically by the [Daily Website Health Monitor](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/workflows/website-monitor.yml) workflow._`,
+              `> _Run: [#${process.env.GITHUB_RUN_NUMBER}](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID})_`,
+            ].join('\n');
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              title: `✅ Website Health Check Report — ${date}`,
+              body,
+              labels: ['website-monitor'],
+            });
+        env:
+          RESULTS_TABLE:  ${{ steps.health_check.outputs.RESULTS_TABLE }}
+          SSL_ROW:        ${{ steps.health_check.outputs.SSL_ROW }}
+          WARNINGS_COUNT: ${{ steps.health_check.outputs.WARNINGS_COUNT }}
+          WARNINGS_LIST:  ${{ steps.health_check.outputs.WARNINGS_LIST }}
