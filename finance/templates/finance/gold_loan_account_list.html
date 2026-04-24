@@ -17,6 +17,22 @@
                 </div>
             </div>
         </div>
+        <div class="col-md-4">
+            <div class="card dashboard-card" style="border-left: 4px solid #0ea5e9;">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Total Loan Given to Customers</p>
+                    <h3 class="mb-0">रु{{ total_loan_given|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card dashboard-card" style="border-left: 4px solid #ef4444;">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Total Unpaid Loan Interest</p>
+                    <h3 class="mb-0">रु{{ total_unpaid_interest|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="row g-4">

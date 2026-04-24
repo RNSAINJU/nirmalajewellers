@@ -228,7 +228,28 @@ def loan_list(request):
 
 @login_required
 def gold_loan_account_list(request):
-    accounts = GoldLoanAccount.objects.all().order_by('-loan_taken_date', '-created_at')
+    accounts = GoldLoanAccount.objects.all().prefetch_related('interest_payments').order_by('-loan_taken_date', '-created_at')
+
+    total_loan_given = Decimal('0.00')
+    total_unpaid_interest = Decimal('0.00')
+    for account in accounts:
+        loan_amount = Decimal(str(account.loan_amount or Decimal('0.00')))
+        accrued_interest = Decimal(str(account.accrued_interest_to_date or Decimal('0.00')))
+        paid_interest = sum(
+            Decimal(str(payment.interest_amount or Decimal('0.00')))
+            for payment in account.interest_payments.all()
+        )
+
+        unpaid_interest = accrued_interest - paid_interest
+        if unpaid_interest < 0:
+            unpaid_interest = Decimal('0.00')
+
+        total_loan_given += loan_amount
+        total_unpaid_interest += unpaid_interest
+
+    total_loan_given = total_loan_given.quantize(Decimal('0.01'))
+    total_unpaid_interest = total_unpaid_interest.quantize(Decimal('0.01'))
+
     if request.method == 'POST':
         form = GoldLoanAccountForm(request.POST)
         if form.is_valid():
@@ -243,6 +264,8 @@ def gold_loan_account_list(request):
         'form': form,
         'title': 'Gold Loan Accounts',
         'total_accounts': accounts.count(),
+        'total_loan_given': total_loan_given,
+        'total_unpaid_interest': total_unpaid_interest,
     }
     return render(request, 'finance/gold_loan_account_list.html', context)
 
@@ -435,6 +458,38 @@ def gold_loan_interest_mark_paid(request, pk):
         messages.success(request, f'Interest for {period_label_bs} marked as paid.')
     else:
         messages.info(request, f'Interest for {period_label_bs} is already marked as paid.')
+
+    return redirect('finance:gold_loan_account_detail', pk=account.pk)
+
+
+@login_required
+def gold_loan_interest_undo_paid(request, pk):
+    account = get_object_or_404(GoldLoanAccount, pk=pk)
+    if request.method != 'POST':
+        return redirect('finance:gold_loan_account_detail', pk=account.pk)
+
+    period_start_str = request.POST.get('period_start_ad', '')
+    period_end_str = request.POST.get('period_end_ad', '')
+    period_label_bs = request.POST.get('period_label_bs', '')
+
+    try:
+        period_start_ad = date.fromisoformat(period_start_str)
+        period_end_ad = date.fromisoformat(period_end_str)
+    except Exception:
+        messages.error(request, 'Invalid monthly period data. Could not undo payment.')
+        return redirect('finance:gold_loan_account_detail', pk=account.pk)
+
+    deleted_count, _ = GoldLoanInterestPayment.objects.filter(
+        account=account,
+        period_start_ad=period_start_ad,
+        period_end_ad=period_end_ad,
+    ).delete()
+
+    if deleted_count > 0:
+        label = period_label_bs or f'{period_start_ad} to {period_end_ad}'
+        messages.success(request, f'Interest payment for {label} has been undone.')
+    else:
+        messages.info(request, 'No paid record found for this month.')
 
     return redirect('finance:gold_loan_account_detail', pk=account.pk)
 

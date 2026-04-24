@@ -25,6 +25,7 @@ urlpatterns = [
     path('loans/gold-accounts/<int:pk>/', __import__('finance.views_loan').views_loan.gold_loan_account_detail, name='gold_loan_account_detail'),
     path('loans/gold-accounts/<int:pk>/edit/', __import__('finance.views_loan').views_loan.gold_loan_account_update, name='gold_loan_account_update'),
     path('loans/gold-accounts/<int:pk>/mark-interest-paid/', __import__('finance.views_loan').views_loan.gold_loan_interest_mark_paid, name='gold_loan_interest_mark_paid'),
+    path('loans/gold-accounts/<int:pk>/undo-interest-paid/', __import__('finance.views_loan').views_loan.gold_loan_interest_undo_paid, name='gold_loan_interest_undo_paid'),
     path('loans/gold-accounts/<int:pk>/delete/', __import__('finance.views_loan').views_loan.gold_loan_account_delete, name='gold_loan_account_delete'),
     path('loans/interest-payment/<int:pk>/edit/', __import__('finance.views_loan').views_loan.loan_interest_payment_edit, name='loan_interest_payment_edit'),
     path('loans/interest-payment/<int:pk>/delete/', __import__('finance.views_loan').views_loan.loan_interest_payment_delete, name='loan_interest_payment_delete'),

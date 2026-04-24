@@ -176,6 +176,15 @@
                                         {% if row.paid_on %}
                                             <br><small class="text-muted">{{ row.paid_on }}</small>
                                         {% endif %}
+                                        <form method="post" action="{% url 'finance:gold_loan_interest_undo_paid' account.pk %}" class="d-inline mt-1">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="period_label_bs" value="{{ row.month_label }}">
+                                            <input type="hidden" name="period_start_ad" value="{{ row.period_start_iso }}">
+                                            <input type="hidden" name="period_end_ad" value="{{ row.period_end_iso }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger mt-1" onclick="return confirm('Undo paid interest for {{ row.month_label }}?');">
+                                                <i class="bi bi-arrow-counterclockwise"></i> Undo
+                                            </button>
+                                        </form>
                                     {% else %}
                                         <form method="post" action="{% url 'finance:gold_loan_interest_mark_paid' account.pk %}" class="d-inline">
                                             {% csrf_token %}
