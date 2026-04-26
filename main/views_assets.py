@@ -146,9 +146,9 @@ def total_assets(request):
     # CALCULATE: Ornament metal content in pending orders (order, processing)
     # ============================================================
     
-    # Get all orders with status: order, processing (NOT completed or delivered)
+    # Get all orders with status: order, processing, on_hold (NOT completed or delivered)
     pending_orders_for_metals = Order.objects.filter(
-        status__in=['order', 'processing']
+        status__in=['order', 'processing', 'on_hold']
     )
     
     order_gold_weight_24k = Decimal('0')
@@ -288,7 +288,7 @@ def total_assets(request):
     # ============================================================
     # 10. LOANS (Liabilities)
     # ============================================================
-    loan_total = Loan.objects.aggregate(
+    loan_total = Loan.objects.filter(is_settled=False).aggregate(
         total=Coalesce(Sum('amount'), Decimal('0'))
     )['total'] or Decimal('0')
 
