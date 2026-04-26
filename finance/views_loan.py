@@ -40,7 +40,7 @@ def _extract_date(val):
         return None
 
 
-def _compute_dhukuti_summary(received_amount, total_kista, paid_amounts, remaining_base_payment=None, received_kista_number=1, planned_amounts_by_month=None):
+def _compute_dhukuti_summary(received_amount, total_kista, paid_amounts, remaining_base_payment=None, received_kista_number=1, planned_amounts_by_month=None, kista_increment=None):
     """Compute Dhukuti-style payment summary from variable monthly kista amounts."""
     if received_amount < 0:
         raise ValueError('Received amount cannot be negative.')
@@ -114,12 +114,12 @@ def _compute_dhukuti_summary(received_amount, total_kista, paid_amounts, remaini
             if amt > 0:
                 planned_month_set[int(month)] = amt
 
-    # Compute average increment from paid kista sequence
-    avg_increment = Decimal('0.00')
-    if paid_kista >= 2:
-        avg_increment = (
-            (paid_rows[-1]['amount'] - paid_rows[0]['amount']) / Decimal(str(paid_kista - 1))
-        ).quantize(Decimal('0.01'))
+    # Determine increment for projecting future kistas.
+    # If user provided kista_increment, use it; otherwise future kistas equal the last paid kista (increment=0).
+    if kista_increment is not None:
+        avg_increment = Decimal(str(kista_increment)).quantize(Decimal('0.01'))
+    else:
+        avg_increment = Decimal('0.00')
     all_kista_rows = []
     prev_amount = None
     for i in range(1, total_kista + 1):
@@ -139,7 +139,7 @@ def _compute_dhukuti_summary(received_amount, total_kista, paid_amounts, remaini
                 increment = None
             else:
                 projected = (prev_amount + avg_increment).quantize(Decimal('0.01'))
-                if avg_increment >= Decimal('0') and projected <= prev_amount:
+                if avg_increment > Decimal('0') and projected <= prev_amount:
                     projected = prev_amount + Decimal('0.01')
                 increment = projected - prev_amount
             all_kista_rows.append({'month': i, 'amount': projected, 'paid': False, 'planned': False, 'increment': increment, 'projected': True})
@@ -835,6 +835,7 @@ def loan_dhukuti_calculator(request):
         'total_kista': '20',
         'received_kista_number': '1',
         'remaining_base_payment': '',
+        'kista_increment': '',
         'paid_amounts_text': '',
         'notes': '',
     }
@@ -849,6 +850,7 @@ def loan_dhukuti_calculator(request):
             initial['total_kista'] = str(selected_dhukuti.total_kista)
             initial['received_kista_number'] = str(selected_dhukuti.received_kista_number)
             initial['remaining_base_payment'] = str(selected_dhukuti.remaining_base_payment)
+            initial['kista_increment'] = str(selected_dhukuti.kista_increment) if selected_dhukuti.kista_increment is not None else ''
             initial['notes'] = selected_dhukuti.notes or ''
             initial['paid_amounts_text'] = '\n'.join(
                 str(p.amount) for p in selected_dhukuti.paid_kistas.all().order_by('month_number')
@@ -862,6 +864,7 @@ def loan_dhukuti_calculator(request):
                 planned_amounts_by_month={
                     p.month_number: p.amount for p in selected_dhukuti.planned_kistas.all().order_by('month_number')
                 },
+                kista_increment=selected_dhukuti.kista_increment,
             )
 
     if request.method == 'POST':
@@ -871,6 +874,7 @@ def loan_dhukuti_calculator(request):
         initial['total_kista'] = request.POST.get('total_kista', '').strip()
         initial['received_kista_number'] = request.POST.get('received_kista_number', '').strip()
         initial['remaining_base_payment'] = request.POST.get('remaining_base_payment', '').strip()
+        initial['kista_increment'] = request.POST.get('kista_increment', '').strip()
         initial['paid_amounts_text'] = request.POST.get('paid_amounts_text', '').strip()
         initial['notes'] = request.POST.get('notes', '').strip()
 
@@ -891,6 +895,10 @@ def loan_dhukuti_calculator(request):
             if initial['remaining_base_payment']:
                 remaining_base_payment = Decimal(initial['remaining_base_payment'])
 
+            kista_increment = None
+            if initial['kista_increment']:
+                kista_increment = Decimal(initial['kista_increment'])
+
             result = _compute_dhukuti_summary(
                 received_amount=received_amount,
                 total_kista=total_kista,
@@ -900,6 +908,7 @@ def loan_dhukuti_calculator(request):
                 planned_amounts_by_month={
                     p.month_number: p.amount for p in selected_dhukuti.planned_kistas.all().order_by('month_number')
                 } if selected_dhukuti else None,
+                kista_increment=kista_increment,
             )
 
             record_name = initial['name'] or f"Dhukuti Loan {received_amount}"
@@ -914,6 +923,7 @@ def loan_dhukuti_calculator(request):
                     selected_dhukuti.total_kista = total_kista
                     selected_dhukuti.received_kista_number = received_kista_number
                     selected_dhukuti.remaining_base_payment = result['remaining_base_payment']
+                    selected_dhukuti.kista_increment = kista_increment
                     selected_dhukuti.notes = initial['notes']
                     selected_dhukuti.save()
 
@@ -941,6 +951,7 @@ def loan_dhukuti_calculator(request):
                     total_kista=total_kista,
                     received_kista_number=received_kista_number,
                     remaining_base_payment=result['remaining_base_payment'],
+                    kista_increment=kista_increment,
                     notes=initial['notes'],
                 )
                 for row in result['paid_rows']:
@@ -963,6 +974,9 @@ def loan_dhukuti_calculator(request):
         'selected_dhukuti': selected_dhukuti,
         'initial': initial,
         'result': result,
+        'dhukuti_total_received': sum((d.received_amount for d in dhukuti_loans), Decimal('0')),
+        'dhukuti_total_paid': sum((d.total_paid for d in dhukuti_loans), Decimal('0')),
+        'dhukuti_total_remaining': sum((d.estimated_remaining_to_pay for d in dhukuti_loans if d.received_amount > 0), Decimal('0')),
     }
     return render(request, 'finance/loan_emi_calculator.html', context)
 
