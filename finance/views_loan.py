@@ -153,6 +153,37 @@ def _compute_dhukuti_summary(received_amount, total_kista, paid_amounts, remaini
     if remaining_kista > 0:
         estimated_remaining_per_kista = (estimated_remaining_total / Decimal(str(remaining_kista))).quantize(Decimal('0.01'))
 
+    # Final interest rule:
+    # Total Interest = Total paid kista + Remaining kista amount - Received amount.
+    # Prefer remaining amount derived from visible remaining rows; fallback to remaining_base_payment.
+    remaining_amount_for_interest = estimated_remaining_total
+    if remaining_amount_for_interest == Decimal('0.00'):
+        remaining_amount_for_interest = remaining_base_payment
+
+    # Keep stored/displayed base remaining aligned with the effective remaining used for interest.
+    remaining_base_payment = remaining_amount_for_interest.quantize(Decimal('0.01'))
+
+    total_interest = (total_paid + remaining_base_payment - received_amount).quantize(Decimal('0.01'))
+    interest_on_paid_side = total_interest < 0
+
+    monthly_interest = Decimal('0.00')
+    if elapsed_interest_kista > 0:
+        monthly_interest = (total_interest / Decimal(str(elapsed_interest_kista))).quantize(Decimal('0.000001'))
+
+    average_interest_rate_percent = Decimal('0.00')
+    if received_amount > 0:
+        average_interest_rate_percent = ((total_interest / received_amount) * Decimal('100')).quantize(Decimal('0.01'))
+
+    average_monthly_interest_rate_percent = Decimal('0.00')
+    if elapsed_interest_kista > 0 and received_amount > 0:
+        average_monthly_interest_rate_percent = ((monthly_interest / received_amount) * Decimal('100')).quantize(Decimal('0.01'))
+
+    remaining_interest = (monthly_interest * Decimal(str(remaining_kista))).quantize(Decimal('0.01'))
+    to_pay_with_interest_adj = (remaining_base_payment - remaining_interest).quantize(Decimal('0.01'))
+    remaining_kista_amount = Decimal('0.00')
+    if remaining_kista > 0:
+        remaining_kista_amount = (to_pay_with_interest_adj / Decimal(str(remaining_kista))).quantize(Decimal('0.01'))
+
     return {
         'paid_rows': paid_rows,
         'all_kista_rows': all_kista_rows,
@@ -175,6 +206,24 @@ def _compute_dhukuti_summary(received_amount, total_kista, paid_amounts, remaini
         'estimated_remaining_total': estimated_remaining_total,
         'estimated_remaining_per_kista': estimated_remaining_per_kista,
     }
+
+
+def _recalculate_and_store_dhukuti_remaining_base(dhukuti_loan):
+    """Recompute remaining_base_payment from latest kista data and persist it."""
+    summary = _compute_dhukuti_summary(
+        received_amount=dhukuti_loan.received_amount,
+        total_kista=dhukuti_loan.total_kista,
+        paid_amounts=[p.amount for p in dhukuti_loan.paid_kistas.all().order_by('month_number')],
+        remaining_base_payment=None,
+        received_kista_number=dhukuti_loan.received_kista_number,
+        planned_amounts_by_month={
+            p.month_number: p.amount for p in dhukuti_loan.planned_kistas.all().order_by('month_number')
+        },
+    )
+    if dhukuti_loan.remaining_base_payment != summary['remaining_base_payment']:
+        dhukuti_loan.remaining_base_payment = summary['remaining_base_payment']
+        dhukuti_loan.save(update_fields=['remaining_base_payment'])
+    return summary
 
 
 def _compute_emi_schedule(principal, annual_rate, tenure_months):
@@ -896,6 +945,8 @@ def loan_dhukuti_calculator(request):
     if selected_dhukuti_id:
         selected_dhukuti = DhukutiLoan.objects.filter(pk=selected_dhukuti_id).first()
         if selected_dhukuti:
+            # Keep stored base remaining synced with current paid/planned kista values.
+            result = _recalculate_and_store_dhukuti_remaining_base(selected_dhukuti)
             initial['name'] = selected_dhukuti.name
             initial['start_date'] = str(selected_dhukuti.start_date) if selected_dhukuti.start_date else ''
             initial['received_amount'] = str(selected_dhukuti.received_amount)
@@ -905,16 +956,6 @@ def loan_dhukuti_calculator(request):
             initial['notes'] = selected_dhukuti.notes or ''
             initial['paid_amounts_text'] = '\n'.join(
                 str(p.amount) for p in selected_dhukuti.paid_kistas.all().order_by('month_number')
-            )
-            result = _compute_dhukuti_summary(
-                received_amount=selected_dhukuti.received_amount,
-                total_kista=selected_dhukuti.total_kista,
-                paid_amounts=[p.amount for p in selected_dhukuti.paid_kistas.all().order_by('month_number')],
-                remaining_base_payment=selected_dhukuti.remaining_base_payment,
-                received_kista_number=selected_dhukuti.received_kista_number,
-                planned_amounts_by_month={
-                    p.month_number: p.amount for p in selected_dhukuti.planned_kistas.all().order_by('month_number')
-                },
             )
 
     if request.method == 'POST':
@@ -1069,6 +1110,7 @@ def loan_dhukuti_kista_mark_paid(request, pk):
                 defaults={'amount': Decimal(amount)},
             )
             DhukutiKistaPlan.objects.filter(loan=dhukuti_loan, month_number=month_number).delete()
+            _recalculate_and_store_dhukuti_remaining_base(dhukuti_loan)
             messages.success(request, f'Kista {month_number} marked as paid (रु{amount}).') 
     return redirect(reverse('finance:loan_dhukuti_calculator') + f'?dhukuti={pk}')
 
@@ -1084,6 +1126,7 @@ def loan_dhukuti_kista_undo_paid(request, pk):
                 loan=dhukuti_loan, month_number=month_number
             ).delete()
             if deleted:
+                _recalculate_and_store_dhukuti_remaining_base(dhukuti_loan)
                 messages.success(request, f'Kista {month_number} payment undone.')
     return redirect(reverse('finance:loan_dhukuti_calculator') + f'?dhukuti={pk}')
 
@@ -1105,6 +1148,7 @@ def loan_dhukuti_kista_update_amount(request, pk):
             loan=dhukuti_loan, month_number=month_number
         ).update(amount=amount)
         if updated_paid:
+            _recalculate_and_store_dhukuti_remaining_base(dhukuti_loan)
             messages.success(request, f'Updated paid kista {month_number} amount to रु{amount}.')
         else:
             DhukutiKistaPlan.objects.update_or_create(
@@ -1112,6 +1156,7 @@ def loan_dhukuti_kista_update_amount(request, pk):
                 month_number=month_number,
                 defaults={'amount': amount},
             )
+            _recalculate_and_store_dhukuti_remaining_base(dhukuti_loan)
             messages.success(request, f'Saved unpaid kista {month_number} amount रु{amount}.')
         return redirect(reverse('finance:loan_dhukuti_calculator') + f'?dhukuti={pk}')
     except Exception as exc:
