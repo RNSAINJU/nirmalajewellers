@@ -124,6 +124,30 @@
                     </div>
                 </div>
                 {% endif %}
+                {% if dhukuti_loans %}
+                <div class="card-body border-bottom py-2">
+                    <div class="row g-2 text-center">
+                        <div class="col-4">
+                            <div class="rounded p-2 bg-danger bg-opacity-10 border border-danger">
+                                <div class="small text-muted mb-1">To Pay Remaining <span class="text-danger">(active received)</span></div>
+                                <div class="fw-bold text-danger fs-6">रु{{ dhukuti_total_remaining|floatformat:2 }}</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="rounded p-2 bg-success bg-opacity-10 border border-success">
+                                <div class="small text-muted mb-1">Total Paid Kista</div>
+                                <div class="fw-bold text-success fs-6">रु{{ dhukuti_total_paid|floatformat:2 }}</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="rounded p-2 {% if dhukuti_net_final > 0 %}bg-warning bg-opacity-10 border border-warning{% else %}bg-success bg-opacity-10 border border-success{% endif %}">
+                                <div class="small text-muted mb-1">Net Final To Pay</div>
+                                <div class="fw-bold {% if dhukuti_net_final > 0 %}text-warning{% else %}text-success{% endif %} fs-6">रु{{ dhukuti_net_final|floatformat:2 }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
                 <div class="table-responsive">
                     <table class="table table-sm table-striped mb-0 align-middle">
                         <thead class="table-light">
