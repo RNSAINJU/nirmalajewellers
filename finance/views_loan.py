@@ -58,9 +58,20 @@ def _compute_dhukuti_summary(received_amount, total_kista, paid_amounts, remaini
 
     paid_kista = len(paid_rows)
     remaining_kista = max(total_kista - paid_kista, 0)
-    raw_diff = received_amount - total_paid
-    interest_on_paid_side = raw_diff < 0
-    total_interest = abs(raw_diff).quantize(Decimal('0.01'))
+
+    # If remaining amount is not provided, estimate it from average paid kista.
+    if remaining_base_payment is None or remaining_base_payment == Decimal('0'):
+        avg_paid = Decimal('0.00')
+        if paid_kista > 0:
+            avg_paid = (total_paid / Decimal(str(paid_kista))).quantize(Decimal('0.01'))
+        remaining_base_payment = (avg_paid * Decimal(str(remaining_kista))).quantize(Decimal('0.01'))
+    else:
+        remaining_base_payment = Decimal(str(remaining_base_payment)).quantize(Decimal('0.01'))
+
+    # User-defined rule:
+    # Total Interest = Total paid kista + Remaining kista amount - Received amount.
+    total_interest = (total_paid + remaining_base_payment - received_amount).quantize(Decimal('0.01'))
+    interest_on_paid_side = total_interest < 0
 
     # Interest period starts from the kista where whole amount is received.
     # 0 means not yet received — treat same as no interest period started.
@@ -73,10 +84,7 @@ def _compute_dhukuti_summary(received_amount, total_kista, paid_amounts, remaini
         elapsed_interest_kista = effective_paid_kista if effective_paid_kista > 0 else 0
 
     monthly_interest = Decimal('0.00')
-    if received_amount == 0:
-        interest_on_paid_side = False
-        total_interest = Decimal('0.00')
-    elif elapsed_interest_kista > 0:
+    if elapsed_interest_kista > 0:
         monthly_interest = (total_interest / Decimal(str(elapsed_interest_kista))).quantize(Decimal('0.000001'))
 
     average_interest_rate_percent = Decimal('0.00')
@@ -88,14 +96,6 @@ def _compute_dhukuti_summary(received_amount, total_kista, paid_amounts, remaini
         average_monthly_interest_rate_percent = ((monthly_interest / received_amount) * Decimal('100')).quantize(Decimal('0.01'))
 
     remaining_interest = (monthly_interest * Decimal(str(remaining_kista))).quantize(Decimal('0.01'))
-
-    if remaining_base_payment is None or remaining_base_payment == Decimal('0'):
-        avg_paid = Decimal('0.00')
-        if paid_kista > 0:
-            avg_paid = (total_paid / Decimal(str(paid_kista))).quantize(Decimal('0.01'))
-        remaining_base_payment = (avg_paid * Decimal(str(remaining_kista))).quantize(Decimal('0.01'))
-    else:
-        remaining_base_payment = Decimal(str(remaining_base_payment)).quantize(Decimal('0.01'))
 
     to_pay_with_interest_adj = (remaining_base_payment - remaining_interest).quantize(Decimal('0.01'))
     remaining_kista_amount = Decimal('0.00')
