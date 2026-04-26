@@ -192,7 +192,13 @@
                     <div class="card border-warning">
                         <div class="card-body">
                             <small class="text-muted d-block">Total Interest</small>
-                            <h4 class="mb-0 text-warning">रु{{ result.total_interest|floatformat:2 }}</h4>
+                            <h4 class="mb-0 text-warning">
+                                {% if result.received_amount and result.received_amount > 0 %}
+                                    रु{{ result.total_interest|floatformat:2 }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </h4>
                         </div>
                     </div>
                 </div>
