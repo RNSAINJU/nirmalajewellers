@@ -9,7 +9,7 @@
 {% block main_content %}
 <div class="container-fluid">
     <div class="row g-4 mb-4">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card dashboard-card" style="border-left: 4px solid #f4c025;">
                 <div class="card-body">
                     <p class="text-muted mb-1">Total Gold Loan Customers</p>
@@ -17,7 +17,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card dashboard-card" style="border-left: 4px solid #0ea5e9;">
                 <div class="card-body">
                     <p class="text-muted mb-1">Total Loan Given to Customers</p>
@@ -25,11 +25,19 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card dashboard-card" style="border-left: 4px solid #ef4444;">
                 <div class="card-body">
                     <p class="text-muted mb-1">Total Unpaid Loan Interest</p>
                     <h3 class="mb-0">रु{{ total_unpaid_interest|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card dashboard-card" style="border-left: 4px solid #8b5cf6;">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Loan Given + Unpaid Interest</p>
+                    <h3 class="mb-0">रु{{ total_gold_loan_receivable|floatformat:2 }}</h3>
                 </div>
             </div>
         </div>

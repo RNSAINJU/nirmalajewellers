@@ -312,6 +312,7 @@ def gold_loan_account_list(request):
 
     total_loan_given = total_loan_given.quantize(Decimal('0.01'))
     total_unpaid_interest = total_unpaid_interest.quantize(Decimal('0.01'))
+    total_gold_loan_receivable = (total_loan_given + total_unpaid_interest).quantize(Decimal('0.01'))
 
     if request.method == 'POST':
         form = GoldLoanAccountForm(request.POST)
@@ -329,6 +330,7 @@ def gold_loan_account_list(request):
         'total_accounts': accounts.count(),
         'total_loan_given': total_loan_given,
         'total_unpaid_interest': total_unpaid_interest,
+        'total_gold_loan_receivable': total_gold_loan_receivable,
     }
     return render(request, 'finance/gold_loan_account_list.html', context)
 

@@ -1359,6 +1359,7 @@
         {% url 'finance:debtor_list' as debtor_list_url %}
         {% url 'finance:creditor_list' as creditor_list_url %}
         {% url 'finance:cashbank_list' as cashbank_list_url %}
+        {% url 'finance:other_investment_list' as other_investment_list_url %}
         {% url 'finance:finance_export_all' as finance_export_all_url %}
         {% url 'finance:finance_import_all' as finance_import_all_url %}
 
@@ -1527,6 +1528,7 @@
                 <a href="{{ debtor_list_url }}" class="nav-link">Sundry Debtors</a>
                 <a href="{{ creditor_list_url }}" class="nav-link">Sundry Creditors</a>
                 <a href="{{ cashbank_list_url }}" class="nav-link">Cash & Bank</a>
+                <a href="{{ other_investment_list_url }}" class="nav-link">Other Investments</a>
             </div>
         </div>
 
