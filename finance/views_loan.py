@@ -1109,7 +1109,7 @@ def loan_dhukuti_calculator(request):
         'initial': initial,
         'result': result,
         'dhukuti_total_received': sum((d.received_amount for d in dhukuti_loans), Decimal('0')),
-        'dhukuti_total_paid': sum((d.total_paid for d in dhukuti_loans if d.remaining_kista > 0), Decimal('0')),
+        'dhukuti_total_paid': sum((d.total_paid for d in dhukuti_loans if d.remaining_kista > 0 or d.received_amount == 0), Decimal('0')),
         'dhukuti_total_remaining': sum((d.estimated_remaining_to_pay for d in dhukuti_loans if d.received_amount > 0 and d.remaining_kista > 0), Decimal('0')),
         'dhukuti_net_final': sum((d.received_amount for d in dhukuti_loans if d.received_amount > 0), Decimal('0')) - sum((d.total_paid for d in dhukuti_loans), Decimal('0')),
         'total_remaining_per_kista': total_remaining_per_kista,
