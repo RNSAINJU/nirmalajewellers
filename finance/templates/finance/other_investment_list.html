@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Other Investment Accounts - Nirmal Jewellers{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-2 mb-4">
+                <h1 class="h2">Other Investment Accounts</h1>
+                <div class="d-flex gap-2 flex-wrap w-100 w-lg-auto">
+                    <a href="{% url 'finance:investment_export_excel' %}" class="btn btn-success">
+                        <i class="bi bi-file-earmark-excel me-1"></i> Export Excel
+                    </a>
+                    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#importInvestmentModal">
+                        <i class="bi bi-upload me-1"></i> Import Excel
+                    </button>
+                    <a href="{% url 'finance:other_investment_create' %}" class="btn btn-primary fw-semibold">
+                        <i class="bi bi-plus-circle me-1"></i> Add Investment
+                    </a>
+                </div>
+            </div>
+
+    <!-- Import Excel Modal -->
+    <div class="modal fade" id="importInvestmentModal" tabindex="-1" aria-labelledby="importInvestmentModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="importInvestmentModalLabel"><i class="bi bi-file-earmark-excel me-2"></i>Import Investments from Excel</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="post" action="{% url 'finance:investment_import_excel' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="investmentExcelFile" class="form-label fw-semibold">Select Excel File (.xlsx)</label>
+                            <input type="file" class="form-control" id="investmentExcelFile" name="file" accept=".xlsx,.xls" required>
+                        </div>
+                        <div class="alert alert-info py-2" style="font-size: 0.85rem;">
+                            <i class="bi bi-info-circle me-1"></i> Columns: <strong>account_name, investment_date, investment_amount, current_amount, notes, is_active</strong>. Export first to get the correct format.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-warning"><i class="bi bi-upload me-1"></i> Import</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-6 col-lg-3">
+            <div class="card dashboard-card" style="border-left: 4px solid #1abc9c;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-0" style="font-size: 0.85rem;">Total Invested</p>
+                            <h3 class="mb-0 mt-2" style="color: #1abc9c;">रु{{ total_invested|floatformat:2 }}</h3>
+                        </div>
+                        <i class="bi bi-piggy-bank" style="font-size: 2rem; color: #1abc9c; opacity: 0.3;"></i>
+                    </div>
+                    <hr class="my-2">
+                    <span class="text-muted small"><i class="bi bi-cash-coin"></i> Original Amount</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card dashboard-card" style="border-left: 4px solid #3498db;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-0" style="font-size: 0.85rem;">Current Value</p>
+                            <h3 class="mb-0 mt-2" style="color: #3498db;">रु{{ total_current|floatformat:2 }}</h3>
+                        </div>
+                        <i class="bi bi-graph-up-arrow" style="font-size: 2rem; color: #3498db; opacity: 0.3;"></i>
+                    </div>
+                    <hr class="my-2">
+                    <span class="text-muted small"><i class="bi bi-bar-chart"></i> Market Value</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card dashboard-card" style="border-left: 4px solid {% if total_profit_loss >= 0 %}#27ae60{% else %}#e74c3c{% endif %};">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-0" style="font-size: 0.85rem;">Total Profit / Loss</p>
+                            <h3 class="mb-0 mt-2" style="color: {% if total_profit_loss >= 0 %}#27ae60{% else %}#e74c3c{% endif %};">{% if total_profit_loss >= 0 %}+{% endif %}रु{{ total_profit_loss|floatformat:2 }}</h3>
+                        </div>
+                        <i class="bi bi-{% if total_profit_loss >= 0 %}arrow-up-circle{% else %}arrow-down-circle{% endif %}" style="font-size: 2rem; color: {% if total_profit_loss >= 0 %}#27ae60{% else %}#e74c3c{% endif %}; opacity: 0.3;"></i>
+                    </div>
+                    <hr class="my-2">
+                    <span class="text-muted small"><i class="bi bi-calculator"></i> Current - Invested</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Accounts Table -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header text-white" style="background-color: #1abc9c;">
+                    <h5 class="mb-0"><i class="bi bi-graph-up-arrow"></i> Investments</h5>
+                </div>
+                <div class="card-body">
+                    {% if accounts %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped table-hover align-middle">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Date (BS)</th>
+                                        <th class="text-end">Invested (रु)</th>
+                                        <th class="text-end">Current Value (रु)</th>
+                                        <th class="text-end">Profit / Loss</th>
+                                        <th>Status</th>
+                                        <th>Notes</th>
+                                        <th class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for account in accounts %}
+                                        <tr>
+                                            <td><strong>{{ account.account_name }}</strong></td>
+                                            <td>{{ account.investment_date|default:"-" }}</td>
+                                            <td class="text-end">
+                                                {% if account.investment_amount %}रु{{ account.investment_amount|floatformat:2 }}{% else %}-{% endif %}
+                                            </td>
+                                            <td class="text-end">
+                                                {% if account.current_amount %}<span class="badge bg-info text-dark">रु{{ account.current_amount|floatformat:2 }}</span>{% else %}-{% endif %}
+                                            </td>
+                                            <td class="text-end">
+                                                {% if account.profit_loss is not None %}
+                                                    {% if account.profit_loss >= 0 %}
+                                                        <span class="badge bg-success">+रु{{ account.profit_loss|floatformat:2 }}</span>
+                                                    {% else %}
+                                                        <span class="badge bg-danger">रु{{ account.profit_loss|floatformat:2 }}</span>
+                                                    {% endif %}
+                                                {% else %}-{% endif %}
+                                            </td>
+                                            <td>
+                                                {% if account.is_active %}
+                                                    <span class="badge bg-success">Active</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Inactive</span>
+                                                {% endif %}
+                                            </td>
+                                            <td><small class="text-muted">{{ account.notes|truncatewords:5 }}</small></td>
+                                            <td class="text-end">
+                                                <a href="{% url 'finance:other_investment_update' account.pk %}" class="btn btn-sm btn-action-edit">
+                                                    <i class="bi bi-pencil"></i> Edit
+                                                </a>
+                                                <a href="{% url 'finance:cashbank_delete' account.pk %}" class="btn btn-sm btn-action-delete">
+                                                    <i class="bi bi-trash"></i> Delete
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info" role="alert">
+                            <i class="bi bi-info-circle"></i> No investments yet.
+                            <a href="{% url 'finance:other_investment_create' %}" class="alert-link">Add your first investment</a>.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .dashboard-card {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        border-radius: 8px;
+        border: none;
+    }
+
+    .dashboard-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px);
+    }
+
+    .dashboard-card .card-body {
+        padding: 1.5rem;
+    }
+</style>
+
+<script>
+function toggleStatus(accountId) {
+    if (confirm('Toggle account status?')) {
+        window.location.href = `/finance/cash-bank/${accountId}/toggle/`;
+    }
+}
+</script>
+{% endblock %}

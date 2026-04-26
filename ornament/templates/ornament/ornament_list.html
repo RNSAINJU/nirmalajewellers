@@ -190,6 +190,41 @@
         <a href="{% url 'ornament:create' %}" class="btn btn-create">
             <i class="bi bi-plus-circle-fill me-2"></i> Create Ornament
         </a>
+        <a href="{% url 'ornament:export_excel' %}" class="btn btn-success">
+            <i class="bi bi-file-earmark-excel me-2"></i> Export Excel
+        </a>
+        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#importExcelModal">
+            <i class="bi bi-upload me-2"></i> Import Excel
+        </button>
+    </div>
+
+    <!-- Import Excel Modal -->
+    <div class="modal fade" id="importExcelModal" tabindex="-1" aria-labelledby="importExcelModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="importExcelModalLabel"><i class="bi bi-file-earmark-excel me-2"></i>Import Ornaments from Excel</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="post" action="{% url 'ornament:import_excel' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="excelFile" class="form-label fw-semibold">Select Excel File (.xlsx)</label>
+                            <input type="file" class="form-control" id="excelFile" name="excel_file" accept=".xlsx,.xls" required>
+                            <div class="form-text text-muted">Upload a .xlsx or .xls file with ornament data. Download the export first to see the expected format.</div>
+                        </div>
+                        <div class="alert alert-info py-2" style="font-size: 0.85rem;">
+                            <i class="bi bi-info-circle me-1"></i> Tip: Export existing ornaments first to get the correct column format.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-warning"><i class="bi bi-upload me-1"></i> Import</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
     <!-- Search, Filter Toggle, and Actions Toggle Row -->

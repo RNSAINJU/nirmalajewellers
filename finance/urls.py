@@ -58,6 +58,7 @@ urlpatterns = [
     path('salaries/add-previous-month/', views.add_previous_month_salaries, name='add_previous_month_salaries'),
     path('salaries/<int:pk>/edit/', views.salary_update, name='salary_update'),
     path('salaries/<int:pk>/delete/', views.salary_delete, name='salary_delete'),
+    path('salaries/<int:pk>/mark-paid/', views.salary_mark_paid, name='salary_mark_paid'),
     path('salaries/export/', views.salary_export, name='salary_export'),
     path('salaries/import/', views.salary_import, name='salary_import'),
     
@@ -95,6 +96,11 @@ urlpatterns = [
     path('cash-bank/<int:pk>/edit/', views_cashbank.cashbank_update, name='cashbank_update'),
     path('cash-bank/<int:pk>/delete/', views_cashbank.cashbank_delete, name='cashbank_delete'),
     path('cash-bank/<int:pk>/toggle/', views_cashbank.cashbank_toggle_active, name='cashbank_toggle_active'),
+    path('other-investments/', views_cashbank.other_investment_list, name='other_investment_list'),
+    path('other-investments/add/', views_cashbank.other_investment_create, name='other_investment_create'),
+    path('other-investments/<int:pk>/edit/', views_cashbank.other_investment_update, name='other_investment_update'),
+    path('other-investments/export/', views_cashbank.investment_export_excel, name='investment_export_excel'),
+    path('other-investments/import/', views_cashbank.investment_import_excel, name='investment_import_excel'),
     
     # Bulk Import/Export
     path('bulk-export/', views.finance_export_all, name='finance_export_all'),

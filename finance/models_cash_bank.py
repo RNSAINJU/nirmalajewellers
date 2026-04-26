@@ -38,6 +38,19 @@ class CashBank(models.Model):
         default=Decimal('0.00'),
         help_text='Current balance'
     )
+    # Investment-specific fields (only used for account_type='other_investment')
+    investment_date = models.DateField(
+        blank=True, null=True,
+        help_text='Date the investment was made'
+    )
+    investment_amount = models.DecimalField(
+        max_digits=15, decimal_places=2, blank=True, null=True,
+        help_text='Original amount invested'
+    )
+    current_amount = models.DecimalField(
+        max_digits=15, decimal_places=2, blank=True, null=True,
+        help_text='Current value of the investment'
+    )
     is_active = models.BooleanField(default=True)
     notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)

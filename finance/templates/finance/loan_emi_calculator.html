@@ -116,6 +116,14 @@
                 <div class="card-header bg-dark text-white">
                     <h6 class="mb-0"><i class="bi bi-archive"></i> Existing Dhukuti Loans</h6>
                 </div>
+                {% if total_remaining_per_kista %}
+                <div class="card-body border-bottom py-2">
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="text-muted small fw-semibold">Total Remaining Per Kista (all loans):</span>
+                        <span class="badge bg-warning text-dark fs-6 px-3 py-2">रु {{ total_remaining_per_kista|floatformat:2 }}</span>
+                    </div>
+                </div>
+                {% endif %}
                 <div class="table-responsive">
                     <table class="table table-sm table-striped mb-0 align-middle">
                         <thead class="table-light">
@@ -214,7 +222,13 @@
                     <div class="card border-warning">
                         <div class="card-body">
                             <small class="text-muted d-block">Total Interest</small>
-                            <h4 class="mb-0 text-warning">रु{{ result.total_interest|floatformat:2 }}</h4>
+                            <h4 class="mb-0 text-warning">
+                                {% if result.received_amount and result.received_amount > 0 %}
+                                    रु{{ result.total_interest|floatformat:2 }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </h4>
                         </div>
                     </div>
                 </div>

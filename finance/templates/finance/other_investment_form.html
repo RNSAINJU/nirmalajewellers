@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ action }} Investment - Nirmal Jewellers{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header text-white" style="background-color: #1abc9c;">
+                    <h5 class="mb-0">
+                        <i class="bi bi-graph-up-arrow me-2"></i>
+                        {% if action == 'Add' %}Add New Investment{% else %}Edit Investment{% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="id_account_name" class="form-label">Investment Name *</label>
+                            {{ form.account_name }}
+                            {% if form.account_name.errors %}
+                                <div class="invalid-feedback d-block">{{ form.account_name.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_investment_date" class="form-label">Investment Date (BS)</label>
+                            {{ form.investment_date }}
+                            {% if form.investment_date.errors %}
+                                <div class="invalid-feedback d-block">{{ form.investment_date.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_investment_amount" class="form-label">Investment Amount (रु) *</label>
+                                    {{ form.investment_amount }}
+                                    <small class="text-muted d-block">Original amount invested</small>
+                                    {% if form.investment_amount.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.investment_amount.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_current_amount" class="form-label">Current Value (रु)</label>
+                                    {{ form.current_amount }}
+                                    <small class="text-muted d-block">Current market value</small>
+                                    {% if form.current_amount.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.current_amount.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Live profit/loss preview -->
+                        <div class="alert alert-secondary mb-3" id="profitLossPreview" style="display:none;">
+                            <strong>Profit / Loss Preview:</strong>
+                            <span id="profitLossValue"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_notes" class="form-label">Notes</label>
+                            {{ form.notes }}
+                            {% if form.notes.errors %}
+                                <div class="invalid-feedback d-block">{{ form.notes.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            {{ form.is_active }}
+                            <label class="form-check-label" for="id_is_active">Active</label>
+                        </div>
+
+                        <div class="d-flex justify-content-between gap-2">
+                            <a href="{% url 'finance:other_investment_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Back
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle"></i>
+                                {% if action == 'Add' %}Add Investment{% else %}Save Changes{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function updatePreview() {
+    const invested = parseFloat(document.getElementById('id_investment_amount').value) || 0;
+    const current = parseFloat(document.getElementById('id_current_amount').value) || 0;
+    const preview = document.getElementById('profitLossPreview');
+    const valueEl = document.getElementById('profitLossValue');
+
+    if (invested > 0 && current > 0) {
+        const diff = current - invested;
+        const pct = ((diff / invested) * 100).toFixed(2);
+        preview.style.display = 'block';
+        if (diff >= 0) {
+            preview.className = 'alert alert-success mb-3';
+            valueEl.innerHTML = ` <span class="text-success fw-bold">+रु${diff.toFixed(2)} (+${pct}%)</span> — Profit`;
+        } else {
+            preview.className = 'alert alert-danger mb-3';
+            valueEl.innerHTML = ` <span class="text-danger fw-bold">रु${diff.toFixed(2)} (${pct}%)</span> — Loss`;
+        }
+    } else {
+        preview.style.display = 'none';
+    }
+}
+
+document.getElementById('id_investment_amount').addEventListener('input', updatePreview);
+document.getElementById('id_current_amount').addEventListener('input', updatePreview);
+// Trigger on page load for edit mode
+updatePreview();
+</script>
+{% endblock %}

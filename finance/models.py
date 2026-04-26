@@ -617,6 +617,19 @@ class CashBank(models.Model):
         default=Decimal('0.00'),
         help_text='Current balance'
     )
+    # Investment-specific fields (only used for account_type='other_investment')
+    investment_date = NepaliDateField(
+        blank=True, null=True,
+        help_text='Date the investment was made'
+    )
+    investment_amount = models.DecimalField(
+        max_digits=15, decimal_places=2, blank=True, null=True,
+        help_text='Original amount invested'
+    )
+    current_amount = models.DecimalField(
+        max_digits=15, decimal_places=2, blank=True, null=True,
+        help_text='Current value of the investment'
+    )
     is_active = models.BooleanField(default=True)
     notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -626,6 +639,13 @@ class CashBank(models.Model):
         ordering = ['account_type', 'account_name']
         verbose_name = "Cash/Bank Account"
         verbose_name_plural = "Cash/Bank Accounts"
+    
+    @property
+    def profit_loss(self):
+        """Calculate profit or loss for investments"""
+        if self.investment_amount is not None and self.current_amount is not None:
+            return self.current_amount - self.investment_amount
+        return None
     
     def __str__(self):
         if self.account_type == 'bank':

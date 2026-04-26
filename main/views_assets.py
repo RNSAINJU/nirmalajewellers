@@ -9,7 +9,7 @@ from goldsilverpurchase.models import MetalStock
 from order.models import Order, OrderOrnament, OrderMetalStock
 from sales.models import Sale
 from main.models import DailyRate, Stock
-from finance.models import SundryDebtor, SundryCreditor, CashBank, Loan
+from finance.models import SundryDebtor, SundryCreditor, CashBank, Loan, GoldLoanAccount
 
 
 @login_required
@@ -146,9 +146,9 @@ def total_assets(request):
     # CALCULATE: Ornament metal content in pending orders (order, processing)
     # ============================================================
     
-    # Get all orders with status: order, processing (NOT completed or delivered)
+    # Get all orders with status: order, processing, on_hold (NOT completed or delivered)
     pending_orders_for_metals = Order.objects.filter(
-        status__in=['order', 'processing']
+        status__in=['order', 'processing', 'on_hold']
     )
     
     order_gold_weight_24k = Decimal('0')
@@ -267,10 +267,15 @@ def total_assets(request):
     total_gold_loan = cash_bank_accounts.filter(account_type='gold_loan').aggregate(
         total=Coalesce(Sum('balance'), Decimal('0'))
     )['total'] or Decimal('0')
-    total_other_investment = cash_bank_accounts.filter(account_type='other_investment').aggregate(
-        total=Coalesce(Sum('balance'), Decimal('0'))
-    )['total'] or Decimal('0')
-    cash_bank_total = total_cash + total_bank + total_gold_loan + total_other_investment
+    other_investment_accounts = cash_bank_accounts.filter(account_type='other_investment')
+    total_other_investment = Decimal('0')
+    for account in other_investment_accounts:
+        # Prefer current market value for investments; fallback to stored balance.
+        if account.current_amount is not None:
+            total_other_investment += account.current_amount
+        else:
+            total_other_investment += account.balance or Decimal('0')
+    cash_bank_total = total_cash + total_bank + total_gold_loan
 
     # ============================================================
     # 9. SUNDRY CREDITORS (Liabilities)
@@ -283,9 +288,33 @@ def total_assets(request):
     # ============================================================
     # 10. LOANS (Liabilities)
     # ============================================================
-    loan_total = Loan.objects.aggregate(
+    loan_total = Loan.objects.filter(is_settled=False).aggregate(
         total=Coalesce(Sum('amount'), Decimal('0'))
     )['total'] or Decimal('0')
+
+    # ============================================================
+    # 11. GOLD LOAN RECEIVABLES (Customer principal + unpaid interest)
+    # ============================================================
+    gold_loan_accounts = GoldLoanAccount.objects.all().prefetch_related('interest_payments')
+    total_gold_loan_given_customers = Decimal('0.00')
+    total_gold_loan_unpaid_interest = Decimal('0.00')
+    for account in gold_loan_accounts:
+        principal = Decimal(str(account.loan_amount or Decimal('0.00')))
+        accrued = Decimal(str(account.accrued_interest_to_date or Decimal('0.00')))
+        paid_interest = sum(
+            Decimal(str(payment.interest_amount or Decimal('0.00')))
+            for payment in account.interest_payments.all()
+        )
+        unpaid_interest = accrued - paid_interest
+        if unpaid_interest < 0:
+            unpaid_interest = Decimal('0.00')
+
+        total_gold_loan_given_customers += principal
+        total_gold_loan_unpaid_interest += unpaid_interest
+
+    gold_loan_receivable_total = (
+        total_gold_loan_given_customers + total_gold_loan_unpaid_interest
+    ).quantize(Decimal('0.01'))
     
     # ============================================================
     # TOTAL ASSETS
@@ -299,7 +328,9 @@ def total_assets(request):
         potey_total +
         order_receivable +
         sundry_debtor_total +
-        cash_bank_total
+        gold_loan_receivable_total +
+        cash_bank_total +
+        total_other_investment
         - sundry_creditor_total
         - loan_total
     )
@@ -344,6 +375,9 @@ def total_assets(request):
         # Receivables
         'order_receivable': order_receivable,
         'sundry_debtor_total': sundry_debtor_total,
+        'gold_loan_receivable_total': gold_loan_receivable_total,
+        'total_gold_loan_given_customers': total_gold_loan_given_customers,
+        'total_gold_loan_unpaid_interest': total_gold_loan_unpaid_interest,
         
         # Cash and Bank
         'total_cash': total_cash,

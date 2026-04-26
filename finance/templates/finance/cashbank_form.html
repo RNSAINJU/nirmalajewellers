@@ -20,6 +20,9 @@
                 <div class="card-body">
                     <form method="post" novalidate>
                         {% csrf_token %}
+                        {% if next %}
+                        <input type="hidden" name="next" value="{{ next }}">
+                        {% endif %}
                         
                         <div class="row">
                             <div class="col-md-6">

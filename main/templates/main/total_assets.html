@@ -199,6 +199,30 @@
         </div>
 
         <div class="col-md-4">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">🏦 Gold Loan Receivable</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm mb-0">
+                        <tr>
+                            <td>Loan Given:</td>
+                            <td class="text-end">₹ {{ total_gold_loan_given_customers|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td>Unpaid Interest:</td>
+                            <td class="text-end">₹ {{ total_gold_loan_unpaid_interest|floatformat:2 }}</td>
+                        </tr>
+                        <tr class="table-primary">
+                            <td><strong>Subtotal:</strong></td>
+                            <td class="text-end"><strong>₹ {{ gold_loan_receivable_total|floatformat:2 }}</strong></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
             <div class="card border-info">
                 <div class="card-header bg-info text-white">
                     <h5 class="mb-0">💰 Cash & Bank</h5>
@@ -217,13 +241,13 @@
                             <td>Gold Loan:</td>
                             <td class="text-end">₹ {{ total_gold_loan|floatformat:2 }}</td>
                         </tr>
-                        <tr>
-                            <td>Other Investments:</td>
-                            <td class="text-end">₹ {{ total_other_investment|floatformat:2 }}</td>
-                        </tr>
                         <tr class="table-info">
-                            <td><strong>Subtotal:</strong></td>
+                            <td><strong>Cash & Bank Subtotal:</strong></td>
                             <td class="text-end"><strong>₹ {{ cash_bank_total|floatformat:2 }}</strong></td>
+                        </tr>
+                        <tr class="table-primary">
+                            <td><strong>Other Investments (Separate):</strong></td>
+                            <td class="text-end"><strong>₹ {{ total_other_investment|floatformat:2 }}</strong></td>
                         </tr>
                     </table>
                 </div>
@@ -313,10 +337,24 @@
                                     </td>
                                 </tr>
                                 <tr>
+                                    <td>🏦 Gold Loan Receivable</td>
+                                    <td class="text-end">{{ gold_loan_receivable_total|floatformat:2 }}</td>
+                                    <td class="text-end">
+                                        {% widthratio gold_loan_receivable_total total_assets 100 %}%
+                                    </td>
+                                </tr>
+                                <tr>
                                     <td>💰 Cash & Bank</td>
                                     <td class="text-end">{{ cash_bank_total|floatformat:2 }}</td>
                                     <td class="text-end">
                                         {% widthratio cash_bank_total total_assets 100 %}%
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>📈 Other Investments</td>
+                                    <td class="text-end">{{ total_other_investment|floatformat:2 }}</td>
+                                    <td class="text-end">
+                                        {% widthratio total_other_investment total_assets 100 %}%
                                     </td>
                                 </tr>
                                 <tr>
@@ -353,9 +391,10 @@
                     <li>Stones, Motimala, and Potey at cost price</li>
                     <li>Pending order amounts that customers owe</li>
                     <li>Sundry debtors (parties that owe money)</li>
+                    <li>Gold loan receivables (loan given + unpaid interest)</li>
                     <li>Cash in hand and bank account balances</li>
                     <li>Gold loan balances (included in liquid assets)</li>
-                    <li>Other investments (included in liquid assets)</li>
+                    <li>Other investments shown separately from cash and bank</li>
                     <li>Sundry creditors and loans are deducted from total assets</li>
                 </ul>
             </div>

@@ -310,6 +310,25 @@ def salary_delete(request, pk):
     return render(request, 'finance/salary_confirm_delete.html', {'object': salary})
 
 
+@login_required
+def salary_mark_paid(request, pk):
+    """Mark an unpaid salary as paid and set amount_paid = base_salary"""
+    salary = get_object_or_404(EmployeeSalary, pk=pk)
+    
+    if request.method == 'POST':
+        if salary.status == 'pending':
+            salary.status = 'paid'
+            salary.amount_paid = salary.base_salary
+            salary.paid_date = ndt.date.today()
+            salary.save()
+            messages.success(request, f"Salary for {salary.employee.first_name} {salary.employee.last_name} ({salary.month}) marked as paid!")
+        else:
+            messages.warning(request, "Only pending salaries can be marked as paid.")
+        return redirect('finance:salary_list')
+    
+    return redirect('finance:salary_list')
+
+
 # SUNDRY DEBTOR VIEWS
 @login_required
 def debtor_list(request):

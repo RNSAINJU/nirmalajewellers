@@ -182,3 +182,43 @@ class CashBankForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['is_active'].label = 'Active'
+        
+        # Filter out 'gold_loan' option - gold loans have dedicated module
+        account_type_field = self.fields['account_type']
+        account_type_field.choices = [
+            (choice, label) for choice, label in account_type_field.choices 
+            if choice != 'gold_loan'
+        ]
+
+
+class OtherInvestmentForm(forms.ModelForm):
+    class Meta:
+        model = CashBank
+        fields = ['account_name', 'investment_date', 'investment_amount', 'current_amount', 'notes', 'is_active']
+        widgets = {
+            'account_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., Share Market, FD, Mutual Fund'}),
+            'investment_date': forms.TextInput(attrs={'class': 'form-control nepali-date', 'placeholder': 'Investment Date (BS)'}),
+            'investment_amount': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Original amount invested', 'step': '0.01'}),
+            'current_amount': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Current market value', 'step': '0.01'}),
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Notes (optional)'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['is_active'].label = 'Active'
+        self.fields['investment_date'].label = 'Investment Date (BS)'
+        self.fields['investment_amount'].label = 'Investment Amount (रु)'
+        self.fields['current_amount'].label = 'Current Value (रु)'
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        instance.account_type = 'other_investment'
+        # Set balance = current_amount for consistency with total assets calculation
+        if instance.current_amount is not None:
+            instance.balance = instance.current_amount
+        elif instance.investment_amount is not None:
+            instance.balance = instance.investment_amount
+        if commit:
+            instance.save()
+        return instance
