@@ -109,6 +109,14 @@
                 <div class="card-header bg-dark text-white">
                     <h6 class="mb-0"><i class="bi bi-archive"></i> Existing Dhukuti Loans</h6>
                 </div>
+                {% if total_remaining_per_kista %}
+                <div class="card-body border-bottom py-2">
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="text-muted small fw-semibold">Total Remaining Per Kista (all loans):</span>
+                        <span class="badge bg-warning text-dark fs-6 px-3 py-2">रु {{ total_remaining_per_kista|floatformat:2 }}</span>
+                    </div>
+                </div>
+                {% endif %}
                 <div class="table-responsive">
                     <table class="table table-sm table-striped mb-0 align-middle">
                         <thead class="table-light">
@@ -176,7 +184,7 @@
                     <div class="card border-success">
                         <div class="card-body">
                             <small class="text-muted d-block">Total (Paid)</small>
-                            <h4 class="mb-0 text-success">रु{{ result.total_paid|floatformat:2 }}</h4>
+                            <h4 class="mb-0 text-success">रु{{ total_paid_all|floatformat:2 }}</h4>
                         </div>
                     </div>
                 </div>
@@ -184,7 +192,7 @@
                     <div class="card border-warning">
                         <div class="card-body">
                             <small class="text-muted d-block">Total Interest</small>
-                            <h4 class="mb-0 text-warning">रु{{ result.total_interest|floatformat:2 }}</h4>
+                            <h4 class="mb-0 text-warning">रु{{ total_interest_all|floatformat:2 }}</h4>
                         </div>
                     </div>
                 </div>
@@ -192,7 +200,7 @@
                     <div class="card border-info">
                         <div class="card-body">
                             <small class="text-muted d-block">Monthly Interest (Avg)</small>
-                            <h4 class="mb-0 text-info">रु{{ result.monthly_interest|floatformat:6 }}</h4>
+                            <h4 class="mb-0 text-info">रु{{ avg_monthly_interest_all|floatformat:2 }}</h4>
                         </div>
                     </div>
                 </div>
@@ -200,7 +208,7 @@
                     <div class="card border-primary">
                         <div class="card-body">
                             <small class="text-muted d-block">Avg Interest Rate</small>
-                            <h4 class="mb-0 text-primary">{{ result.average_interest_rate_percent|floatformat:2 }}%</h4>
+                            <h4 class="mb-0 text-primary">{{ avg_interest_rate_all|floatformat:2 }}%</h4>
                         </div>
                     </div>
                 </div>

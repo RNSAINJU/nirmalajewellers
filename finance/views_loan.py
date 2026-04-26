@@ -828,6 +828,57 @@ def loan_dhukuti_calculator(request):
     """Finance page to calculate Dhukuti-style payment summary."""
     dhukuti_loans = DhukutiLoan.objects.prefetch_related('paid_kistas', 'planned_kistas').all()
     selected_dhukuti = None
+
+    def _compute_dhukuti_aggregate_metrics(loans):
+        total_remaining_per_kista_local = Decimal('0.00')
+        total_paid_all_local = Decimal('0.00')
+        total_interest_all_local = Decimal('0.00')
+        total_received_all_local = Decimal('0.00')
+        total_elapsed_interest_kista_local = 0
+
+        for dloan in loans:
+            total_paid_all_local += dloan.total_paid
+            # Keep interest total non-negative, aligned with summary cards behavior.
+            total_interest_all_local += abs(dloan.received_amount - dloan.total_paid)
+            total_received_all_local += dloan.received_amount or Decimal('0.00')
+
+            if dloan.received_kista_number and dloan.received_kista_number > 0:
+                elapsed_interest_kista = dloan.paid_kista_count - dloan.received_kista_number + 1
+                if elapsed_interest_kista > 0:
+                    total_elapsed_interest_kista_local += elapsed_interest_kista
+
+            if dloan.remaining_kista > 0 and dloan.remaining_base_payment:
+                per_kista = (Decimal(str(dloan.remaining_base_payment)) / Decimal(str(dloan.remaining_kista))).quantize(Decimal('0.01'))
+                total_remaining_per_kista_local += per_kista
+
+        avg_monthly_interest_all_local = Decimal('0.00')
+        if total_elapsed_interest_kista_local > 0:
+            avg_monthly_interest_all_local = (
+                total_interest_all_local / Decimal(str(total_elapsed_interest_kista_local))
+            ).quantize(Decimal('0.01'))
+
+        avg_interest_rate_all_local = Decimal('0.00')
+        if total_received_all_local > 0:
+            avg_interest_rate_all_local = (
+                (total_interest_all_local / total_received_all_local) * Decimal('100')
+            ).quantize(Decimal('0.01'))
+
+        return (
+            total_remaining_per_kista_local,
+            total_paid_all_local,
+            total_interest_all_local,
+            avg_monthly_interest_all_local,
+            avg_interest_rate_all_local,
+        )
+
+    (
+        total_remaining_per_kista,
+        total_paid_all,
+        total_interest_all,
+        avg_monthly_interest_all,
+        avg_interest_rate_all,
+    ) = _compute_dhukuti_aggregate_metrics(dhukuti_loans)
+
     result = None
 
     initial = {
@@ -934,6 +985,13 @@ def loan_dhukuti_calculator(request):
 
                     messages.success(request, f'Dhukuti loan record "{selected_dhukuti.name}" updated successfully.')
                     dhukuti_loans = DhukutiLoan.objects.prefetch_related('paid_kistas', 'planned_kistas').all()
+                    (
+                        total_remaining_per_kista,
+                        total_paid_all,
+                        total_interest_all,
+                        avg_monthly_interest_all,
+                        avg_interest_rate_all,
+                    ) = _compute_dhukuti_aggregate_metrics(dhukuti_loans)
 
             elif request.POST.get('save_record') == '1':
                 dhukuti_loan = DhukutiLoan.objects.create(
@@ -955,6 +1013,13 @@ def loan_dhukuti_calculator(request):
                 messages.success(request, f'Dhukuti loan record "{dhukuti_loan.name}" saved successfully.')
                 selected_dhukuti = dhukuti_loan
                 dhukuti_loans = DhukutiLoan.objects.prefetch_related('paid_kistas', 'planned_kistas').all()
+                (
+                    total_remaining_per_kista,
+                    total_paid_all,
+                    total_interest_all,
+                    avg_monthly_interest_all,
+                    avg_interest_rate_all,
+                ) = _compute_dhukuti_aggregate_metrics(dhukuti_loans)
         except Exception as exc:
             messages.error(request, f'Unable to calculate Dhukuti payment: {exc}')
 
@@ -965,6 +1030,11 @@ def loan_dhukuti_calculator(request):
         'selected_dhukuti': selected_dhukuti,
         'initial': initial,
         'result': result,
+        'total_remaining_per_kista': total_remaining_per_kista,
+        'total_paid_all': total_paid_all,
+        'total_interest_all': total_interest_all,
+        'avg_monthly_interest_all': avg_monthly_interest_all,
+        'avg_interest_rate_all': avg_interest_rate_all,
     }
     return render(request, 'finance/loan_emi_calculator.html', context)
 
