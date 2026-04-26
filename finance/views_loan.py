@@ -117,9 +117,21 @@ def _compute_dhukuti_summary(received_amount, total_kista, paid_amounts, remaini
     # Compute average increment from paid kista sequence
     avg_increment = Decimal('0.00')
     if paid_kista >= 2:
-        avg_increment = (
-            (paid_rows[-1]['amount'] - paid_rows[0]['amount']) / Decimal(str(paid_kista - 1))
-        ).quantize(Decimal('0.01'))
+        increments = []
+        for idx in range(1, len(paid_rows)):
+            increments.append((paid_rows[idx]['amount'] - paid_rows[idx - 1]['amount']).quantize(Decimal('0.01')))
+
+        if received_amount == Decimal('0.00') or received_kista_number == 0:
+            # Before amount is received, project future kista with an upward trend.
+            # Use positive increments only and keep at least रु2200 growth per kista.
+            positive_increments = [inc for inc in increments if inc > Decimal('0.00')]
+            if positive_increments:
+                avg_increment = (sum(positive_increments, Decimal('0.00')) / Decimal(str(len(positive_increments)))).quantize(Decimal('0.01'))
+            avg_increment = max(avg_increment, Decimal('2200.00'))
+        else:
+            avg_increment = (
+                (paid_rows[-1]['amount'] - paid_rows[0]['amount']) / Decimal(str(paid_kista - 1))
+            ).quantize(Decimal('0.01'))
     all_kista_rows = []
     prev_amount = None
     for i in range(1, total_kista + 1):
