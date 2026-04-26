@@ -217,6 +217,8 @@ def cashbank_update(request, pk):
         if form.is_valid():
             cashbank = form.save()
             messages.success(request, f"Account '{cashbank.account_name}' updated successfully!")
+            if cashbank.account_type == 'other_investment':
+                return redirect('finance:other_investment_list')
             return redirect('finance:cashbank_list')
     else:
         form = CashBankForm(instance=cashbank)
@@ -229,12 +231,13 @@ def cashbank_update(request, pk):
 def cashbank_delete(request, pk):
     """Delete a cash or bank account"""
     cashbank = get_object_or_404(CashBank, pk=pk)
+    redirect_url = 'finance:other_investment_list' if cashbank.account_type == 'other_investment' else 'finance:cashbank_list'
     
     if request.method == 'POST':
         account_name = cashbank.account_name
         cashbank.delete()
         messages.success(request, f"Account '{account_name}' deleted successfully!")
-        return redirect('finance:cashbank_list')
+        return redirect(redirect_url)
     
     context = {'cashbank': cashbank}
     return render(request, 'finance/cashbank_confirm_delete.html', context)

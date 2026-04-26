@@ -267,10 +267,15 @@ def total_assets(request):
     total_gold_loan = cash_bank_accounts.filter(account_type='gold_loan').aggregate(
         total=Coalesce(Sum('balance'), Decimal('0'))
     )['total'] or Decimal('0')
-    total_other_investment = cash_bank_accounts.filter(account_type='other_investment').aggregate(
-        total=Coalesce(Sum('balance'), Decimal('0'))
-    )['total'] or Decimal('0')
-    cash_bank_total = total_cash + total_bank + total_gold_loan + total_other_investment
+    other_investment_accounts = cash_bank_accounts.filter(account_type='other_investment')
+    total_other_investment = Decimal('0')
+    for account in other_investment_accounts:
+        # Prefer current market value for investments; fallback to stored balance.
+        if account.current_amount is not None:
+            total_other_investment += account.current_amount
+        else:
+            total_other_investment += account.balance or Decimal('0')
+    cash_bank_total = total_cash + total_bank + total_gold_loan
 
     # ============================================================
     # 9. SUNDRY CREDITORS (Liabilities)
@@ -324,7 +329,8 @@ def total_assets(request):
         order_receivable +
         sundry_debtor_total +
         gold_loan_receivable_total +
-        cash_bank_total
+        cash_bank_total +
+        total_other_investment
         - sundry_creditor_total
         - loan_total
     )

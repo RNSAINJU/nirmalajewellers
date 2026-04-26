@@ -7,17 +7,17 @@
 <div class="container-fluid mt-4">
     <div class="row">
         <div class="col-md-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-2 mb-4">
                 <h1 class="h2">Other Investment Accounts</h1>
-                <div class="d-flex gap-2 flex-wrap">
+                <div class="d-flex gap-2 flex-wrap w-100 w-lg-auto">
                     <a href="{% url 'finance:investment_export_excel' %}" class="btn btn-success">
                         <i class="bi bi-file-earmark-excel me-1"></i> Export Excel
                     </a>
                     <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#importInvestmentModal">
                         <i class="bi bi-upload me-1"></i> Import Excel
                     </button>
-                    <a href="{% url 'finance:other_investment_create' %}" class="btn btn-create">
-                        <i class="bi bi-plus-circle"></i> Add Investment
+                    <a href="{% url 'finance:other_investment_create' %}" class="btn btn-primary fw-semibold">
+                        <i class="bi bi-plus-circle me-1"></i> Add Investment
                     </a>
                 </div>
             </div>

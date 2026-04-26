@@ -47,7 +47,7 @@
                     <form method="post">
                         {% csrf_token %}
                         <div class="d-flex justify-content-between gap-2">
-                            <a href="{% url 'finance:cashbank_list' %}" class="btn btn-secondary">
+                            <a href="{% if cashbank.account_type == 'other_investment' %}{% url 'finance:other_investment_list' %}{% else %}{% url 'finance:cashbank_list' %}{% endif %}" class="btn btn-secondary">
                                 <i class="bi bi-arrow-left"></i> Cancel
                             </a>
                             <button type="submit" class="btn btn-danger">
