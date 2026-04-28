@@ -180,7 +180,11 @@
                         </thead>
                         <tbody>
                             {% for dloan in dhukuti_loans %}
-                            <tr class="dhukuti-loan-row {% if selected_dhukuti and selected_dhukuti.pk == dloan.pk %}table-warning{% endif %}" data-completed="{% if dloan.remaining_kista > 0 %}false{% else %}true{% endif %}">
+                            <tr class="dhukuti-loan-row {% if selected_dhukuti and selected_dhukuti.pk == dloan.pk %}table-warning{% endif %}"
+                                data-completed="{% if dloan.remaining_kista > 0 %}false{% else %}true{% endif %}"
+                                data-received="{{ dloan.received_amount|default:0|floatformat:2 }}"
+                                data-paid="{{ dloan.total_paid|default:0|floatformat:2 }}"
+                                data-remaining="{% if dloan.received_amount > 0 and dloan.remaining_kista > 0 %}{{ dloan.estimated_remaining_to_pay|default:0|floatformat:2 }}{% else %}0.00{% endif %}">
                                 <td>
                                     <strong>{{ dloan.name }}</strong>
                                     {% if dloan.notes %}
@@ -238,9 +242,9 @@
                         <tfoot class="table-dark fw-semibold">
                             <tr>
                                 <td colspan="2">Total</td>
-                                <td class="text-end">रु{{ dhukuti_total_received|floatformat:2 }}</td>
-                                <td class="text-end">रु{{ dhukuti_total_paid|floatformat:2 }}</td>
-                                <td class="text-end">रु{{ dhukuti_total_remaining|floatformat:2 }}</td>
+                                <td class="text-end" id="dhukuti-total-received">रु{{ dhukuti_total_received|floatformat:2 }}</td>
+                                <td class="text-end" id="dhukuti-total-paid">रु{{ dhukuti_total_paid|floatformat:2 }}</td>
+                                <td class="text-end" id="dhukuti-total-remaining">रु{{ dhukuti_total_remaining|floatformat:2 }}</td>
                                 <td colspan="5"></td>
                             </tr>
                         </tfoot>
@@ -647,6 +651,39 @@ function filterDhukutiLoans(filterType) {
         } else {
             allBtn.className = 'btn btn-sm btn-secondary';
         }
+    }
+
+    recalculateVisibleDhukutiTotals();
+}
+
+function recalculateVisibleDhukutiTotals() {
+    const rows = document.querySelectorAll('.dhukuti-loan-row');
+    let totalReceived = 0;
+    let totalPaid = 0;
+    let totalRemaining = 0;
+
+    rows.forEach(row => {
+        if (row.style.display === 'none') {
+            return;
+        }
+
+        totalReceived += parseFloat(row.dataset.received || '0') || 0;
+        totalPaid += parseFloat(row.dataset.paid || '0') || 0;
+        totalRemaining += parseFloat(row.dataset.remaining || '0') || 0;
+    });
+
+    const receivedEl = document.getElementById('dhukuti-total-received');
+    const paidEl = document.getElementById('dhukuti-total-paid');
+    const remainingEl = document.getElementById('dhukuti-total-remaining');
+
+    if (receivedEl) {
+        receivedEl.textContent = `रु${totalReceived.toFixed(2)}`;
+    }
+    if (paidEl) {
+        paidEl.textContent = `रु${totalPaid.toFixed(2)}`;
+    }
+    if (remainingEl) {
+        remainingEl.textContent = `रु${totalRemaining.toFixed(2)}`;
     }
 }
 
