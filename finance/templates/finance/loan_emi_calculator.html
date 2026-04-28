@@ -117,6 +117,20 @@
                     </div>
                 </div>
                 {% endif %}
+                <div class="card-body border-bottom py-2">
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <span class="text-muted small fw-semibold me-2">Show Loans:</span>
+                        <button type="button" id="dhukuti-filter-active" class="btn btn-sm btn-primary" onclick="filterDhukutiLoans('active')">
+                            Active
+                        </button>
+                        <button type="button" id="dhukuti-filter-completed" class="btn btn-sm btn-outline-success" onclick="filterDhukutiLoans('completed')">
+                            Completed
+                        </button>
+                        <button type="button" id="dhukuti-filter-all" class="btn btn-sm btn-outline-secondary" onclick="filterDhukutiLoans('all')">
+                            All
+                        </button>
+                    </div>
+                </div>
                 <div class="table-responsive">
                     <table class="table table-sm table-striped mb-0 align-middle">
                         <thead class="table-light">
@@ -134,7 +148,7 @@
                         </thead>
                         <tbody>
                             {% for dloan in dhukuti_loans %}
-                            <tr {% if selected_dhukuti and selected_dhukuti.pk == dloan.pk %}class="table-warning"{% endif %}>
+                            <tr class="dhukuti-loan-row {% if selected_dhukuti and selected_dhukuti.pk == dloan.pk %}table-warning{% endif %}" data-completed="{% if dloan.remaining_kista > 0 %}false{% else %}true{% endif %}">
                                 <td>
                                     <strong>{{ dloan.name }}</strong>
                                     {% if dloan.notes %}
@@ -173,6 +187,9 @@
                                 <td colspan="9" class="text-center text-muted py-3">No saved Dhukuti records yet.</td>
                             </tr>
                             {% endfor %}
+                            <tr id="dhukuti-filter-empty-row" style="display:none;">
+                                <td colspan="9" class="text-center text-muted py-3">No loans found in this filter.</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -534,6 +551,53 @@ if (dhukutiForm) {
         syncKistaInputs();
     });
 }
+
+function filterDhukutiLoans(filterType) {
+    const rows = document.querySelectorAll('.dhukuti-loan-row');
+    const emptyRow = document.getElementById('dhukuti-filter-empty-row');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+        const isCompleted = row.dataset.completed === 'true';
+        let showRow = true;
+
+        if (filterType === 'active') {
+            showRow = !isCompleted;
+        } else if (filterType === 'completed') {
+            showRow = isCompleted;
+        }
+
+        row.style.display = showRow ? '' : 'none';
+        if (showRow) {
+            visibleCount += 1;
+        }
+    });
+
+    if (emptyRow) {
+        emptyRow.style.display = visibleCount === 0 ? '' : 'none';
+    }
+
+    const activeBtn = document.getElementById('dhukuti-filter-active');
+    const completedBtn = document.getElementById('dhukuti-filter-completed');
+    const allBtn = document.getElementById('dhukuti-filter-all');
+
+    if (activeBtn && completedBtn && allBtn) {
+        activeBtn.className = 'btn btn-sm btn-outline-primary';
+        completedBtn.className = 'btn btn-sm btn-outline-success';
+        allBtn.className = 'btn btn-sm btn-outline-secondary';
+
+        if (filterType === 'active') {
+            activeBtn.className = 'btn btn-sm btn-primary';
+        } else if (filterType === 'completed') {
+            completedBtn.className = 'btn btn-sm btn-success';
+        } else {
+            allBtn.className = 'btn btn-sm btn-secondary';
+        }
+    }
+}
+
+// Default view: show active loans only.
+filterDhukutiLoans('active');
 </script>
 {% endblock %}
 {% endblock %}
