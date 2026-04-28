@@ -1101,6 +1101,24 @@ def loan_dhukuti_calculator(request):
         except Exception as exc:
             messages.error(request, f'Unable to calculate Dhukuti payment: {exc}')
 
+    # Compute list-level values from the same summary function used in details,
+    # so list and detail calculations stay perfectly aligned.
+    for dloan in dhukuti_loans:
+        dloan_summary = _compute_dhukuti_summary(
+            received_amount=dloan.received_amount,
+            total_kista=dloan.total_kista,
+            paid_amounts=[p.amount for p in dloan.paid_kistas.all().order_by('month_number')],
+            remaining_base_payment=dloan.remaining_base_payment,
+            received_kista_number=dloan.received_kista_number,
+            planned_amounts_by_month={
+                p.month_number: p.amount for p in dloan.planned_kistas.all().order_by('month_number')
+            },
+            kista_increment=dloan.kista_increment,
+        )
+        dloan.list_to_pay_remaining = dloan_summary['remaining_base_payment']
+        dloan.list_total_interest = dloan_summary['total_interest'] if dloan.received_amount > 0 else None
+        dloan.list_avg_interest_rate = dloan_summary['average_interest_rate_percent'] if dloan.received_amount > 0 else None
+
     context = {
         'title': 'Dhukuti Loans',
         'page_title': 'Dhukuti Loans',
@@ -1110,7 +1128,8 @@ def loan_dhukuti_calculator(request):
         'result': result,
         'dhukuti_total_received': sum((d.received_amount for d in dhukuti_loans), Decimal('0')),
         'dhukuti_total_paid': sum((d.total_paid for d in dhukuti_loans if d.remaining_kista > 0 or d.received_amount == 0), Decimal('0')),
-        'dhukuti_total_remaining': sum((d.estimated_remaining_to_pay for d in dhukuti_loans if d.received_amount > 0 and d.remaining_kista > 0), Decimal('0')),
+        'dhukuti_total_remaining': sum((d.list_to_pay_remaining for d in dhukuti_loans if d.received_amount > 0 and d.remaining_kista > 0), Decimal('0')),
+        'dhukuti_total_interest': sum((d.list_total_interest for d in dhukuti_loans if d.list_total_interest is not None), Decimal('0')),
         'dhukuti_net_final': sum((d.received_amount for d in dhukuti_loans if d.received_amount > 0), Decimal('0')) - sum((d.total_paid for d in dhukuti_loans), Decimal('0')),
         'total_remaining_per_kista': total_remaining_per_kista,
         'total_paid_all': total_paid_all,

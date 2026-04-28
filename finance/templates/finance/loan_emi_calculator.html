@@ -144,19 +144,19 @@
                         <div class="col-4">
                             <div class="rounded p-2 bg-danger bg-opacity-10 border border-danger">
                                 <div class="small text-muted mb-1">To Pay Remaining <span class="text-danger">(active received)</span></div>
-                                <div class="fw-bold text-danger fs-6">रु{{ dhukuti_total_remaining|floatformat:2 }}</div>
+                                <div id="dhukuti-card-total-remaining" class="fw-bold text-danger fs-6">रु{{ dhukuti_total_remaining|floatformat:2 }}</div>
                             </div>
                         </div>
                         <div class="col-4">
                             <div class="rounded p-2 bg-success bg-opacity-10 border border-success">
                                 <div class="small text-muted mb-1">Total Paid Kista</div>
-                                <div class="fw-bold text-success fs-6">रु{{ dhukuti_total_paid|floatformat:2 }}</div>
+                                <div id="dhukuti-card-total-paid" class="fw-bold text-success fs-6">रु{{ dhukuti_total_paid|floatformat:2 }}</div>
                             </div>
                         </div>
                         <div class="col-4">
-                            <div class="rounded p-2 {% if dhukuti_net_final > 0 %}bg-warning bg-opacity-10 border border-warning{% else %}bg-success bg-opacity-10 border border-success{% endif %}">
+                            <div id="dhukuti-card-net-wrap" class="rounded p-2 {% if dhukuti_net_final > 0 %}bg-warning bg-opacity-10 border border-warning{% else %}bg-success bg-opacity-10 border border-success{% endif %}">
                                 <div class="small text-muted mb-1">Net Final To Pay</div>
-                                <div class="fw-bold {% if dhukuti_net_final > 0 %}text-warning{% else %}text-success{% endif %} fs-6">रु{{ dhukuti_net_final|floatformat:2 }}</div>
+                                <div id="dhukuti-card-net-value" class="fw-bold {% if dhukuti_net_final > 0 %}text-warning{% else %}text-success{% endif %} fs-6">रु{{ dhukuti_net_final|floatformat:2 }}</div>
                             </div>
                         </div>
                     </div>
@@ -171,6 +171,7 @@
                                 <th class="text-end">Received</th>
                                 <th class="text-end">Paid</th>
                                 <th class="text-end">To Pay Remaining</th>
+                                <th class="text-end">Total Interest</th>
                                 <th class="text-center">Kista</th>
                                 <th class="text-center">Remaining</th>
                                 <th class="text-center">Received At</th>
@@ -184,7 +185,8 @@
                                 data-completed="{% if dloan.remaining_kista > 0 %}false{% else %}true{% endif %}"
                                 data-received="{{ dloan.received_amount|default:0|floatformat:2 }}"
                                 data-paid="{{ dloan.total_paid|default:0|floatformat:2 }}"
-                                data-remaining="{% if dloan.received_amount > 0 and dloan.remaining_kista > 0 %}{{ dloan.estimated_remaining_to_pay|default:0|floatformat:2 }}{% else %}0.00{% endif %}">
+                                data-remaining="{% if dloan.received_amount > 0 and dloan.remaining_kista > 0 %}{{ dloan.list_to_pay_remaining|default:0|floatformat:2 }}{% else %}0.00{% endif %}"
+                                data-interest="{% if dloan.list_total_interest is not None %}{{ dloan.list_total_interest|floatformat:2 }}{% else %}0.00{% endif %}">
                                 <td>
                                     <strong>{{ dloan.name }}</strong>
                                     {% if dloan.notes %}
@@ -197,12 +199,19 @@
                                 <td class="text-end">
                                     {% if dloan.received_amount > 0 %}
                                         {% if dloan.remaining_kista > 0 %}
-                                        <span class="text-danger fw-semibold">{{ dloan.estimated_remaining_to_pay|floatformat:2 }}</span>
+                                        <span class="text-danger fw-semibold">{{ dloan.list_to_pay_remaining|floatformat:2 }}</span>
                                         {% else %}
                                         <span class="text-success"><i class="bi bi-check-circle"></i> Done</span>
                                         {% endif %}
                                     {% else %}
                                     <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    {% if dloan.list_total_interest is not None %}
+                                        <span class="fw-semibold">{{ dloan.list_total_interest|floatformat:2 }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
                                     {% endif %}
                                 </td>
                                 <td class="text-center">{{ dloan.paid_kista_count }}/{{ dloan.total_kista }}</td>
@@ -214,7 +223,13 @@
                                     {% endif %}
                                 </td>
                                 <td class="text-center">{{ dloan.received_kista_number }}</td>
-                                <td class="text-end">{{ dloan.average_interest_rate_percent|floatformat:2 }}%</td>
+                                <td class="text-end">
+                                    {% if dloan.list_avg_interest_rate is not None %}
+                                        {{ dloan.list_avg_interest_rate|floatformat:2 }}%
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
                                 <td>
                                     <div class="d-flex gap-1">
                                         <a href="?dhukuti={{ dloan.pk }}" class="btn btn-sm btn-outline-primary" title="Edit this Dhukuti record">
@@ -231,11 +246,11 @@
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="10" class="text-center text-muted py-3">No saved Dhukuti records yet.</td>
+                                <td colspan="11" class="text-center text-muted py-3">No saved Dhukuti records yet.</td>
                             </tr>
                             {% endfor %}
                             <tr id="dhukuti-filter-empty-row" style="display:none;">
-                                <td colspan="10" class="text-center text-muted py-3">No loans found in this filter.</td>
+                                <td colspan="11" class="text-center text-muted py-3">No loans found in this filter.</td>
                             </tr>
                         </tbody>
                         {% if dhukuti_loans %}
@@ -245,6 +260,7 @@
                                 <td class="text-end" id="dhukuti-total-received">रु{{ dhukuti_total_received|floatformat:2 }}</td>
                                 <td class="text-end" id="dhukuti-total-paid">रु{{ dhukuti_total_paid|floatformat:2 }}</td>
                                 <td class="text-end" id="dhukuti-total-remaining">रु{{ dhukuti_total_remaining|floatformat:2 }}</td>
+                                <td class="text-end" id="dhukuti-total-interest">रु{{ dhukuti_total_interest|floatformat:2 }}</td>
                                 <td colspan="5"></td>
                             </tr>
                         </tfoot>
@@ -661,6 +677,7 @@ function recalculateVisibleDhukutiTotals() {
     let totalReceived = 0;
     let totalPaid = 0;
     let totalRemaining = 0;
+    let totalInterest = 0;
 
     rows.forEach(row => {
         if (row.style.display === 'none') {
@@ -670,11 +687,19 @@ function recalculateVisibleDhukutiTotals() {
         totalReceived += parseFloat(row.dataset.received || '0') || 0;
         totalPaid += parseFloat(row.dataset.paid || '0') || 0;
         totalRemaining += parseFloat(row.dataset.remaining || '0') || 0;
+        totalInterest += parseFloat(row.dataset.interest || '0') || 0;
     });
 
     const receivedEl = document.getElementById('dhukuti-total-received');
     const paidEl = document.getElementById('dhukuti-total-paid');
     const remainingEl = document.getElementById('dhukuti-total-remaining');
+    const interestEl = document.getElementById('dhukuti-total-interest');
+    const cardPaidEl = document.getElementById('dhukuti-card-total-paid');
+    const cardRemainingEl = document.getElementById('dhukuti-card-total-remaining');
+    const cardNetWrapEl = document.getElementById('dhukuti-card-net-wrap');
+    const cardNetValEl = document.getElementById('dhukuti-card-net-value');
+
+    const netFinal = totalReceived - totalPaid;
 
     if (receivedEl) {
         receivedEl.textContent = `रु${totalReceived.toFixed(2)}`;
@@ -684,6 +709,27 @@ function recalculateVisibleDhukutiTotals() {
     }
     if (remainingEl) {
         remainingEl.textContent = `रु${totalRemaining.toFixed(2)}`;
+    }
+    if (interestEl) {
+        interestEl.textContent = `रु${totalInterest.toFixed(2)}`;
+    }
+    if (cardPaidEl) {
+        cardPaidEl.textContent = `रु${totalPaid.toFixed(2)}`;
+    }
+    if (cardRemainingEl) {
+        cardRemainingEl.textContent = `रु${totalRemaining.toFixed(2)}`;
+    }
+    if (cardNetValEl) {
+        cardNetValEl.textContent = `रु${netFinal.toFixed(2)}`;
+    }
+    if (cardNetWrapEl && cardNetValEl) {
+        if (netFinal > 0) {
+            cardNetWrapEl.className = 'rounded p-2 bg-warning bg-opacity-10 border border-warning';
+            cardNetValEl.className = 'fw-bold text-warning fs-6';
+        } else {
+            cardNetWrapEl.className = 'rounded p-2 bg-success bg-opacity-10 border border-success';
+            cardNetValEl.className = 'fw-bold text-success fs-6';
+        }
     }
 }
 
