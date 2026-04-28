@@ -209,6 +209,10 @@ class DhukutiLoan(models.Model):
         help_text="Kista number in which whole amount was received."
     )
     remaining_base_payment = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    kista_increment = models.DecimalField(
+        max_digits=14, decimal_places=2, blank=True, null=True,
+        help_text="Optional. If set, each future kista increases by this amount. If blank, future kistas equal the last paid kista amount."
+    )
     notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -239,6 +243,20 @@ class DhukutiLoan(models.Model):
     @property
     def total_interest(self):
         return self.received_amount - self.total_paid
+
+    @property
+    def estimated_remaining_to_pay(self):
+        """Estimated total remaining amount still to be paid."""
+        remaining = self.remaining_kista
+        if remaining <= 0:
+            return Decimal('0')
+        if self.remaining_base_payment and self.remaining_base_payment > 0:
+            return self.remaining_base_payment
+        paid_count = self.paid_kista_count
+        if paid_count > 0:
+            avg = (self.total_paid / Decimal(str(paid_count))).quantize(Decimal('0.01'))
+            return (avg * Decimal(str(remaining))).quantize(Decimal('0.01'))
+        return Decimal('0')
 
     @property
     def average_interest_rate_percent(self):
