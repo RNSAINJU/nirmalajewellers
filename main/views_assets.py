@@ -10,6 +10,7 @@ from order.models import Order, OrderOrnament, OrderMetalStock
 from sales.models import Sale
 from main.models import DailyRate, Stock
 from finance.models import SundryDebtor, SundryCreditor, CashBank, Loan, GoldLoanAccount, DhukutiLoan
+from finance.views_loan import _compute_dhukuti_summary
 
 
 @login_required
@@ -318,18 +319,26 @@ def total_assets(request):
 
     # ============================================================
     # 12. DHUKUTI NET (Payable/Receivable)
-    # Net Final = (to pay remaining of received active dhukuti)
-    #             - (total paid of dhukuti where received amount is 0)
+    # Use the exact same summary logic as the Dhukuti loans page so
+    # Total Assets stays perfectly aligned with "Net Final To Pay".
     # ============================================================
-    dhukuti_loans = DhukutiLoan.objects.prefetch_related('paid_kistas').all()
-    dhukuti_total_remaining_received = sum(
-        (
-            dloan.estimated_remaining_to_pay
-            for dloan in dhukuti_loans
-            if dloan.received_amount > 0 and dloan.remaining_kista > 0
-        ),
-        Decimal('0.00')
-    )
+    dhukuti_loans = DhukutiLoan.objects.prefetch_related('paid_kistas', 'planned_kistas').all()
+    dhukuti_total_remaining_received = Decimal('0.00')
+    for dloan in dhukuti_loans:
+        dloan_summary = _compute_dhukuti_summary(
+            received_amount=dloan.received_amount,
+            total_kista=dloan.total_kista,
+            paid_amounts=[p.amount for p in dloan.paid_kistas.all().order_by('month_number')],
+            remaining_base_payment=dloan.remaining_base_payment,
+            received_kista_number=dloan.received_kista_number,
+            planned_amounts_by_month={
+                p.month_number: p.amount for p in dloan.planned_kistas.all().order_by('month_number')
+            },
+            kista_increment=dloan.kista_increment,
+        )
+        if dloan.received_amount > 0 and dloan_summary['remaining_kista'] > 0:
+            dhukuti_total_remaining_received += dloan_summary['remaining_base_payment']
+
     dhukuti_total_paid_not_received = sum(
         (dloan.total_paid for dloan in dhukuti_loans if dloan.received_amount == 0),
         Decimal('0.00')
