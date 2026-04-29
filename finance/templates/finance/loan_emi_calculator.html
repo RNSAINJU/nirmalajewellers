@@ -680,7 +680,9 @@ function recalculateVisibleDhukutiTotals() {
     let totalInterest = 0;
     let totalPaidForCard = 0;
     let totalPaidReceivedZero = 0;
+    let totalRemainingForCard = 0;
 
+    // Footer totals follow current filter (visible rows only).
     rows.forEach(row => {
         if (row.style.display === 'none') {
             return;
@@ -697,15 +699,24 @@ function recalculateVisibleDhukutiTotals() {
         totalRemaining += remaining;
         totalInterest += interest;
 
-        // Paid card rule: include active loans and also loans where received amount is 0.
+    });
+
+    // Top cards should represent full dataset, independent of filter buttons.
+    rows.forEach(row => {
+        const received = parseFloat(row.dataset.received || '0') || 0;
+        const paid = parseFloat(row.dataset.paid || '0') || 0;
+        const remaining = parseFloat(row.dataset.remaining || '0') || 0;
+        const isCompleted = row.dataset.completed === 'true';
+
         if (!isCompleted || received === 0) {
             totalPaidForCard += paid;
         }
 
-        // Net final rule uses paid amount of not-received loans only.
         if (received === 0) {
             totalPaidReceivedZero += paid;
         }
+
+        totalRemainingForCard += remaining;
     });
 
     const receivedEl = document.getElementById('dhukuti-total-received');
@@ -717,7 +728,7 @@ function recalculateVisibleDhukutiTotals() {
     const cardNetWrapEl = document.getElementById('dhukuti-card-net-wrap');
     const cardNetValEl = document.getElementById('dhukuti-card-net-value');
 
-    const netFinal = totalRemaining - totalPaidReceivedZero;
+    const netFinal = totalRemainingForCard - totalPaidReceivedZero;
 
     if (receivedEl) {
         receivedEl.textContent = `रु${totalReceived.toFixed(2)}`;
@@ -735,7 +746,7 @@ function recalculateVisibleDhukutiTotals() {
         cardPaidEl.textContent = `रु${totalPaidForCard.toFixed(2)}`;
     }
     if (cardRemainingEl) {
-        cardRemainingEl.textContent = `रु${totalRemaining.toFixed(2)}`;
+        cardRemainingEl.textContent = `रु${totalRemainingForCard.toFixed(2)}`;
     }
     if (cardNetValEl) {
         cardNetValEl.textContent = `रु${netFinal.toFixed(2)}`;
