@@ -357,6 +357,20 @@
                                         {% widthratio total_other_investment total_assets 100 %}%
                                     </td>
                                 </tr>
+                                {% if dhukuti_net_receivable > 0 %}
+                                <tr>
+                                    <td>➕ Dhukuti Net Receivable (Added)</td>
+                                    <td class="text-end">{{ dhukuti_net_receivable|floatformat:2 }}</td>
+                                    <td class="text-end">-</td>
+                                </tr>
+                                {% endif %}
+                                {% if dhukuti_net_payable > 0 %}
+                                <tr>
+                                    <td>➖ Dhukuti Net Payable (Deducted)</td>
+                                    <td class="text-end">-{{ dhukuti_net_payable|floatformat:2 }}</td>
+                                    <td class="text-end">-</td>
+                                </tr>
+                                {% endif %}
                                 <tr>
                                     <td>➖ Sundry Creditors (Deduction)</td>
                                     <td class="text-end">-{{ sundry_creditor_total|floatformat:2 }}</td>
@@ -395,6 +409,7 @@
                     <li>Cash in hand and bank account balances</li>
                     <li>Gold loan balances (included in liquid assets)</li>
                     <li>Other investments shown separately from cash and bank</li>
+                    <li>Dhukuti net is adjusted: payable is deducted, receivable is added</li>
                     <li>Sundry creditors and loans are deducted from total assets</li>
                 </ul>
             </div>
