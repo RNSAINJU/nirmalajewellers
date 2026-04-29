@@ -678,16 +678,34 @@ function recalculateVisibleDhukutiTotals() {
     let totalPaid = 0;
     let totalRemaining = 0;
     let totalInterest = 0;
+    let totalPaidForCard = 0;
+    let totalPaidReceivedZero = 0;
 
     rows.forEach(row => {
         if (row.style.display === 'none') {
             return;
         }
 
-        totalReceived += parseFloat(row.dataset.received || '0') || 0;
-        totalPaid += parseFloat(row.dataset.paid || '0') || 0;
-        totalRemaining += parseFloat(row.dataset.remaining || '0') || 0;
-        totalInterest += parseFloat(row.dataset.interest || '0') || 0;
+        const received = parseFloat(row.dataset.received || '0') || 0;
+        const paid = parseFloat(row.dataset.paid || '0') || 0;
+        const remaining = parseFloat(row.dataset.remaining || '0') || 0;
+        const interest = parseFloat(row.dataset.interest || '0') || 0;
+        const isCompleted = row.dataset.completed === 'true';
+
+        totalReceived += received;
+        totalPaid += paid;
+        totalRemaining += remaining;
+        totalInterest += interest;
+
+        // Paid card rule: include active loans and also loans where received amount is 0.
+        if (!isCompleted || received === 0) {
+            totalPaidForCard += paid;
+        }
+
+        // Net final rule uses paid amount of not-received loans only.
+        if (received === 0) {
+            totalPaidReceivedZero += paid;
+        }
     });
 
     const receivedEl = document.getElementById('dhukuti-total-received');
@@ -699,7 +717,7 @@ function recalculateVisibleDhukutiTotals() {
     const cardNetWrapEl = document.getElementById('dhukuti-card-net-wrap');
     const cardNetValEl = document.getElementById('dhukuti-card-net-value');
 
-    const netFinal = totalReceived - totalPaid;
+    const netFinal = totalRemaining - totalPaidReceivedZero;
 
     if (receivedEl) {
         receivedEl.textContent = `रु${totalReceived.toFixed(2)}`;
@@ -714,7 +732,7 @@ function recalculateVisibleDhukutiTotals() {
         interestEl.textContent = `रु${totalInterest.toFixed(2)}`;
     }
     if (cardPaidEl) {
-        cardPaidEl.textContent = `रु${totalPaid.toFixed(2)}`;
+        cardPaidEl.textContent = `रु${totalPaidForCard.toFixed(2)}`;
     }
     if (cardRemainingEl) {
         cardRemainingEl.textContent = `रु${totalRemaining.toFixed(2)}`;
