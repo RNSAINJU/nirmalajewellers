@@ -81,6 +81,28 @@
         color: #4b5563;
         border-color: #e5e7eb;
     }
+    body.dark .ornament-link {
+        color: #93c5fd !important;
+    }
+    body.dark .ornament-link:hover {
+        color: #dbeafe !important;
+    }
+    body.dark .ornament-chip {
+        background: rgba(30, 41, 59, 0.85) !important;
+        color: #f8fafc !important;
+        border-color: rgba(148, 163, 184, 0.5) !important;
+    }
+    body.dark .ornament-chip * {
+        color: inherit !important;
+    }
+    body.dark .ornament-chip .text-primary {
+        color: #93c5fd !important;
+    }
+    body.dark .ornament-chip-muted {
+        background: rgba(71, 85, 105, 0.55) !important;
+        color: #e2e8f0 !important;
+        border-color: rgba(148, 163, 184, 0.45) !important;
+    }
     .btn-filter {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         border: none;
@@ -276,7 +298,7 @@
                                 </div>
                             {% endif %}
                         {% endwith %}
-                        {% with metals=sale.sale_metals.all %}
+                        {% with metals=sale.non_zero_metal_lines %}
                             {% if metals and metals|length > 0 %}
                                 <div class="ornament-chips mt-1" title="{% for metal in metals %}{{ metal.get_metal_type_display }} {{ metal.purity }} - {{ metal.quantity|floatformat:3 }}g @ Rs.{{ metal.rate_per_gram|floatformat:2 }}/g{% if not forloop.last %}, {% endif %}{% endfor %}">
                                     {% for metal in metals|slice:":3" %}
@@ -288,7 +310,7 @@
                                 </div>
                             {% endif %}
                         {% endwith %}
-                        {% if order.order_ornaments.count == 0 and sale.sale_metals.count == 0 %}
+                        {% if order.order_ornaments.count == 0 and sale.non_zero_metal_count == 0 %}
                             <small class="text-muted">No ornaments</small>
                         {% endif %}
                     </td>
