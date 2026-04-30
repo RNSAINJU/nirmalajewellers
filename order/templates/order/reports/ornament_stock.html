@@ -95,6 +95,39 @@
         border-bottom: 3px solid #667eea;
         padding-bottom: 10px;
     }
+
+    /* Dark mode readability */
+    body.dark .stock-summary,
+    body.dark .details-table-container,
+    body.dark .rate-info {
+        background: #1f2937;
+        color: #e5e7eb;
+        border-color: #374151;
+    }
+
+    body.dark .rate-info strong,
+    body.dark .table-title,
+    body.dark .amount-cell {
+        color: #f8fafc;
+    }
+
+    body.dark .summary-table td,
+    body.dark .details-table td,
+    body.dark .details-table th,
+    body.dark .summary-table th {
+        border-color: #374151;
+    }
+
+    body.dark .summary-table td,
+    body.dark .details-table td {
+        color: #e5e7eb;
+    }
+
+    body.dark .summary-table .total-row,
+    body.dark .details-table tbody tr:hover {
+        background: #111827;
+        color: #f9fafb;
+    }
 </style>
 
 <div class="container-fluid mt-4">

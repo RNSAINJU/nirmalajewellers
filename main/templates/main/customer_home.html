@@ -87,6 +87,18 @@
         button[class*="bg-primary"] {
           color: #221e10 !important;
         }
+
+        .home-brand-logo {
+          height: 42px;
+          width: auto;
+          object-fit: contain;
+        }
+
+        @media (max-width: 576px) {
+          .home-brand-logo {
+            height: 34px;
+          }
+        }
     </style>
 </head>
 <body class="bg-background-light dark:bg-background-dark text-stone-900 dark:text-stone-200 min-h-screen pb-24">
@@ -97,7 +109,12 @@
 <button class="p-2 -ml-2" onclick="toggleMenu()">
 <span class="material-icons-outlined">menu</span>
 </button>
-<h1 class="text-2xl font-light tracking-[0.2em] text-primary uppercase">Nirmala</h1>
+<h1 class="m-0">
+<a href="{% url 'main:customer_home' %}" class="inline-flex items-center" style="text-decoration:none;">
+<img class="home-brand-logo" src="{% static 'images/nj-logo.png' %}" alt="Nirmala Jewellers logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+<span class="text-2xl font-light tracking-[0.2em] text-primary uppercase" style="display:none;">Nirmala</span>
+</a>
+</h1>
 <div class="flex items-center gap-1">
 <button class="p-2" onclick="toggleTheme()" title="Toggle dark/light mode">
 <span class="material-icons-outlined" id="themeIcon">dark_mode</span>
