@@ -1,6 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 
+from .models import Sale
 from .models import SalesMetalStock
 from django.forms import inlineformset_factory
 
@@ -100,3 +101,17 @@ class ExcelImportForm(forms.Form):
                 raise ValidationError('File size must not exceed 10MB.')
         
         return file
+
+
+class SaleUpdateForm(forms.ModelForm):
+    """Form for editing sale details with explicit Nepali date input."""
+
+    class Meta:
+        model = Sale
+        fields = ["bill_no", "sale_date", "pan_number", "address"]
+        widgets = {
+            "bill_no": forms.TextInput(attrs={"class": "form-control"}),
+            "sale_date": forms.TextInput(attrs={"class": "form-control nepali-date", "placeholder": "YYYY-MM-DD (BS)"}),
+            "pan_number": forms.TextInput(attrs={"class": "form-control"}),
+            "address": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
+        }

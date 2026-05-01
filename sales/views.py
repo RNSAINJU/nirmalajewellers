@@ -26,7 +26,7 @@ from order.models import Order, OrderOrnament, OrderPayment, DebtorPayment
 from order.forms import OrderForm, OrnamentFormSet
 from ornament.models import Ornament, Kaligar
 from .models import Sale
-from .forms import ExcelImportForm
+from .forms import ExcelImportForm, SaleUpdateForm
 from finance.models import SundryDebtor
 
 
@@ -273,8 +273,12 @@ class SaleUpdateView(LoginRequiredMixin, UpdateView):
     """Edit a Sale (bill number and sale date)."""
 
     model = Sale
-    fields = ["bill_no", "sale_date", "pan_number", "address"]
+    form_class = SaleUpdateForm
     template_name = "sales/sale_form.html"
+
+    def form_valid(self, form):
+        messages.success(self.request, "Sale details updated successfully.")
+        return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
