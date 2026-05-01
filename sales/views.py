@@ -285,8 +285,23 @@ class SaleUpdateView(LoginRequiredMixin, UpdateView):
     template_name = "sales/sale_form.html"
 
     def form_valid(self, form):
-        messages.success(self.request, "Sale details updated successfully.")
-        return super().form_valid(form)
+        # Save explicitly so sale_date always persists from the submitted edit value.
+        self.object = form.save(commit=False)
+        raw_sale_date = (self.request.POST.get("sale_date") or "").strip()
+        if raw_sale_date:
+            try:
+                self.object.sale_date = ndt.date.fromisoformat(raw_sale_date)
+            except Exception:
+                # Keep form-cleaned value as fallback if parsing fails unexpectedly.
+                self.object.sale_date = form.cleaned_data.get("sale_date")
+        self.object.save()
+
+        messages.success(self.request, f"Sale details updated successfully. New sale date: {self.object.sale_date}")
+        return redirect(self.get_success_url())
+
+    def form_invalid(self, form):
+        messages.error(self.request, "Sale update failed. Please check the date format (YYYY-MM-DD BS).")
+        return super().form_invalid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
