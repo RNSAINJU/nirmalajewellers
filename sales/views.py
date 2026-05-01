@@ -161,6 +161,10 @@ class SalesListView(LoginRequiredMixin, ListView):
             # Cache ornament and metal data for this sale
             ornament_lines = list(sale.order.order_ornaments.all())
             sale_metals = list(sale.sale_metals.all())
+            non_zero_metal_lines = [
+                metal for metal in sale_metals
+                if (metal.line_amount or Decimal("0")) > Decimal("0")
+            ]
             
             # Calculate ornament weights
             ornament_weight = Decimal("0")
@@ -217,6 +221,8 @@ class SalesListView(LoginRequiredMixin, ListView):
                 'metal_total': metal_total,
                 'display_total': metal_total if len(ornament_lines) == 0 else (sale.order.total or Decimal("0")),
                 'ornament_count': len(ornament_lines),
+                'non_zero_metal_lines': non_zero_metal_lines,
+                'non_zero_metal_count': len(non_zero_metal_lines),
             }
 
         # Patch sales with cached data - no additional queries needed
@@ -228,6 +234,8 @@ class SalesListView(LoginRequiredMixin, ListView):
                     sale.gold_24_weight = cached['gold_24_weight']
                     sale.silver_24_weight = cached['silver_24_weight']
                     sale.display_total = cached['display_total']
+                    sale.non_zero_metal_lines = cached['non_zero_metal_lines']
+                    sale.non_zero_metal_count = cached['non_zero_metal_count']
 
         apply_cached_totals(context["sales"])
         apply_cached_totals(context["gold_sales"])

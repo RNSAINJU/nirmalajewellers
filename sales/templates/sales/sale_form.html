@@ -1,6 +1,39 @@
 {% extends 'base.html' %}
 
 {% block content %}
+  <style>
+    /* Sales form dark-mode readability */
+    body.dark .card {
+      background-color: #1f2937;
+      border-color: #374151;
+      color: #e5e7eb;
+    }
+
+    body.dark .card-header {
+      background-color: #111827;
+      border-color: #374151;
+      color: #f9fafb;
+    }
+
+    body.dark .table {
+      color: #e5e7eb;
+      border-color: #374151;
+    }
+
+    body.dark .table th,
+    body.dark .table td {
+      color: #e5e7eb !important;
+      border-color: #374151;
+      background-color: transparent;
+    }
+
+    body.dark .table thead.table-light th {
+      background-color: #111827;
+      color: #f9fafb !important;
+      border-color: #374151;
+    }
+  </style>
+
   <!-- Order Details -->
   {% if order %}
     <div class="card mb-4">

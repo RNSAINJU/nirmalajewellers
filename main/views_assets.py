@@ -9,7 +9,8 @@ from goldsilverpurchase.models import MetalStock
 from order.models import Order, OrderOrnament, OrderMetalStock
 from sales.models import Sale
 from main.models import DailyRate, Stock
-from finance.models import SundryDebtor, SundryCreditor, CashBank, Loan, GoldLoanAccount
+from finance.models import SundryDebtor, SundryCreditor, CashBank, Loan, GoldLoanAccount, DhukutiLoan
+from finance.views_loan import _compute_dhukuti_summary
 
 
 @login_required
@@ -315,6 +316,38 @@ def total_assets(request):
     gold_loan_receivable_total = (
         total_gold_loan_given_customers + total_gold_loan_unpaid_interest
     ).quantize(Decimal('0.01'))
+
+    # ============================================================
+    # 12. DHUKUTI NET (Payable/Receivable)
+    # Use the exact same summary logic as the Dhukuti loans page so
+    # Total Assets stays perfectly aligned with "Net Final To Pay".
+    # ============================================================
+    dhukuti_loans = DhukutiLoan.objects.prefetch_related('paid_kistas', 'planned_kistas').all()
+    dhukuti_total_remaining_received = Decimal('0.00')
+    for dloan in dhukuti_loans:
+        dloan_summary = _compute_dhukuti_summary(
+            received_amount=dloan.received_amount,
+            total_kista=dloan.total_kista,
+            paid_amounts=[p.amount for p in dloan.paid_kistas.all().order_by('month_number')],
+            remaining_base_payment=dloan.remaining_base_payment,
+            received_kista_number=dloan.received_kista_number,
+            planned_amounts_by_month={
+                p.month_number: p.amount for p in dloan.planned_kistas.all().order_by('month_number')
+            },
+            kista_increment=dloan.kista_increment,
+        )
+        if dloan.received_amount > 0 and dloan_summary['remaining_kista'] > 0:
+            dhukuti_total_remaining_received += dloan_summary['remaining_base_payment']
+
+    dhukuti_total_paid_not_received = sum(
+        (dloan.total_paid for dloan in dhukuti_loans if dloan.received_amount == 0),
+        Decimal('0.00')
+    )
+    dhukuti_net_final = (
+        dhukuti_total_remaining_received - dhukuti_total_paid_not_received
+    ).quantize(Decimal('0.01'))
+    dhukuti_net_payable = max(dhukuti_net_final, Decimal('0.00'))
+    dhukuti_net_receivable = max(-dhukuti_net_final, Decimal('0.00'))
     
     # ============================================================
     # TOTAL ASSETS
@@ -331,8 +364,10 @@ def total_assets(request):
         gold_loan_receivable_total +
         cash_bank_total +
         total_other_investment
+        + dhukuti_net_receivable
         - sundry_creditor_total
         - loan_total
+        - dhukuti_net_payable
     )
     
     context = {
@@ -389,6 +424,11 @@ def total_assets(request):
         # Liabilities
         'sundry_creditor_total': sundry_creditor_total,
         'loan_total': loan_total,
+        'dhukuti_net_final': dhukuti_net_final,
+        'dhukuti_net_payable': dhukuti_net_payable,
+        'dhukuti_net_receivable': dhukuti_net_receivable,
+        'dhukuti_total_remaining_received': dhukuti_total_remaining_received,
+        'dhukuti_total_paid_not_received': dhukuti_total_paid_not_received,
         
         # Totals
         'total_assets': total_assets_amount,

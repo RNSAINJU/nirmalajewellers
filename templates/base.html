@@ -271,6 +271,26 @@
         color: var(--admin-gold) !important;
         font-family: 'Cinzel', serif;
         letter-spacing: 1px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+    }
+
+    .top-navbar .navbar-brand .brand-logo-img {
+        width: 34px;
+        height: 34px;
+        object-fit: contain;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 2px;
+    }
+
+    body:not(.dark) .top-navbar .navbar-brand .brand-logo-img {
+        background: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark .top-navbar .navbar-brand .brand-logo-img {
+        background: rgba(255, 255, 255, 0.9);
     }
 
     /* MOBILE BOTTOM NAV */
@@ -1227,7 +1247,9 @@
         </button>
 
         <span class="navbar-brand mb-0 h1">
-            <i class="bi bi-gem"></i> Nirmala Jewellers
+            <img class="brand-logo-img" src="{% static 'images/nj-logo.png' %}" alt="Nirmala Jewellers logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+            <span style="display:none;"><i class="bi bi-gem"></i></span>
+            Nirmala Jewellers
         </span>
 
         <div class="d-flex align-items-center gap-2 navbar-actions">
