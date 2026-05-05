@@ -20,6 +20,8 @@ class LoginRequiredMiddleware:
             '/static/',
             '/media/',
             '/api/products/',
+            '/api/ornament-chat/',
+            '/ornament/api/chat/',
             '/shop',
             '/products/',
         }
