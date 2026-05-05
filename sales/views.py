@@ -24,7 +24,7 @@ from django.conf import settings
 
 from order.models import Order, OrderOrnament, OrderPayment, DebtorPayment
 from order.forms import OrderForm, OrnamentFormSet
-from ornament.models import Ornament, Kaligar
+from ornament.models import Ornament, Kaligar, MainCategory, SubCategory
 from .models import Sale
 from .forms import ExcelImportForm
 from finance.models import SundryDebtor
@@ -423,6 +423,9 @@ class DirectSaleCreateView(LoginRequiredMixin, CreateView):
         else:
             context['metal_stock_formset'] = SalesMetalStockFormSet(instance=None)
         context['metal_formset_prefix'] = context['metal_stock_formset'].prefix
+        context['kaligars'] = Kaligar.objects.all()
+        context['main_categories'] = MainCategory.objects.all()
+        context['sub_categories'] = SubCategory.objects.all()
 
         return context
 

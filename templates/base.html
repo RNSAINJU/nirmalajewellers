@@ -26,6 +26,9 @@
     <link rel="stylesheet" href="{% static 'css/management_list.css' %}?v=20260418">
 
     {% block extra_css %}{% endblock %}
+    
+    <!-- Chatbot Styles -->
+    <link rel="stylesheet" href="{% static 'css/ornament-chatbot.css' %}?v=20260506">
 
 <style>
     :root {
@@ -1793,6 +1796,21 @@ window.addEventListener('resize', function() {
 </script>
 
 {% block extra_js %}{% endblock %}
+
+<!-- Ornament Chatbot -->
+<script src="{% static 'js/ornament-chatbot.js' %}?v=20260506"></script>
+<script>
+    // Initialize chatbot with API endpoint
+    document.addEventListener('DOMContentLoaded', function() {
+        if (!window.ornamentChatbot) {
+            window.ornamentChatbot = new OrnamentChatbot({
+                apiEndpoint: '/ornament/api/chat/',
+                title: 'Ornament Assistant',
+                subtitle: 'Ask about our ornaments...'
+            });
+        }
+    });
+</script>
 
 </body>
 </html>

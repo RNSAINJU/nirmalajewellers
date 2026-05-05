@@ -770,6 +770,105 @@ const gemColumnManualVisibility = {
     stone: false,
 };
 
+// Initialize inline modal early to prevent issues with reopening
+let inlineModalInstance = null;
+let modalEventListenersAttached = false;
+
+function resetInlineOrnamentForm() {
+    const modalEl = document.getElementById('inlineOrnamentModal');
+    
+    // Remove inline display style so Bootstrap can manage it via CSS classes
+    if (modalEl) {
+        modalEl.style.removeProperty('display');
+    }
+    
+    // Clear all form fields
+    document.getElementById('inline-ornament-name').value = '';
+    document.getElementById('inline-ornament-code').value = '';
+    document.getElementById('inline-ornament-weight').value = '';
+    document.getElementById('inline-ornament-diamond').value = '';
+    document.getElementById('inline-ornament-zircon').value = '';
+    document.getElementById('inline-ornament-stone').value = '';
+    document.getElementById('inline-ornament-jarti').value = '';
+    document.getElementById('inline-ornament-jyala').value = '';
+    // Reset dropdowns to first option
+    document.getElementById('inline-ornament-metal').selectedIndex = 0;
+    document.getElementById('inline-ornament-type').selectedIndex = 0;
+    document.getElementById('inline-ornament-kaligar').selectedIndex = 0;
+    document.getElementById('inline-ornament-maincategory').selectedIndex = 0;
+    document.getElementById('inline-ornament-subcategory').selectedIndex = 0;
+    // Clear error message
+    const errorEl = document.getElementById('inline-ornament-error');
+    if (errorEl) {
+        errorEl.textContent = '';
+        errorEl.classList.add('d-none');
+    }
+    // Re-enable save button
+    const saveBtn = document.getElementById('inline-ornament-save');
+    if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save & Add';
+    }
+}
+
+function initializeInlineModal() {
+    const modalEl = document.getElementById('inlineOrnamentModal');
+    if (!modalEl) return null;
+    
+    if (!inlineModalInstance) {
+        // Use existing Bootstrap instance if available, otherwise create one
+        inlineModalInstance = bootstrap.Modal.getInstance(modalEl);
+        if (!inlineModalInstance) {
+            inlineModalInstance = new bootstrap.Modal(modalEl);
+        }
+    }
+    
+    // Attach event listeners only once
+    if (!modalEventListenersAttached) {
+        // Reset form when modal is about to show
+        modalEl.addEventListener('show.bs.modal', function() {
+            // Remove inline display style so Bootstrap can manage visibility via CSS
+            modalEl.style.removeProperty('display');
+            resetInlineOrnamentForm();
+        });
+        
+        // Alternative: Also clear on shown event as backup
+        modalEl.addEventListener('shown.bs.modal', function() {
+            // Ensure display style is removed if it somehow got set again
+            if (modalEl.style.display === 'none') {
+                modalEl.style.removeProperty('display');
+            }
+        });
+        
+        // Cleanup after modal fully hides
+        modalEl.addEventListener('hidden.bs.modal', function() {
+            // Ensure body is fully accessible
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+            
+            // Remove any lingering backdrops
+            document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+        });
+        
+        modalEventListenersAttached = true;
+    }
+    
+    return inlineModalInstance;
+}
+
+function closeInlineOrnamentModal() {
+    if (!inlineModalInstance) {
+        inlineModalInstance = initializeInlineModal();
+    }
+    if (inlineModalInstance) {
+        inlineModalInstance.hide();
+    }
+}
+
+// Initialize modal as soon as this script runs
+initializeInlineModal();
+
 function hasGemData(group) {
     const ids = Object.keys(selectedOrnaments);
     for (const id of ids) {
@@ -883,47 +982,6 @@ document.getElementById('ornament-search').addEventListener('input', function() 
 // Inline ornament create
 const inlineSaveBtn = document.getElementById('inline-ornament-save');
 const inlineError = document.getElementById('inline-ornament-error');
-
-// Close modal safely even if Bootstrap instance is missing
-function closeInlineOrnamentModal() {
-    const modalEl = document.getElementById('inlineOrnamentModal');
-    if (!modalEl) return;
-    
-    // Get Bootstrap modal instance
-    const instance = bootstrap.Modal.getInstance(modalEl);
-    if (instance) {
-        instance.hide();
-    }
-    
-    // Immediate cleanup - don't wait
-    modalEl.classList.remove('show', 'fade');
-    modalEl.style.display = 'none';
-    modalEl.setAttribute('aria-hidden', 'true');
-    modalEl.removeAttribute('aria-modal');
-    modalEl.removeAttribute('role');
-    
-    // Completely restore body scrolling
-    document.body.classList.remove('modal-open');
-    document.body.style.removeProperty('overflow');
-    document.body.style.removeProperty('padding-right');
-    document.body.style.overflow = 'auto';
-    
-    // Remove all modal backdrops immediately
-    const backdrops = document.querySelectorAll('.modal-backdrop');
-    backdrops.forEach(backdrop => backdrop.remove());
-    
-    // Double check after animation completes
-    setTimeout(() => {
-        document.body.classList.remove('modal-open');
-        document.body.style.overflow = 'auto';
-        document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
-        
-        // Force restore fade class for next opening
-        if (!modalEl.classList.contains('fade')) {
-            modalEl.classList.add('fade');
-        }
-    }, 200);
-}
 
 function inlineOrnamentPayload() {
     return {

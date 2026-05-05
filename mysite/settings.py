@@ -96,6 +96,21 @@ cloudinary.config(
 
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
+# Cloudinary Storage Configuration for Image Optimization
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': os.getenv('CLOUDINARY_API_KEY'),
+    'API_SECRET': os.getenv('CLOUDINARY_API_SECRET'),
+}
+
+# Image Upload Transformations (server-side optimization)
+CLOUDINARY_IMAGE_PARAMS = {
+    'quality': 'auto',           # Auto-detect best quality format
+    'fetch_format': 'auto',      # Serve WebP to modern browsers, JPG otherwise
+    'flags': 'progressive',      # Progressive JPEG for faster loading
+    'dpr': 'auto',               # Auto device pixel ratio
+}
+
 MEDIA_URL = '/media/'
 
 

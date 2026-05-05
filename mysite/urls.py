@@ -16,10 +16,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from ornament.chatbot_views import ornament_chat_api
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')),
+    path('api/ornament-chat/', ornament_chat_api, name='ornament_chat_api_legacy'),
     path('', include('main.urls')),
     path('purchase/', include('goldsilverpurchase.urls')),
     path('order/', include('order.urls')),

@@ -32,6 +32,7 @@ from .views import (
     ornament_price_calculator,
     detect_barcode_from_image,
 )
+from .chatbot_views import ornament_chat_api
 
 app_name = 'ornament'
 
@@ -39,6 +40,7 @@ urlpatterns = [
     path('', OrnamentListView.as_view(), name='list'),
     path('barcode-scanner/', barcode_scanner, name='barcode_scanner'),
     path('barcode-scanner/detect/', detect_barcode_from_image, name='detect_barcode'),
+        path('api/chat/', ornament_chat_api, name='chat_api'),
     path('<int:pk>/price-calculator/', ornament_price_calculator, name='price_calculator'),
     path('admin-inventory/', OrnamentAdminInventoryView.as_view(), name='admin_inventory'),
     path('create/', OrnamentCreateView.as_view(), name='create'),
