@@ -1,6 +1,8 @@
 from django import forms
 from django.core.exceptions import ValidationError
+import nepali_datetime as ndt
 
+from .models import Sale
 from .models import SalesMetalStock
 from django.forms import inlineformset_factory
 
@@ -100,3 +102,33 @@ class ExcelImportForm(forms.Form):
                 raise ValidationError('File size must not exceed 10MB.')
         
         return file
+
+
+class SaleUpdateForm(forms.ModelForm):
+    """Form for editing sale details with explicit Nepali date input."""
+
+    class Meta:
+        model = Sale
+        fields = ["bill_no", "sale_date", "pan_number", "address"]
+        widgets = {
+            "bill_no": forms.TextInput(attrs={"class": "form-control"}),
+            "sale_date": forms.TextInput(attrs={"class": "form-control nepali-date", "placeholder": "YYYY-MM-DD (BS)"}),
+            "pan_number": forms.TextInput(attrs={"class": "form-control"}),
+            "address": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
+        }
+
+    def clean_sale_date(self):
+        """Accept and normalize Nepali (BS) date from text input."""
+        value = self.cleaned_data.get("sale_date")
+        if value in (None, ""):
+            return None
+
+        # Already parsed by field/widget.
+        if hasattr(value, "year") and hasattr(value, "month") and hasattr(value, "day"):
+            return value
+
+        raw = str(value).strip()
+        try:
+            return ndt.date.fromisoformat(raw)
+        except Exception:
+            raise ValidationError("Enter a valid Nepali date in YYYY-MM-DD format.")

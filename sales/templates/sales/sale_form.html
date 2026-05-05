@@ -132,6 +132,11 @@
   <div class="col-lg-6">
     <form method="post" class="card p-4 shadow-sm" novalidate>
       {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger py-2">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
       {% if return_month and return_year %}
         <input type="hidden" name="return_month" value="{{ return_month }}">
         <input type="hidden" name="return_year" value="{{ return_year }}">
@@ -143,6 +148,9 @@
       <div class="mb-3">
         <label for="id_sale_date" class="form-label">Sale Date (BS)</label>
         {{ form.sale_date }}
+        {% if form.sale_date.errors %}
+          <div class="text-danger small mt-1">{{ form.sale_date.errors|join:", " }}</div>
+        {% endif %}
       </div>
       <div class="mb-3">
         <label for="id_pan_number" class="form-label">PAN Number</label>

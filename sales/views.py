@@ -26,7 +26,7 @@ from order.models import Order, OrderOrnament, OrderPayment, DebtorPayment
 from order.forms import OrderForm, OrnamentFormSet
 from ornament.models import Ornament, Kaligar, MainCategory, SubCategory
 from .models import Sale
-from .forms import ExcelImportForm
+from .forms import ExcelImportForm, SaleUpdateForm
 from finance.models import SundryDebtor
 
 
@@ -281,8 +281,27 @@ class SaleUpdateView(LoginRequiredMixin, UpdateView):
     """Edit a Sale (bill number and sale date)."""
 
     model = Sale
-    fields = ["bill_no", "sale_date", "pan_number", "address"]
+    form_class = SaleUpdateForm
     template_name = "sales/sale_form.html"
+
+    def form_valid(self, form):
+        # Save explicitly so sale_date always persists from the submitted edit value.
+        self.object = form.save(commit=False)
+        raw_sale_date = (self.request.POST.get("sale_date") or "").strip()
+        if raw_sale_date:
+            try:
+                self.object.sale_date = ndt.date.fromisoformat(raw_sale_date)
+            except Exception:
+                # Keep form-cleaned value as fallback if parsing fails unexpectedly.
+                self.object.sale_date = form.cleaned_data.get("sale_date")
+        self.object.save()
+
+        messages.success(self.request, f"Sale details updated successfully. New sale date: {self.object.sale_date}")
+        return redirect(self.get_success_url())
+
+    def form_invalid(self, form):
+        messages.error(self.request, "Sale update failed. Please check the date format (YYYY-MM-DD BS).")
+        return super().form_invalid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
