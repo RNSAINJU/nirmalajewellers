@@ -704,7 +704,7 @@ def sales_monthly_tax_report(request):
     ws = wb.active
     ws.title = "Monthly Tax Report"
 
-    headers = ["Bill No", "Customer Name", "PAN", "Address", "Taxable Amount", "Tax"]
+    headers = ["Customer Name", "PAN", "Address", "Taxable Amount", "Tax"]
     ws.append(headers)
 
     for sale in sales:
@@ -712,7 +712,6 @@ def sales_monthly_tax_report(request):
         # Use taxable_amount (gold/diamond only, discount already deducted)
         taxable = order.taxable_amount if order.taxable_amount is not None else 0
         ws.append([
-            sale.bill_no,
             order.customer_name,
             order.pan_number or "",
             order.address or "",
