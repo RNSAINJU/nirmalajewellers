@@ -438,25 +438,126 @@
 /* Responsive Design */
 @media (max-width: 480px) {
     .chatbot-widget {
-        bottom: 10px !important;
-        right: 10px !important;
+        bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+        right: calc(10px + env(safe-area-inset-right, 0px)) !important;
         left: auto !important;
         top: auto !important;
     }
 
     .chatbot-window {
-        width: calc(100vw - 20px);
-        max-width: 100%;
-        height: 70vh;
-        max-height: 600px;
+        position: fixed;
+        left: 10px;
+        right: 10px;
+        top: 10px;
+        bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+        width: auto;
+        height: auto;
+        max-width: none;
+        max-height: none;
+        border-radius: 20px;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.24);
+    }
+
+    .chatbot-header {
+        padding: 14px 16px;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .chat-title {
+        font-size: 16px;
+    }
+
+    .chat-subtitle {
+        font-size: 11px;
+        line-height: 1.35;
+    }
+
+    .chatbot-messages {
+        padding: 14px;
+        gap: 10px;
     }
 
     .message-content {
-        max-width: 95%;
+        max-width: 100%;
+        font-size: 13px;
+        line-height: 1.45;
+    }
+
+    .example-queries {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+    }
+
+    .query-button {
+        padding: 10px 10px;
+        font-size: 11px;
+        border-radius: 10px;
+        min-height: 40px;
+    }
+
+    .ornament-card {
+        padding: 10px;
+    }
+
+    .ornament-header {
+        gap: 8px;
+        align-items: flex-start;
+    }
+
+    .ornament-code {
+        white-space: nowrap;
     }
 
     .ornament-details {
         grid-template-columns: 1fr;
+    }
+
+    .chatbot-input-area {
+        padding: 10px;
+        gap: 6px;
+        padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .chat-input {
+        padding: 10px 14px;
+        font-size: 13px;
+    }
+
+    .send-button {
+        width: 42px;
+        height: 42px;
+        flex: 0 0 42px;
+    }
+
+    .message-time {
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 380px) {
+    .chatbot-window {
+        left: 8px;
+        right: 8px;
+        top: 8px;
+        bottom: calc(82px + env(safe-area-inset-bottom, 0px));
+        border-radius: 18px;
+    }
+
+    .example-queries {
+        grid-template-columns: 1fr;
+    }
+
+    .chat-title {
+        font-size: 15px;
+    }
+
+    .chat-subtitle {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
 }
 
