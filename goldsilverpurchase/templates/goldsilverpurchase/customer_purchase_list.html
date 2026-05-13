@@ -55,7 +55,7 @@
     <div class="row mb-4 g-3 align-items-center">
         <div class="col-md-8">
             <form method="get" class="d-flex gap-2">
-                <input type="text" name="search" class="form-control" placeholder="Search by SN, name, phone, ornament" value="{{ search }}">
+                <input type="text" name="search" class="form-control" placeholder="Search by Bill No, SN, name, phone, ornament" value="{{ search }}">
                 <input type="text" name="date" class="form-control" placeholder="Date (YYYY-MM-DD)" value="{{ date }}">
                 <button class="btn btn-primary">Search</button>
                 <a href="{% url 'gsp:customer_purchase_list' %}" class="btn btn-outline-secondary">Clear</a>
@@ -88,6 +88,12 @@
             <button class="nav-link" id="silver-tab" data-bs-toggle="tab" data-bs-target="#silver-content" type="button" role="tab" aria-controls="silver-content" aria-selected="false">
                 <span style="color: #94a3b8; font-weight: 600;">🥈 Silver</span>
                 <small class="ms-2" style="color: #666;">({{ silver_purchases|length }})</small>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="diamond-tab" data-bs-toggle="tab" data-bs-target="#diamond-content" type="button" role="tab" aria-controls="diamond-content" aria-selected="false">
+                <span style="color: #06b6d4; font-weight: 600;">💎 Diamond</span>
+                <small class="ms-2" style="color: #666;">({{ diamond_purchases|length }})</small>
             </button>
         </li>
     </ul>
@@ -127,7 +133,7 @@
                 <table class="table table-bordered table-striped table-hover align-middle table-sm mb-0">
                     <thead class="table-dark">
                         <tr>
-                            <th scope="col">SN</th>
+                            <th scope="col">Bill No</th>
                             <th scope="col">Date</th>
                             <th scope="col">Customer</th>
                             <th scope="col">Ornament</th>
@@ -135,7 +141,7 @@
                             <th scope="col" class="text-end">Final</th>
                             <th scope="col" class="text-end">Profit</th>
                             <th scope="col" class="text-end">Rate</th>
-                            <th scope="col" class="text-end">Amount</th>
+                            <th scope="col" class="text-end">Total</th>
                             <th scope="col" class="text-end">Profit</th>
                             <th scope="col">Actions</th>
                         </tr>
@@ -143,7 +149,7 @@
                     <tbody>
                         {% for cp in gold_purchases %}
                         <tr>
-                            <td>{{ cp.sn }}</td>
+                            <td>{{ cp.bill_no|default:'-' }}</td>
                             <td style="min-width:90px;">{{ cp.purchase_date }}</td>
                             <td style="min-width:120px;">{{ cp.customer_name }}</td>
                             <td style="min-width:120px;">{{ cp.ornament_name }}</td>
@@ -151,7 +157,7 @@
                             <td class="text-end">{{ cp.final_weight|floatformat:3 }}</td>
                             <td class="text-end"><span class="badge bg-info">{{ cp.profit_weight|floatformat:3 }}</span></td>
                             <td class="text-end">{{ cp.rate|floatformat:2 }}</td>
-                            <td class="text-end">{{ cp.amount|floatformat:2 }}</td>
+                            <td class="text-end">{{ cp.total_amount|floatformat:2 }}</td>
                             <td class="text-end"><span class="badge bg-success">रु{{ cp.profit|floatformat:2 }}</span></td>
                             <td class="d-flex flex-column flex-md-row gap-1">
                                 <a href="{% url 'gsp:customer_purchase_update' cp.pk %}" class="btn btn-outline-primary btn-sm w-100">Edit</a>
@@ -200,7 +206,7 @@
                 <table class="table table-bordered table-striped table-hover align-middle table-sm mb-0">
                     <thead class="table-dark">
                         <tr>
-                            <th scope="col">SN</th>
+                            <th scope="col">Bill No</th>
                             <th scope="col">Date</th>
                             <th scope="col">Customer</th>
                             <th scope="col">Ornament</th>
@@ -208,7 +214,7 @@
                             <th scope="col" class="text-end">Final</th>
                             <th scope="col" class="text-end">Profit</th>
                             <th scope="col" class="text-end">Rate</th>
-                            <th scope="col" class="text-end">Amount</th>
+                            <th scope="col" class="text-end">Total</th>
                             <th scope="col" class="text-end">Profit</th>
                             <th scope="col">Actions</th>
                         </tr>
@@ -216,7 +222,7 @@
                     <tbody>
                         {% for cp in silver_purchases %}
                         <tr>
-                            <td>{{ cp.sn }}</td>
+                            <td>{{ cp.bill_no|default:'-' }}</td>
                             <td style="min-width:90px;">{{ cp.purchase_date }}</td>
                             <td style="min-width:120px;">{{ cp.customer_name }}</td>
                             <td style="min-width:120px;">{{ cp.ornament_name }}</td>
@@ -224,7 +230,7 @@
                             <td class="text-end">{{ cp.final_weight|floatformat:3 }}</td>
                             <td class="text-end"><span class="badge bg-info">{{ cp.profit_weight|floatformat:3 }}</span></td>
                             <td class="text-end">{{ cp.rate|floatformat:2 }}</td>
-                            <td class="text-end">{{ cp.amount|floatformat:2 }}</td>
+                            <td class="text-end">{{ cp.total_amount|floatformat:2 }}</td>
                             <td class="text-end"><span class="badge bg-success">रु{{ cp.profit|floatformat:2 }}</span></td>
                             <td class="d-flex flex-column flex-md-row gap-1">
                                 <a href="{% url 'gsp:customer_purchase_update' cp.pk %}" class="btn btn-outline-primary btn-sm w-100">Edit</a>
@@ -237,6 +243,79 @@
             </div>
             {% else %}
             <div class="alert alert-info text-center py-4">No silver purchases found.</div>
+            {% endif %}
+        </div>
+
+        <!-- Diamond Tab -->
+        <div class="tab-pane fade" id="diamond-content" role="tabpanel" aria-labelledby="diamond-tab">
+            {% if diamond_purchases %}
+            <div class="row mb-3 g-3">
+                <div class="col-12 col-md-3">
+                    <div class="card shadow-sm border-0" style="background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);">
+                        <div class="card-body text-white text-center">
+                            <h6 class="mb-1">Total Weight</h6>
+                            <h4 class="mb-0">{{ diamond_total_weight|floatformat:3 }} <small style="font-size:0.6em;">तोल</small></h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-3">
+                    <div class="card shadow-sm border-0" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                        <div class="card-body text-white text-center">
+                            <h6 class="mb-1">Total Amount</h6>
+                            <h4 class="mb-0">रु{{ diamond_total_amount|floatformat:2 }}</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-3">
+                    <div class="card shadow-sm border-0" style="background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);">
+                        <div class="card-body text-white text-center">
+                            <h6 class="mb-1">Total Profit</h6>
+                            <h4 class="mb-0">रु{{ diamond_total_profit|floatformat:2 }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped table-hover align-middle table-sm mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th scope="col">Bill No</th>
+                            <th scope="col">Date</th>
+                            <th scope="col">Customer</th>
+                            <th scope="col">Ornament</th>
+                            <th scope="col" class="text-end">Weight</th>
+                            <th scope="col" class="text-end">Final</th>
+                            <th scope="col" class="text-end">Profit</th>
+                            <th scope="col" class="text-end">Rate</th>
+                            <th scope="col" class="text-end">Total</th>
+                            <th scope="col" class="text-end">Profit</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cp in diamond_purchases %}
+                        <tr>
+                            <td>{{ cp.bill_no|default:'-' }}</td>
+                            <td style="min-width:90px;">{{ cp.purchase_date }}</td>
+                            <td style="min-width:120px;">{{ cp.customer_name }}</td>
+                            <td style="min-width:120px;">{{ cp.ornament_name }}</td>
+                            <td class="text-end">{{ cp.weight|floatformat:3 }}</td>
+                            <td class="text-end">{{ cp.final_weight|floatformat:3 }}</td>
+                            <td class="text-end"><span class="badge bg-info">{{ cp.profit_weight|floatformat:3 }}</span></td>
+                            <td class="text-end">{{ cp.rate|floatformat:2 }}</td>
+                            <td class="text-end">{{ cp.total_amount|floatformat:2 }}</td>
+                            <td class="text-end"><span class="badge bg-success">रु{{ cp.profit|floatformat:2 }}</span></td>
+                            <td class="d-flex flex-column flex-md-row gap-1">
+                                <a href="{% url 'gsp:customer_purchase_update' cp.pk %}" class="btn btn-outline-primary btn-sm w-100">Edit</a>
+                                <a href="{% url 'gsp:customer_purchase_delete' cp.pk %}" class="btn btn-outline-danger btn-sm w-100 mt-1 mt-md-0">Delete</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info text-center py-4">No diamond purchases found.</div>
             {% endif %}
         </div>
     </div>

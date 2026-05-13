@@ -480,6 +480,7 @@ class CustomerPurchaseListView(LoginRequiredMixin, ListView):
 
         if search:
             qs = qs.filter(
+                Q(bill_no__icontains=search) |
                 Q(sn__icontains=search) |
                 Q(customer_name__icontains=search) |
                 Q(location__icontains=search) |
@@ -504,8 +505,14 @@ class CustomerPurchaseListView(LoginRequiredMixin, ListView):
         if metal_type:
             qs = qs.filter(metal_type=metal_type)
 
-        # Order by SN in descending numeric order
-        qs = qs.annotate(sn_numeric=Cast('sn', IntegerField())).order_by('-sn_numeric')
+        # Order by Bill No in ascending numeric order (fallback to text and id)
+        qs = qs.annotate(
+            bill_no_numeric=Case(
+                When(bill_no__regex=r'^\d+$', then=Cast('bill_no', IntegerField())),
+                default=2147483647,
+                output_field=IntegerField(),
+            )
+        ).order_by('bill_no_numeric', 'bill_no', 'id')
         
         return qs
 
@@ -516,7 +523,7 @@ class CustomerPurchaseListView(LoginRequiredMixin, ListView):
         ctx['total_refined_weight'] = qs.aggregate(total=Sum('refined_weight'))['total'] or Decimal('0')
         ctx['total_final_weight'] = qs.aggregate(total=Sum('final_weight'))['total'] or Decimal('0')
         ctx['total_profit_weight'] = qs.aggregate(total=Sum('profit_weight'))['total'] or Decimal('0')
-        ctx['total_amount'] = qs.aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        ctx['total_amount'] = qs.aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
         ctx['total_profit'] = qs.aggregate(total=Sum('profit'))['total'] or Decimal('0')
         ctx['date'] = self.request.GET.get('date', '')
         ctx['start_date'] = self.request.GET.get('start_date', '')
@@ -527,15 +534,20 @@ class CustomerPurchaseListView(LoginRequiredMixin, ListView):
         # Separate gold and silver for tabs
         ctx['gold_purchases'] = qs.filter(metal_type='gold')
         ctx['silver_purchases'] = qs.filter(metal_type='silver')
+        ctx['diamond_purchases'] = qs.filter(metal_type='diamond')
         
         # Calculate stats for each metal type
         ctx['gold_total_weight'] = ctx['gold_purchases'].aggregate(total=Sum('weight'))['total'] or Decimal('0')
-        ctx['gold_total_amount'] = ctx['gold_purchases'].aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        ctx['gold_total_amount'] = ctx['gold_purchases'].aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
         ctx['gold_total_profit'] = ctx['gold_purchases'].aggregate(total=Sum('profit'))['total'] or Decimal('0')
         
         ctx['silver_total_weight'] = ctx['silver_purchases'].aggregate(total=Sum('weight'))['total'] or Decimal('0')
-        ctx['silver_total_amount'] = ctx['silver_purchases'].aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        ctx['silver_total_amount'] = ctx['silver_purchases'].aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
         ctx['silver_total_profit'] = ctx['silver_purchases'].aggregate(total=Sum('profit'))['total'] or Decimal('0')
+
+        ctx['diamond_total_weight'] = ctx['diamond_purchases'].aggregate(total=Sum('weight'))['total'] or Decimal('0')
+        ctx['diamond_total_amount'] = ctx['diamond_purchases'].aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
+        ctx['diamond_total_profit'] = ctx['diamond_purchases'].aggregate(total=Sum('profit'))['total'] or Decimal('0')
         
         return ctx
 
@@ -692,13 +704,14 @@ def export_customer_excel(request):
     ws.title = "CustomerPurchases"
 
     headers = [
-        "Purchase Date (BS)", "Customer Name", "Location", "Phone",
-        "Metal", "Ornament Name", "Weight (तोल)", "Percentage", "Final Weight (तोल)", "Refined Weight (तोल)", "Rate (Per तोल)", "Amount"
+        "Bill No", "Purchase Date (BS)", "Customer Name", "Location", "Phone",
+        "Metal", "Ornament Name", "Weight (तोल)", "Percentage", "Final Weight (तोल)", "Refined Weight (तोल)", "Rate (Per तोल)", "Gold Amount", "Diamond Weight", "Diamond Rate", "Diamond Total", "Total Amount"
     ]
     ws.append(headers)
 
     for p in purchases:
         ws.append([
+            p.bill_no,
             str(p.purchase_date),
             p.customer_name,
             p.location,
@@ -711,6 +724,10 @@ def export_customer_excel(request):
             p.refined_weight,
             p.rate,
             p.amount,
+            p.diamond_weight,
+            p.diamond_rate,
+            p.diamond_amount,
+            p.total_amount,
         ])
 
     for col in ws.columns:
@@ -907,6 +924,7 @@ def import_customer_excel(request):
 
                 try:
                     (
+                        bill_no,
                         purchase_date_bs,
                         customer_name,
                         location,
@@ -919,10 +937,21 @@ def import_customer_excel(request):
                         refined_weight,
                         rate,
                         amount,
+                        diamond_weight,
+                        diamond_rate,
+                        diamond_amount,
+                        total_amount,
                     ) = row
                 except Exception:
                     messages.error(request, "Excel format is incorrect. Columns mismatch.")
                     return redirect("gsp:customer_import_excel")
+
+                normalized_bill_no = None
+                if bill_no is not None and str(bill_no).strip() != "":
+                    if isinstance(bill_no, float) and bill_no.is_integer():
+                        normalized_bill_no = str(int(bill_no))
+                    else:
+                        normalized_bill_no = str(bill_no).strip()
 
                 try:
                     y, m, d = map(int, str(purchase_date_bs).split("-"))
@@ -935,18 +964,23 @@ def import_customer_excel(request):
                     metal_value = CustomerPurchase.MetalType.GOLD
 
                 CustomerPurchase.objects.create(
+                    bill_no=normalized_bill_no,
                     purchase_date=purchase_date,
                     customer_name=customer_name or "",
                     location=location or "",
                     phone_no=phone_no or "",
                     metal_type=metal_value,
                     ornament_name=ornament_name or "",
-                    weight=D(weight),
-                    percentage=D(percentage),
-                    final_weight=D(final_weight),
-                    refined_weight=D(refined_weight),
-                    rate=D(rate),
-                    amount=D(amount),
+                    weight=to_decimal(weight),
+                    percentage=to_decimal(percentage),
+                    final_weight=to_decimal(final_weight),
+                    refined_weight=to_decimal(refined_weight),
+                    rate=to_decimal(rate),
+                    amount=to_decimal(amount),
+                    diamond_weight=to_decimal(diamond_weight),
+                    diamond_rate=to_decimal(diamond_rate),
+                    diamond_amount=to_decimal(diamond_amount),
+                    total_amount=to_decimal(total_amount),
                 )
                 imported += 1
 

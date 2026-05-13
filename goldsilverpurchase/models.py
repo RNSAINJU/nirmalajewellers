@@ -277,6 +277,7 @@ class CustomerPurchase(models.Model):
 
     id = models.AutoField(primary_key=True)
     sn = models.CharField(max_length=20, unique=True, verbose_name="SN", blank=True)
+    bill_no = models.CharField(max_length=20, blank=True, null=True, db_index=True)
     purchase_date = NepaliDateField(null=True, blank=True)
     customer_name = models.CharField(max_length=255)
     location = models.CharField(max_length=255, blank=True, null=True)
@@ -327,6 +328,38 @@ class CustomerPurchase(models.Model):
         help_text='Unit for rate (per gram, per 10 gram, per tola)'
     )
     amount = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)], blank=True, null=True, help_text='Auto-calculated: Weight × Rate')
+    diamond_weight = models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        validators=[MinValueValidator(0)],
+        blank=True,
+        null=True,
+        help_text='Diamond weight for diamond purchases'
+    )
+    diamond_rate = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        blank=True,
+        null=True,
+        help_text='Rate for diamond weight'
+    )
+    diamond_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        blank=True,
+        null=True,
+        help_text='Auto-calculated: Diamond Weight × Diamond Rate'
+    )
+    total_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        blank=True,
+        null=True,
+        help_text='Auto-calculated: Gold Amount + Diamond Amount'
+    )
     profit_weight = models.DecimalField(max_digits=10, decimal_places=3, validators=[MinValueValidator(Decimal('-999999.999'))], blank=True, null=True, help_text='Auto-calculated: Refined Weight - Final Weight')
     profit = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(Decimal('-999999.99'))], blank=True, null=True, help_text='Auto-calculated: Profit Weight × Rate (adjusted for rate_unit)')
 
@@ -370,6 +403,18 @@ class CustomerPurchase(models.Model):
                 self.amount = Decimal('0.00')
         else:
             self.amount = None
+
+        # Calculate diamond amount and combined total
+        if self.diamond_weight is not None and self.diamond_rate is not None:
+            self.diamond_amount = (self.diamond_weight * self.diamond_rate).quantize(Decimal('0.01'))
+            if self.diamond_amount < 0:
+                self.diamond_amount = Decimal('0.00')
+        else:
+            self.diamond_amount = None
+
+        base_amount = self.amount or Decimal('0.00')
+        extra_diamond_amount = self.diamond_amount or Decimal('0.00')
+        self.total_amount = (base_amount + extra_diamond_amount).quantize(Decimal('0.01'))
 
         # Calculate profit
         if self.profit_weight is not None and self.rate is not None:

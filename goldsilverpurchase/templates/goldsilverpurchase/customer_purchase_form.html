@@ -32,6 +32,14 @@
         <div class="card-body">
           <div class="mb-3">
             <label class="form-label mb-1">
+              Bill No
+            </label>
+            <input type="text" name="bill_no" class="form-control form-control-sm {% if form.bill_no.errors %}is-invalid{% endif %}" value="{{ form.bill_no.value|default:'' }}" placeholder="Bill number">
+            {% if form.bill_no.errors %}<div class="text-danger small mt-1">{{ form.bill_no.errors }}</div>{% endif %}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label mb-1">
               Purchase Date (BS)
                   Amount
             <input type="text" name="purchase_date" id="id_purchase_date" class="form-control form-control-sm {% if form.purchase_date.errors %}is-invalid{% endif %}" placeholder="YYYY-MM-DD (e.g., 2082-09-30)" value="{{ form.purchase_date.value|default:'' }}">
@@ -48,7 +56,7 @@
           <div class="mb-3">
           <label class="form-label mb-1">
               Metal Type <span class="text-danger fw-bold">*</span>
-            <select name="metal_type" class="form-select form-select-sm {% if form.metal_type.errors %}is-invalid{% endif %}" required>
+            <select name="metal_type" id="id_metal_type" class="form-select form-select-sm {% if form.metal_type.errors %}is-invalid{% endif %}" required>
               <option value="">-- Select Metal Type --</option>
               {% for key, value in form.metal_type.field.choices %}
               <option value="{{ key }}" {% if form.metal_type.value == key %}selected{% endif %}>{{ value }}</option>
@@ -170,7 +178,7 @@
           <div class="row g-3 mt-2">
             <div class="col-md-4">
               <label class="form-label mb-1">
-                Amount
+                Gold Amount
               </label>
               <input type="number" step="0.01" name="amount" id="id_amount" class="form-control form-control-sm bg-light" value="{{ form.amount.value|default_if_none:'0.00' }}" placeholder="Auto-calculated" readonly>
               <small class="text-muted">(Refined Weight ÷ unit_conversion) × Rate (auto-calculated)</small>
@@ -190,6 +198,28 @@
               <small class="text-muted">(Profit Weight ÷ unit_conversion) × Rate (auto-calculated)</small>
             </div>
           </div>
+
+          <div class="row g-3 mt-2 diamond-fields" id="diamond_fields_section">
+            <div class="col-md-4">
+              <label class="form-label mb-1">Diamond Weight</label>
+              <input type="number" step="0.001" name="diamond_weight" id="id_diamond_weight" class="form-control form-control-sm" value="{{ form.diamond_weight.value|default_if_none:'' }}" placeholder="0.000">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label mb-1">Diamond Rate</label>
+              <input type="number" step="0.01" name="diamond_rate" id="id_diamond_rate" class="form-control form-control-sm" value="{{ form.diamond_rate.value|default_if_none:'' }}" placeholder="0.00">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label mb-1">Diamond Total</label>
+              <input type="number" step="0.01" name="diamond_amount" id="id_diamond_amount" class="form-control form-control-sm bg-light" value="{{ form.diamond_amount.value|default_if_none:'0.00' }}" placeholder="Auto-calculated" readonly>
+            </div>
+          </div>
+
+          <div class="row g-3 mt-2">
+            <div class="col-md-4">
+              <label class="form-label mb-1">Total Amount (Gold + Diamond)</label>
+              <input type="number" step="0.01" name="total_amount" id="id_total_amount" class="form-control form-control-sm bg-light" value="{{ form.total_amount.value|default_if_none:'0.00' }}" placeholder="Auto-calculated" readonly>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -198,6 +228,8 @@
       <!-- Hidden fields for required model fields not shown in UI -->
       <input type="hidden" name="final_weight" id="id_final_weight_hidden" value="{{ form.final_weight.value|default:'' }}">
       <input type="hidden" name="amount" id="id_amount_hidden" value="{{ form.amount.value|default:'' }}">
+      <input type="hidden" name="diamond_amount" id="id_diamond_amount_hidden" value="{{ form.diamond_amount.value|default:'' }}">
+      <input type="hidden" name="total_amount" id="id_total_amount_hidden" value="{{ form.total_amount.value|default:'' }}">
       <input type="hidden" name="profit_weight" id="id_profit_weight_hidden" value="{{ form.profit_weight.value|default:'' }}">
       <input type="hidden" name="profit" id="id_profit_hidden" value="{{ form.profit.value|default:'' }}">
       <button type="submit" class="btn btn-success btn-lg w-100 w-md-auto mb-2 mb-md-0">
@@ -225,32 +257,49 @@
 
     const $w = document.getElementById('id_weight');
     const $p = document.getElementById('id_percentage');
+    const $mt = document.getElementById('id_metal_type');
     const $fw = document.getElementById('id_final_weight');
     const $rw = document.querySelector('input[name="refined_weight"]');
     const $r = document.getElementById('id_rate');
     const $u = document.getElementById('id_rate_unit');
     const $a = document.getElementById('id_amount');
+    const $dw = document.getElementById('id_diamond_weight');
+    const $dr = document.getElementById('id_diamond_rate');
+    const $da = document.getElementById('id_diamond_amount');
+    const $ta = document.getElementById('id_total_amount');
     const $pw = document.getElementById('id_profit_weight');
     const $pr = document.getElementById('id_profit');
+    const $diamondSection = document.getElementById('diamond_fields_section');
     
     // Also update hidden fields for submission
     const $fw_hidden = document.getElementById('id_final_weight_hidden');
     const $a_hidden = document.getElementById('id_amount_hidden');
+    const $da_hidden = document.getElementById('id_diamond_amount_hidden');
+    const $ta_hidden = document.getElementById('id_total_amount_hidden');
     const $pw_hidden = document.getElementById('id_profit_weight_hidden');
     const $pr_hidden = document.getElementById('id_profit_hidden');
     console.log('Form elements loaded:', {
       weight: !!$w, percentage: !!$p, finalWeight: !!$fw, refinedWeight: !!$rw,
       rate: !!$r, rateUnit: !!$u, amount: !!$a, profitWeight: !!$pw, profit: !!$pr,
-      fw_hidden: !!$fw_hidden, a_hidden: !!$a_hidden, pw_hidden: !!$pw_hidden, pr_hidden: !!$pr_hidden
+      diamondWeight: !!$dw, diamondRate: !!$dr, diamondAmount: !!$da, totalAmount: !!$ta,
+      fw_hidden: !!$fw_hidden, a_hidden: !!$a_hidden, da_hidden: !!$da_hidden, ta_hidden: !!$ta_hidden, pw_hidden: !!$pw_hidden, pr_hidden: !!$pr_hidden
     });
     
     // Check if all elements exist
-    if (!$w || !$p || !$fw || !$rw || !$r || !$u || !$a || !$pw || !$pr) {
+    if (!$w || !$p || !$fw || !$rw || !$r || !$u || !$a || !$pw || !$pr || !$dw || !$dr || !$da || !$ta || !$mt) {
       console.error('Missing form elements for calculation', {
         weight: !!$w, percentage: !!$p, finalWeight: !!$fw, refinedWeight: !!$rw,
-        rate: !!$r, rateUnit: !!$u, amount: !!$a, profitWeight: !!$pw, profit: !!$pr
+        rate: !!$r, rateUnit: !!$u, amount: !!$a, profitWeight: !!$pw, profit: !!$pr,
+        diamondWeight: !!$dw, diamondRate: !!$dr, diamondAmount: !!$da, totalAmount: !!$ta, metalType: !!$mt
       });
       return;
+    }
+
+    function toggleDiamondFields() {
+      const isDiamond = $mt && $mt.value === 'diamond';
+      if ($diamondSection) {
+        $diamondSection.style.display = isDiamond ? '' : 'none';
+      }
     }
     
     function D(x){ const n = parseFloat(x); return isNaN(n) ? 0 : n; }
@@ -267,6 +316,8 @@
         const percentage = D($p.value);
         const rate = D($r.value);
         const refinedWeight = D($rw.value);
+        const diamondWeight = D($dw.value);
+        const diamondRate = D($dr.value);
         
         console.log('Input values:', { weight, percentage, rate, refinedWeight });
         
@@ -287,20 +338,28 @@
         const amt = (Math.max(0, refinedWeight) / divisor) * rate;
         $a.value = Math.max(0, amt).toFixed(2);
         if ($a_hidden) $a_hidden.value = $a.value;
+
+        const diamondTotal = Math.max(0, diamondWeight) * Math.max(0, diamondRate);
+        $da.value = diamondTotal.toFixed(2);
+        if ($da_hidden) $da_hidden.value = $da.value;
+
+        const totalAmount = Math.max(0, amt) + diamondTotal;
+        $ta.value = totalAmount.toFixed(2);
+        if ($ta_hidden) $ta_hidden.value = $ta.value;
         
         // Calculate profit based on profit_weight and rate_unit
         const profitAmt = (profitWeight / divisor) * rate;
         $pr.value = profitAmt.toFixed(2);
         if ($pr_hidden) $pr_hidden.value = $pr.value;
         
-        console.log('Calculation complete:', { finalWeight, profitWeight, amount: amt, profit: profitAmt });
+        console.log('Calculation complete:', { finalWeight, profitWeight, amount: amt, diamondTotal, totalAmount, profit: profitAmt });
       } catch (e) {
         console.error('Calculation error:', e);
       }
     }
     
     // Attach listeners and always recalc on input/change
-    const elements = [$w, $p, $r, $u, $rw];
+    const elements = [$w, $p, $r, $u, $rw, $dw, $dr, $mt];
     elements.forEach(el => {
       if (el) {
         el.addEventListener('input', recalc);
@@ -319,6 +378,10 @@
         rate: $r.value,
         rateUnit: $u.value,
         amount: $a.value,
+        diamondWeight: $dw.value,
+        diamondRate: $dr.value,
+        diamondAmount: $da.value,
+        totalAmount: $ta.value,
         profitWeight: $pw.value,
         profit: $pr.value
       });
@@ -331,6 +394,14 @@
         el.addEventListener('change', recalcWithDebug);
       }
     });
+
+    toggleDiamondFields();
+    if ($mt) {
+      $mt.addEventListener('change', function() {
+        toggleDiamondFields();
+        recalcWithDebug();
+      });
+    }
 
     // Initial calculation with debug
     recalcWithDebug();

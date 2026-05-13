@@ -48,8 +48,8 @@ class CustomerPurchaseForm(forms.ModelForm):
     class Meta:
         model = CustomerPurchase
         fields = [
-            'purchase_date', 'customer_name', 'location',
-            'phone_no', 'metal_type', 'ornament_name', 'purity', 'weight', 'percentage', 'final_weight', 'refined_status', 'refined_weight', 'rate', 'rate_unit', 'amount', 'profit_weight', 'profit'
+            'bill_no', 'purchase_date', 'customer_name', 'location',
+            'phone_no', 'metal_type', 'ornament_name', 'purity', 'weight', 'percentage', 'final_weight', 'refined_status', 'refined_weight', 'rate', 'rate_unit', 'amount', 'diamond_weight', 'diamond_rate', 'diamond_amount', 'total_amount', 'profit_weight', 'profit'
         ]
     
     def clean_purchase_date(self):
@@ -70,6 +70,8 @@ class CustomerPurchaseForm(forms.ModelForm):
         refined_weight = cleaned.get('refined_weight') or Decimal('0')
         rate = cleaned.get('rate') or Decimal('0')
         rate_unit = cleaned.get('rate_unit') or 'tola'
+        diamond_weight = cleaned.get('diamond_weight') or Decimal('0')
+        diamond_rate = cleaned.get('diamond_rate') or Decimal('0')
 
         # Only calculate final_weight if not already set (i.e., on create)
         if not cleaned.get('final_weight'):
@@ -90,6 +92,10 @@ class CustomerPurchaseForm(forms.ModelForm):
             else:
                 calc_amount = Decimal('0.00')
             cleaned['amount'] = calc_amount.quantize(Decimal('0.01')) if calc_amount else Decimal('0.00')
+
+        diamond_amount = (diamond_weight * diamond_rate).quantize(Decimal('0.01')) if (diamond_weight and diamond_rate) else Decimal('0.00')
+        cleaned['diamond_amount'] = diamond_amount
+        cleaned['total_amount'] = ((cleaned.get('amount') or Decimal('0.00')) + diamond_amount).quantize(Decimal('0.01'))
 
         return cleaned
 
