@@ -5,47 +5,31 @@
     <h1 class="text-center mb-4" style="color: #667eea; font-weight: 700; font-size:2rem;">Customer Purchases</h1>
 
     <div class="row g-3 mb-4 flex-wrap">
-        <div class="col-6 col-md-4 col-lg-2">
+        <div class="col-12 col-md-4 col-lg-3">
             <div class="card shadow-sm border-0 mb-2" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);">
                 <div class="card-body text-white text-center">
-                    <h6 class="mb-1">Total Weight</h6>
-                    <h3 class="mb-0">{{ total_weight|floatformat:3 }} <small style="font-size:0.6em;opacity:0.9;">तोल</small></h3>
+                    <h6 class="mb-1">Total Gold Purchase</h6>
+                    <h3 class="mb-0">{{ total_gold_purchase|floatformat:3 }} <small style="font-size:0.6em;opacity:0.9;">तोल</small></h3>
                 </div>
             </div>
         </div>
-        <div class="col-6 col-md-4 col-lg-2">
+        <div class="col-12 col-md-4 col-lg-3">
             <div class="card shadow-sm border-0 mb-2" style="background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);">
                 <div class="card-body text-white text-center">
-                    <h6 class="mb-1">Final Weight</h6>
-                    <h3 class="mb-0">{{ total_final_weight|floatformat:3 }} <small style="font-size:0.6em;opacity:0.9;">तोल</small></h3>
+                    <h6 class="mb-1">Total Silver Purchase</h6>
+                    <h3 class="mb-0">{{ silver_total_final_weight|floatformat:3 }} <small style="font-size:0.6em;opacity:0.9;">तोल</small></h3>
                 </div>
             </div>
         </div>
-        <div class="col-6 col-md-4 col-lg-2">
-            <div class="card shadow-sm border-0 mb-2" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">
+        <div class="col-12 col-md-4 col-lg-3">
+            <div class="card shadow-sm border-0 mb-2" style="background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);">
                 <div class="card-body text-white text-center">
-                    <h6 class="mb-1">Profit Weight</h6>
-                    <h3 class="mb-0">{{ total_profit_weight|floatformat:3 }} <small style="font-size:0.6em;opacity:0.9;">तोल</small></h3>
+                    <h6 class="mb-1">Total Diamond Purchase</h6>
+                    <h3 class="mb-0">{{ diamond_total_weight|floatformat:3 }} <small style="font-size:0.6em;opacity:0.9;">तोल</small></h3>
                 </div>
             </div>
         </div>
-        <div class="col-6 col-md-4 col-lg-2">
-            <div class="card shadow-sm border-0 mb-2" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-                <div class="card-body text-white text-center">
-                    <h6 class="mb-1">Total Amount</h6>
-                    <h3 class="mb-0">रु{{ total_amount|floatformat:2 }}</h3>
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-md-4 col-lg-2">
-            <div class="card shadow-sm border-0 mb-2" style="background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);">
-                <div class="card-body text-white text-center">
-                    <h6 class="mb-1">Total Profit</h6>
-                    <h3 class="mb-0">रु{{ total_profit|floatformat:2 }}</h3>
-                </div>
-            </div>
-        </div>
-        <div class="col-12 col-md-4 col-lg-2 d-flex align-items-center justify-content-center flex-wrap gap-2 mt-2 mt-lg-0">
+        <div class="col-12 col-md-12 col-lg-3 d-flex align-items-center justify-content-center flex-wrap gap-2 mt-2 mt-lg-0">
             <a href="{% url 'gsp:customer_purchase_create' %}" class="btn btn-primary btn-lg w-100 mb-2">Create</a>
             <a href="{% url 'gsp:customer_export_excel' %}" class="btn btn-success btn-lg w-100 mb-2">Export</a>
             <a href="{% url 'gsp:customer_import_excel' %}" class="btn btn-outline-info btn-lg w-100">Import</a>
@@ -113,6 +97,14 @@
                     </div>
                 </div>
                 <div class="col-12 col-md-3">
+                    <div class="card shadow-sm border-0" style="background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);">
+                        <div class="card-body text-white text-center">
+                            <h6 class="mb-1">Final Weight</h6>
+                            <h4 class="mb-0">{{ gold_total_final_weight|floatformat:3 }} <small style="font-size:0.6em;">तोल</small></h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-3">
                     <div class="card shadow-sm border-0" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
                         <div class="card-body text-white text-center">
                             <h6 class="mb-1">Total Amount</h6>
@@ -138,6 +130,7 @@
                             <th scope="col">Customer</th>
                             <th scope="col">Ornament</th>
                             <th scope="col" class="text-end">Weight</th>
+                            <th scope="col" class="text-end">Diamond Weight</th>
                             <th scope="col" class="text-end">Final</th>
                             <th scope="col" class="text-end">Profit</th>
                             <th scope="col" class="text-end">Rate</th>
@@ -154,6 +147,7 @@
                             <td style="min-width:120px;">{{ cp.customer_name }}</td>
                             <td style="min-width:120px;">{{ cp.ornament_name }}</td>
                             <td class="text-end">{{ cp.weight|floatformat:3 }}</td>
+                            <td class="text-end">{{ cp.diamond_weight|default:0|floatformat:3 }}</td>
                             <td class="text-end">{{ cp.final_weight|floatformat:3 }}</td>
                             <td class="text-end"><span class="badge bg-info">{{ cp.profit_weight|floatformat:3 }}</span></td>
                             <td class="text-end">{{ cp.rate|floatformat:2 }}</td>
@@ -182,6 +176,14 @@
                         <div class="card-body text-white text-center">
                             <h6 class="mb-1">Total Weight</h6>
                             <h4 class="mb-0">{{ silver_total_weight|floatformat:3 }} <small style="font-size:0.6em;">तोल</small></h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-3">
+                    <div class="card shadow-sm border-0" style="background: linear-gradient(135deg, #475569 0%, #334155 100%);">
+                        <div class="card-body text-white text-center">
+                            <h6 class="mb-1">Final Weight</h6>
+                            <h4 class="mb-0">{{ silver_total_final_weight|floatformat:3 }} <small style="font-size:0.6em;">तोल</small></h4>
                         </div>
                     </div>
                 </div>
@@ -255,6 +257,14 @@
                         <div class="card-body text-white text-center">
                             <h6 class="mb-1">Total Weight</h6>
                             <h4 class="mb-0">{{ diamond_total_weight|floatformat:3 }} <small style="font-size:0.6em;">तोल</small></h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-3">
+                    <div class="card shadow-sm border-0" style="background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);">
+                        <div class="card-body text-white text-center">
+                            <h6 class="mb-1">Final Weight</h6>
+                            <h4 class="mb-0">{{ diamond_total_final_weight|floatformat:3 }} <small style="font-size:0.6em;">तोल</small></h4>
                         </div>
                     </div>
                 </div>

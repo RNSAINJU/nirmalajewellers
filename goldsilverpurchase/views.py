@@ -538,16 +538,22 @@ class CustomerPurchaseListView(LoginRequiredMixin, ListView):
         
         # Calculate stats for each metal type
         ctx['gold_total_weight'] = ctx['gold_purchases'].aggregate(total=Sum('weight'))['total'] or Decimal('0')
+        ctx['gold_total_final_weight'] = ctx['gold_purchases'].aggregate(total=Sum('final_weight'))['total'] or Decimal('0')
         ctx['gold_total_amount'] = ctx['gold_purchases'].aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
         ctx['gold_total_profit'] = ctx['gold_purchases'].aggregate(total=Sum('profit'))['total'] or Decimal('0')
         
         ctx['silver_total_weight'] = ctx['silver_purchases'].aggregate(total=Sum('weight'))['total'] or Decimal('0')
+        ctx['silver_total_final_weight'] = ctx['silver_purchases'].aggregate(total=Sum('final_weight'))['total'] or Decimal('0')
         ctx['silver_total_amount'] = ctx['silver_purchases'].aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
         ctx['silver_total_profit'] = ctx['silver_purchases'].aggregate(total=Sum('profit'))['total'] or Decimal('0')
 
-        ctx['diamond_total_weight'] = ctx['diamond_purchases'].aggregate(total=Sum('weight'))['total'] or Decimal('0')
+        ctx['diamond_total_weight'] = ctx['diamond_purchases'].aggregate(total=Sum('diamond_weight'))['total'] or Decimal('0')
+        ctx['diamond_total_final_weight'] = ctx['diamond_purchases'].aggregate(total=Sum('final_weight'))['total'] or Decimal('0')
         ctx['diamond_total_amount'] = ctx['diamond_purchases'].aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
         ctx['diamond_total_profit'] = ctx['diamond_purchases'].aggregate(total=Sum('profit'))['total'] or Decimal('0')
+
+        # Business rule: Total Gold Purchase includes gold final weight + diamond final weight
+        ctx['total_gold_purchase'] = (ctx['gold_total_final_weight'] or Decimal('0')) + (ctx['diamond_total_final_weight'] or Decimal('0'))
         
         return ctx
 
