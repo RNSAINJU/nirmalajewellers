@@ -107,58 +107,52 @@
 <div class="container mt-5">
     <h1 class="text-center mb-4 sales-top-title">Sales</h1>
 
-    <!-- Stats Tabs (matching order page theme) -->
-    <div class="sales-stats-shell">
-        <div class="row g-3">
-            <div class="col-md-3 col-sm-6">
-                <div class="sales-stat-card sales-accent">
-                    <div class="sales-stat-label">Total Sales</div>
-                    <h3 class="sales-stat-value">{{ sales_count }}</h3>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6">
-                <div class="sales-stat-card sales-accent">
-                    <div class="sales-stat-label">24K Gold Sold (gms)</div>
-                    <h3 class="sales-stat-value">{{ gold_24_weight|floatformat:3 }}</h3>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6">
-                <div class="sales-stat-card sales-accent">
-                    <div class="sales-stat-label">Silver Sold (gms)</div>
-                    <h3 class="sales-stat-value">{{ silver_weight|floatformat:3 }}</h3>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6">
-                <div class="sales-stat-card sales-accent">
-                    <div class="sales-stat-label">Total Sales Amount</div>
-                    <h3 class="sales-stat-value">{{ total_sales_amount|floatformat:2 }}</h3>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Tabs Navigation (like customer purchase page) -->
     <ul class="nav nav-tabs mb-4" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all-content" type="button" role="tab" aria-controls="all-content" aria-selected="true">
+            <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all-content" type="button" role="tab" aria-controls="all-content" aria-selected="true"
+                data-stat-main-label="Total Sold Weight"
+                data-stat-main-value="{{ all_totals.weight|floatformat:0 }}"
+                data-stat-24k-label="Total 24K Equivalent"
+                data-stat-24k-value="{{ all_totals.gold_24_weight|add:all_totals.silver_24_weight|floatformat:0 }}"
+                data-stat-amount-value="{{ all_totals.total|floatformat:0 }}"
+                data-stat-profit-value="{{ all_totals.profit|floatformat:0 }}">
                 <span style="font-weight: 600;">🧾 All Sales</span>
                 <small class="ms-2" style="color: #666;">({{ all_sales_count }})</small>
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="gold-tab" data-bs-toggle="tab" data-bs-target="#gold-content" type="button" role="tab" aria-controls="gold-content" aria-selected="false">
+            <button class="nav-link" id="gold-tab" data-bs-toggle="tab" data-bs-target="#gold-content" type="button" role="tab" aria-controls="gold-content" aria-selected="false"
+                data-stat-main-label="Gold Sold (gms)"
+                data-stat-main-value="{{ gold_totals.gold_sold_weight|floatformat:0 }}"
+                data-stat-24k-label="Gold Sold 24K Eq"
+                data-stat-24k-value="{{ gold_totals.gold_24_weight|floatformat:0 }}"
+                data-stat-amount-value="{{ gold_totals.total|floatformat:0 }}"
+                data-stat-profit-value="{{ gold_totals.profit|floatformat:0 }}">
                 <span style="color: #fbbf24; font-weight: 600;">🥇 Gold</span>
                 <small class="ms-2" style="color: #666;">({{ gold_sales_count }})</small>
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="silver-tab" data-bs-toggle="tab" data-bs-target="#silver-content" type="button" role="tab" aria-controls="silver-content" aria-selected="false">
+            <button class="nav-link" id="silver-tab" data-bs-toggle="tab" data-bs-target="#silver-content" type="button" role="tab" aria-controls="silver-content" aria-selected="false"
+                data-stat-main-label="Silver Sold (gms)"
+                data-stat-main-value="{{ silver_totals.silver_sold_weight|floatformat:0 }}"
+                data-stat-24k-label="Silver Sold 24K Eq"
+                data-stat-24k-value="{{ silver_totals.silver_24_weight|floatformat:0 }}"
+                data-stat-amount-value="{{ silver_totals.total|floatformat:0 }}"
+                data-stat-profit-value="{{ silver_totals.profit|floatformat:0 }}">
                 <span style="color: #94a3b8; font-weight: 600;">🥈 Silver</span>
                 <small class="ms-2" style="color: #666;">({{ silver_sales_count }})</small>
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="diamond-tab" data-bs-toggle="tab" data-bs-target="#diamond-content" type="button" role="tab" aria-controls="diamond-content" aria-selected="false">
+            <button class="nav-link" id="diamond-tab" data-bs-toggle="tab" data-bs-target="#diamond-content" type="button" role="tab" aria-controls="diamond-content" aria-selected="false"
+                data-stat-main-label="Diamond Sold (gms)"
+                data-stat-main-value="{{ diamond_totals.diamond_sold_weight|floatformat:0 }}"
+                data-stat-24k-label="Diamond Sold 24K Eq"
+                data-stat-24k-value="{{ diamond_totals.diamond_sold_weight|floatformat:0 }}"
+                data-stat-amount-value="{{ diamond_totals.total|floatformat:0 }}"
+                data-stat-profit-value="{{ diamond_totals.profit|floatformat:0 }}">
                 <span style="color: #a855f7; font-weight: 600;">💎 Diamond</span>
                 <small class="ms-2" style="color: #666;">({{ diamond_sales_count }})</small>
             </button>
@@ -170,6 +164,36 @@
         <a href="{% url 'sales:sale_create' %}" class="btn btn-create">
             <i class="bi bi-plus-circle-fill me-2"></i> Create Sale
         </a>
+    </div>
+
+    <!-- Tab-aware summary cards (above search field) -->
+    <div class="sales-stats-shell" id="tab-aware-sales-stats">
+        <div class="row g-3">
+            <div class="col-md-6 col-lg-3 col-sm-6">
+                <div class="sales-stat-card sales-accent">
+                    <div class="sales-stat-label" id="tab-stat-main-label">Total Sold Weight</div>
+                    <h3 class="sales-stat-value" id="tab-stat-main-value">{{ all_totals.weight|floatformat:0 }}</h3>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3 col-sm-6">
+                <div class="sales-stat-card sales-accent">
+                    <div class="sales-stat-label" id="tab-stat-24k-label">Total 24K Equivalent</div>
+                    <h3 class="sales-stat-value" id="tab-stat-24k-value">{{ all_totals.gold_24_weight|add:all_totals.silver_24_weight|floatformat:0 }}</h3>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3 col-sm-6">
+                <div class="sales-stat-card sales-accent">
+                    <div class="sales-stat-label">Total Sales Amount</div>
+                    <h3 class="sales-stat-value" id="tab-stat-amount-value">{{ all_totals.total|floatformat:0 }}</h3>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3 col-sm-6">
+                <div class="sales-stat-card sales-accent">
+                    <div class="sales-stat-label">Total Profit</div>
+                    <h3 class="sales-stat-value" id="tab-stat-profit-value">{{ all_totals.profit|floatformat:0 }}</h3>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Search and Actions Toggle Row -->
@@ -654,5 +678,44 @@
                     </div>
     </div>
 </div>
+
+<script>
+    (function() {
+        function updateTabStats(tabButton) {
+            if (!tabButton) return;
+            const mainLabel = tabButton.getAttribute('data-stat-main-label') || 'Total Sold Weight';
+            const mainValue = tabButton.getAttribute('data-stat-main-value') || '0';
+            const k24Label = tabButton.getAttribute('data-stat-24k-label') || 'Total 24K Equivalent';
+            const k24Value = tabButton.getAttribute('data-stat-24k-value') || '0';
+            const amountValue = tabButton.getAttribute('data-stat-amount-value') || '0';
+            const profitValue = tabButton.getAttribute('data-stat-profit-value') || '0';
+
+            const mainLabelEl = document.getElementById('tab-stat-main-label');
+            const mainValueEl = document.getElementById('tab-stat-main-value');
+            const k24LabelEl = document.getElementById('tab-stat-24k-label');
+            const k24ValueEl = document.getElementById('tab-stat-24k-value');
+            const amountEl = document.getElementById('tab-stat-amount-value');
+            const profitEl = document.getElementById('tab-stat-profit-value');
+
+            if (mainLabelEl) mainLabelEl.textContent = mainLabel;
+            if (mainValueEl) mainValueEl.textContent = mainValue;
+            if (k24LabelEl) k24LabelEl.textContent = k24Label;
+            if (k24ValueEl) k24ValueEl.textContent = k24Value;
+            if (amountEl) amountEl.textContent = amountValue;
+            if (profitEl) profitEl.textContent = profitValue;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const activeTab = document.querySelector('.nav-tabs .nav-link.active');
+            updateTabStats(activeTab);
+
+            document.querySelectorAll('.nav-tabs .nav-link').forEach(function(btn) {
+                btn.addEventListener('shown.bs.tab', function(event) {
+                    updateTabStats(event.target);
+                });
+            });
+        });
+    })();
+</script>
 
 {% endblock %}

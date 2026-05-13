@@ -152,8 +152,11 @@ class SalesListView(LoginRequiredMixin, ListView):
         # Build a cache of sale data to avoid re-iterating
         sale_data_cache = {}
         
+        gold_sold_weight = Decimal("0")
+        silver_sold_weight = Decimal("0")
+        diamond_sold_weight = Decimal("0")
         gold_24_weight = Decimal("0")
-        silver_weight = Decimal("0")
+        silver_24_weight = Decimal("0")
         total_sales_amount = Decimal("0")
 
         # Single iteration to calculate all required metrics
@@ -168,6 +171,9 @@ class SalesListView(LoginRequiredMixin, ListView):
             
             # Calculate ornament weights
             ornament_weight = Decimal("0")
+            sale_gold_sold = Decimal("0")
+            sale_silver_sold = Decimal("0")
+            sale_diamond_sold = Decimal("0")
             sale_gold_24 = Decimal("0")
             sale_silver_24 = Decimal("0")
             
@@ -178,17 +184,21 @@ class SalesListView(LoginRequiredMixin, ListView):
                 metal_type = str(getattr(line.ornament, 'metal_type', '')).lower()
                 
                 if metal_type == str(gold_metal).lower():
+                    sale_gold_sold += weight
+                    gold_sold_weight += weight
                     weighted = weight * factor
                     sale_gold_24 += weighted
                     gold_24_weight += weighted
                 elif metal_type == str(getattr(Ornament.MetalTypeCategory, 'DIAMOND', 'diamond')).lower():
-                    weighted = weight * factor
-                    sale_gold_24 += weighted
-                    gold_24_weight += weighted
+                    diamond_wt = line.ornament.diamond_weight or Decimal("0")
+                    sale_diamond_sold += diamond_wt
+                    diamond_sold_weight += diamond_wt
                 elif metal_type == str(silver_metal).lower():
+                    sale_silver_sold += weight
+                    silver_sold_weight += weight
                     weighted = weight * factor
                     sale_silver_24 += weighted
-                    silver_weight += weighted
+                    silver_24_weight += weighted
             
             # Calculate metal weights and amounts
             metal_weight = Decimal("0")
@@ -200,15 +210,20 @@ class SalesListView(LoginRequiredMixin, ListView):
                 metal_total += metal.line_amount or Decimal("0")
                 
                 if metal.metal_type == 'gold':
-                    gold_24_weight += quantity
-                    sale_gold_24 += quantity
+                    gold_sold_weight += quantity
+                    sale_gold_sold += quantity
+                    metal_factor = purity_factors.get(getattr(metal, 'purity', None), Decimal("1.00"))
+                    weighted = quantity * metal_factor
+                    sale_gold_24 += weighted
+                    gold_24_weight += weighted
                 elif metal.metal_type == 'silver':
-                    silver_weight += quantity
-                    sale_silver_24 += quantity
+                    silver_sold_weight += quantity
+                    sale_silver_sold += quantity
+                    metal_factor = purity_factors.get(getattr(metal, 'purity', None), Decimal("1.00"))
+                    weighted = quantity * metal_factor
+                    sale_silver_24 += weighted
+                    silver_24_weight += weighted
                 
-                total_sales_amount += metal.line_amount or Decimal("0")
-            
-            # Add order total
             total_sales_amount += sale.order.total or Decimal("0")
             
             # Cache computed values for this sale
@@ -216,6 +231,10 @@ class SalesListView(LoginRequiredMixin, ListView):
                 'ornament_weight': ornament_weight,
                 'metal_weight': metal_weight,
                 'total_weight': ornament_weight + metal_weight,
+                'gold_sold_weight': sale_gold_sold,
+                'silver_sold_weight': sale_silver_sold,
+                'diamond_sold_weight': sale_diamond_sold,
+                # Backward-compatible keys used by existing table sections
                 'gold_24_weight': sale_gold_24,
                 'silver_24_weight': sale_silver_24,
                 'metal_total': metal_total,
@@ -231,6 +250,9 @@ class SalesListView(LoginRequiredMixin, ListView):
                 cached = sale_data_cache.get(sale.id)
                 if cached:
                     sale.total_weight = cached['total_weight']
+                    sale.gold_sold_weight = cached['gold_sold_weight']
+                    sale.silver_sold_weight = cached['silver_sold_weight']
+                    sale.diamond_sold_weight = cached['diamond_sold_weight']
                     sale.gold_24_weight = cached['gold_24_weight']
                     sale.silver_24_weight = cached['silver_24_weight']
                     sale.display_total = cached['display_total']
@@ -249,6 +271,11 @@ class SalesListView(LoginRequiredMixin, ListView):
                 "total": Decimal("0"),
                 "paid": Decimal("0"),
                 "remaining": Decimal("0"),
+                "profit": Decimal("0"),
+                "gold_sold_weight": Decimal("0"),
+                "silver_sold_weight": Decimal("0"),
+                "diamond_sold_weight": Decimal("0"),
+                # Backward-compatible keys used by existing table sections
                 "gold_24_weight": Decimal("0"),
                 "silver_24_weight": Decimal("0"),
             }
@@ -257,16 +284,23 @@ class SalesListView(LoginRequiredMixin, ListView):
                 if cached:
                     totals["weight"] += cached['total_weight']
                     totals["total"] += cached['display_total']
+                    totals["gold_sold_weight"] += cached['gold_sold_weight']
+                    totals["silver_sold_weight"] += cached['silver_sold_weight']
+                    totals["diamond_sold_weight"] += cached['diamond_sold_weight']
                     totals["gold_24_weight"] += cached['gold_24_weight']
                     totals["silver_24_weight"] += cached['silver_24_weight']
                     totals["paid"] += sale.order.total_paid or Decimal("0")
                     totals["remaining"] += sale.order.remaining_amount or Decimal("0")
+                    totals["profit"] += (sale.order.total or Decimal("0")) - (sale.order.amount or Decimal("0"))
             return totals
 
         context.update(
             {
+                "gold_sold_weight": gold_sold_weight,
+                "silver_sold_weight": silver_sold_weight,
+                "diamond_sold_weight": diamond_sold_weight,
                 "gold_24_weight": gold_24_weight,
-                "silver_weight": silver_weight,
+                "silver_24_weight": silver_24_weight,
                 "total_sales_amount": total_sales_amount,
                 "all_totals": calculate_totals_from_cache(sales_qs),
                 "gold_totals": calculate_totals_from_cache(context["gold_sales"]),
