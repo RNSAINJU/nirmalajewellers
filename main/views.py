@@ -1058,14 +1058,38 @@ def stock_report(request):
         "diamond_stock_weight": 0,
     }
 
-    # Helper: customer purchase inflow by metal (refined_weight + amount)
-    def customer_purchase_totals(metal_type):
+    # Helpers: customer purchase inflow by business rules
+    def _customer_qs(metal_type):
         qs = CustomerPurchase.objects.filter(metal_type__icontains=metal_type)
         if from_date:
             qs = qs.filter(purchase_date__gte=from_date)
         if to_date:
             qs = qs.filter(purchase_date__lte=to_date)
-        agg = qs.aggregate(total_amount=Sum("amount"), total_weight=Sum("refined_weight"))
+        return qs
+
+    def customer_gold_purchase_totals():
+        gold_qs = _customer_qs("gold")
+        diamond_qs = _customer_qs("diamond")
+
+        gold_amount = gold_qs.aggregate(total_amount=Sum("total_amount")).get("total_amount") or Decimal("0")
+        gold_final_weight = gold_qs.aggregate(total_weight=Sum("final_weight")).get("total_weight") or Decimal("0")
+        diamond_final_weight = diamond_qs.aggregate(total_weight=Sum("final_weight")).get("total_weight") or Decimal("0")
+
+        # Keep stock report aligned with customer purchase business rule:
+        # total gold purchase includes diamond final weight contribution.
+        return gold_amount, (gold_final_weight + diamond_final_weight)
+
+    def customer_silver_purchase_totals():
+        qs = _customer_qs("silver")
+        agg = qs.aggregate(total_amount=Sum("total_amount"), total_weight=Sum("final_weight"))
+        return (
+            agg.get("total_amount") or Decimal("0"),
+            agg.get("total_weight") or Decimal("0"),
+        )
+
+    def customer_diamond_purchase_totals():
+        qs = _customer_qs("diamond")
+        agg = qs.aggregate(total_amount=Sum("diamond_amount"), total_weight=Sum("diamond_weight"))
         return (
             agg.get("total_amount") or Decimal("0"),
             agg.get("total_weight") or Decimal("0"),
@@ -1083,7 +1107,7 @@ def stock_report(request):
         total_wages=Sum("wages"),
         total_qty=Sum("quantity"),
     )
-    gold_cust_amount, gold_cust_weight = customer_purchase_totals("gold")
+    gold_cust_amount, gold_cust_weight = customer_gold_purchase_totals()
     totals["gold_purchase_amount"] = (
         (gold_purchases.get("total_amount") or Decimal("0"))
         - (gold_purchases.get("total_wages") or Decimal("0"))
@@ -1102,7 +1126,7 @@ def stock_report(request):
         total_wages=Sum("wages"),
         total_qty=Sum("quantity"),
     )
-    silver_cust_amount, silver_cust_weight = customer_purchase_totals("silver")
+    silver_cust_amount, silver_cust_weight = customer_silver_purchase_totals()
     totals["silver_purchase_amount"] = (
         (silver_purchases.get("total_amount") or Decimal("0"))
         - (silver_purchases.get("total_wages") or Decimal("0"))
@@ -1117,18 +1141,42 @@ def stock_report(request):
     if to_date:
         diamond_qs = diamond_qs.filter(bill_date__lte=to_date)
     diamond_purchases = diamond_qs.aggregate(total_amount=Sum("amount"), total_qty=Sum("quantity"))
-    diamond_cust_amount, diamond_cust_weight = customer_purchase_totals("diamond")
+    diamond_cust_amount, diamond_cust_weight = customer_diamond_purchase_totals()
     totals["diamond_purchase_amount"] = (diamond_purchases.get("total_amount") or Decimal("0")) + diamond_cust_amount
     totals["diamond_purchase_weight"] = (diamond_purchases.get("total_qty") or 0) + diamond_cust_weight
 
-    # Wages from all purchases
-    wages_qs = GoldSilverPurchase.objects.all()
+    # Wages from company purchases for gold and silver only
+    wages_qs = GoldSilverPurchase.objects.filter(
+        Q(metal_type__icontains="gold") | Q(metal_type__icontains="silver")
+    )
     if from_date:
         wages_qs = wages_qs.filter(bill_date__gte=from_date)
     if to_date:
         wages_qs = wages_qs.filter(bill_date__lte=to_date)
     wages_agg = wages_qs.aggregate(total_wages=Sum("wages"))
     total_wages = wages_agg.get("total_wages") or 0
+
+    purchase_wages_gold = gold_purchases.get("total_wages") or Decimal("0")
+    purchase_wages_silver = silver_purchases.get("total_wages") or Decimal("0")
+
+    # Purchase Jardi split by metal (gold/silver company purchases only)
+    purchase_jardi_gold_qs = GoldSilverPurchase.objects.filter(
+        Q(metal_type__icontains="gold")
+        & (Q(particular__icontains="jardi") | Q(particular__icontains="jarti"))
+    )
+    purchase_jardi_silver_qs = GoldSilverPurchase.objects.filter(
+        Q(metal_type__icontains="silver")
+        & (Q(particular__icontains="jardi") | Q(particular__icontains="jarti"))
+    )
+    if from_date:
+        purchase_jardi_gold_qs = purchase_jardi_gold_qs.filter(bill_date__gte=from_date)
+        purchase_jardi_silver_qs = purchase_jardi_silver_qs.filter(bill_date__gte=from_date)
+    if to_date:
+        purchase_jardi_gold_qs = purchase_jardi_gold_qs.filter(bill_date__lte=to_date)
+        purchase_jardi_silver_qs = purchase_jardi_silver_qs.filter(bill_date__lte=to_date)
+    purchase_jardi_gold_amount = purchase_jardi_gold_qs.aggregate(total_amount=Sum("amount")).get("total_amount") or Decimal("0")
+    purchase_jardi_silver_amount = purchase_jardi_silver_qs.aggregate(total_amount=Sum("amount")).get("total_amount") or Decimal("0")
+    purchase_jardi_amount = purchase_jardi_gold_amount + purchase_jardi_silver_amount
 
     # Customer sales (orders) for the chosen BS period (all customers)
     order_qs = Order.objects.all()
@@ -1158,6 +1206,46 @@ def stock_report(request):
     gold_sales_amount, gold_sales_weight = aggregate_sales("gold", "ornament__weight")
     silver_sales_amount, silver_sales_weight = aggregate_sales("silver", "ornament__weight")
 
+    # Requested sales-detail metrics
+    purity_factors = {
+        '24KARAT': Decimal('1.00'),
+        '23KARAT': Decimal('0.99'),
+        '22KARAT': Decimal('0.98'),
+        '18KARAT': Decimal('0.75'),
+        '14KARAT': Decimal('0.58'),
+    }
+
+    gold_sales_lines = sales_qs.filter(ornament__metal_type__iexact='Gold').select_related('ornament')
+    silver_sales_lines = sales_qs.filter(ornament__metal_type__iexact='Silver').select_related('ornament')
+
+    sales_gold_equivalent_qty = Decimal('0')
+    sales_silver_equivalent_qty = Decimal('0')
+    sales_jarti_equivalent_gold_qty = Decimal('0')
+    sales_jarti_equivalent_silver_qty = Decimal('0')
+    sales_wages_gold_amount = Decimal('0')
+    sales_wages_silver_amount = Decimal('0')
+
+    for line in gold_sales_lines:
+        factor = purity_factors.get(getattr(line.ornament, 'type', None), Decimal('1.00'))
+        ornament_weight = line.ornament.weight or Decimal('0')
+        sales_gold_equivalent_qty += ornament_weight * factor
+        sales_jarti_equivalent_gold_qty += (line.jarti or Decimal('0')) * factor
+        sales_wages_gold_amount += line.jyala or Decimal('0')
+
+    for line in silver_sales_lines:
+        factor = purity_factors.get(getattr(line.ornament, 'type', None), Decimal('1.00'))
+        ornament_weight = line.ornament.weight or Decimal('0')
+        sales_silver_equivalent_qty += ornament_weight * factor
+        sales_jarti_equivalent_silver_qty += (line.jarti or Decimal('0')) * factor
+        sales_wages_silver_amount += line.jyala or Decimal('0')
+
+    # Diamond detail: total of all sold diamond weights
+    sales_diamond_total_weight = sales_qs.aggregate(total=Sum('ornament__diamond_weight')).get('total') or Decimal('0')
+    sales_jardi_amount_gold = sales_jarti_equivalent_gold_qty
+    sales_jardi_amount_silver = sales_jarti_equivalent_silver_qty
+    sales_jardi_amount = sales_jardi_amount_gold + sales_jardi_amount_silver
+    sales_wages_amount = sales_wages_gold_amount + sales_wages_silver_amount
+
     totals["sales_amount"] = diamond_sales_amount + gold_sales_amount + silver_sales_amount
     totals["sales_weight"] = diamond_sales_weight + gold_sales_weight + silver_sales_weight
 
@@ -1173,20 +1261,20 @@ def stock_report(request):
         {"label": "Diamond", "qty": totals["diamond_purchase_weight"], "amount": totals["diamond_purchase_amount"]},
         {"label": "Gold", "qty": totals["gold_purchase_weight"], "amount": totals["gold_purchase_amount"]},
         {"label": "Silver", "qty": totals["silver_purchase_weight"], "amount": totals["silver_purchase_amount"]},
-        {"label": "Jardi", "qty": 0, "amount": 0},
-        {"label": "Wages", "qty": 0, "amount": total_wages},
+        {"label": "Jardi (Gold)", "qty": 0, "amount": purchase_jardi_gold_amount},
+        {"label": "Wages (Gold)", "qty": 0, "amount": purchase_wages_gold},
+        {"label": "Jardi (Silver)", "qty": 0, "amount": purchase_jardi_silver_amount},
+        {"label": "Wages (Silver)", "qty": 0, "amount": purchase_wages_silver},
     ]
 
-    # Sales extras: Jardi and Wages from order line items
-    sales_jardi_amount = sales_qs.aggregate(total_jardi=Sum("jarti")).get("total_jardi") or Decimal("0")
-    sales_wages_amount = sales_qs.aggregate(total_wages=Sum("jyala")).get("total_wages") or Decimal("0")
-
     sales_rows = [
-        {"label": "Diamond", "qty": diamond_sales_weight, "amount": diamond_sales_amount},
-        {"label": "Gold", "qty": gold_sales_weight, "amount": gold_sales_amount},
-        {"label": "Silver", "qty": silver_sales_weight, "amount": silver_sales_amount},
-        {"label": "Jardi", "qty": 0, "amount": sales_jardi_amount},
-        {"label": "Wages", "qty": 0, "amount": sales_wages_amount},
+        {"label": "Diamond", "qty": sales_diamond_total_weight, "amount": diamond_sales_amount},
+        {"label": "Gold", "qty": sales_gold_equivalent_qty, "amount": gold_sales_amount},
+        {"label": "Silver", "qty": sales_silver_equivalent_qty, "amount": silver_sales_amount},
+        {"label": "Jardi (Gold)", "qty": sales_jarti_equivalent_gold_qty, "amount": sales_jardi_amount_gold},
+        {"label": "Wages (Gold)", "qty": 0, "amount": sales_wages_gold_amount},
+        {"label": "Jardi (Silver)", "qty": sales_jarti_equivalent_silver_qty, "amount": sales_jardi_amount_silver},
+        {"label": "Wages (Silver)", "qty": 0, "amount": sales_wages_silver_amount},
     ]
 
     purchase_totals = {
@@ -1199,13 +1287,7 @@ def stock_report(request):
         "amount": sum(row["amount"] for row in sales_rows),
     }
 
-    # Purchase extras: Jardi from purchase 'particular' and Wages from purchases.wages
-    purchase_jardi_qs = GoldSilverPurchase.objects.filter(Q(particular__icontains="jardi") | Q(particular__icontains="jarti"))
-    if 'from_date' in locals() and from_date:
-        purchase_jardi_qs = purchase_jardi_qs.filter(bill_date__gte=from_date)
-    if 'to_date' in locals() and to_date:
-        purchase_jardi_qs = purchase_jardi_qs.filter(bill_date__lte=to_date)
-    purchase_jardi_amount = purchase_jardi_qs.aggregate(total_amount=Sum("amount")).get("total_amount") or Decimal("0")
+    # Purchase extras already computed above (gold/silver split and combined)
 
     # Fetch previous year remaining stock
     # Try to get stock for year 2082 first, if not available use any previous year
