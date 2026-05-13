@@ -624,15 +624,13 @@ def sales_print_view(request):
 
 @login_required(login_url='/accounts/login/')
 def sales_export_excel(request):
-    """Export sales to Excel, similar to ornaments/purchases export."""
+    """Export sales to Excel with grouped sheets for all, gold, and silver sales."""
 
     view = SalesListView()
     view.request = request
     sales = view.get_queryset()
 
     wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Sales"
 
     headers = [
         "Bill No",
@@ -642,6 +640,7 @@ def sales_export_excel(request):
         "Customer",
         "Phone",
         "Status",
+        "Weight",
         "Amount",
         "Discount",
         "Subtotal",
@@ -651,35 +650,62 @@ def sales_export_excel(request):
         "Paid Amount",
         "Remaining Amount",
     ]
-    ws.append(headers)
 
-    for s in sales:
-        o = s.order
-        ws.append([
-            s.bill_no,
-            str(s.sale_date) if s.sale_date else "",
-            o.sn,
-            str(o.order_date) if o.order_date else "",
-            o.customer_name,
-            o.phone_number,
-            o.get_status_display(),
-            o.amount,
-            o.discount,
-            o.subtotal,
-            o.tax,
-            o.total,
-            ", ".join([p.get_payment_mode_display() for p in o.payments.all()]) if o.payments.exists() else "",
-            o.total_paid,
-            o.remaining_amount,
-        ])
+    def append_sales_sheet(ws, queryset):
+        ws.append(headers)
+        for s in queryset:
+            o = s.order
+            payment_modes = ", ".join([p.get_payment_mode_display() for p in o.payments.all()]) if o.payments.exists() else ""
+            ornament_weight = sum((line.ornament.weight or Decimal("0")) for line in o.order_ornaments.all())
+            metal_weight = sum((metal.quantity or Decimal("0")) for metal in s.sale_metals.all())
+            total_weight = ornament_weight + metal_weight
+            ws.append([
+                s.bill_no,
+                str(s.sale_date) if s.sale_date else "",
+                o.sn,
+                str(o.order_date) if o.order_date else "",
+                o.customer_name,
+                o.phone_number,
+                o.get_status_display(),
+                total_weight,
+                o.amount,
+                o.discount,
+                o.subtotal,
+                o.tax,
+                o.total,
+                payment_modes,
+                o.total_paid,
+                o.remaining_amount,
+            ])
 
-    for col in ws.columns:
-        max_length = 0
-        col_letter = get_column_letter(col[0].column)
-        for cell in col:
-            if cell.value:
-                max_length = max(max_length, len(str(cell.value)))
-        ws.column_dimensions[col_letter].width = max_length + 2
+        for col in ws.columns:
+            max_length = 0
+            col_letter = get_column_letter(col[0].column)
+            for cell in col:
+                if cell.value is not None:
+                    max_length = max(max_length, len(str(cell.value)))
+            ws.column_dimensions[col_letter].width = max_length + 2
+
+    # Sheet 1: All sales
+    ws_all = wb.active
+    ws_all.title = "All Sales"
+    append_sales_sheet(ws_all, sales)
+
+    # Sheet 2: Gold sales group
+    gold_sales = sales.filter(
+        Q(order__order_ornaments__ornament__metal_type__iexact=Ornament.MetalTypeCategory.GOLD)
+        | Q(sale_metals__metal_type="gold")
+    ).distinct()
+    ws_gold = wb.create_sheet(title="Gold Sales")
+    append_sales_sheet(ws_gold, gold_sales)
+
+    # Sheet 3: Silver sales group
+    silver_sales = sales.filter(
+        Q(order__order_ornaments__ornament__metal_type__iexact=Ornament.MetalTypeCategory.SILVER)
+        | Q(sale_metals__metal_type="silver")
+    ).distinct()
+    ws_silver = wb.create_sheet(title="Silver Sales")
+    append_sales_sheet(ws_silver, silver_sales)
 
     output = BytesIO()
     wb.save(output)

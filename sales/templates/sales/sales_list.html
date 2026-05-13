@@ -113,8 +113,8 @@
             <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all-content" type="button" role="tab" aria-controls="all-content" aria-selected="true"
                 data-stat-main-label="Total Sold Weight"
                 data-stat-main-value="{{ all_totals.weight|floatformat:0 }}"
-                data-stat-24k-label="Total 24K Equivalent"
-                data-stat-24k-value="{{ all_totals.gold_24_weight|add:all_totals.silver_24_weight|floatformat:0 }}"
+                data-stat-24k-label="Total 24K Gold Equivalent"
+                data-stat-24k-value="{{ all_totals.gold_24_weight|floatformat:0 }}"
                 data-stat-amount-value="{{ all_totals.total|floatformat:0 }}"
                 data-stat-profit-value="{{ all_totals.profit|floatformat:0 }}">
                 <span style="font-weight: 600;">🧾 All Sales</span>
@@ -177,8 +177,8 @@
             </div>
             <div class="col-md-6 col-lg-3 col-sm-6">
                 <div class="sales-stat-card sales-accent">
-                    <div class="sales-stat-label" id="tab-stat-24k-label">Total 24K Equivalent</div>
-                    <h3 class="sales-stat-value" id="tab-stat-24k-value">{{ all_totals.gold_24_weight|add:all_totals.silver_24_weight|floatformat:0 }}</h3>
+                    <div class="sales-stat-label" id="tab-stat-24k-label">Total 24K Gold Equivalent</div>
+                    <h3 class="sales-stat-value" id="tab-stat-24k-value">{{ all_totals.gold_24_weight|floatformat:0 }}</h3>
                 </div>
             </div>
             <div class="col-md-6 col-lg-3 col-sm-6">
@@ -685,7 +685,7 @@
             if (!tabButton) return;
             const mainLabel = tabButton.getAttribute('data-stat-main-label') || 'Total Sold Weight';
             const mainValue = tabButton.getAttribute('data-stat-main-value') || '0';
-            const k24Label = tabButton.getAttribute('data-stat-24k-label') || 'Total 24K Equivalent';
+            const k24Label = tabButton.getAttribute('data-stat-24k-label') || 'Total 24K Gold Equivalent';
             const k24Value = tabButton.getAttribute('data-stat-24k-value') || '0';
             const amountValue = tabButton.getAttribute('data-stat-amount-value') || '0';
             const profitValue = tabButton.getAttribute('data-stat-profit-value') || '0';
