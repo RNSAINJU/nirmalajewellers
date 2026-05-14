@@ -511,7 +511,7 @@
                                         <i class="bi bi-pencil-square me-1"></i>Edit
                                     </a>
                             
-                                    <a href="{% url 'ornament:delete' o.pk %}" 
+                                    <a href="{% url 'ornament:delete' o.pk %}?next={{ request.get_full_path|urlencode }}" 
                                        class="btn btn-sm btn-action-delete"
                                        title="Delete Ornament">
                                         <i class="bi bi-trash-fill me-1"></i>Delete
@@ -630,7 +630,7 @@
                             <a href="{% url 'ornament:update' o.pk %}?next={{ request.get_full_path|urlencode }}" class="btn btn-sm btn-action-edit" title="Edit">
                                 <i class="bi bi-pencil-square me-1"></i>Edit
                             </a>
-                            <a href="{% url 'ornament:delete' o.pk %}" class="btn btn-sm btn-action-delete" title="Delete">
+                            <a href="{% url 'ornament:delete' o.pk %}?next={{ request.get_full_path|urlencode }}" class="btn btn-sm btn-action-delete" title="Delete">
                                 <i class="bi bi-trash-fill me-1"></i>Delete
                             </a>
                             {% if o.status != 'destroyed' %}

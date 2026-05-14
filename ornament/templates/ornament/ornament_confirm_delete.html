@@ -7,6 +7,10 @@
 <form method="post">
     {% csrf_token %}
     <button type="submit" class="btn btn-danger">Yes, delete</button>
+    {% if request.GET.next %}
+    <a href="{{ request.GET.next }}" class="btn btn-secondary">Cancel</a>
+    {% else %}
     <a href="{% url 'ornament:list' %}" class="btn btn-secondary">Cancel</a>
+    {% endif %}
 </form>
 {% endblock %}
