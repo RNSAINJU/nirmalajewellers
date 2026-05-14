@@ -518,7 +518,7 @@
                                     </a>
 
                                     {% if o.status != 'destroyed' %}
-                                    <a href="{% url 'ornament:destroy' o.pk %}" 
+                                    <a href="{% url 'ornament:destroy' o.pk %}?next={{ request.get_full_path|urlencode }}" 
                                        class="btn btn-sm btn-action-destroy"
                                        title="Destroy Ornament">
                                         <i class="bi bi-fire me-1"></i>Destroy
@@ -634,7 +634,7 @@
                                 <i class="bi bi-trash-fill me-1"></i>Delete
                             </a>
                             {% if o.status != 'destroyed' %}
-                            <a href="{% url 'ornament:destroy' o.pk %}" class="btn btn-sm btn-action-destroy" title="Destroy">
+                            <a href="{% url 'ornament:destroy' o.pk %}?next={{ request.get_full_path|urlencode }}" class="btn btn-sm btn-action-destroy" title="Destroy">
                                 <i class="bi bi-fire me-1"></i>Destroy
                             </a>
                             {% endif %}

@@ -602,6 +602,15 @@ class OrnamentDestroyView(UpdateView):
     template_name = 'ornament/ornament_confirm_destroy.html'
     success_url = reverse_lazy('ornament:list')
 
+    def get_success_url(self):
+        from urllib.parse import urlparse
+        next_url = self.request.GET.get('next')
+        if next_url:
+            parsed = urlparse(next_url)
+            if not parsed.scheme and not parsed.netloc:
+                return next_url
+        return self.success_url
+
     def form_valid(self, form):
         """Update status to destroyed."""
         self.object.status = Ornament.StatusCategory.DESTROYED
