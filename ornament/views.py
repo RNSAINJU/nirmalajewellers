@@ -306,12 +306,16 @@ class OrnamentListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Total weight calculation for current page only
+        # Total weight calculations for current page, active ornaments only
         page_ornaments = context['ornaments']
         total_weight = Decimal('0')
+        total_diamond_weight = Decimal('0')
         for ornament in page_ornaments:
-            total_weight += ornament.weight or Decimal('0')
+            if ornament.status == Ornament.StatusCategory.ACTIVE:
+                total_weight += ornament.weight or Decimal('0')
+                total_diamond_weight += ornament.diamond_weight or Decimal('0')
         context['total_weight'] = total_weight
+        context['total_diamond_weight'] = total_diamond_weight
 
         # Filters back to template
         context['metal_type'] = self.request.GET.get('metal_type')
@@ -524,10 +528,14 @@ class OrnamentUpdateView(UpdateView):
             return self.form_invalid(form)
 
     def get_success_url(self):
-        # Check if there's a 'next' parameter to redirect back to
+        # Check if there's a 'next' parameter to redirect back to (same-origin only)
+        from urllib.parse import urlparse
         next_url = self.request.GET.get('next')
         if next_url:
-            return next_url
+            parsed = urlparse(next_url)
+            # Accept only relative URLs (no scheme/netloc) to prevent open-redirect
+            if not parsed.scheme and not parsed.netloc:
+                return next_url
         return self.success_url
 
     def get_context_data(self, **kwargs):
@@ -548,8 +556,17 @@ class OrnamentDeleteView(DeleteView):
     success_url = reverse_lazy('ornament:list')
 
     def post(self, request, *args, **kwargs):
-        """Handle delete with protection check for orders."""
+        """Soft delete ornament with protection check for orders."""
         self.object = self.get_object()
+
+        # Already removed from active stock
+        if self.object.status == Ornament.StatusCategory.DELETED:
+            messages.info(request, f"Ornament '{self.object.ornament_name}' is already in deleted status.")
+            return redirect('ornament:list')
+
+        if self.object.status == Ornament.StatusCategory.DESTROYED:
+            messages.info(request, f"Ornament '{self.object.ornament_name}' is already destroyed.")
+            return redirect('ornament:list')
         
         # Check if this ornament is used in any orders
         related_orders = OrderOrnament.objects.filter(ornament=self.object).select_related('order')
@@ -563,10 +580,12 @@ class OrnamentDeleteView(DeleteView):
                 f"Please use the 'Destroy' status instead to mark it as no longer available."
             )
             return redirect('ornament:list')
-        
-        # No related orders, proceed with deletion
-        messages.success(request, f"Ornament '{self.object.ornament_name}' has been deleted.")
-        return super().post(request, *args, **kwargs)
+
+        # No related orders, move it to Deleted section instead of hard-deleting.
+        self.object.status = Ornament.StatusCategory.DELETED
+        self.object.save(update_fields=['status', 'updated_at'])
+        messages.success(request, f"Ornament '{self.object.ornament_name}' moved to deleted section.")
+        return redirect('ornament:list')
 
 
 class OrnamentDestroyView(UpdateView):
@@ -1278,32 +1297,25 @@ def ornament_report(request):
     """Show ornament counts grouped by metal type, then by main category."""
     from django.db.models import Count
 
-    total_ornaments = Ornament.objects.filter(
+    _active_qs = Ornament.objects.filter(
         ornament_type__in=[
             Ornament.OrnamentCategory.STOCK,
             Ornament.OrnamentCategory.ORDER,
-        ]
-    ).count()
+        ],
+        status=Ornament.StatusCategory.ACTIVE,
+    )
+
+    total_ornaments = _active_qs.count()
 
     # Totals per metal type
     metal_totals = {
         row['metal_type']: row['count']
-        for row in Ornament.objects.filter(
-            ornament_type__in=[
-                Ornament.OrnamentCategory.STOCK,
-                Ornament.OrnamentCategory.ORDER,
-            ]
-        ).values('metal_type').annotate(count=Count('id'))
+        for row in _active_qs.values('metal_type').annotate(count=Count('id'))
     }
 
     # Category breakdown per metal
     category_rows = (
-        Ornament.objects.filter(
-            ornament_type__in=[
-                Ornament.OrnamentCategory.STOCK,
-                Ornament.OrnamentCategory.ORDER,
-            ]
-        )
+        _active_qs
         .values('metal_type', 'maincategory__id', 'maincategory__name')
         .annotate(count=Count('id'))
         .order_by('metal_type', 'maincategory__name')
