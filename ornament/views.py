@@ -1381,6 +1381,11 @@ def ornament_weight_report(request):
     base_qs = Ornament.objects.filter(
         ornament_type=Ornament.OrnamentCategory.STOCK,
         status=Ornament.StatusCategory.ACTIVE,
+        metal_type__in=[
+            Ornament.MetalTypeCategory.GOLD,
+            Ornament.MetalTypeCategory.SILVER,
+            Ornament.MetalTypeCategory.DIAMOND,
+        ],
     ).filter(
         Q(weight__gt=0) | Q(diamond_weight__gt=0)
     )
