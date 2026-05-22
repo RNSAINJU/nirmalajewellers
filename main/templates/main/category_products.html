@@ -538,9 +538,10 @@
             <div class="product-info">
                 <div class="product-name">{{ product.ornament_name }}</div>
                 <div class="product-price">
-                    <span class="price-current">रु85,500</span>
-                    {% if forloop.counter == 3 %}
-                    <span class="price-original">रु1,25,000</span>
+                    {% if product.calculated_selling_amount != None %}
+                    <span class="price-current">रु{{ product.calculated_selling_amount|floatformat:0 }}</span>
+                    {% else %}
+                    <span class="price-current">Price unavailable</span>
                     {% endif %}
                 </div>
                 <button class="view-details-btn {% if forloop.counter == 1 or forloop.counter == 6 %}primary{% endif %}" 

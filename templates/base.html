@@ -1312,6 +1312,7 @@
         {% url 'main:total_assets' as total_assets_url %}
         {% url 'main:account_settings' as account_settings_url %}
         {% url 'main:role_list' as role_list_url %}
+        {% url 'main:marketing_dashboard' as marketing_dashboard_url %}
 
         {% url 'ornament:list' as ornament_list_url %}
         {% url 'ornament:barcode_scanner' as ornament_barcode_scanner_url %}
@@ -1584,6 +1585,12 @@
         <div class="mb-3">
             <a href="{{ total_assets_url }}" class="nav-link">
                 <span><i class="bi bi-wallet2"></i> Total Assets</span>
+            </a>
+        </div>
+
+        <div class="mb-3">
+            <a href="{{ marketing_dashboard_url }}" class="nav-link {% if request.path == marketing_dashboard_url %}active{% endif %}">
+                <span><i class="bi bi-megaphone"></i> Marketing</span>
             </a>
         </div>
 

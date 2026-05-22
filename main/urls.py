@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 from . import views_accounts
 from . import views_assets
+from . import views_marketing
 
 app_name = 'main'
 
@@ -51,4 +52,9 @@ urlpatterns = [
     
     # Assets URLs
     path('total-assets/', views_assets.total_assets, name='total_assets'),
+
+    # Marketing URLs
+    path('marketing/', views_marketing.marketing_dashboard, name='marketing_dashboard'),
+    path('api/marketing/meta-insights/', views_marketing.api_meta_insights, name='marketing_meta_insights'),
+    path('api/marketing/tiktok-insights/', views_marketing.api_tiktok_insights, name='marketing_tiktok_insights'),
 ]
