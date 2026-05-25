@@ -134,10 +134,14 @@ class SalesListView(LoginRequiredMixin, ListView):
         context["diamond_sales"] = sales_qs.filter(
             Q(order__order_ornaments__ornament__metal_type__iexact=diamond_metal)
         ).distinct()
+        context["own_gold_sales"] = sales_qs.filter(
+            Q(order__order_ornaments__own_gold__gt=0)
+        ).distinct()
         context["all_sales_count"] = context["sales_count"]
         context["gold_sales_count"] = context["gold_sales"].count()
         context["silver_sales_count"] = context["silver_sales"].count()
         context["diamond_sales_count"] = context["diamond_sales"].count()
+        context["own_gold_sales_count"] = context["own_gold_sales"].count()
 
         # Calculate gold/silver weights and total sales amount (including raw metals)
         purity_factors = {
@@ -263,6 +267,7 @@ class SalesListView(LoginRequiredMixin, ListView):
         apply_cached_totals(context["gold_sales"])
         apply_cached_totals(context["silver_sales"])
         apply_cached_totals(context["diamond_sales"])
+        apply_cached_totals(context["own_gold_sales"])
 
         # Calculate category totals from cached data - no additional queries
         def calculate_totals_from_cache(queryset):
@@ -306,6 +311,7 @@ class SalesListView(LoginRequiredMixin, ListView):
                 "gold_totals": calculate_totals_from_cache(context["gold_sales"]),
                 "silver_totals": calculate_totals_from_cache(context["silver_sales"]),
                 "diamond_totals": calculate_totals_from_cache(context["diamond_sales"]),
+                "own_gold_totals": calculate_totals_from_cache(context["own_gold_sales"]),
             }
         )
         return context
@@ -1873,14 +1879,6 @@ class SalesByMonthView(LoginRequiredMixin, ListView):
         
         # Calculate statistics for filtered sales
         if context['sales']:
-            purity_factors = {
-                Ornament.TypeCategory.TWENTYFOURKARAT: Decimal("1.00"),
-                Ornament.TypeCategory.TWENTHREEKARAT: Decimal("0.99"),
-                Ornament.TypeCategory.TWENTYTWOKARAT: Decimal("0.98"),
-                Ornament.TypeCategory.EIGHTEENKARAT: Decimal("0.75"),
-                Ornament.TypeCategory.FOURTEENKARAT: Decimal("0.58"),
-            }
-            
             gold_24_weight = Decimal("0")
             silver_weight = Decimal("0")
             total_sales_amount = Decimal("0")
@@ -1899,15 +1897,13 @@ class SalesByMonthView(LoginRequiredMixin, ListView):
             }
             
             for sale in context["sales"]:
-                # Ornaments
+                # Ornaments — gold = actual ornament weight (no purity conversion)
                 for line in sale.order.order_ornaments.all():
                     weight = line.ornament.weight or Decimal("0")
-                    factor = purity_factors.get(getattr(line.ornament, 'type', None), Decimal("1.00"))
-                    if getattr(line.ornament, 'metal_type', None) == getattr(Ornament.MetalTypeCategory, 'GOLD', 'gold'):
-                        gold_24_weight += weight * factor
-                    elif getattr(line.ornament, 'metal_type', None) == getattr(Ornament.MetalTypeCategory, 'DIAMOND', 'diamond'):
-                        gold_24_weight += weight * factor
-                    elif getattr(line.ornament, 'metal_type', None) == getattr(Ornament.MetalTypeCategory, 'SILVER', 'silver'):
+                    metal_type = getattr(line.ornament, 'metal_type', None)
+                    if metal_type == getattr(Ornament.MetalTypeCategory, 'GOLD', 'gold'):
+                        gold_24_weight += weight
+                    elif metal_type == getattr(Ornament.MetalTypeCategory, 'SILVER', 'silver'):
                         silver_weight += weight
                     
                     # Calculate profit: (customer_jarti - ornament_jarti) / 11.664 * rate + jyala
@@ -1920,12 +1916,12 @@ class SalesByMonthView(LoginRequiredMixin, ListView):
                     profit = (jarti_difference / Decimal("11.664") * rate) + jyala
                     total_profit += profit
                 
-                # Raw metals
+                # Raw metals — add actual quantity to gold/silver totals
                 for metal in sale.sale_metals.all():
                     if metal.metal_type == 'gold':
-                        gold_24_weight += metal.quantity
+                        gold_24_weight += metal.quantity or Decimal("0")
                     elif metal.metal_type == 'silver':
-                        silver_weight += metal.quantity
+                        silver_weight += metal.quantity or Decimal("0")
                 
                 # Add order total, remaining amount, and tax
                 total_sales_amount += sale.order.total or Decimal("0")

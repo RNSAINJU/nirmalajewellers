@@ -78,6 +78,43 @@
         box-shadow: inset 0 0 0 1px rgba(244, 192, 37, 0.08);
     }
 
+    .sold-total-card {
+        background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+        border: 1px solid #374151;
+        border-radius: 12px;
+        padding: 14px;
+        text-align: center;
+    }
+
+    .sold-total-label {
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+        color: #cbd5e1;
+    }
+
+    .sold-total-value {
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: #f8fafc;
+    }
+
+    body:not(.dark) .sold-total-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        border-color: #e5e7eb;
+    }
+
+    body:not(.dark) .sold-total-label {
+        color: #4b5563;
+    }
+
+    body:not(.dark) .sold-total-value {
+        color: #111827;
+    }
+
     /* Ensure ornament names stay readable in dark mode */
     body.dark .ornament-link {
         color: #93c5fd !important;
@@ -157,6 +194,18 @@
                 <small class="ms-2" style="color: #666;">({{ diamond_sales_count }})</small>
             </button>
         </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="own-gold-tab" data-bs-toggle="tab" data-bs-target="#own-gold-content" type="button" role="tab" aria-controls="own-gold-content" aria-selected="false"
+                data-stat-main-label="Own Gold Sold (gms)"
+                data-stat-main-value="{{ own_gold_totals.gold_sold_weight|floatformat:0 }}"
+                data-stat-24k-label="Own Gold 24K Eq"
+                data-stat-24k-value="{{ own_gold_totals.gold_24_weight|floatformat:0 }}"
+                data-stat-amount-value="{{ own_gold_totals.total|floatformat:0 }}"
+                data-stat-profit-value="{{ own_gold_totals.profit|floatformat:0 }}">
+                <span style="color: #f59e0b; font-weight: 600;">👑 Own Gold</span>
+                <small class="ms-2" style="color: #666;">({{ own_gold_sales_count }})</small>
+            </button>
+        </li>
     </ul>
 
     <!-- Create button -->
@@ -196,12 +245,38 @@
         </div>
     </div>
 
+    <div class="sales-stats-shell">
+        <div class="row g-3">
+            <div class="col-md-4 col-sm-6">
+                <div class="sold-total-card">
+                    <div class="sold-total-label">Gold Sold Total</div>
+                    <h4 class="sold-total-value">रु{{ gold_totals.total|floatformat:2 }}</h4>
+                </div>
+            </div>
+            <div class="col-md-4 col-sm-6">
+                <div class="sold-total-card">
+                    <div class="sold-total-label">Silver Sold Total</div>
+                    <h4 class="sold-total-value">रु{{ silver_totals.total|floatformat:2 }}</h4>
+                </div>
+            </div>
+            <div class="col-md-4 col-sm-6">
+                <div class="sold-total-card">
+                    <div class="sold-total-label">Diamond Sold Total</div>
+                    <h4 class="sold-total-value">रु{{ diamond_totals.total|floatformat:2 }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Search and Actions Toggle Row -->
     <div class="row mb-4 g-3 align-items-center">
         <!-- Search Box -->
         <div class="col-md-9">
             <div class="search-section">
                 <form method="get" class="d-flex gap-2">
+                    {% if show_deleted %}
+                    <input type="hidden" name="show_deleted" value="1">
+                    {% endif %}
                     <input type="text" name="search" class="form-control" placeholder="Search by bill number, order number, customer name..." value="{{ request.GET.search }}">
                     <button class="btn btn-primary fw-bold" style="min-width: 100px;">Search</button>
                     <a href="{% url 'sales:sales_list' %}" class="btn btn-outline-secondary fw-bold">Clear</a>
@@ -212,9 +287,20 @@
         <!-- Import/Export Toggle Button -->
         <div class="col-md-3">
             <div class="text-center">
-                <button class="btn btn-create w-100" type="button" data-bs-toggle="collapse" data-bs-target="#actionsSection" aria-expanded="false" aria-controls="actionsSection">
-                    <i class="bi bi-gear-fill me-2"></i>Import/Export
-                </button>
+                <div class="d-grid gap-2">
+                    {% if show_deleted %}
+                    <a href="{% url 'sales:sales_list' %}" class="btn btn-outline-warning w-100">
+                        <i class="bi bi-eye me-2"></i>Show Active Sales
+                    </a>
+                    {% else %}
+                    <a href="{% url 'sales:sales_list' %}?show_deleted=1" class="btn btn-outline-danger w-100">
+                        <i class="bi bi-trash me-2"></i>Show Deleted Sales
+                    </a>
+                    {% endif %}
+                    <button class="btn btn-create w-100" type="button" data-bs-toggle="collapse" data-bs-target="#actionsSection" aria-expanded="false" aria-controls="actionsSection">
+                        <i class="bi bi-gear-fill me-2"></i>Import/Export
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -673,6 +759,113 @@
                             </div>
                             {% else %}
                             <div class="alert alert-info text-center py-3">No diamond sales found.</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Own Gold Tab -->
+                        <div class="tab-pane fade" id="own-gold-content" role="tabpanel" aria-labelledby="own-gold-tab">
+                            {% if own_gold_sales %}
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped table-hover align-middle">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Bill No</th>
+                                            <th>Sale Date</th>
+                                            <th>Order No</th>
+                                            <th>Order Date</th>
+                                            <th>Customer</th>
+                                            <th>Phone</th>
+                                            <th>Ornaments</th>
+                                            <th>Weight</th>
+                                            <th>Total</th>
+                                            <th>Paid</th>
+                                            <th>Remaining</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for sale in own_gold_sales %}
+                                        {% with order=sale.order %}
+                                        <tr>
+                                            <td>
+                                                <a href="{% url 'sales:sale_update' sale.pk %}" class="text-decoration-none fw-semibold">{{ sale.bill_no }}</a>
+                                            </td>
+                                            <td>{{ sale.sale_date|bs_date }}</td>
+                                            <td><a href="{% url 'order:update' order.sn %}" class="text-decoration-none ornament-link" target="_blank">{{ order.sn }}</a></td>
+                                            <td>{{ order.order_date|bs_date }}</td>
+                                            <td>{{ order.customer_name }}</td>
+                                            <td>{{ order.phone_number }}</td>
+                                            <td>
+                                                {% with items=order.order_ornaments.all %}
+                                                    {% if items and items|length > 0 %}
+                                                        <div class="ornament-chips" title="{% for line in items %}{{ line.ornament.ornament_name }} ({{ line.ornament.metal_type }}, {{ line.ornament.type }}){% if not forloop.last %}, {% endif %}{% endfor %}">
+                                                            {% for line in items|slice:':3' %}
+                                                                <span class="ornament-chip">{{ line.ornament.ornament_name }}</span>
+                                                            {% endfor %}
+                                                            {% if items|length > 3 %}
+                                                                <span class="ornament-chip ornament-chip-muted">+{{ items|length|add:"-3" }}</span>
+                                                            {% endif %}
+                                                        </div>
+                                                    {% else %}
+                                                        <span class="text-muted">No ornaments</span>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </td>
+                                            <td>
+                                                {{ sale.total_weight|floatformat:3 }}
+                                                <div class="text-muted" style="font-size: 12px;">24K G: {{ sale.gold_24_weight|floatformat:3 }}</div>
+                                                <div class="text-muted" style="font-size: 12px;">24K S: {{ sale.silver_24_weight|floatformat:3 }}</div>
+                                            </td>
+                                            <td>{{ sale.display_total|floatformat:2 }}</td>
+                                            <td>{{ order.total_paid|floatformat:2 }}</td>
+                                            <td>{{ order.remaining_amount|floatformat:2 }}</td>
+                                            <td>
+                                                {% if order.remaining_amount <= 0 %}
+                                                    <span class="badge bg-success">Paid</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning text-dark">Due</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'sales:sale_update' sale.pk %}" class="btn btn-sm btn-action-edit">Edit</a>
+                                                <form method="post" action="{% url 'sales:sale_delete_with_order' sale.pk %}" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-sm btn-action-delete" onclick="return confirm('Delete this sale and its order? This cannot be undone.');">Delete</button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                        {% endwith %}
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="13" class="text-center text-muted">No own gold sales found.</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="table-light fw-semibold">
+                                            <td colspan="7" class="text-end">Totals</td>
+                                            <td class="text-end">{{ own_gold_totals.weight|floatformat:3 }}</td>
+                                            <td class="text-end">{{ own_gold_totals.total|floatformat:2 }}</td>
+                                            <td class="text-end">{{ own_gold_totals.paid|floatformat:2 }}</td>
+                                            <td class="text-end">{{ own_gold_totals.remaining|floatformat:2 }}</td>
+                                            <td colspan="2"></td>
+                                        </tr>
+                                        <tr class="table-light">
+                                            <td colspan="7" class="text-end">24K Gold Weight</td>
+                                            <td class="text-end">{{ own_gold_totals.gold_24_weight|floatformat:3 }}</td>
+                                            <td colspan="5"></td>
+                                        </tr>
+                                        <tr class="table-light">
+                                            <td colspan="7" class="text-end">24K Silver Weight</td>
+                                            <td class="text-end">{{ own_gold_totals.silver_24_weight|floatformat:3 }}</td>
+                                            <td colspan="5"></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-info text-center py-3">No own gold sales found.</div>
                             {% endif %}
                         </div>
                     </div>
