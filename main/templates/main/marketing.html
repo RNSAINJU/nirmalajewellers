@@ -1,0 +1,436 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Marketing — Nirmala Jewellers{% endblock %}
+
+{% block extra_css %}
+<style>
+    .marketing-hero {
+        background: linear-gradient(135deg, #1a1a1a 0%, #2d2410 50%, #1a1a1a 100%);
+        border: 1px solid rgba(244, 192, 37, 0.2);
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 1.5rem;
+    }
+    .platform-card {
+        background: var(--admin-panel);
+        border: 1px solid var(--admin-border);
+        border-radius: 14px;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+    .platform-card .card-header-custom {
+        padding: 0.9rem 1.25rem;
+        font-weight: 700;
+        font-family: 'Cinzel', serif;
+        font-size: 0.95rem;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+    .platform-card.facebook .card-header-custom { background: #1877F2; color: #fff; }
+    .platform-card.instagram .card-header-custom { background: linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); color: #fff; }
+    .platform-card.tiktok .card-header-custom { background: #010101; color: #fff; border-bottom: 2px solid #fe2c55; }
+    .platform-card.suggestions .card-header-custom { background: linear-gradient(135deg,#1a1a1a,#2d2410); color: var(--admin-gold); border-bottom: 1px solid rgba(244,192,37,0.2); }
+
+    .suggestion-card {
+        background: var(--admin-bg);
+        border: 1px solid rgba(244,192,37,0.25);
+        border-left: 4px solid var(--admin-gold);
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 0.75rem;
+        display: flex;
+        gap: 0.75rem;
+        align-items: flex-start;
+    }
+    .suggestion-icon { font-size: 1.5rem; line-height: 1; flex-shrink: 0; }
+    .suggestion-title { font-weight: 700; margin-bottom: 0.2rem; font-size: 0.9rem; }
+    .suggestion-body { font-size: 0.82rem; color: var(--admin-muted); }
+
+    .embed-wrapper {
+        padding: 1.25rem;
+        display: flex;
+        justify-content: center;
+    }
+    .ig-embed-box {
+        background: var(--admin-bg);
+        border: 1px solid var(--admin-border);
+        border-radius: 10px;
+        padding: 1.5rem;
+        text-align: center;
+    }
+    .ig-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: linear-gradient(135deg, #f09433, #dc2743, #bc1888);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 0.6rem 1.2rem;
+        font-weight: 700;
+        font-size: 0.875rem;
+        text-decoration: none;
+        margin-top: 0.75rem;
+    }
+    .ig-btn:hover { color: #fff; opacity: 0.9; }
+    .tt-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: #010101;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 0.6rem 1.2rem;
+        font-weight: 700;
+        font-size: 0.875rem;
+        text-decoration: none;
+        margin-top: 0.75rem;
+        border: 1px solid #fe2c55;
+    }
+    .tt-btn:hover { color: #fe2c55; }
+
+    .note-box {
+        background: rgba(244,192,37,0.08);
+        border: 1px solid rgba(244,192,37,0.25);
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+        font-size: 0.8rem;
+        color: var(--admin-muted);
+        margin: 0 1.25rem 1rem;
+    }
+    .note-box strong { color: var(--admin-gold); }
+
+    /* Optional advanced section */
+    .advanced-toggle {
+        background: none;
+        border: 1px dashed var(--admin-border);
+        border-radius: 8px;
+        color: var(--admin-muted);
+        font-size: 0.8rem;
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        width: 100%;
+        margin-bottom: 1.5rem;
+    }
+    .advanced-toggle:hover { border-color: var(--admin-gold); color: var(--admin-gold); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Hero -->
+<div class="marketing-hero">
+    <div class="d-flex align-items-center gap-3 flex-wrap">
+        <div style="font-size:2.5rem;">📣</div>
+        <div>
+            <h2 style="color:var(--admin-gold);margin:0;font-size:1.5rem;">Marketing Dashboard</h2>
+            <p style="color:#aaa;margin:0.2rem 0 0;font-size:0.875rem;">
+                Facebook · Instagram · TikTok — Nirmala Jewellers
+            </p>
+        </div>
+        <div class="ms-auto d-flex gap-2 flex-wrap">
+            <a href="https://www.facebook.com/profile.php?id=107868541732644" target="_blank" class="btn btn-sm btn-outline-light">
+                <i class="bi bi-facebook me-1"></i> Open Page
+            </a>
+            <a href="https://www.instagram.com/nirmalajewellers_official/" target="_blank" class="btn btn-sm btn-outline-light">
+                <i class="bi bi-instagram me-1"></i> Open Profile
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Facebook Page Plugin (official embed, no token needed) -->
+<div class="platform-card facebook">
+    <div class="card-header-custom">
+        <i class="bi bi-facebook"></i> Facebook Page
+        <span class="ms-auto" style="font-size:0.72rem;font-weight:400;opacity:0.85;">Live embed — no token required</span>
+    </div>
+    <div class="note-box">
+        <strong>ℹ️ Official Facebook Page Plugin</strong> — shows your public follower count, cover photo, and recent posts directly from Facebook. No API token needed.
+    </div>
+    <div class="embed-wrapper">
+        <!-- Facebook Page Plugin: https://developers.facebook.com/docs/plugins/page-plugin -->
+        <div
+            class="fb-page"
+            data-href="https://www.facebook.com/profile.php?id=107868541732644"
+            data-tabs="timeline,events"
+            data-width="500"
+            data-height="600"
+            data-small-header="false"
+            data-adapt-container-width="true"
+            data-hide-cover="false"
+            data-show-facepile="true">
+        </div>
+    </div>
+</div>
+
+<!-- Instagram -->
+<div class="platform-card instagram">
+    <div class="card-header-custom">
+        <i class="bi bi-instagram"></i> Instagram Profile
+        <span class="ms-auto" style="font-size:0.72rem;font-weight:400;opacity:0.85;">Public profile link</span>
+    </div>
+    <div class="note-box" style="background:rgba(220,39,67,0.07);border-color:rgba(220,39,67,0.2);">
+        <strong style="color:#dc2743;">ℹ️ Instagram</strong> — Instagram does not provide a public embed widget. You can view your profile analytics directly on the Instagram app or Meta Business Suite.
+    </div>
+    <div class="embed-wrapper">
+        <div class="ig-embed-box" style="max-width:420px;width:100%;">
+            <div style="font-size:3rem;">📸</div>
+            <div style="font-family:'Cinzel',serif;font-size:1.1rem;margin:0.5rem 0;">Nirmala Jewellers</div>
+            <div style="color:var(--admin-muted);font-size:0.82rem;margin-bottom:0.5rem;">Instagram Business Account ID: <code>17841452161435255</code></div>
+            <div class="d-flex gap-2 justify-content-center flex-wrap mt-2">
+                <a href="https://www.instagram.com/nirmalajewellers_official/" target="_blank" class="ig-btn">
+                    <i class="bi bi-instagram"></i> View Instagram Profile
+                </a>
+                <a href="https://business.facebook.com/latest/insights/overview" target="_blank" class="btn btn-sm" style="background:rgba(220,39,67,0.1);color:#dc2743;border:1px solid rgba(220,39,67,0.3);font-weight:600;">
+                    <i class="bi bi-bar-chart me-1"></i> Meta Business Suite Insights
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TikTok -->
+<div class="platform-card tiktok">
+    <div class="card-header-custom">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right:2px"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V9.13a8.22 8.22 0 0 0 4.83 1.55V7.25a4.85 4.85 0 0 1-1.06-.56z"/></svg>
+        TikTok Business
+        <span class="ms-auto" style="font-size:0.72rem;font-weight:400;opacity:0.7;">TikTok Business Center</span>
+    </div>
+    <div class="note-box" style="background:rgba(254,44,85,0.07);border-color:rgba(254,44,85,0.2);">
+        <strong style="color:#fe2c55;">ℹ️ TikTok</strong> — TikTok does not have a public embed widget. View your analytics directly in TikTok Business Center or TikTok Studio.
+    </div>
+    <div class="embed-wrapper">
+        <div class="ig-embed-box" style="max-width:420px;width:100%;">
+            <div style="font-size:3rem;">🎵</div>
+            <div style="font-family:'Cinzel',serif;font-size:1.1rem;margin:0.5rem 0;">Nirmala Jewellers</div>
+            <div class="d-flex gap-2 justify-content-center flex-wrap mt-2">
+                <a href="https://www.tiktok.com/@nirmalajewellers" target="_blank" class="tt-btn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V9.13a8.22 8.22 0 0 0 4.83 1.55V7.25a4.85 4.85 0 0 1-1.06-.56z"/></svg>
+                    View TikTok Profile
+                </a>
+                <a href="https://business.tiktok.com/" target="_blank" class="btn btn-sm" style="background:rgba(254,44,85,0.1);color:#fe2c55;border:1px solid rgba(254,44,85,0.3);font-weight:600;">
+                    <i class="bi bi-bar-chart me-1"></i> TikTok Business Center
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Marketing Suggestions -->
+<div class="platform-card suggestions">
+    <div class="card-header-custom">
+        <i class="bi bi-lightbulb"></i> Marketing Suggestions for Nirmala Jewellers
+    </div>
+    <div class="p-3">
+
+        <div class="suggestion-card">
+            <div class="suggestion-icon">💍</div>
+            <div>
+                <div class="suggestion-title">Showcase jewellery with Reels &amp; Short Videos</div>
+                <div class="suggestion-body">Short-form videos (Instagram Reels, Facebook Videos, TikTok) drive 2–3× more reach than static images. Create 15–30 sec clips showing craftsmanship, new arrivals, or unboxing moments.</div>
+            </div>
+        </div>
+
+        <div class="suggestion-card">
+            <div class="suggestion-icon">📅</div>
+            <div>
+                <div class="suggestion-title">Post Consistently at Peak Hours</div>
+                <div class="suggestion-body">For jewellery buyers in Nepal, best engagement is at <strong>8–10 AM</strong> and <strong>7–9 PM</strong> (NPT). Aim for 4–5 posts per week across platforms.</div>
+            </div>
+        </div>
+
+        <div class="suggestion-card">
+            <div class="suggestion-icon">🎉</div>
+            <div>
+                <div class="suggestion-title">Festival &amp; Wedding Season Campaigns</div>
+                <div class="suggestion-body">Nepal's jewellery demand spikes around <strong>Dashain, Tihar, Teej, and wedding seasons</strong>. Plan promotional campaigns 2–3 weeks ahead with gift bundles and special discounts.</div>
+            </div>
+        </div>
+
+        <div class="suggestion-card">
+            <div class="suggestion-icon">#️⃣</div>
+            <div>
+                <div class="suggestion-title">Use Targeted Hashtags</div>
+                <div class="suggestion-body">Mix broad and niche: <code>#NepaliJewellery #GoldJewellery #NirmalaJewellers #SilverJewellery #BridalJewellery #HandmadeJewelry #KathmanduJewellery</code>. Use 8–12 per Instagram post.</div>
+            </div>
+        </div>
+
+        <div class="suggestion-card">
+            <div class="suggestion-icon">📸</div>
+            <div>
+                <div class="suggestion-title">User-Generated Content &amp; Testimonials</div>
+                <div class="suggestion-body">Encourage customers to tag <strong>@NirmalaJewellers</strong> in their photos. Reshare with permission — UGC builds social proof and trust, which is crucial for jewellery buyers.</div>
+            </div>
+        </div>
+
+        <div class="suggestion-card">
+            <div class="suggestion-icon">💰</div>
+            <div>
+                <div class="suggestion-title">Boost Top-Performing Posts with Paid Ads</div>
+                <div class="suggestion-body">Run targeted promotions on Facebook/Instagram for NPR 1,000–5,000/week. Target: women aged 20–45, Nepal &amp; Nepali diaspora, interests in jewellery, weddings, fashion.</div>
+            </div>
+        </div>
+
+        <div class="suggestion-card">
+            <div class="suggestion-icon">💬</div>
+            <div>
+                <div class="suggestion-title">Respond to Comments &amp; DMs Quickly</div>
+                <div class="suggestion-body">Responding within 1 hour significantly increases purchase conversion. Set up quick replies for common questions: pricing, availability, custom orders, delivery.</div>
+            </div>
+        </div>
+
+        <div class="suggestion-card">
+            <div class="suggestion-icon">📊</div>
+            <div>
+                <div class="suggestion-title">Use Meta Business Suite for Free Analytics</div>
+                <div class="suggestion-body">
+                    <a href="https://business.facebook.com/latest/insights/overview" target="_blank" style="color:var(--admin-gold);font-weight:600;">Meta Business Suite</a> gives you full reach, impressions, follower growth, and post performance for both Facebook and Instagram — completely free, no API token needed. Just log in with your business account.
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Optional: Advanced API Analytics (collapsed by default) -->
+<button class="advanced-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#advancedAnalytics">
+    <i class="bi bi-chevron-down me-2"></i> Advanced: Connect API Token for Live Analytics (optional)
+</button>
+<div class="collapse" id="advancedAnalytics">
+    <div class="platform-card">
+        <div class="card-header-custom" style="background:var(--admin-bg);border-bottom:1px solid var(--admin-border);color:var(--admin-text);">
+            <i class="bi bi-key"></i> Meta API Token (optional — for live reach/impressions data)
+        </div>
+        <div class="p-3">
+            <div class="note-box">
+                <strong>How to get a permanent token:</strong> Go to
+                <a href="https://developers.facebook.com/tools/explorer/" target="_blank" style="color:var(--admin-gold);">Meta Graph API Explorer</a>,
+                generate a token with <code>pages_read_engagement</code>, <code>instagram_basic</code>, <code>instagram_manage_insights</code> permissions,
+                then exchange it for a Page Access Token (never expires).
+            </div>
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <label class="form-label" style="font-size:0.8rem;font-weight:600;">Meta Page Access Token</label>
+                    <div class="input-group">
+                        <input type="password" id="metaToken" class="form-control form-control-sm" placeholder="Paste your Meta Page Access Token…">
+                        <button class="btn btn-outline-secondary btn-sm" type="button" onclick="toggleVis()"><i class="bi bi-eye" id="visIcon"></i></button>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button class="btn btn-sm w-100" style="background:var(--admin-gold);color:#000;font-weight:700;" onclick="fetchMetaInsights()">
+                        <span class="spinner-border spinner-border-sm me-1 d-none" id="apiSpinner"></span>
+                        <i class="bi bi-arrow-repeat me-1" id="apiIcon"></i> Fetch Live Data
+                    </button>
+                </div>
+            </div>
+            <small class="text-muted mt-2 d-block"><i class="bi bi-shield-lock me-1"></i>Token used only for this request — never stored.</small>
+            <div id="apiResults" class="mt-3"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Facebook SDK -->
+<div id="fb-root"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script async defer crossorigin="anonymous"
+    src="https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v19.0&appId=&autoLogAppEvents=1">
+</script>
+
+<script>
+const CSRF_TOKEN = '{{ csrf_token }}';
+const META_API_URL = '{% url "main:marketing_meta_insights" %}';
+
+function toggleVis() {
+    const el = document.getElementById('metaToken');
+    const icon = document.getElementById('visIcon');
+    if (el.type === 'password') { el.type = 'text'; icon.className = 'bi bi-eye-slash'; }
+    else { el.type = 'password'; icon.className = 'bi bi-eye'; }
+}
+
+function fmtNum(n) {
+    if (!n && n !== 0) return '—';
+    if (n >= 1000000) return (n/1000000).toFixed(1)+'M';
+    if (n >= 1000) return (n/1000).toFixed(1)+'K';
+    return n.toLocaleString();
+}
+
+function extractVal(data, name) {
+    if (!data || !data.data) return null;
+    const item = data.data.find(d => d.name === name);
+    if (!item || !item.values) return null;
+    return item.values.reduce((s, v) => s + (v.value || 0), 0);
+}
+
+function metricHtml(label, val, emoji) {
+    return `<div style="background:var(--admin-bg);border:1px solid var(--admin-border);border-radius:10px;padding:0.75rem;text-align:center;">
+        <div style="font-size:1.3rem;font-weight:800;color:var(--admin-gold);font-family:'Cinzel',serif;">${emoji}${fmtNum(val)}</div>
+        <div style="font-size:0.68rem;color:var(--admin-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">${label}</div>
+    </div>`;
+}
+
+async function fetchMetaInsights() {
+    const token = document.getElementById('metaToken').value.trim();
+    if (!token) { alert('Please enter a Meta Access Token.'); return; }
+
+    document.getElementById('apiSpinner').classList.remove('d-none');
+    document.getElementById('apiIcon').style.display = 'none';
+    document.getElementById('apiResults').innerHTML = '';
+
+    try {
+        const resp = await fetch(META_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+            body: JSON.stringify({ token })
+        });
+        const data = await resp.json();
+
+        let html = '<div class="row g-3">';
+
+        // Facebook metrics
+        const fi = data.facebook_insights || {};
+        if (!fi.error) {
+            html += `<div class="col-12"><h6 style="font-family:'Cinzel',serif;font-size:0.85rem;color:var(--admin-gold);">📘 Facebook (last 7 days)</h6>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:0.6rem;">
+                ${metricHtml('Impressions', extractVal(fi,'page_impressions'), '👁️ ')}
+                ${metricHtml('Reach', extractVal(fi,'page_reach'), '📡 ')}
+                ${metricHtml('Engaged', extractVal(fi,'page_engaged_users'), '🤝 ')}
+                ${metricHtml('Followers', extractVal(fi,'page_fans'), '👥 ')}
+            </div></div>`;
+        } else {
+            const msg = fi.error?.message || fi.error?.error?.message || JSON.stringify(fi.error);
+            html += `<div class="col-12"><div class="alert alert-danger py-2" style="font-size:0.82rem;">Facebook: ${msg}</div></div>`;
+        }
+
+        // Instagram metrics
+        const ii = data.instagram_insights || {};
+        if (!ii.error) {
+            html += `<div class="col-12"><h6 style="font-family:'Cinzel',serif;font-size:0.85rem;color:#dc2743;">📸 Instagram (last 7 days)</h6>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:0.6rem;">
+                ${metricHtml('Impressions', extractVal(ii,'impressions'), '👁️ ')}
+                ${metricHtml('Reach', extractVal(ii,'reach'), '📡 ')}
+                ${metricHtml('Profile Views', extractVal(ii,'profile_views'), '🔍 ')}
+                ${metricHtml('Followers', extractVal(ii,'follower_count'), '👥 ')}
+            </div></div>`;
+        } else {
+            const msg = ii.error?.message || ii.error?.error?.message || JSON.stringify(ii.error);
+            html += `<div class="col-12"><div class="alert alert-danger py-2" style="font-size:0.82rem;">Instagram: ${msg}</div></div>`;
+        }
+
+        html += '</div>';
+        document.getElementById('apiResults').innerHTML = html;
+    } catch(e) {
+        document.getElementById('apiResults').innerHTML = `<div class="alert alert-danger py-2" style="font-size:0.82rem;">Error: ${e.message}</div>`;
+    }
+
+    document.getElementById('apiSpinner').classList.add('d-none');
+    document.getElementById('apiIcon').style.display = '';
+}
+</script>
+{% endblock %}

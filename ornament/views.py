@@ -306,12 +306,16 @@ class OrnamentListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Total weight calculation for current page only
+        # Total weight calculations for current page, active ornaments only
         page_ornaments = context['ornaments']
         total_weight = Decimal('0')
+        total_diamond_weight = Decimal('0')
         for ornament in page_ornaments:
-            total_weight += ornament.weight or Decimal('0')
+            if ornament.status == Ornament.StatusCategory.ACTIVE:
+                total_weight += ornament.weight or Decimal('0')
+                total_diamond_weight += ornament.diamond_weight or Decimal('0')
         context['total_weight'] = total_weight
+        context['total_diamond_weight'] = total_diamond_weight
 
         # Filters back to template
         context['metal_type'] = self.request.GET.get('metal_type')
@@ -524,10 +528,14 @@ class OrnamentUpdateView(UpdateView):
             return self.form_invalid(form)
 
     def get_success_url(self):
-        # Check if there's a 'next' parameter to redirect back to
+        # Check if there's a 'next' parameter to redirect back to (same-origin only)
+        from urllib.parse import urlparse
         next_url = self.request.GET.get('next')
         if next_url:
-            return next_url
+            parsed = urlparse(next_url)
+            # Accept only relative URLs (no scheme/netloc) to prevent open-redirect
+            if not parsed.scheme and not parsed.netloc:
+                return next_url
         return self.success_url
 
     def get_context_data(self, **kwargs):
@@ -548,8 +556,24 @@ class OrnamentDeleteView(DeleteView):
     success_url = reverse_lazy('ornament:list')
 
     def post(self, request, *args, **kwargs):
-        """Handle delete with protection check for orders."""
+        """Soft delete ornament with protection check for orders."""
+        from urllib.parse import urlparse
+
         self.object = self.get_object()
+        next_url = request.GET.get('next')
+        if next_url:
+            parsed = urlparse(next_url)
+            if parsed.scheme or parsed.netloc:
+                next_url = None
+
+        # Already removed from active stock
+        if self.object.status == Ornament.StatusCategory.DELETED:
+            messages.info(request, f"Ornament '{self.object.ornament_name}' is already in deleted status.")
+            return redirect(next_url or 'ornament:list')
+
+        if self.object.status == Ornament.StatusCategory.DESTROYED:
+            messages.info(request, f"Ornament '{self.object.ornament_name}' is already destroyed.")
+            return redirect(next_url or 'ornament:list')
         
         # Check if this ornament is used in any orders
         related_orders = OrderOrnament.objects.filter(ornament=self.object).select_related('order')
@@ -562,11 +586,13 @@ class OrnamentDeleteView(DeleteView):
                 f"Cannot delete this ornament as it is referenced by {len(order_list)} order(s): {', '.join(order_list[:3])}{'...' if len(order_list) > 3 else ''}. "
                 f"Please use the 'Destroy' status instead to mark it as no longer available."
             )
-            return redirect('ornament:list')
-        
-        # No related orders, proceed with deletion
-        messages.success(request, f"Ornament '{self.object.ornament_name}' has been deleted.")
-        return super().post(request, *args, **kwargs)
+            return redirect(next_url or 'ornament:list')
+
+        # No related orders, move it to Deleted section instead of hard-deleting.
+        self.object.status = Ornament.StatusCategory.DELETED
+        self.object.save(update_fields=['status', 'updated_at'])
+        messages.success(request, f"Ornament '{self.object.ornament_name}' moved to deleted section.")
+        return redirect(next_url or 'ornament:list')
 
 
 class OrnamentDestroyView(UpdateView):
@@ -575,6 +601,15 @@ class OrnamentDestroyView(UpdateView):
     fields = []
     template_name = 'ornament/ornament_confirm_destroy.html'
     success_url = reverse_lazy('ornament:list')
+
+    def get_success_url(self):
+        from urllib.parse import urlparse
+        next_url = self.request.GET.get('next')
+        if next_url:
+            parsed = urlparse(next_url)
+            if not parsed.scheme and not parsed.netloc:
+                return next_url
+        return self.success_url
 
     def form_valid(self, form):
         """Update status to destroyed."""
@@ -1278,32 +1313,25 @@ def ornament_report(request):
     """Show ornament counts grouped by metal type, then by main category."""
     from django.db.models import Count
 
-    total_ornaments = Ornament.objects.filter(
+    _active_qs = Ornament.objects.filter(
         ornament_type__in=[
             Ornament.OrnamentCategory.STOCK,
             Ornament.OrnamentCategory.ORDER,
-        ]
-    ).count()
+        ],
+        status=Ornament.StatusCategory.ACTIVE,
+    )
+
+    total_ornaments = _active_qs.count()
 
     # Totals per metal type
     metal_totals = {
         row['metal_type']: row['count']
-        for row in Ornament.objects.filter(
-            ornament_type__in=[
-                Ornament.OrnamentCategory.STOCK,
-                Ornament.OrnamentCategory.ORDER,
-            ]
-        ).values('metal_type').annotate(count=Count('id'))
+        for row in _active_qs.values('metal_type').annotate(count=Count('id'))
     }
 
     # Category breakdown per metal
     category_rows = (
-        Ornament.objects.filter(
-            ornament_type__in=[
-                Ornament.OrnamentCategory.STOCK,
-                Ornament.OrnamentCategory.ORDER,
-            ]
-        )
+        _active_qs
         .values('metal_type', 'maincategory__id', 'maincategory__name')
         .annotate(count=Count('id'))
         .order_by('metal_type', 'maincategory__name')
@@ -1344,14 +1372,22 @@ def ornament_report(request):
 def ornament_weight_report(request):
     """Show ornament total net weight by metal type."""
     from django.db.models import F, Count
+    from django.db.models import Q
     # Use latest fetched daily rates for per tola pricing
     from main.models import DailyRate
 
-    # Only include ornaments with positive weight and status active
+    # Include active stock ornaments that have either net metal weight or diamond weight.
+    # This ensures diamond-only entries (diamond_weight > 0, weight = 0) are not skipped.
     base_qs = Ornament.objects.filter(
         ornament_type=Ornament.OrnamentCategory.STOCK,
         status=Ornament.StatusCategory.ACTIVE,
-        weight__gt=0
+        metal_type__in=[
+            Ornament.MetalTypeCategory.GOLD,
+            Ornament.MetalTypeCategory.SILVER,
+            Ornament.MetalTypeCategory.DIAMOND,
+        ],
+    ).filter(
+        Q(weight__gt=0) | Q(diamond_weight__gt=0)
     )
 
     # Get latest daily gold/silver per tola rates

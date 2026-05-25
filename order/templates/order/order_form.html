@@ -735,13 +735,25 @@
                         <label class="form-label mb-1">Stone Weight</label>
                         <input type="number" step="0.001" id="inline-ornament-stone" class="form-control form-control-sm" placeholder="0.000">
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-12">
                         <label class="form-label mb-1">Jarti</label>
-                        <input type="number" step="0.001" id="inline-ornament-jarti" class="form-control form-control-sm" placeholder="0.000">
+                        <input type="number" step="0.001" id="inline-ornament-jarti" class="form-control form-control-sm mb-1" placeholder="0.000">
+                        <div class="d-flex flex-wrap gap-1">
+                            <button type="button" class="btn btn-outline-primary btn-sm inline-jarti-btn" data-value="4.0">4%</button>
+                            <button type="button" class="btn btn-outline-primary btn-sm inline-jarti-btn" data-value="4.5">4.5%</button>
+                            <button type="button" class="btn btn-outline-primary btn-sm inline-jarti-btn" data-value="5.0">5%</button>
+                            <button type="button" class="btn btn-outline-primary btn-sm inline-jarti-btn" data-value="6.5">6.5%</button>
+                            <button type="button" class="btn btn-outline-primary btn-sm inline-jarti-btn" data-value="8.0">8%</button>
+                        </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-12">
                         <label class="form-label mb-1">Jyala</label>
-                        <input type="number" step="0.01" id="inline-ornament-jyala" class="form-control form-control-sm" placeholder="0.00">
+                        <input type="number" step="0.01" id="inline-ornament-jyala" class="form-control form-control-sm mb-1" placeholder="0.00">
+                        <div class="d-flex flex-wrap gap-1">
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="inline-calc-diamond-jyala">Calculate Diamond Jyala</button>
+                            <button type="button" class="btn btn-outline-info btn-sm" id="inline-calc-silver-jyala">Calculate Silver Jyala</button>
+                        </div>
+                        <small class="text-muted d-block mt-1">Diamond: Metal Weight × 2500 &nbsp;|&nbsp; Silver: (Metal Weight / 11.664) × 150</small>
                     </div>
                 </div>
                 <div class="alert alert-danger mt-3 d-none" id="inline-ornament-error"></div>
@@ -868,6 +880,59 @@ function closeInlineOrnamentModal() {
 
 // Initialize modal as soon as this script runs
 initializeInlineModal();
+
+// ── Quick Jarti % buttons inside inline modal ──
+document.addEventListener('DOMContentLoaded', function () {
+    const inlineJartiInput  = document.getElementById('inline-ornament-jarti');
+    const inlineWeightInput = document.getElementById('inline-ornament-weight');
+    const inlineJyalaInput  = document.getElementById('inline-ornament-jyala');
+
+    // Jarti % quick-fill buttons
+    document.querySelectorAll('.inline-jarti-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const weight = parseFloat(inlineWeightInput.value);
+            if (!weight || weight <= 0) {
+                alert('Please enter Metal Weight first');
+                return;
+            }
+            const percent = parseFloat(this.dataset.value);
+            inlineJartiInput.value = ((weight * percent) / 100).toFixed(3);
+            // Highlight active button
+            document.querySelectorAll('.inline-jarti-btn').forEach(function (b) {
+                b.classList.remove('btn-primary');
+                b.classList.add('btn-outline-primary');
+            });
+            this.classList.remove('btn-outline-primary');
+            this.classList.add('btn-primary');
+        });
+    });
+
+    // Calculate Diamond Jyala
+    var diamondBtn = document.getElementById('inline-calc-diamond-jyala');
+    if (diamondBtn) {
+        diamondBtn.addEventListener('click', function () {
+            const weight = parseFloat(inlineWeightInput.value);
+            if (!weight || weight <= 0) {
+                alert('Please enter Metal Weight first');
+                return;
+            }
+            inlineJyalaInput.value = (weight * 2500).toFixed(3);
+        });
+    }
+
+    // Calculate Silver Jyala
+    var silverBtn = document.getElementById('inline-calc-silver-jyala');
+    if (silverBtn) {
+        silverBtn.addEventListener('click', function () {
+            const weight = parseFloat(inlineWeightInput.value);
+            if (!weight || weight <= 0) {
+                alert('Please enter Metal Weight first');
+                return;
+            }
+            inlineJyalaInput.value = ((weight / 11.664) * 150).toFixed(3);
+        });
+    }
+});
 
 function hasGemData(group) {
     const ids = Object.keys(selectedOrnaments);

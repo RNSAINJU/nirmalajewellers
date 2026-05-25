@@ -18,6 +18,57 @@ from main.forms import DailyRateForm
 
 # Create your views here.
 
+def calculate_product_selling_amount(product, latest_rate):
+    """Calculate product selling amount using the same logic as the price calculator."""
+    if not latest_rate:
+        return None
+
+    diamond_weight = Decimal(str(product.diamond_weight or 0))
+    stone_weight = Decimal(str(product.stone_weight or 0))
+    net_metal_weight = product.net_metal_weight
+
+    effective_metal_type = product.metal_type
+    if effective_metal_type in ['Diamond', 'Others']:
+        effective_metal_type = 'Gold'
+
+    net_weight_in_tola = net_metal_weight / Decimal('11.664')
+    karat_factor = product.get_purity_factor()
+
+    metal_value = Decimal('0.00')
+    adjusted_gold_rate = Decimal('0.00')
+
+    if effective_metal_type == 'Gold':
+        adjusted_gold_rate = Decimal(str(latest_rate.gold_rate or 0)) * karat_factor
+        metal_value = net_weight_in_tola * adjusted_gold_rate
+    elif effective_metal_type == 'Silver':
+        metal_value = net_weight_in_tola * Decimal(str(latest_rate.silver_rate or 0))
+
+    diamond_rate_used = Decimal('60000')
+    diamond_value = diamond_weight * diamond_rate_used if diamond_weight > 0 else Decimal('0.00')
+
+    if stone_weight > 0 and product.stone_percaratprice:
+        stone_value = stone_weight * Decimal(str(product.stone_percaratprice or 0))
+    else:
+        stone_value = Decimal('0.00')
+
+    jarti_value = Decimal(str(product.jarti or 0))
+
+    default_jarti_percent = Decimal('12')
+    gold_net_weight_tola = net_weight_in_tola if effective_metal_type == 'Gold' else Decimal('0.00')
+    calculated_jarti_weight_tola = (gold_net_weight_tola * default_jarti_percent) / Decimal('100')
+    calculated_jarti_value = calculated_jarti_weight_tola * adjusted_gold_rate
+
+    default_jyala_rate_per_gram = Decimal('2500')
+    calculated_jyala_value = net_metal_weight * default_jyala_rate_per_gram
+
+    base_price_without_dynamic = metal_value + stone_value + jarti_value
+    return (
+        base_price_without_dynamic
+        + diamond_value
+        + calculated_jarti_value
+        + calculated_jyala_value
+    )
+
 def calculate_daily_ornament_totals(target_date, gold_rate=None, silver_rate=None, diamond_rate=None, use_date_filter=False):
     """
     Calculate total ornament values for a given date.
@@ -341,53 +392,7 @@ def product_detail(request, product_id):
     latest_rate = DailyRate.objects.order_by('-created_at').first()
 
     # Match the same pricing logic used in ornament price calculator (barcode flow)
-    total_selling_amount = None
-    if latest_rate:
-        diamond_weight = Decimal(str(product.diamond_weight or 0))
-        stone_weight = Decimal(str(product.stone_weight or 0))
-        net_metal_weight = product.net_metal_weight
-
-        effective_metal_type = product.metal_type
-        if effective_metal_type in ['Diamond', 'Others']:
-            effective_metal_type = 'Gold'
-
-        net_weight_in_tola = net_metal_weight / Decimal('11.664')
-        karat_factor = product.get_purity_factor()
-
-        metal_value = Decimal('0.00')
-        adjusted_gold_rate = Decimal('0.00')
-
-        if effective_metal_type == 'Gold':
-            adjusted_gold_rate = Decimal(str(latest_rate.gold_rate or 0)) * karat_factor
-            metal_value = net_weight_in_tola * adjusted_gold_rate
-        elif effective_metal_type == 'Silver':
-            metal_value = net_weight_in_tola * Decimal(str(latest_rate.silver_rate or 0))
-
-        diamond_rate_used = Decimal('60000')
-        diamond_value = diamond_weight * diamond_rate_used if diamond_weight > 0 else Decimal('0.00')
-
-        if stone_weight > 0 and product.stone_percaratprice:
-            stone_value = stone_weight * Decimal(str(product.stone_percaratprice or 0))
-        else:
-            stone_value = Decimal('0.00')
-
-        jarti_value = Decimal(str(product.jarti or 0))
-
-        default_jarti_percent = Decimal('12')
-        gold_net_weight_tola = net_weight_in_tola if effective_metal_type == 'Gold' else Decimal('0.00')
-        calculated_jarti_weight_tola = (gold_net_weight_tola * default_jarti_percent) / Decimal('100')
-        calculated_jarti_value = calculated_jarti_weight_tola * adjusted_gold_rate
-
-        default_jyala_rate_per_gram = Decimal('2500')
-        calculated_jyala_value = net_metal_weight * default_jyala_rate_per_gram
-
-        base_price_without_dynamic = metal_value + stone_value + jarti_value
-        total_selling_amount = (
-            base_price_without_dynamic
-            + diamond_value
-            + calculated_jarti_value
-            + calculated_jyala_value
-        )
+    total_selling_amount = calculate_product_selling_amount(product, latest_rate)
     
     context = {
         'product': product,
@@ -423,6 +428,10 @@ def category_products(request, category_id=None):
     
     # Get latest gold and silver rates
     latest_rate = DailyRate.objects.order_by('-created_at').first()
+
+    # Precompute listing prices so templates can render real values instead of placeholders.
+    for product in products:
+        product.calculated_selling_amount = calculate_product_selling_amount(product, latest_rate)
     
     context = {
         'category': category,
