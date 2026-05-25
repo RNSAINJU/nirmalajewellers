@@ -180,12 +180,15 @@ class SalesListView(LoginRequiredMixin, ListView):
             sale_diamond_sold = Decimal("0")
             sale_gold_24 = Decimal("0")
             sale_silver_24 = Decimal("0")
+            sale_own_gold = Decimal("0")
             
             for line in ornament_lines:
                 weight = line.ornament.weight or Decimal("0")
                 ornament_weight += weight
                 factor = purity_factors.get(getattr(line.ornament, 'type', None), Decimal("1.00"))
                 metal_type = str(getattr(line.ornament, 'metal_type', '')).lower()
+                own_gold = line.own_gold or Decimal("0")
+                sale_own_gold += own_gold
                 
                 if metal_type == str(gold_metal).lower():
                     sale_gold_sold += weight
@@ -238,6 +241,7 @@ class SalesListView(LoginRequiredMixin, ListView):
                 'gold_sold_weight': sale_gold_sold,
                 'silver_sold_weight': sale_silver_sold,
                 'diamond_sold_weight': sale_diamond_sold,
+                'own_gold': sale_own_gold,
                 # Backward-compatible keys used by existing table sections
                 'gold_24_weight': sale_gold_24,
                 'silver_24_weight': sale_silver_24,
@@ -257,6 +261,7 @@ class SalesListView(LoginRequiredMixin, ListView):
                     sale.gold_sold_weight = cached['gold_sold_weight']
                     sale.silver_sold_weight = cached['silver_sold_weight']
                     sale.diamond_sold_weight = cached['diamond_sold_weight']
+                    sale.own_gold = cached['own_gold']
                     sale.gold_24_weight = cached['gold_24_weight']
                     sale.silver_24_weight = cached['silver_24_weight']
                     sale.display_total = cached['display_total']
