@@ -460,12 +460,13 @@ def admin_dashboard(request):
     
     # Get total sales (last 7 days)
     seven_days_ago = date.today() - timedelta(days=7)
-    recent_sales = Sale.objects.filter(sale_date__gte=seven_days_ago)
+    recent_sales = Sale.objects.filter(is_deleted=False, sale_date__gte=seven_days_ago)
     total_sales = sum(sale.order.total for sale in recent_sales if sale.order) or Decimal('0')
     
     # Calculate sales change (compare with previous 7 days)
     fourteen_days_ago = date.today() - timedelta(days=14)
     previous_week_sales = Sale.objects.filter(
+        is_deleted=False,
         sale_date__gte=fourteen_days_ago,
         sale_date__lt=seven_days_ago
     )
@@ -482,7 +483,7 @@ def admin_dashboard(request):
     sales_data = []
     for i in range(6, -1, -1):
         day = date.today() - timedelta(days=i)
-        day_sales = Sale.objects.filter(sale_date=day)
+        day_sales = Sale.objects.filter(is_deleted=False, sale_date=day)
         day_total = sum(sale.order.total for sale in day_sales if sale.order) or 0
         sales_labels.append(day.strftime('%a'))
         sales_data.append(float(day_total))
@@ -594,7 +595,7 @@ def dashboard(request):
     from collections import defaultdict
     
     # Get all sales with their Nepali dates and order totals
-    sales = Sale.objects.select_related('order').filter(sale_date__isnull=False).order_by('sale_date')
+    sales = Sale.objects.select_related('order').filter(is_deleted=False, sale_date__isnull=False).order_by('sale_date')
     
     # Group sales by Nepali year-month
     monthly_sales = defaultdict(Decimal)
@@ -1021,8 +1022,9 @@ def stock_report(request):
     """
 
     # Optional BS date range (YYYY-MM-DD)
-    from_date_str = request.GET.get("from_date") or ""
-    to_date_str = request.GET.get("to_date") or ""
+    # Default to requested fiscal range when explicit dates are not provided.
+    from_date_str = request.GET.get("from_date") or "2082-04-01"
+    to_date_str = request.GET.get("to_date") or "2083-03-30"
 
     from_date = None
     to_date = None
@@ -1216,6 +1218,9 @@ def stock_report(request):
     }
 
     gold_sales_lines = sales_qs.filter(ornament__metal_type__iexact='Gold').select_related('ornament')
+    gold_and_diamond_sales_lines = sales_qs.filter(
+        Q(ornament__metal_type__iexact='Gold') | Q(ornament__metal_type__iexact='Diamond')
+    ).select_related('ornament')
     silver_sales_lines = sales_qs.filter(ornament__metal_type__iexact='Silver').select_related('ornament')
 
     sales_gold_equivalent_qty = Decimal('0')
@@ -1225,10 +1230,13 @@ def stock_report(request):
     sales_wages_gold_amount = Decimal('0')
     sales_wages_silver_amount = Decimal('0')
 
-    for line in gold_sales_lines:
+    for line in gold_and_diamond_sales_lines:
         factor = purity_factors.get(getattr(line.ornament, 'type', None), Decimal('1.00'))
         ornament_weight = line.ornament.weight or Decimal('0')
         sales_gold_equivalent_qty += ornament_weight * factor
+
+    for line in gold_sales_lines:
+        factor = purity_factors.get(getattr(line.ornament, 'type', None), Decimal('1.00'))
         sales_jarti_equivalent_gold_qty += (line.jarti or Decimal('0')) * factor
         sales_wages_gold_amount += line.jyala or Decimal('0')
 
@@ -1239,8 +1247,15 @@ def stock_report(request):
         sales_jarti_equivalent_silver_qty += (line.jarti or Decimal('0')) * factor
         sales_wages_silver_amount += line.jyala or Decimal('0')
 
-    # Diamond detail: total of all sold diamond weights
-    sales_diamond_total_weight = sales_qs.aggregate(total=Sum('ornament__diamond_weight')).get('total') or Decimal('0')
+    # Diamond detail: compute amount per sale line (diamond_weight * diamond_rate) and total it.
+    diamond_sales_lines = sales_qs.filter(ornament__metal_type__iexact='Diamond').select_related('ornament')
+    sales_diamond_total_weight = Decimal('0')
+    diamond_sales_amount = Decimal('0')
+    for line in diamond_sales_lines:
+        line_diamond_weight = (line.ornament.diamond_weight or Decimal('0'))
+        line_diamond_rate = (line.diamond_rate or Decimal('0'))
+        sales_diamond_total_weight += line_diamond_weight
+        diamond_sales_amount += line_diamond_weight * line_diamond_rate
     sales_jardi_amount_gold = sales_jarti_equivalent_gold_qty
     sales_jardi_amount_silver = sales_jarti_equivalent_silver_qty
     sales_jardi_amount = sales_jardi_amount_gold + sales_jardi_amount_silver
@@ -1425,14 +1440,55 @@ def monthly_stock_report(request):
         agg = qs.aggregate(total_amount=Sum("amount"), total_weight=Sum("refined_weight"))
         return (agg.get("total_amount") or Decimal("0")), (agg.get("total_weight") or Decimal("0"))
 
-    def sales_totals(metal_type: str, weight_field: str):
-        qs = OrderOrnament.objects.select_related("order", "ornament").filter(
-            order__order_date__gte=start_date,
-            order__order_date__lte=end_date,
-            ornament__metal_type__icontains=metal_type,
-        )
-        agg = qs.aggregate(total_amount=Sum("line_amount"), total_weight=Sum(weight_field))
-        return (agg.get("total_amount") or Decimal("0")), (agg.get("total_weight") or Decimal("0"))
+    # Keep monthly sales math consistent with stock_report Note 14.1.
+    purity_factors = {
+        '24KARAT': Decimal('1.00'),
+        '23KARAT': Decimal('0.99'),
+        '22KARAT': Decimal('0.98'),
+        '18KARAT': Decimal('0.75'),
+        '14KARAT': Decimal('0.58'),
+    }
+
+    sales_qs = OrderOrnament.objects.select_related("order", "ornament").filter(
+        order__order_date__gte=start_date,
+        order__order_date__lte=end_date,
+    )
+
+    gold_sales_lines = sales_qs.filter(ornament__metal_type__iexact='Gold')
+    gold_and_diamond_sales_lines = sales_qs.filter(
+        Q(ornament__metal_type__iexact='Gold') | Q(ornament__metal_type__iexact='Diamond')
+    )
+    silver_sales_lines = sales_qs.filter(ornament__metal_type__iexact='Silver')
+    diamond_sales_lines = sales_qs.filter(ornament__metal_type__iexact='Diamond')
+
+    gold_sales_amount = gold_sales_lines.aggregate(total=Sum("line_amount")).get("total") or Decimal("0")
+    silver_sales_amount = silver_sales_lines.aggregate(total=Sum("line_amount")).get("total") or Decimal("0")
+
+    gold_sales_qty = Decimal('0')
+    for line in gold_and_diamond_sales_lines:
+        factor = purity_factors.get(getattr(line.ornament, 'type', None), Decimal('1.00'))
+        ornament_weight = line.ornament.weight or Decimal('0')
+        gold_sales_qty += ornament_weight * factor
+
+    silver_sales_qty = Decimal('0')
+    for line in silver_sales_lines:
+        factor = purity_factors.get(getattr(line.ornament, 'type', None), Decimal('1.00'))
+        ornament_weight = line.ornament.weight or Decimal('0')
+        silver_sales_qty += ornament_weight * factor
+
+    diamond_sales_qty = Decimal('0')
+    diamond_sales_amount = Decimal('0')
+    for line in diamond_sales_lines:
+        line_diamond_weight = line.ornament.diamond_weight or Decimal('0')
+        line_diamond_rate = line.diamond_rate or Decimal('0')
+        diamond_sales_qty += line_diamond_weight
+        diamond_sales_amount += line_diamond_weight * line_diamond_rate
+
+    sales_by_metal = {
+        "gold": {"amount": gold_sales_amount, "qty": gold_sales_qty},
+        "silver": {"amount": silver_sales_amount, "qty": silver_sales_qty},
+        "diamond": {"amount": diamond_sales_amount, "qty": diamond_sales_qty},
+    }
 
     metals = [
         ("gold", "Gold", "weight"),
@@ -1451,7 +1507,8 @@ def monthly_stock_report(request):
         metal_purchase_amount = gs_amount + cust_amount
         metal_purchase_qty = gs_qty + cust_qty
 
-        sales_amount, sales_qty = sales_totals(key, f"ornament__{sales_weight_field}")
+        sales_amount = sales_by_metal[key]["amount"]
+        sales_qty = sales_by_metal[key]["qty"]
 
         purchase_rows.append({"label": label, "qty": metal_purchase_qty, "amount": metal_purchase_amount})
         sales_rows.append({"label": label, "qty": sales_qty, "amount": sales_amount})

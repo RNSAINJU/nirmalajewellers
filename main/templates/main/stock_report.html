@@ -176,7 +176,7 @@
             <td>{{ forloop.counter }}</td>
             <td>{{ row.label }}</td>
             <td>{{ row.qty|floatformat:2 }}</td>
-            <td>Gms.</td>
+            <td>{% if row.label == 'Diamond' %}ct{% else %}Gms.{% endif %}</td>
             <td>{{ row.amount|floatformat:2 }}</td>
           </tr>
         {% empty %}
@@ -208,7 +208,7 @@
             <td>{{ forloop.counter }}</td>
             <td>{{ row.label }}</td>
             <td>{{ row.qty|floatformat:2 }}</td>
-            <td>Gms.</td>
+            <td>{% if row.label == 'Diamond' %}ct{% else %}Gms.{% endif %}</td>
             <td>{{ row.amount|floatformat:2 }}</td>
           </tr>
         {% endfor %}
@@ -264,7 +264,7 @@
             <td>{{ forloop.counter }}</td>
             <td>{{ row.label }}</td>
             <td>{{ row.qty|floatformat:2 }}</td>
-            <td>Gms.</td>
+            <td>{% if row.label == 'Diamond' %}ct{% else %}Gms.{% endif %}</td>
             <td>{{ row.amount|floatformat:2 }}</td>
           </tr>
         {% endfor %}

@@ -402,7 +402,7 @@
                             <td><strong>{{ month.month_name }} {{ month.year }}</strong></td>
                             <td class="text-end">{{ month.total_gold_weight|floatformat:3 }}</td>
                             <td class="text-end">{{ month.total_silver_weight|floatformat:3 }}</td>
-                            <td class="text-end">{{ month.total_diamond_weight|floatformat:3 }}</td>
+                            <td class="text-end">{{ month.ornament_diamond_carat|floatformat:3 }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -411,7 +411,7 @@
                             <td>Total</td>
                             <td class="text-end">{{ monthly_totals.total_gold_weight|floatformat:3 }}</td>
                             <td class="text-end">{{ monthly_totals.total_silver_weight|floatformat:3 }}</td>
-                            <td class="text-end">{{ monthly_totals.total_diamond_weight|floatformat:3 }}</td>
+                            <td class="text-end">{{ monthly_totals.ornament_diamond_carat|floatformat:3 }}</td>
                         </tr>
                     </tfoot>
                 </table>

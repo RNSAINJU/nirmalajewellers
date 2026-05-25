@@ -1,5 +1,6 @@
 from django.db import models
 from nepali_datetime_field.models import NepaliDateField
+from django.utils import timezone
 
 from order.models import Order
 
@@ -38,6 +39,8 @@ class Sale(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         app_label = "order"  # keep model under the `order` app for migrations
@@ -48,6 +51,16 @@ class Sale(models.Model):
 
     def __str__(self):
         return f"Sale for Order {self.order_id}"
+
+    def soft_delete(self):
+        self.is_deleted = True
+        self.deleted_at = timezone.now()
+        self.save(update_fields=["is_deleted", "deleted_at", "updated_at"])
+
+    def restore(self):
+        self.is_deleted = False
+        self.deleted_at = None
+        self.save(update_fields=["is_deleted", "deleted_at", "updated_at"])
 
 
 # --- Raw Metal Stock for Sales ---

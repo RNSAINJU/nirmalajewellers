@@ -1448,7 +1448,7 @@ def export_all_data(request):
     # --- Sales Models ---
     from sales.models import Sale, SalesMetalStock
     sale_rows = [
-        (s.order_id, s.bill_no, s.sale_date, s.created_at, s.updated_at) for s in Sale.objects.select_related("order").order_by("created_at")
+        (s.order_id, s.bill_no, s.sale_date, s.created_at, s.updated_at) for s in Sale.objects.select_related("order").filter(is_deleted=False).order_by("created_at")
     ]
     add_sheet("Sale", ["Order ID", "Bill No", "Sale Date", "Created At", "Updated At"], sale_rows)
 

@@ -496,7 +496,7 @@ class MonthlySalesReport(View):
             'order__order_ornaments__ornament',
             'sale_metals',
             'order__payments'
-        ).exclude(sale_date__isnull=True).order_by('-sale_date', 'bill_no', 'order__sn')
+        ).filter(is_deleted=False).exclude(sale_date__isnull=True).order_by('-sale_date', 'bill_no', 'order__sn')
         
         # Group sales by month/year
         monthly_data = {}

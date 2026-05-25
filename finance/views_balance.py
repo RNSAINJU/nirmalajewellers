@@ -12,7 +12,7 @@ def balance_sheet(request):
     salaries = EmployeeSalary.objects.aggregate(total=Sum('total_salary'))['total'] or 0
     order_income = Order.objects.aggregate(total=Sum('total'))['total'] or 0
     # Sum total from Orders that have a related Sale (i.e., completed sales)
-    sales_income = Order.objects.filter(sale__isnull=False).aggregate(total=Sum('total'))['total'] or 0
+    sales_income = Order.objects.filter(sale__isnull=False, sale__is_deleted=False).aggregate(total=Sum('total'))['total'] or 0
     expenses = Expense.objects.aggregate(total=Sum('amount'))['total'] or 0
 
     assets = debtors + order_income + sales_income
