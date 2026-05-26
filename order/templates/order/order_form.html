@@ -786,6 +786,25 @@ const gemColumnManualVisibility = {
 let inlineModalInstance = null;
 let modalEventListenersAttached = false;
 
+function cleanupInlineModalState() {
+    const modalEl = document.getElementById('inlineOrnamentModal');
+    if (!modalEl) return;
+
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
+    modalEl.style.removeProperty('display');
+    modalEl.classList.remove('show');
+    modalEl.setAttribute('aria-hidden', 'true');
+    modalEl.removeAttribute('aria-modal');
+    document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+
+    if (inlineModalInstance) {
+        inlineModalInstance.dispose();
+        inlineModalInstance = null;
+    }
+}
+
 function resetInlineOrnamentForm() {
     const modalEl = document.getElementById('inlineOrnamentModal');
     
@@ -826,52 +845,52 @@ function resetInlineOrnamentForm() {
 function initializeInlineModal() {
     const modalEl = document.getElementById('inlineOrnamentModal');
     if (!modalEl) return null;
-    
-    if (!inlineModalInstance) {
-        // Use existing Bootstrap instance if available, otherwise create one
-        inlineModalInstance = bootstrap.Modal.getInstance(modalEl);
-        if (!inlineModalInstance) {
-            inlineModalInstance = new bootstrap.Modal(modalEl);
-        }
-    }
-    
+
+    // Always refresh instance in case Bootstrap recreated it via data attributes.
+    inlineModalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+
     // Attach event listeners only once
     if (!modalEventListenersAttached) {
-        // Reset form when modal is about to show
         modalEl.addEventListener('show.bs.modal', function() {
-            // Remove inline display style so Bootstrap can manage visibility via CSS
-            modalEl.style.removeProperty('display');
-            resetInlineOrnamentForm();
-        });
-        
-        // Alternative: Also clear on shown event as backup
-        modalEl.addEventListener('shown.bs.modal', function() {
-            // Ensure display style is removed if it somehow got set again
-            if (modalEl.style.display === 'none') {
-                modalEl.style.removeProperty('display');
-            }
-        });
-        
-        // Cleanup after modal fully hides
-        modalEl.addEventListener('hidden.bs.modal', function() {
-            // Ensure body is fully accessible
+            // Make sure there is no stale modal backdrop/state before Bootstrap shows it.
             document.body.classList.remove('modal-open');
             document.body.style.overflow = '';
             document.body.style.paddingRight = '';
-            
-            // Remove any lingering backdrops
+            modalEl.style.removeProperty('display');
+            modalEl.classList.remove('show');
+            modalEl.setAttribute('aria-hidden', 'true');
+            modalEl.removeAttribute('aria-modal');
             document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+            resetInlineOrnamentForm();
         });
-        
+
+        modalEl.addEventListener('hidden.bs.modal', function() {
+            // Cleanup any leftover modal state in case Bootstrap did not fully clear it.
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+            modalEl.style.removeProperty('display');
+            modalEl.classList.remove('show');
+            modalEl.setAttribute('aria-hidden', 'true');
+            modalEl.removeAttribute('aria-modal');
+            document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+
+            if (inlineModalInstance) {
+                inlineModalInstance.dispose();
+                inlineModalInstance = null;
+            }
+        });
+
         modalEventListenersAttached = true;
     }
-    
+
     return inlineModalInstance;
 }
 
 function closeInlineOrnamentModal() {
-    if (!inlineModalInstance) {
-        inlineModalInstance = initializeInlineModal();
+    const modalEl = document.getElementById('inlineOrnamentModal');
+    if (!inlineModalInstance && modalEl) {
+        inlineModalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
     }
     if (inlineModalInstance) {
         inlineModalInstance.hide();
@@ -880,6 +899,14 @@ function closeInlineOrnamentModal() {
 
 // Initialize modal as soon as this script runs
 initializeInlineModal();
+
+// Always reset stale modal state before opening the quick-create modal.
+document.querySelectorAll('[data-bs-target="#inlineOrnamentModal"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        cleanupInlineModalState();
+        initializeInlineModal();
+    });
+});
 
 // ── Quick Jarti % buttons inside inline modal ──
 document.addEventListener('DOMContentLoaded', function () {

@@ -1,5 +1,7 @@
+from django.db import transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+import threading
 
 from .models import Ornament
 
@@ -55,10 +57,18 @@ def generate_ornament_code(sender, instance, created, **kwargs):
 def generate_barcode_image(sender, instance, created, **kwargs):
     """Generate barcode image after save (ensure barcode is set first)."""
     if instance.barcode and not instance.barcode_image:
-        try:
-            instance.generate_barcode_image()
-            instance.save(update_fields=['barcode_image'])
-        except Exception as e:
-            print(f"Error generating barcode image for ornament {instance.pk}: {e}")
+        def _generate(pk):
+            try:
+                inst = Ornament.objects.get(pk=pk)
+                inst.generate_barcode_image()
+                inst.save(update_fields=['barcode_image'])
+            except Exception as e:
+                print(f"Async barcode generation failed for ornament {pk}: {e}")
+
+        def start_async_generation():
+            thread = threading.Thread(target=_generate, args=(instance.pk,), daemon=True)
+            thread.start()
+
+        transaction.on_commit(start_async_generation)
 
 
