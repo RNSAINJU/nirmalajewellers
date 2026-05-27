@@ -142,6 +142,10 @@ class SalesListView(LoginRequiredMixin, ListView):
         context["silver_sales_count"] = context["silver_sales"].count()
         context["diamond_sales_count"] = context["diamond_sales"].count()
         context["own_gold_sales_count"] = context["own_gold_sales"].count()
+        context["pan_sales"] = sales_qs.filter(
+            Q(pan_number__isnull=False) & ~Q(pan_number__exact="")
+        ).distinct()
+        context["pan_sales_count"] = context["pan_sales"].count()
 
         # Calculate gold/silver weights and total sales amount (including raw metals)
         purity_factors = {
@@ -273,6 +277,7 @@ class SalesListView(LoginRequiredMixin, ListView):
         apply_cached_totals(context["silver_sales"])
         apply_cached_totals(context["diamond_sales"])
         apply_cached_totals(context["own_gold_sales"])
+        apply_cached_totals(context["pan_sales"])
 
         # Calculate category totals from cached data - no additional queries
         def calculate_totals_from_cache(queryset):
@@ -317,6 +322,7 @@ class SalesListView(LoginRequiredMixin, ListView):
                 "silver_totals": calculate_totals_from_cache(context["silver_sales"]),
                 "diamond_totals": calculate_totals_from_cache(context["diamond_sales"]),
                 "own_gold_totals": calculate_totals_from_cache(context["own_gold_sales"]),
+                "pan_totals": calculate_totals_from_cache(context["pan_sales"]),
             }
         )
         return context
