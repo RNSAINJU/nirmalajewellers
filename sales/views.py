@@ -16,7 +16,7 @@ from django.contrib import messages
 import openpyxl
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font, PatternFill, Alignment
-from django.db.models import Sum, Q, Count, Case, When, Value, IntegerField
+from django.db.models import Sum, Q, Count, Case, When, Value, IntegerField, Prefetch
 from django.db import transaction
 from django.db.models.functions import Cast
 from django.core.files.storage import default_storage
@@ -87,12 +87,17 @@ class SalesListView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        # We'll add total_weight and total_amount in get_context_data for both ornaments and raw metals
+        # Optimize with Prefetch for related objects
+        ornament_prefetch = Prefetch(
+            'order__order_ornaments',
+            queryset=OrderOrnament.objects.select_related('ornament')
+        )
+        
         queryset = (
             super()
             .get_queryset()
             .select_related("order")
-            .prefetch_related("order__order_ornaments__ornament", "sale_metals")
+            .prefetch_related(ornament_prefetch, "sale_metals")
         )
         search = self.request.GET.get("search")
         if search:
@@ -130,29 +135,50 @@ class SalesListView(LoginRequiredMixin, ListView):
         silver_metal = Ornament.MetalTypeCategory.SILVER
         diamond_metal = Ornament.MetalTypeCategory.DIAMOND
 
-        context["gold_sales"] = full_sales_qs.filter(
-            Q(order__order_ornaments__ornament__metal_type__iexact=gold_metal)
-            | Q(sale_metals__metal_type="gold")
-        ).distinct()
-        context["silver_sales"] = full_sales_qs.filter(
-            Q(order__order_ornaments__ornament__metal_type__iexact=silver_metal)
-            | Q(sale_metals__metal_type="silver")
-        ).distinct()
-        context["diamond_sales"] = full_sales_qs.filter(
-            Q(order__order_ornaments__ornament__metal_type__iexact=diamond_metal)
-        ).distinct()
-        context["own_gold_sales"] = full_sales_qs.filter(
-            Q(order__order_ornaments__own_gold__gt=0)
-        ).distinct()
+        # Optimize: Use values_list to get IDs then filter - reduces database queries
+        # Get IDs for each filter type to avoid multiple count() queries
+        gold_sale_ids = set(
+            full_sales_qs.filter(
+                Q(order__order_ornaments__ornament__metal_type__iexact=gold_metal)
+                | Q(sale_metals__metal_type="gold")
+            ).distinct().values_list('id', flat=True)
+        )
+        silver_sale_ids = set(
+            full_sales_qs.filter(
+                Q(order__order_ornaments__ornament__metal_type__iexact=silver_metal)
+                | Q(sale_metals__metal_type="silver")
+            ).distinct().values_list('id', flat=True)
+        )
+        diamond_sale_ids = set(
+            full_sales_qs.filter(
+                Q(order__order_ornaments__ornament__metal_type__iexact=diamond_metal)
+            ).distinct().values_list('id', flat=True)
+        )
+        own_gold_sale_ids = set(
+            full_sales_qs.filter(
+                Q(order__order_ornaments__own_gold__gt=0)
+            ).distinct().values_list('id', flat=True)
+        )
+        pan_sale_ids = set(
+            full_sales_qs.filter(
+                Q(pan_number__isnull=False) & ~Q(pan_number__exact="")
+            ).distinct().values_list('id', flat=True)
+        )
+
+        # Create filtered querysets using the IDs
+        context["gold_sales"] = full_sales_qs.filter(id__in=gold_sale_ids)
+        context["silver_sales"] = full_sales_qs.filter(id__in=silver_sale_ids)
+        context["diamond_sales"] = full_sales_qs.filter(id__in=diamond_sale_ids)
+        context["own_gold_sales"] = full_sales_qs.filter(id__in=own_gold_sale_ids)
+        context["pan_sales"] = full_sales_qs.filter(id__in=pan_sale_ids)
+
+        # Use len() on sets instead of count() - much faster
         context["all_sales_count"] = context["sales_count"]
-        context["gold_sales_count"] = context["gold_sales"].count()
-        context["silver_sales_count"] = context["silver_sales"].count()
-        context["diamond_sales_count"] = context["diamond_sales"].count()
-        context["own_gold_sales_count"] = context["own_gold_sales"].count()
-        context["pan_sales"] = full_sales_qs.filter(
-            Q(pan_number__isnull=False) & ~Q(pan_number__exact="")
-        ).distinct()
-        context["pan_sales_count"] = context["pan_sales"].count()
+        context["gold_sales_count"] = len(gold_sale_ids)
+        context["silver_sales_count"] = len(silver_sale_ids)
+        context["diamond_sales_count"] = len(diamond_sale_ids)
+        context["own_gold_sales_count"] = len(own_gold_sale_ids)
+        context["pan_sales_count"] = len(pan_sale_ids)
 
         # Calculate gold/silver weights and total sales amount (including raw metals)
         purity_factors = {
