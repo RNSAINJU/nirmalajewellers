@@ -84,7 +84,6 @@ class SalesListView(LoginRequiredMixin, ListView):
     template_name = "sales/sales_list.html"
     context_object_name = "sales"
     ordering = ["-bill_no"]
-    paginate_by = 10
 
     def get_queryset(self):
         # We'll add total_weight and total_amount in get_context_data for both ornaments and raw metals
