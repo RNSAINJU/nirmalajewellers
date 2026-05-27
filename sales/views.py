@@ -84,6 +84,7 @@ class SalesListView(LoginRequiredMixin, ListView):
     template_name = "sales/sales_list.html"
     context_object_name = "sales"
     ordering = ["-bill_no"]
+    paginate_by = 10
 
     def get_queryset(self):
         # We'll add total_weight and total_amount in get_context_data for both ornaments and raw metals
@@ -116,25 +117,31 @@ class SalesListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        sales_qs = context["sales"]
-        context["sales_count"] = sales_qs.count() if hasattr(sales_qs, "count") else len(sales_qs)
+        
+        # Get paginated sales for the current page
+        paginated_sales = context["sales"]
+        
+        # Get full unpaginated queryset for filtering
+        full_sales_qs = self.get_queryset()
+        
+        context["sales_count"] = full_sales_qs.count()
 
         gold_metal = Ornament.MetalTypeCategory.GOLD
         silver_metal = Ornament.MetalTypeCategory.SILVER
         diamond_metal = Ornament.MetalTypeCategory.DIAMOND
 
-        context["gold_sales"] = sales_qs.filter(
+        context["gold_sales"] = full_sales_qs.filter(
             Q(order__order_ornaments__ornament__metal_type__iexact=gold_metal)
             | Q(sale_metals__metal_type="gold")
         ).distinct()
-        context["silver_sales"] = sales_qs.filter(
+        context["silver_sales"] = full_sales_qs.filter(
             Q(order__order_ornaments__ornament__metal_type__iexact=silver_metal)
             | Q(sale_metals__metal_type="silver")
         ).distinct()
-        context["diamond_sales"] = sales_qs.filter(
+        context["diamond_sales"] = full_sales_qs.filter(
             Q(order__order_ornaments__ornament__metal_type__iexact=diamond_metal)
         ).distinct()
-        context["own_gold_sales"] = sales_qs.filter(
+        context["own_gold_sales"] = full_sales_qs.filter(
             Q(order__order_ornaments__own_gold__gt=0)
         ).distinct()
         context["all_sales_count"] = context["sales_count"]
@@ -142,7 +149,7 @@ class SalesListView(LoginRequiredMixin, ListView):
         context["silver_sales_count"] = context["silver_sales"].count()
         context["diamond_sales_count"] = context["diamond_sales"].count()
         context["own_gold_sales_count"] = context["own_gold_sales"].count()
-        context["pan_sales"] = sales_qs.filter(
+        context["pan_sales"] = full_sales_qs.filter(
             Q(pan_number__isnull=False) & ~Q(pan_number__exact="")
         ).distinct()
         context["pan_sales_count"] = context["pan_sales"].count()
@@ -156,7 +163,7 @@ class SalesListView(LoginRequiredMixin, ListView):
             Ornament.TypeCategory.FOURTEENKARAT: Decimal("14") / Decimal("24"),
         }
 
-        # OPTIMIZATION: Single iteration over sales with cached calculations
+        # OPTIMIZATION: Single iteration over paginated sales with cached calculations
         # Build a cache of sale data to avoid re-iterating
         sale_data_cache = {}
         
@@ -167,8 +174,8 @@ class SalesListView(LoginRequiredMixin, ListView):
         silver_24_weight = Decimal("0")
         total_sales_amount = Decimal("0")
 
-        # Single iteration to calculate all required metrics
-        for sale in context["sales"]:
+        # Single iteration to calculate all required metrics for current page
+        for sale in paginated_sales:
             # Cache ornament and metal data for this sale
             ornament_lines = list(sale.order.order_ornaments.all())
             sale_metals = list(sale.sale_metals.all())
@@ -272,7 +279,8 @@ class SalesListView(LoginRequiredMixin, ListView):
                     sale.non_zero_metal_lines = cached['non_zero_metal_lines']
                     sale.non_zero_metal_count = cached['non_zero_metal_count']
 
-        apply_cached_totals(context["sales"])
+        # Patch paginated sales with cached data - no additional queries needed
+        apply_cached_totals(paginated_sales)
         apply_cached_totals(context["gold_sales"])
         apply_cached_totals(context["silver_sales"])
         apply_cached_totals(context["diamond_sales"])
@@ -317,7 +325,7 @@ class SalesListView(LoginRequiredMixin, ListView):
                 "gold_24_weight": gold_24_weight,
                 "silver_24_weight": silver_24_weight,
                 "total_sales_amount": total_sales_amount,
-                "all_totals": calculate_totals_from_cache(sales_qs),
+                "all_totals": calculate_totals_from_cache(paginated_sales),
                 "gold_totals": calculate_totals_from_cache(context["gold_sales"]),
                 "silver_totals": calculate_totals_from_cache(context["silver_sales"]),
                 "diamond_totals": calculate_totals_from_cache(context["diamond_sales"]),
