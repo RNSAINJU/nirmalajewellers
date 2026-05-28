@@ -13,6 +13,7 @@ from django.contrib import messages
 from ornament.models import Ornament, Kaligar
 from goldsilverpurchase.models import GoldSilverPurchase, Party, CustomerPurchase
 from order.models import Order, OrderOrnament
+from sales.models import SalesMetalStock
 from main.models import Stock, DailyRate
 from main.forms import DailyRateForm
 
@@ -1219,6 +1220,17 @@ def stock_report(request):
     gold_sales_amount, gold_sales_weight = aggregate_sales("gold", "ornament__weight")
     silver_sales_amount, silver_sales_weight = aggregate_sales("silver", "ornament__weight")
 
+    raw_sales_qs = SalesMetalStock.objects.select_related('sale__order')
+    if from_date:
+        raw_sales_qs = raw_sales_qs.filter(sale__order__order_date__gte=from_date)
+    if to_date:
+        raw_sales_qs = raw_sales_qs.filter(sale__order__order_date__lte=to_date)
+
+    raw_gold_weight = raw_sales_qs.filter(metal_type='gold').aggregate(total_qty=Sum('quantity')).get('total_qty') or Decimal('0')
+    raw_gold_amount = raw_sales_qs.filter(metal_type='gold').aggregate(total_amount=Sum('line_amount')).get('total_amount') or Decimal('0')
+    raw_silver_weight = raw_sales_qs.filter(metal_type='silver').aggregate(total_qty=Sum('quantity')).get('total_qty') or Decimal('0')
+    raw_silver_amount = raw_sales_qs.filter(metal_type='silver').aggregate(total_amount=Sum('line_amount')).get('total_amount') or Decimal('0')
+
     # Requested sales-detail metrics
     purity_factors = {
         '24KARAT': Decimal('1.00'),
@@ -1272,14 +1284,14 @@ def stock_report(request):
     sales_jardi_amount = sales_jardi_amount_gold + sales_jardi_amount_silver
     sales_wages_amount = sales_wages_gold_amount + sales_wages_silver_amount
 
-    totals["sales_amount"] = diamond_sales_amount + gold_sales_amount + silver_sales_amount
-    totals["sales_weight"] = diamond_sales_weight + gold_sales_weight + silver_sales_weight
+    totals["sales_amount"] = diamond_sales_amount + gold_sales_amount + silver_sales_amount + raw_gold_amount + raw_silver_amount
+    totals["sales_weight"] = diamond_sales_weight + gold_sales_weight + silver_sales_weight + raw_gold_weight + raw_silver_weight
 
     # Compute stock as purchases minus sales
-    totals["gold_stock_amount"] = (totals["gold_purchase_amount"] or Decimal("0")) - (gold_sales_amount or Decimal("0"))
-    totals["gold_stock_weight"] = (totals["gold_purchase_weight"] or Decimal("0")) - (gold_sales_weight or Decimal("0"))
-    totals["silver_stock_amount"] = (totals["silver_purchase_amount"] or Decimal("0")) - (silver_sales_amount or Decimal("0"))
-    totals["silver_stock_weight"] = (totals["silver_purchase_weight"] or Decimal("0")) - (silver_sales_weight or Decimal("0"))
+    totals["gold_stock_amount"] = (totals["gold_purchase_amount"] or Decimal("0")) - ((gold_sales_amount + raw_gold_amount) or Decimal("0"))
+    totals["gold_stock_weight"] = (totals["gold_purchase_weight"] or Decimal("0")) - ((gold_sales_weight + raw_gold_weight) or Decimal("0"))
+    totals["silver_stock_amount"] = (totals["silver_purchase_amount"] or Decimal("0")) - ((silver_sales_amount + raw_silver_amount) or Decimal("0"))
+    totals["silver_stock_weight"] = (totals["silver_purchase_weight"] or Decimal("0")) - ((silver_sales_weight + raw_silver_weight) or Decimal("0"))
     totals["diamond_stock_amount"] = (totals["diamond_purchase_amount"] or Decimal("0")) - (diamond_sales_amount or Decimal("0"))
     totals["diamond_stock_weight"] = (totals["diamond_purchase_weight"] or Decimal("0")) - (diamond_sales_weight or Decimal("0"))
 
@@ -1295,8 +1307,8 @@ def stock_report(request):
 
     sales_rows = [
         {"label": "Diamond", "qty": sales_diamond_total_weight, "amount": diamond_sales_amount},
-        {"label": "Gold", "qty": sales_gold_equivalent_qty, "amount": gold_sales_amount},
-        {"label": "Silver", "qty": sales_silver_equivalent_qty, "amount": silver_sales_amount},
+        {"label": "Gold", "qty": sales_gold_equivalent_qty + raw_gold_weight, "amount": gold_sales_amount + raw_gold_amount},
+        {"label": "Silver", "qty": sales_silver_equivalent_qty + raw_silver_weight, "amount": silver_sales_amount + raw_silver_amount},
         {"label": "Jardi (Gold)", "qty": sales_jarti_equivalent_gold_qty, "amount": sales_jardi_amount_gold},
         {"label": "Wages (Gold)", "qty": 0, "amount": sales_wages_gold_amount},
         {"label": "Jardi (Silver)", "qty": sales_jarti_equivalent_silver_qty, "amount": sales_jardi_amount_silver},
