@@ -1202,11 +1202,12 @@ def stock_report(request):
     totals["customer_amount"] = customer_sales.get("total_amount") or 0
 
     # Sales detail (line amounts) grouped by ornament metal type
-    sales_qs = OrderOrnament.objects.select_related("order", "ornament")
+    # Use Sale.sale_date for sales filters so stock report matches monthly-sales logic
+    sales_qs = OrderOrnament.objects.select_related("order", "ornament").filter(order__sale__isnull=False)
     if from_date:
-        sales_qs = sales_qs.filter(order__order_date__gte=from_date)
+        sales_qs = sales_qs.filter(order__sale__sale_date__gte=from_date)
     if to_date:
-        sales_qs = sales_qs.filter(order__order_date__lte=to_date)
+        sales_qs = sales_qs.filter(order__sale__sale_date__lte=to_date)
 
     def aggregate_sales(metal_type, weight_field):
         qs = sales_qs.filter(ornament__metal_type__icontains=metal_type)
@@ -1220,11 +1221,12 @@ def stock_report(request):
     gold_sales_amount, gold_sales_weight = aggregate_sales("gold", "ornament__weight")
     silver_sales_amount, silver_sales_weight = aggregate_sales("silver", "ornament__weight")
 
-    raw_sales_qs = SalesMetalStock.objects.select_related('sale__order')
+    # Raw metal lines attached to Sale; filter by Sale.sale_date to match monthly report
+    raw_sales_qs = SalesMetalStock.objects.select_related('sale')
     if from_date:
-        raw_sales_qs = raw_sales_qs.filter(sale__order__order_date__gte=from_date)
+        raw_sales_qs = raw_sales_qs.filter(sale__sale_date__gte=from_date)
     if to_date:
-        raw_sales_qs = raw_sales_qs.filter(sale__order__order_date__lte=to_date)
+        raw_sales_qs = raw_sales_qs.filter(sale__sale_date__lte=to_date)
 
     raw_gold_weight = raw_sales_qs.filter(metal_type='gold').aggregate(total_qty=Sum('quantity')).get('total_qty') or Decimal('0')
     raw_gold_amount = raw_sales_qs.filter(metal_type='gold').aggregate(total_amount=Sum('line_amount')).get('total_amount') or Decimal('0')
