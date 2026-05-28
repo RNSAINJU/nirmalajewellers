@@ -189,7 +189,7 @@ class SalesListView(LoginRequiredMixin, ListView):
             Ornament.TypeCategory.FOURTEENKARAT: Decimal("14") / Decimal("24"),
         }
 
-        # OPTIMIZATION: Single iteration over paginated sales with cached calculations
+        # OPTIMIZATION: Single iteration over all sales with cached calculations
         # Build a cache of sale data to avoid re-iterating
         sale_data_cache = {}
         
@@ -200,8 +200,8 @@ class SalesListView(LoginRequiredMixin, ListView):
         silver_24_weight = Decimal("0")
         total_sales_amount = Decimal("0")
 
-        # Single iteration to calculate all required metrics for current page
-        for sale in paginated_sales:
+        # Single iteration to calculate all required metrics for ALL sales
+        for sale in full_sales_qs:
             # Cache ornament and metal data for this sale
             ornament_lines = list(sale.order.order_ornaments.all())
             sale_metals = list(sale.sale_metals.all())
@@ -351,12 +351,12 @@ class SalesListView(LoginRequiredMixin, ListView):
                 "gold_24_weight": gold_24_weight,
                 "silver_24_weight": silver_24_weight,
                 "total_sales_amount": total_sales_amount,
-                "all_totals": calculate_totals_from_cache(paginated_sales),
-                "gold_totals": calculate_totals_from_cache(context["gold_sales"]),
-                "silver_totals": calculate_totals_from_cache(context["silver_sales"]),
-                "diamond_totals": calculate_totals_from_cache(context["diamond_sales"]),
-                "own_gold_totals": calculate_totals_from_cache(context["own_gold_sales"]),
-                "pan_totals": calculate_totals_from_cache(context["pan_sales"]),
+                "all_totals": calculate_totals_from_cache(full_sales_qs),
+                "gold_totals": calculate_totals_from_cache(full_sales_qs.filter(id__in=gold_sale_ids)),
+                "silver_totals": calculate_totals_from_cache(full_sales_qs.filter(id__in=silver_sale_ids)),
+                "diamond_totals": calculate_totals_from_cache(full_sales_qs.filter(id__in=diamond_sale_ids)),
+                "own_gold_totals": calculate_totals_from_cache(full_sales_qs.filter(id__in=own_gold_sale_ids)),
+                "pan_totals": calculate_totals_from_cache(full_sales_qs.filter(id__in=pan_sale_ids)),
             }
         )
         return context
