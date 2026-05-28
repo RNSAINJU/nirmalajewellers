@@ -865,6 +865,7 @@ def dashboard(request):
 def daily_rates(request):
     """List and allow editing of fetched daily rates."""
     rates = DailyRate.objects.all().order_by('-created_at')
+    chart_rates = DailyRate.objects.all().order_by('created_at')
 
     if request.method == 'POST':
         rate_id = request.POST.get('rate_id')
@@ -893,6 +894,7 @@ def daily_rates(request):
 
     context = {
         'rates': rates,
+        'chart_rates': chart_rates,
     }
     return render(request, 'main/daily_rates.html', context)
 
