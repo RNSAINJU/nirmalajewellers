@@ -1987,11 +1987,22 @@ def ornament_price_calculator(request, pk):
         price_breakdown['calculated_jarti_weight_tola'] = calculated_jarti_weight_tola
         price_breakdown['calculated_jarti_value'] = calculated_jarti_value
 
-        # Configurable jyala based on net weight in grams.
-        # Gold ornaments default to 1000/g; Diamond and Silver default to 3500/g.
+        # Configurable jyala based on ornament type and metal.
+        # For Silver Keyrings: fixed 1000
+        # For Gold: 1000/g; For Diamond and other Silver: 3500/g
         # Use original metal_type (not effective_metal_type which remaps Diamond→Gold).
-        default_jyala_rate_per_gram = Decimal('1000') if ornament.metal_type == 'Gold' else Decimal('3500')
-        calculated_jyala_value = net_metal_weight * default_jyala_rate_per_gram
+        is_silver_keyring = (
+            ornament.metal_type == 'Silver' and 
+            ornament.maincategory and 
+            'keyring' in ornament.maincategory.name.lower()
+        )
+        
+        if is_silver_keyring:
+            calculated_jyala_value = Decimal('1000')
+            default_jyala_rate_per_gram = Decimal('fixed_1000')
+        else:
+            default_jyala_rate_per_gram = Decimal('1000') if ornament.metal_type == 'Gold' else Decimal('3500')
+            calculated_jyala_value = net_metal_weight * default_jyala_rate_per_gram
 
         price_breakdown['net_weight_gram'] = net_metal_weight
         price_breakdown['selected_jyala_rate_per_gram'] = default_jyala_rate_per_gram

@@ -1,7 +1,9 @@
 from django.db import transaction
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save, post_delete
 from django.dispatch import receiver
 import threading
+
+import cloudinary.uploader
 
 from .models import Ornament
 
@@ -10,6 +12,56 @@ def _first_char(value, default='X'):
     """Return first uppercase character for non-empty strings, else default."""
     text = str(value or '').strip()
     return text[0].upper() if text else default
+
+
+def _get_public_id(field_value):
+    if not field_value:
+        return None
+
+    if hasattr(field_value, 'public_id') and field_value.public_id:
+        return field_value.public_id
+
+    return str(field_value) if field_value else None
+
+
+def _destroy_cloudinary_resource(public_id):
+    if not public_id:
+        return
+
+    try:
+        cloudinary.uploader.destroy(public_id, invalidate=True)
+    except Exception:
+        pass
+
+
+@receiver(pre_save, sender=Ornament)
+def delete_old_ornament_images_on_change(sender, instance, **kwargs):
+    if not instance.pk:
+        return
+
+    try:
+        previous = sender.objects.get(pk=instance.pk)
+    except sender.DoesNotExist:
+        return
+
+    for field_name in ('image', 'barcode_image'):
+        old_value = getattr(previous, field_name, None)
+        new_value = getattr(instance, field_name, None)
+
+        old_public_id = _get_public_id(old_value)
+        new_public_id = _get_public_id(new_value)
+
+        if old_public_id and new_public_id and old_public_id != new_public_id:
+            _destroy_cloudinary_resource(old_public_id)
+
+
+@receiver(post_delete, sender=Ornament)
+def delete_ornament_images_on_delete(sender, instance, **kwargs):
+    for field_name in ('image', 'barcode_image'):
+        public_id = _get_public_id(getattr(instance, field_name, None))
+        if public_id:
+            _destroy_cloudinary_resource(public_id)
+
 
 
 @receiver(post_save, sender=Ornament)

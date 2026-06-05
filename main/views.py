@@ -24,15 +24,27 @@ def calculate_product_selling_amount(product, latest_rate):
     if not latest_rate:
         return None
 
+    net_metal_weight = product.net_metal_weight
+    net_weight_in_tola = net_metal_weight / Decimal('11.664')
+
+    # Special handling for Silver Keyrings: simple formula
+    # Price = (weight_in_tola × silver_rate) + fixed jyala (1000)
+    if (product.metal_type == 'Silver' and 
+        product.maincategory and 
+        'keyring' in product.maincategory.name.lower()):
+        silver_rate = Decimal(str(latest_rate.silver_rate or 0))
+        metal_value = net_weight_in_tola * silver_rate
+        fixed_jyala = Decimal('1000')
+        return metal_value + fixed_jyala
+
+    # Standard formula for other items
     diamond_weight = Decimal(str(product.diamond_weight or 0))
     stone_weight = Decimal(str(product.stone_weight or 0))
-    net_metal_weight = product.net_metal_weight
 
     effective_metal_type = product.metal_type
     if effective_metal_type in ['Diamond', 'Others']:
         effective_metal_type = 'Gold'
 
-    net_weight_in_tola = net_metal_weight / Decimal('11.664')
     karat_factor = product.get_purity_factor()
 
     metal_value = Decimal('0.00')
