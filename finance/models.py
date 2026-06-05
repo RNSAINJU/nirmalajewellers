@@ -117,6 +117,10 @@ class GoldLoanAccount(models.Model):
     monthly_interest_amount = models.DecimalField(max_digits=14, decimal_places=2, blank=True, null=True, help_text="Direct monthly interest amount")
     penalty_rate = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('4.00'), help_text='Monthly penalty rate (%)')
     notes = models.TextField(blank=True, null=True)
+    is_settled = models.BooleanField(default=False, help_text='Mark this gold loan account as settled')
+    settled_date = NepaliDateField(blank=True, null=True, help_text='Date when the loan was settled')
+    final_interest_paid = models.DecimalField(max_digits=14, decimal_places=2, blank=True, null=True, help_text='Final interest paid at settlement')
+    settlement_months = models.PositiveSmallIntegerField(blank=True, null=True, help_text='Number of months the loan was active before settlement')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -175,6 +179,12 @@ class GoldLoanAccount(models.Model):
             return Decimal('0.00')
         accrued = monthly_interest * self.elapsed_months_to_date
         return accrued.quantize(Decimal('0.01'))
+
+    @property
+    def effective_interest_rate(self):
+        if not self.final_interest_paid or not self.settlement_months or self.loan_amount == 0:
+            return None
+        return (self.final_interest_paid / self.loan_amount) * (Decimal('12') / Decimal(str(self.settlement_months))) * Decimal('100')
 
 
 class GoldLoanInterestPayment(models.Model):

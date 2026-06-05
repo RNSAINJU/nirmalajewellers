@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Metal Pricing Configuration{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-warning">
+                <strong>⚠️ This page has been updated!</strong>
+                <br>
+                The pricing configuration now applies to <strong>all Gold and Silver items</strong>, not just silver keyrings.
+                <br>
+                <a href="{% url 'main:metal_pricing_config' %}" class="btn btn-sm btn-primary mt-2">Go to Updated Configuration Page</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

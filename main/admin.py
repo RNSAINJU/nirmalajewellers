@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Stock, DailyRate, CustomerCampaignContact, CampaignMessageLog
+from .models import Stock, DailyRate, CustomerCampaignContact, CampaignMessageLog, MetalCategoryPricingConfig
 
 @admin.register(DailyRate)
 class DailyRateAdmin(admin.ModelAdmin):
@@ -73,3 +73,47 @@ class CampaignMessageLogAdmin(admin.ModelAdmin):
     list_filter = ['campaign_type', 'channel', 'status', 'created_at']
     search_fields = ['recipient_phone', 'recipient_name', 'provider_message_id']
     readonly_fields = ['campaign_type', 'channel', 'recipient_name', 'recipient_phone', 'message_body', 'status', 'provider_message_id', 'error_message', 'related_order', 'created_at', 'sent_at']
+
+
+@admin.register(MetalCategoryPricingConfig)
+class MetalCategoryPricingConfigAdmin(admin.ModelAdmin):
+    list_display = ['get_gold_status', 'get_silver_status', 'get_updated_at']
+    fieldsets = (
+        ('Gold Pricing', {
+            'fields': ('gold_enabled', 'gold_fixed_jyala'),
+            'description': 'Applies to ALL gold items. Price formula: (weight_tola × gold_rate) + fixed_jyala'
+        }),
+        ('Silver Pricing', {
+            'fields': ('silver_enabled', 'silver_fixed_jyala'),
+            'description': 'Applies to ALL silver items. Price formula: (weight_tola × silver_rate) + fixed_jyala'
+        }),
+        ('Notes', {
+            'fields': ('description',),
+            'classes': ('collapse',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    readonly_fields = ['created_at', 'updated_at']
+    
+    def get_gold_status(self, obj):
+        return "✓ Gold Enabled" if obj.gold_enabled else "✗ Gold Disabled"
+    get_gold_status.short_description = 'Gold Status'
+    
+    def get_silver_status(self, obj):
+        return "✓ Silver Enabled" if obj.silver_enabled else "✗ Silver Disabled"
+    get_silver_status.short_description = 'Silver Status'
+    
+    def get_updated_at(self, obj):
+        return obj.updated_at.strftime('%Y-%m-%d %H:%M')
+    get_updated_at.short_description = 'Last Updated'
+    
+    def has_add_permission(self, request):
+        """Allow only one configuration to exist."""
+        return not MetalCategoryPricingConfig.objects.exists()
+    
+    def has_delete_permission(self, request, obj=None):
+        """Prevent deletion of the single configuration."""
+        return False

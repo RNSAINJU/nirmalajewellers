@@ -5,6 +5,15 @@
 <a href="{% url 'finance:gold_loan_account_list' %}" class="btn btn-secondary">
     <i class="bi bi-arrow-left"></i> Back to Gold Loan Accounts
 </a>
+{% if not account.is_settled %}
+<a href="{% url 'finance:gold_loan_account_settle' account.pk %}" class="btn btn-success">
+    <i class="bi bi-check2-circle"></i> Settle
+</a>
+{% else %}
+<span class="btn btn-outline-success disabled">
+    <i class="bi bi-check2-circle"></i> Settled
+</span>
+{% endif %}
 <a href="{% url 'finance:gold_loan_account_update' account.pk %}" class="btn btn-warning">
     <i class="bi bi-pencil-square"></i> Edit
 </a>

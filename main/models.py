@@ -174,3 +174,56 @@ class CampaignMessageLog(models.Model):
 
     def __str__(self):
         return f"{self.campaign_type} -> {self.recipient_phone} [{self.status}]"
+
+
+class MetalCategoryPricingConfig(models.Model):
+    """
+    Configuration for special pricing rules for Gold and Silver items across all categories.
+    Price formula: (weight_in_tola × metal_rate) + fixed_jyala_amount
+    Applies to ALL items of specified metal type, regardless of category.
+    """
+    
+    gold_enabled = models.BooleanField(
+        default=True,
+        help_text="Enable/disable special pricing for ALL gold items"
+    )
+    gold_fixed_jyala = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('1000.00'),
+        help_text="Fixed jyala amount (रु) to add to all gold item prices"
+    )
+    
+    silver_enabled = models.BooleanField(
+        default=True,
+        help_text="Enable/disable special pricing for ALL silver items"
+    )
+    silver_fixed_jyala = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('1000.00'),
+        help_text="Fixed jyala amount (रु) to add to all silver item prices"
+    )
+    
+    description = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Internal notes about metal pricing rules"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = 'Metal Category Pricing Config'
+        verbose_name_plural = 'Metal Category Pricing Configs'
+    
+    def __str__(self):
+        gold_status = "✓" if self.gold_enabled else "✗"
+        silver_status = "✓" if self.silver_enabled else "✗"
+        return f"Metal Pricing - Gold {gold_status} (रु {self.gold_fixed_jyala}) | Silver {silver_status} (रु {self.silver_fixed_jyala})"
+    
+    @classmethod
+    def get_config(cls):
+        """Get or create the single pricing configuration."""
+        config, _ = cls.objects.get_or_create(pk=1)
+        return config

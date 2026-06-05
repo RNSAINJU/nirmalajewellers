@@ -27,15 +27,20 @@ def calculate_product_selling_amount(product, latest_rate):
     net_metal_weight = product.net_metal_weight
     net_weight_in_tola = net_metal_weight / Decimal('11.664')
 
-    # Special handling for Silver Keyrings: simple formula
-    # Price = (weight_in_tola × silver_rate) + fixed jyala (1000)
-    if (product.metal_type == 'Silver' and 
-        product.maincategory and 
-        'keyring' in product.maincategory.name.lower()):
+    # Check if metal pricing is enabled
+    from .models import MetalCategoryPricingConfig
+    pricing_config = MetalCategoryPricingConfig.get_config()
+    
+    # Special handling for Gold and Silver with fixed jyala (when enabled)
+    if product.metal_type == 'Gold' and pricing_config.gold_enabled:
+        gold_rate = Decimal(str(latest_rate.gold_rate or 0))
+        metal_value = net_weight_in_tola * gold_rate
+        return metal_value + pricing_config.gold_fixed_jyala
+    
+    if product.metal_type == 'Silver' and pricing_config.silver_enabled:
         silver_rate = Decimal(str(latest_rate.silver_rate or 0))
         metal_value = net_weight_in_tola * silver_rate
-        fixed_jyala = Decimal('1000')
-        return metal_value + fixed_jyala
+        return metal_value + pricing_config.silver_fixed_jyala
 
     # Standard formula for other items
     diamond_weight = Decimal(str(product.diamond_weight or 0))
@@ -1644,3 +1649,37 @@ def edit_stock(request, year):
         'page_title': f'Edit Stock Details - Year {year}',
     }
     return render(request, 'main/stock_form.html', context)
+
+
+@login_required(login_url='/accounts/login/')
+def metal_pricing_config(request):
+    """View to manage metal pricing configuration for Gold and Silver."""
+    from django.shortcuts import redirect
+    from django.contrib import messages
+    from .models import MetalCategoryPricingConfig
+    from .forms import MetalCategoryPricingForm
+    
+    # Get or create the single configuration
+    config = MetalCategoryPricingConfig.get_config()
+    
+    if request.method == 'POST':
+        form = MetalCategoryPricingForm(request.POST, instance=config)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Metal Category Pricing Configuration updated successfully!')
+            return redirect('main:metal_pricing_config')
+    else:
+        form = MetalCategoryPricingForm(instance=config)
+    
+    context = {
+        'form': form,
+        'config': config,
+        'page_title': 'Metal Category Pricing Configuration',
+        'description': 'Manage how Gold and Silver items are priced for customers'
+    }
+    
+    return render(request, 'main/metal_pricing_config.html', context)
+
+
+# Keep old name for backwards compatibility
+silver_keyring_pricing_config = metal_pricing_config

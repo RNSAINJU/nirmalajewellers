@@ -153,6 +153,13 @@
                                         {{ account.accrued_interest_to_date|floatformat:2 }}
                                     </td>
                                     <td class="text-end">
+                                        {% if not account.is_settled %}
+                                        <a href="{% url 'finance:gold_loan_account_settle' account.pk %}" class="btn btn-sm btn-success me-1" title="Mark Settled">
+                                            <i class="bi bi-check2-circle"></i>
+                                        </a>
+                                        {% else %}
+                                        <span class="badge bg-success me-1">Settled</span>
+                                        {% endif %}
                                         <a href="{% url 'finance:gold_loan_account_update' account.pk %}" class="btn btn-sm btn-action-edit me-1" title="Edit">
                                             <i class="bi bi-pencil"></i>
                                         </a>

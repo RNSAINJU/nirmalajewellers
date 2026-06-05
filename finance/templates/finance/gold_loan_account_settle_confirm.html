@@ -1,0 +1,154 @@
+{% extends 'finance/base_finance.html' %}
+{% load bs_filters %}
+
+{% block action_buttons %}
+<a href="{% url 'finance:gold_loan_account_list' %}" class="btn btn-secondary">
+    <i class="bi bi-arrow-left"></i> Back to Gold Loan Accounts
+</a>
+{% endblock %}
+
+{% block main_content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-6">
+            <div class="card shadow-sm border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-check2-circle"></i> Settle Gold Loan
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning mb-4">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        You are about to mark this gold loan account as <strong>fully settled</strong>.
+                        This will mark the account as settled in the list.
+                    </div>
+
+                    <table class="table table-bordered table-sm mb-4">
+                        <tr>
+                            <th class="table-light" style="width:40%">Customer</th>
+                            <td><strong>{{ account.customer_name }}</strong></td>
+                        </tr>
+                        <tr>
+                            <th class="table-light">Loan Amount</th>
+                            <td>रु{{ account.loan_amount|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <th class="table-light">Loan Taken Date</th>
+                            <td>
+                                BS: {{ account.loan_taken_date }}
+                                {% with converted=account.loan_taken_ad_date %}
+                                {% if converted %}
+                                <br><small class="text-muted">AD: {{ converted }}</small>
+                                {% endif %}
+                                {% endwith %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="table-light">Interest Info</th>
+                            <td>
+                                {% if account.interest_rate %}
+                                    {{ account.interest_rate|floatformat:2 }}% p.a.
+                                {% else %}
+                                    Auto from monthly amount
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% if account.notes %}
+                        <tr>
+                            <th class="table-light">Notes</th>
+                            <td>{{ account.notes }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Settlement Date (BS) <span class="text-danger">*</span></label>
+                            <input type="text" name="settled_date" class="form-control"
+                                   placeholder="e.g. 2082-01-15" required>
+                            <div class="form-text">Enter the BS date when the loan was fully paid.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Final Interest Paid (रु) <span class="text-muted">(Optional)</span></label>
+                            <input type="number" name="final_interest_paid" class="form-control"
+                                   placeholder="e.g. 50000" step="0.01" min="0" id="finalInterestField">
+                            <div class="form-text">Actual total interest paid at settlement.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Loan Duration (Months) <span class="text-muted">(Optional)</span></label>
+                            <input type="number" name="settlement_months" class="form-control"
+                                   placeholder="e.g. 12" min="1" max="600" id="settlementMonthsField">
+                            <div class="form-text">Number of months the loan was active.</div>
+                        </div>
+
+                        <div class="alert alert-info mb-4">
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Interest / Loan</small>
+                                    <strong id="finalInterestPercentage">—</strong>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Effective Rate (p.a.)</small>
+                                    <strong id="effectiveRate">—</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-success fw-semibold flex-fill">
+                                <i class="bi bi-check2-circle"></i> Confirm Settlement
+                            </button>
+                            <a href="{% url 'finance:gold_loan_account_list' %}" class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const loanAmount = {{ account.loan_amount|floatformat:2 }};
+    const finalInterestField = document.getElementById('finalInterestField');
+    const settlementMonthsField = document.getElementById('settlementMonthsField');
+    const finalInterestPercentageDisplay = document.getElementById('finalInterestPercentage');
+    const effectiveRateDisplay = document.getElementById('effectiveRate');
+
+    function updateMetrics() {
+        const finalInterest = parseFloat(finalInterestField.value) || 0;
+        const months = parseInt(settlementMonthsField.value) || 0;
+
+        if (finalInterest > 0) {
+            const interestPercentage = (finalInterest / loanAmount) * 100;
+            finalInterestPercentageDisplay.textContent = interestPercentage.toFixed(2) + '%';
+        } else {
+            finalInterestPercentageDisplay.textContent = '—';
+        }
+
+        if (finalInterest > 0 && months > 0) {
+            const effectiveRate = (finalInterest / loanAmount) * (12 / months) * 100;
+            effectiveRateDisplay.textContent = effectiveRate.toFixed(2) + '%';
+        } else {
+            effectiveRateDisplay.textContent = '—';
+        }
+    }
+
+    finalInterestField.addEventListener('input', updateMetrics);
+    settlementMonthsField.addEventListener('input', updateMetrics);
+    updateMetrics();
+})();
+</script>
+
+<style>
+    .alert-info { background-color: #cfe2ff; border-color: #b6d4fe; }
+    .form-text { font-size: 0.85rem; }
+</style>
+{% endblock %}

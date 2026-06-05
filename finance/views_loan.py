@@ -535,6 +535,45 @@ def gold_loan_account_detail(request, pk):
 
 
 @login_required
+def gold_loan_account_settle(request, pk):
+    account = get_object_or_404(GoldLoanAccount, pk=pk)
+
+    if request.method == 'POST':
+        settled_date = request.POST.get('settled_date', '')
+        final_interest_paid = request.POST.get('final_interest_paid', '')
+        settlement_months = request.POST.get('settlement_months', '')
+
+        if not settled_date:
+            messages.error(request, 'Settlement date is required.')
+            return render(request, 'finance/gold_loan_account_settle_confirm.html', {'account': account})
+
+        try:
+            account.is_settled = True
+            account.settled_date = settled_date
+
+            if final_interest_paid:
+                account.final_interest_paid = Decimal(final_interest_paid)
+
+            if settlement_months:
+                account.settlement_months = int(settlement_months)
+
+            account.save()
+            message = f'Gold loan account for {account.customer_name} (रु{account.loan_amount}) has been marked as settled.'
+            if account.final_interest_paid:
+                message += f' Final interest: रु{account.final_interest_paid}.'
+                if account.effective_interest_rate:
+                    message += f' Effective rate: {account.effective_interest_rate:.2f}% p.a.'
+
+            messages.success(request, message)
+            return redirect('finance:gold_loan_account_list')
+        except (ValueError, TypeError) as e:
+            messages.error(request, f'Error processing settlement: {str(e)}')
+            return render(request, 'finance/gold_loan_account_settle_confirm.html', {'account': account})
+
+    return render(request, 'finance/gold_loan_account_settle_confirm.html', {'account': account})
+
+
+@login_required
 def gold_loan_account_update(request, pk):
     account = get_object_or_404(GoldLoanAccount, pk=pk)
     if request.method == 'POST':

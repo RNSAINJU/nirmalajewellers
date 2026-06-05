@@ -1,5 +1,5 @@
 from django import forms
-from .models import Stock, DailyRate
+from .models import Stock, DailyRate, MetalCategoryPricingConfig
 
 
 class StockForm(forms.ModelForm):
@@ -129,3 +129,52 @@ class DailyRateForm(forms.ModelForm):
             except Exception:
                 # Fallback if nepali_datetime is not available
                 pass
+
+
+class MetalCategoryPricingForm(forms.ModelForm):
+    """Form for managing metal category pricing configuration."""
+    
+    class Meta:
+        model = MetalCategoryPricingConfig
+        fields = [
+            'gold_enabled', 'gold_fixed_jyala',
+            'silver_enabled', 'silver_fixed_jyala',
+            'description'
+        ]
+        widgets = {
+            'gold_enabled': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+            }),
+            'gold_fixed_jyala': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+            }),
+            'silver_enabled': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+            }),
+            'silver_fixed_jyala': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Internal notes about metal pricing rules',
+            }),
+        }
+        labels = {
+            'gold_enabled': 'Enable Special Pricing for ALL Gold Items',
+            'gold_fixed_jyala': 'Fixed Jyala for Gold (रु)',
+            'silver_enabled': 'Enable Special Pricing for ALL Silver Items',
+            'silver_fixed_jyala': 'Fixed Jyala for Silver (रु)',
+            'description': 'Description / Notes',
+        }
+        help_texts = {
+            'gold_enabled': 'When enabled, ALL gold items use: (weight_tola × gold_rate) + fixed jyala',
+            'gold_fixed_jyala': 'Fixed amount as jyala for each gold item (default: 1000)',
+            'silver_enabled': 'When enabled, ALL silver items use: (weight_tola × silver_rate) + fixed jyala',
+            'silver_fixed_jyala': 'Fixed amount as jyala for each silver item (default: 1000)',
+            'description': 'Internal notes only (not visible to customers)',
+        }

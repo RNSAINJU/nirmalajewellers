@@ -1,0 +1,321 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Metal Pricing Configuration{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row">
+        <div class="col-12 col-lg-10 offset-lg-1">
+            <!-- Header -->
+            <div class="mb-4">
+                <h1 class="h2 mb-2">
+                    <i class="bi bi-gear"></i> Metal Category Pricing Configuration
+                </h1>
+                <p class="text-muted">{{ description }}</p>
+            </div>
+
+            <!-- Alert Box - Formula -->
+            <div class="alert alert-info border-0" role="alert">
+                <div class="d-flex">
+                    <div class="flex-shrink-0">
+                        <i class="bi bi-info-circle-fill"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-2">
+                        <strong>Price Formula:</strong>
+                        <br>
+                        <code style="background: rgba(0,0,0,0.05); padding: 5px 10px; border-radius: 4px;">
+                            (Weight in Tola × Today's Metal Rate) + Fixed Jyala Amount
+                        </code>
+                        <br><small class="text-muted mt-2 d-block">Applied to ALL items of the selected metal type, regardless of category</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Status Cards -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <h6 class="card-title text-muted mb-2"><i class="bi bi-coin"></i> Gold Status</h6>
+                            {% if config.gold_enabled %}
+                                <span class="badge bg-warning text-dark">✓ Enabled</span>
+                            {% else %}
+                                <span class="badge bg-secondary">✗ Disabled</span>
+                            {% endif %}
+                            <h5 class="mt-3 mb-0">Fixed Jyala: रु {{ config.gold_fixed_jyala }}</h5>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <h6 class="card-title text-muted mb-2"><i class="bi bi-shield-fill"></i> Silver Status</h6>
+                            {% if config.silver_enabled %}
+                                <span class="badge bg-info">✓ Enabled</span>
+                            {% else %}
+                                <span class="badge bg-secondary">✗ Disabled</span>
+                            {% endif %}
+                            <h5 class="mt-3 mb-0">Fixed Jyala: रु {{ config.silver_fixed_jyala }}</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configuration Form -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-pencil"></i> Edit Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" novalidate>
+                        {% csrf_token %}
+
+                        <!-- GOLD SECTION -->
+                        <h5 class="mb-3 mt-3"><i class="bi bi-coin"></i> Gold Pricing</h5>
+                        <hr>
+
+                        <!-- Gold Enable/Disable Toggle -->
+                        <div class="form-check form-switch mb-4">
+                            <input 
+                                class="form-check-input" 
+                                type="checkbox" 
+                                id="{{ form.gold_enabled.id_for_label }}" 
+                                name="{{ form.gold_enabled.name }}"
+                                {% if config.gold_enabled %}checked{% endif %}
+                                style="width: 3rem; height: 1.5rem; cursor: pointer;"
+                            >
+                            <label class="form-check-label" for="{{ form.gold_enabled.id_for_label }}">
+                                <strong>{{ form.gold_enabled.label }}</strong>
+                            </label>
+                            {% if form.gold_enabled.help_text %}
+                                <small class="d-block text-muted mt-1">{{ form.gold_enabled.help_text|safe }}</small>
+                            {% endif %}
+                        </div>
+
+                        {% if form.gold_enabled.errors %}
+                            <div class="text-danger small mb-3">{{ form.gold_enabled.errors }}</div>
+                        {% endif %}
+
+                        <!-- Gold Fixed Jyala Amount -->
+                        <div class="mb-4">
+                            <label for="{{ form.gold_fixed_jyala.id_for_label }}" class="form-label">
+                                {{ form.gold_fixed_jyala.label }}
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">रु</span>
+                                {{ form.gold_fixed_jyala }}
+                            </div>
+                            {% if form.gold_fixed_jyala.help_text %}
+                                <small class="d-block text-muted mt-1">{{ form.gold_fixed_jyala.help_text|safe }}</small>
+                            {% endif %}
+                            {% if form.gold_fixed_jyala.errors %}
+                                <div class="text-danger small mt-2">{{ form.gold_fixed_jyala.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- SILVER SECTION -->
+                        <h5 class="mb-3 mt-5"><i class="bi bi-shield-fill"></i> Silver Pricing</h5>
+                        <hr>
+
+                        <!-- Silver Enable/Disable Toggle -->
+                        <div class="form-check form-switch mb-4">
+                            <input 
+                                class="form-check-input" 
+                                type="checkbox" 
+                                id="{{ form.silver_enabled.id_for_label }}" 
+                                name="{{ form.silver_enabled.name }}"
+                                {% if config.silver_enabled %}checked{% endif %}
+                                style="width: 3rem; height: 1.5rem; cursor: pointer;"
+                            >
+                            <label class="form-check-label" for="{{ form.silver_enabled.id_for_label }}">
+                                <strong>{{ form.silver_enabled.label }}</strong>
+                            </label>
+                            {% if form.silver_enabled.help_text %}
+                                <small class="d-block text-muted mt-1">{{ form.silver_enabled.help_text|safe }}</small>
+                            {% endif %}
+                        </div>
+
+                        {% if form.silver_enabled.errors %}
+                            <div class="text-danger small mb-3">{{ form.silver_enabled.errors }}</div>
+                        {% endif %}
+
+                        <!-- Silver Fixed Jyala Amount -->
+                        <div class="mb-4">
+                            <label for="{{ form.silver_fixed_jyala.id_for_label }}" class="form-label">
+                                {{ form.silver_fixed_jyala.label }}
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">रु</span>
+                                {{ form.silver_fixed_jyala }}
+                            </div>
+                            {% if form.silver_fixed_jyala.help_text %}
+                                <small class="d-block text-muted mt-1">{{ form.silver_fixed_jyala.help_text|safe }}</small>
+                            {% endif %}
+                            {% if form.silver_fixed_jyala.errors %}
+                                <div class="text-danger small mt-2">{{ form.silver_fixed_jyala.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-4">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">
+                                {{ form.description.label }}
+                            </label>
+                            {{ form.description }}
+                            {% if form.description.help_text %}
+                                <small class="d-block text-muted mt-1">{{ form.description.help_text|safe }}</small>
+                            {% endif %}
+                            {% if form.description.errors %}
+                                <div class="text-danger small mt-2">{{ form.description.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-2 mt-5">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Save Configuration
+                            </button>
+                            <a href="{% url 'main:admin_dashboard' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Price Calculation Examples -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-calculator"></i> How Prices Are Currently Calculated</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Metal Type</th>
+                                    <th>Category</th>
+                                    <th>Pricing Status</th>
+                                    <th>Price Formula</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Gold Examples -->
+                                <tr>
+                                    <td><i class="bi bi-coin"></i> <strong>Gold</strong></td>
+                                    <td>Necklaces, Bangles, Rings, Keyrings, etc.</td>
+                                    {% if config.gold_enabled %}
+                                        <td><span class="badge bg-warning text-dark">Fixed Jyala</span></td>
+                                        <td>
+                                            <small>
+                                                <code>(weight_tola × gold_rate) + रु {{ config.gold_fixed_jyala }}</code>
+                                            </small>
+                                        </td>
+                                    {% else %}
+                                        <td><span class="badge bg-secondary">Standard</span></td>
+                                        <td>
+                                            <small>
+                                                <code>(weight_tola × gold_rate) + diamond_value + stone_value + jarti_value + calculated_jyala</code>
+                                            </small>
+                                        </td>
+                                    {% endif %}
+                                </tr>
+
+                                <!-- Silver Examples -->
+                                <tr>
+                                    <td><i class="bi bi-shield-fill"></i> <strong>Silver</strong></td>
+                                    <td>Keyrings, Chains, Bracelets, etc.</td>
+                                    {% if config.silver_enabled %}
+                                        <td><span class="badge bg-info">Fixed Jyala</span></td>
+                                        <td>
+                                            <small>
+                                                <code>(weight_tola × silver_rate) + रु {{ config.silver_fixed_jyala }}</code>
+                                            </small>
+                                        </td>
+                                    {% else %}
+                                        <td><span class="badge bg-secondary">Standard</span></td>
+                                        <td>
+                                            <small>
+                                                <code>(weight_tola × silver_rate) + stone_value + jarti_value + calculated_jyala</code>
+                                            </small>
+                                        </td>
+                                    {% endif %}
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Detailed Explanation -->
+                    <div class="mt-4 pt-3 border-top">
+                        <h6 class="mb-2">Formula Components:</h6>
+                        <ul class="small mb-0">
+                            <li><strong>weight_tola:</strong> Item weight converted to tola (1 tola = 11.664 grams)</li>
+                            <li><strong>gold_rate / silver_rate:</strong> Today's metal rate per tola from Daily Rates</li>
+                            <li><strong>Fixed Jyala:</strong> Flat amount added to price (when enabled)</li>
+                            <li><strong>Calculated Jyala:</strong> Weight-based jyala (Gold: 1000/g, Silver: 3500/g when disabled)</li>
+                            <li><strong>Jarti Value:</strong> Labor cost (12% of gold weight for gold items)</li>
+                            <li><strong>Diamond/Stone Value:</strong> Based on weight and per-carat price</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Box -->
+            <div class="alert alert-light border mt-4">
+                <h6 class="mb-3"><i class="bi bi-lightbulb"></i> How This Works</h6>
+                <ul class="mb-0 small">
+                    <li><strong>Scope:</strong> These rules apply to <strong>ALL items</strong> of the selected metal type, regardless of category (Necklaces, Keyrings, Bangles, Chains, etc.)</li>
+                    <li><strong>Gold Enabled:</strong> When enabled, ALL gold items use fixed jyala instead of calculated jyala</li>
+                    <li><strong>Silver Enabled:</strong> When enabled, ALL silver items use fixed jyala instead of calculated jyala</li>
+                    <li><strong>Disabled:</strong> When disabled, items use the standard pricing formula with calculated jyala</li>
+                    <li><strong>Applies To:</strong> Both customer-facing product pages and admin price calculator</li>
+                    <li><strong>Daily Rates Impact:</strong> Metal rates from "Daily Rates" section are used for calculations</li>
+                </ul>
+            </div>
+
+            <!-- Last Modified -->
+            {% if config.updated_at %}
+                <div class="text-muted small mt-4">
+                    <i class="bi bi-clock-history"></i> Last updated: {{ config.updated_at|date:"d M Y, H:i" }}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .input-group-text {
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+    }
+    
+    .form-control:focus, .form-check-input:focus {
+        border-color: #ffc107;
+        box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+    }
+    
+    .btn-primary {
+        background-color: #ffc107;
+        border-color: #ffc107;
+        color: #000;
+    }
+    
+    .btn-primary:hover {
+        background-color: #ffb700;
+        border-color: #ffb700;
+    }
+
+    .table-responsive {
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .table code {
+        background: rgba(0,0,0,0.05);
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 0.85em;
+    }
+</style>
+{% endblock %}
