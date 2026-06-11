@@ -1,5 +1,7 @@
 # Local database artifacts
 *.sqlite3
+db.sqlite3
+media/
 
 *.pyc
 __pycache__/

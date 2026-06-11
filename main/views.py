@@ -484,14 +484,16 @@ def admin_dashboard(request):
     import json
     from sales.models import Sale
     from datetime import timedelta
-    
+
+    today = ndt.date.today()
+
     # Get total sales (last 7 days)
-    seven_days_ago = date.today() - timedelta(days=7)
+    seven_days_ago = today - timedelta(days=7)
     recent_sales = Sale.objects.filter(is_deleted=False, sale_date__gte=seven_days_ago)
     total_sales = sum(sale.order.total for sale in recent_sales if sale.order) or Decimal('0')
     
     # Calculate sales change (compare with previous 7 days)
-    fourteen_days_ago = date.today() - timedelta(days=14)
+    fourteen_days_ago = today - timedelta(days=14)
     previous_week_sales = Sale.objects.filter(
         is_deleted=False,
         sale_date__gte=fourteen_days_ago,
@@ -509,7 +511,7 @@ def admin_dashboard(request):
     sales_labels = []
     sales_data = []
     for i in range(6, -1, -1):
-        day = date.today() - timedelta(days=i)
+        day = today - timedelta(days=i)
         day_sales = Sale.objects.filter(is_deleted=False, sale_date=day)
         day_total = sum(sale.order.total for sale in day_sales if sale.order) or 0
         sales_labels.append(day.strftime('%a'))
