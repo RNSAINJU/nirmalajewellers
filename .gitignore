@@ -2,6 +2,9 @@
 *.sqlite3
 db.sqlite3
 media/
+backups/uploads/
+*.json.dump
+full_db_dump*.json
 
 *.pyc
 __pycache__/

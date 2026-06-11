@@ -1,18 +1,33 @@
-## Local development (no PostgreSQL required)
+## Local development
 
 ```bash
 pip install -r requirements.txt
 ./scripts/run_local.sh
 ```
 
-This uses SQLite (`db.sqlite3`), creates an `admin` user (`admin` / `admin123`), and starts the server at http://127.0.0.1:8000.
+With `.env` configured for PostgreSQL (see `.env.example`), local dev uses your imported dump.  
+Without `DATABASE_*` vars, it falls back to SQLite.
 
-Manual alternative:
+### Import a database dump
 
 ```bash
-python manage.py migrate --settings=mysite.settings_local
-python manage.py runserver --settings=mysite.settings_local
+# PostgreSQL custom format (.dump)
+./scripts/import_db_dump.sh /path/to/backup.dump
+
+# Plain SQL
+./scripts/import_db_dump.sh /path/to/backup.sql
+
+# Django JSON fixture
+./scripts/import_db_dump.sh /path/to/full_db_dump.json
 ```
+
+Then start the server:
+
+```bash
+./scripts/run_local.sh
+```
+
+Default local URL: http://127.0.0.1:8000
 
 ## Production setup
 
