@@ -1,10 +1,20 @@
-pip install django
-pip install requests
-pip install beautifulsoup4
-pip install cloudinary
-pip install django-cloudinary-storage
-pip install openpyxl
+## Setup
 
+```bash
+pip install -r requirements.txt
+cp .env.example .env   # then edit with your values
+python manage.py migrate
+python manage.py runserver
+```
 
-first import purchase, customer purchase
-then import  order, ornaments, order_payments, order_ornaments, 
+## Tests
+
+Tests use an in-memory SQLite database (no PostgreSQL required):
+
+```bash
+python manage.py test --settings=mysite.settings_test
+```
+
+## Data import order
+
+First import purchase and customer purchase, then order, ornaments, order_payments, and order_ornaments.

@@ -1,81 +1,49 @@
-#!/usr/bin/env python
-"""
-Test script to verify payment_lines_json is processed correctly by OrderCreateView.form_valid()
-This simulates what happens when the form is submitted with payment data.
-"""
-
-import os
-import django
 import json
-import sys
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mysite.settings')
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-APP_ROOT = os.path.join(REPO_ROOT, 'nirmalajewellers')
-sys.path.insert(0, APP_ROOT)
-django.setup()
+from django.test import TestCase
 
-from django.test import RequestFactory
-from order.views import OrderCreateView
 from order.forms import OrderForm
-from order.models import Order
-from decimal import Decimal
 
-# Sample payment_lines_json data that would come from the frontend
-sample_payment_json = json.dumps([
-    {'payment_mode': 'cash', 'amount': 1000, 'debtor_data': None},
-])
 
-print(f"\n{'='*80}")
-print("Testing payment_lines_json processing")
-print(f"{'='*80}\n")
+class OrderFormPaymentLinesTest(TestCase):
+    """Verify payment_lines_json is accepted and parsed by OrderForm."""
 
-print(f"Sample payment_lines_json: {sample_payment_json}\n")
+    def _base_post_data(self):
+        return {
+            'customer_name': 'Test Customer',
+            'phone_number': '9841234567',
+            'status': 'order',
+            'order_type': 'custom',
+            'description': 'Test order',
+            'amount': '1000',
+            'taxable_amount': '1000',
+            'subtotal': '1000',
+            'discount': '0',
+            'tax': '0',
+            'total': '1000',
+            'order_lines_json': '[]',
+        }
 
-# Create request factory
-factory = RequestFactory()
+    def test_payment_lines_json_parses_when_valid(self):
+        payment_lines = json.dumps([
+            {'payment_mode': 'cash', 'amount': 1000, 'debtor_data': None},
+        ])
+        post_data = self._base_post_data()
+        post_data['payment_lines_json'] = payment_lines
 
-# Create a POST request with form data
-post_data = {
-    'customer_name': 'Test Customer',
-    'phone_number': '9841234567',
-    'status': 'order',
-    'order_type': 'custom',
-    'description': 'Test order',
-    'amount': '1000',
-    'subtotal': '1000',
-    'discount': '0',
-    'tax': '0',
-    'total': '1000',
-    'payment_mode': 'cash',
-    'payment_amount': '1000',
-    'payment_lines_json': sample_payment_json,
-    'order_lines_json': '[]',
-}
+        form = OrderForm(post_data)
 
-print(f"POST data keys: {list(post_data.keys())}\n")
-print(f"payment_lines_json in POST data: {'payment_lines_json' in post_data}")
-print(f"payment_lines_json value: {post_data.get('payment_lines_json')}\n")
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(
+            json.loads(form.cleaned_data['payment_lines_json']),
+            [{'payment_mode': 'cash', 'amount': 1000, 'debtor_data': None}],
+        )
 
-# Create form instance
-form = OrderForm(post_data)
+    def test_taxable_amount_required_in_form_submission(self):
+        post_data = self._base_post_data()
+        del post_data['taxable_amount']
 
-print(f"Form is_valid: {form.is_valid()}")
-if not form.is_valid():
-    print(f"Form errors: {form.errors}\n")
-else:
-    print("Form validation passed!\n")
-    
-    # Check cleaned_data
-    print(f"Cleaned data keys: {form.cleaned_data.keys()}\n")
-    payment_lines = form.cleaned_data.get('payment_lines_json')
-    print(f"payment_lines_json in cleaned_data: {repr(payment_lines)}\n")
-    
-    # Try to parse it
-    try:
-        parsed = json.loads(payment_lines)
-        print(f"Parsed payment_lines_json: {parsed}\n")
-    except Exception as e:
-        print(f"Error parsing payment_lines_json: {e}\n")
+        form = OrderForm(post_data)
 
-print(f"{'='*80}\n")
+        self.assertFalse(form.is_valid())
+        self.assertIn('taxable_amount', form.errors)

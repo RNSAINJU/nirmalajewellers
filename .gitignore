@@ -18,9 +18,6 @@ order/__pycache__/forms.cpython-310.pyc
 order/__pycache__/urls.cpython-310.pyc
 order/__pycache__/views.cpython-310.pyc
 
-# Django migrations - ignore all migration files but keep __init__.py
-*/migrations/*.py
-!*/migrations/__init__.py
 **/migrations/__pycache__/
 
 # Python bytecode
