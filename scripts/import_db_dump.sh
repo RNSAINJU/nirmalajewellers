@@ -28,16 +28,19 @@ case "$EXT" in
     echo "=== Restoring PostgreSQL custom dump ==="
     pg_restore -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
       --no-owner --no-privileges "$DUMP_FILE"
+    SYNC_SCHEMA=1
     ;;
   sql)
     echo "=== Restoring plain SQL dump ==="
     psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$DUMP_FILE"
+    SYNC_SCHEMA=1
     ;;
   json)
     echo "=== Loading Django JSON fixture ==="
     export PATH="${HOME}/.local/bin:${PATH}"
     cd "$(dirname "$0")/.."
     python3 manage.py migrate --settings=mysite.settings_local --noinput
+    python3 manage.py create_missing_tables --settings=mysite.settings_local
     python3 manage.py loaddata "$DUMP_FILE" --settings=mysite.settings_local
     ;;
   *)
@@ -45,5 +48,13 @@ case "$EXT" in
     exit 1
     ;;
 esac
+
+if [[ "${SYNC_SCHEMA:-}" == "1" ]]; then
+  echo "=== Syncing schema for tables added after dump ==="
+  export PATH="${HOME}/.local/bin:${PATH}"
+  cd "$(dirname "$0")/.."
+  python3 manage.py migrate --settings=mysite.settings_local --noinput
+  python3 manage.py create_missing_tables --settings=mysite.settings_local
+fi
 
 echo "=== Import complete ==="
