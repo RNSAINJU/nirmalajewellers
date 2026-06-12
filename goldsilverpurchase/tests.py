@@ -1,6 +1,9 @@
 
+from django.contrib.auth.models import User
 from django.test import TestCase
-from .models import CustomerPurchase, MetalStockMovement, MetalStockType, MetalStock
+from django.urls import reverse
+
+from .models import CustomerPurchase, GoldSilverPurchase, MetalStockMovement, MetalStockType, MetalStock
 from decimal import Decimal
 
 class CustomerPurchaseRefinedStockMovementTest(TestCase):
@@ -139,3 +142,64 @@ class CustomerPurchaseRefinedStockMovementTest(TestCase):
 				
 				# Raw stock should have the customer's selected purity
 				self.assertEqual(raw_movement.metal_stock.purity, purity)
+
+
+class DataManagementAuthorizationTest(TestCase):
+	def test_full_database_export_requires_staff_user(self):
+		user = User.objects.create_user(username="regular", password="password")
+		self.client.force_login(user)
+
+		response = self.client.get(reverse("gsp:export_full_db_dump"))
+
+		self.assertEqual(response.status_code, 302)
+		self.assertIn("/accounts/login/", response["Location"])
+
+
+class MetalStockMovementQuantityTest(TestCase):
+	def setUp(self):
+		self.user = User.objects.create_user(username="operator", password="password")
+		self.client.force_login(self.user)
+		self.raw_type = MetalStockType.objects.create(name=MetalStockType.StockTypeChoices.RAW)
+
+	def test_delete_movement_recalculates_quantity_once(self):
+		stock = MetalStock.objects.create(
+			metal_type=MetalStock.MetalType.GOLD,
+			stock_type=self.raw_type,
+			purity=MetalStock.Purity.TWENTYTWOKARAT,
+			quantity=Decimal("7.000"),
+			rate_unit="gram",
+		)
+		MetalStockMovement.objects.create(
+			metal_stock=stock,
+			movement_type=MetalStockMovement.MovementType.IN,
+			quantity=Decimal("10.000"),
+		)
+		out_movement = MetalStockMovement.objects.create(
+			metal_stock=stock,
+			movement_type=MetalStockMovement.MovementType.OUT,
+			quantity=Decimal("3.000"),
+		)
+
+		response = self.client.post(reverse("gsp:metal_stock_movement_delete", args=[out_movement.pk]))
+
+		self.assertEqual(response.status_code, 302)
+		self.assertFalse(MetalStockMovement.objects.filter(pk=out_movement.pk).exists())
+		stock.refresh_from_db()
+		self.assertEqual(stock.quantity, Decimal("10.000"))
+
+	def test_gold_silver_purchase_create_syncs_stock_quantity_from_movement(self):
+		GoldSilverPurchase.objects.create(
+			bill_no="BILL-1",
+			metal_type=MetalStock.MetalType.GOLD,
+			purity=MetalStock.Purity.TWENTYTWOKARAT,
+			quantity=Decimal("5.000"),
+			rate=Decimal("100.00"),
+			rate_unit="gram",
+		)
+
+		stock = MetalStock.objects.get(
+			metal_type=MetalStock.MetalType.GOLD,
+			stock_type=self.raw_type,
+			purity=MetalStock.Purity.TWENTYTWOKARAT,
+		)
+		self.assertEqual(stock.quantity, Decimal("5.000"))

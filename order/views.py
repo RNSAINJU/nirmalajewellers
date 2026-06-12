@@ -640,13 +640,15 @@ class OrderUpdateView(LoginRequiredMixin, UpdateView):
                 ornament.ornament_type = 'order'
             ornament.save()
 
-        # Detach ornaments no longer present in this order
+        # Detach ornaments no longer present in this order. When every line is
+        # removed, this must release all previously linked ornaments.
+        removed_ornaments = Ornament.objects.filter(order=self.object)
         if new_ornament_ids:
-            # Revert ornament_type back to STOCK for removed ornaments
-            Ornament.objects.filter(order=self.object).exclude(id__in=new_ornament_ids).update(
-                order=None,
-                ornament_type='stock',
-            )
+            removed_ornaments = removed_ornaments.exclude(id__in=new_ornament_ids)
+        removed_ornaments.update(
+            order=None,
+            ornament_type=Ornament.OrnamentCategory.STOCK,
+        )
 
         # Save metal stock formset - NOW with the saved order instance
         metal_stock_formset = MetalStockFormSet(self.request.POST, instance=self.object)
