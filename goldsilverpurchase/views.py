@@ -2751,6 +2751,13 @@ class MetalStockMovementDeleteView(LoginRequiredMixin, DeleteView):
     model = MetalStockMovement
     template_name = 'goldsilverpurchase/metalstockmovement_confirm_delete.html'
 
+    def form_valid(self, form):
+        self.object = self.get_object()
+        metal_stock_id = self.object.metal_stock_id
+        response = super().form_valid(form)
+        recalculate_metal_stock_quantity(metal_stock_id)
+        return response
+
     def delete(self, request, *args, **kwargs):
         self.object = self.get_object()
         metal_stock_id = self.object.metal_stock_id

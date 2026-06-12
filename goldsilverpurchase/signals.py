@@ -118,7 +118,7 @@ def add_refined_weight_to_metal_stock(sender, instance, created, **kwargs):
                     'quantity': instance.refined_weight,
                     'rate': instance.rate,
                     'notes': notes,
-                    'movement_date': instance.purchase_date or instance.created_at,
+                    'movement_date': instance.purchase_date,
                 }
             )
             recalculate_metal_stock_quantity(refined_metal_stock)
@@ -154,7 +154,7 @@ def add_refined_weight_to_metal_stock(sender, instance, created, **kwargs):
                     'quantity': instance.refined_weight,
                     'rate': instance.rate,
                     'notes': notes,
-                    'movement_date': instance.purchase_date or instance.created_at,
+                    'movement_date': instance.purchase_date,
                 }
             )
             recalculate_metal_stock_quantity(raw_metal_stock)
