@@ -303,23 +303,6 @@ class CustomerPurchase(models.Model):
         null=True,
         help_text='Weight after refining (if applicable)'
     )
-    weight = models.DecimalField(max_digits=10, decimal_places=3, validators=[MinValueValidator(0)], blank=True, null=True)
-    final_weight = models.DecimalField(max_digits=10, decimal_places=3, validators=[MinValueValidator(0)], blank=True, null=True, help_text='Final weight after applying percentage')
-    refined_status = models.CharField(
-        max_length=10,
-        choices=[('no', 'No'), ('yes', 'Yes')],
-        default='no',
-        verbose_name='Refined',
-        help_text='Has this purchase been refined?'
-    )
-    refined_weight = models.DecimalField(
-        max_digits=10,
-        decimal_places=3,
-        validators=[MinValueValidator(0)],
-        blank=True,
-        null=True,
-        help_text='Weight after refining (if applicable)'
-    )
     rate = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)], blank=True, null=True)
     rate_unit = models.CharField(
         max_length=10,

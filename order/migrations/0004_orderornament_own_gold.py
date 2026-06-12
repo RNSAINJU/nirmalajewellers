@@ -1,3 +1,4 @@
+from common.migration_utils import PostgreSQLOnlyRunSQL
 from django.db import migrations
 
 
@@ -8,7 +9,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunSQL(
+        PostgreSQLOnlyRunSQL(
             sql="""
             ALTER TABLE order_orderornament
                 ADD COLUMN IF NOT EXISTS own_gold numeric(10, 3) NOT NULL DEFAULT 0;

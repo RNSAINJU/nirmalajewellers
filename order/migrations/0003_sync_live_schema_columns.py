@@ -1,5 +1,6 @@
 """Add columns that exist in models but are missing from older live databases."""
 
+from common.migration_utils import PostgreSQLOnlyRunSQL
 from django.db import migrations
 
 
@@ -10,7 +11,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunSQL(
+        PostgreSQLOnlyRunSQL(
             sql="""
             ALTER TABLE order_order
                 ADD COLUMN IF NOT EXISTS taxable_amount numeric(15, 2) NOT NULL DEFAULT 0;

@@ -1,3 +1,4 @@
+from common.migration_utils import PostgreSQLOnlyRunSQL
 from django.db import migrations
 
 
@@ -8,7 +9,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunSQL(
+        PostgreSQLOnlyRunSQL(
             sql="""
             ALTER TABLE finance_loan
                 ADD COLUMN IF NOT EXISTS final_interest_paid numeric(14, 2);
