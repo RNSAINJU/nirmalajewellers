@@ -4,7 +4,7 @@ import json
 from datetime import timedelta
 
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
@@ -18,7 +18,6 @@ from django.utils import timezone
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
-from django.utils.decorators import method_decorator
 
 import openpyxl
 from openpyxl.utils import get_column_letter
@@ -38,9 +37,20 @@ from .models import (
 from ornament.models import Kaligar, MainCategory, Ornament, SubCategory
 from order.models import Order, OrderMetalStock, OrderOrnament, OrderPayment
 from sales.models import Sale, SalesMetalStock
+from .stock_utils import recalculate_metal_stock_quantity
 
 # Decimal alias used in a few imports
 D = Decimal
+
+
+def is_staff_or_superuser(user):
+    return user.is_active and (user.is_staff or user.is_superuser)
+
+
+data_admin_required = user_passes_test(
+    is_staff_or_superuser,
+    login_url='/accounts/login/',
+)
 
 @login_required(login_url='/accounts/login/')
 def export_metalstock_xlsx(request):
@@ -266,7 +276,6 @@ def export_metalstock_xlsx(request):
     wb.save(response)
     return response
 
-@method_decorator(csrf_exempt, name='dispatch')
 class ImportMetalStockXLSXView(LoginRequiredMixin, View):
     def post(self, request):
         from datetime import date, datetime
@@ -1004,6 +1013,7 @@ def import_customer_excel(request):
 
 
 @login_required(login_url='/accounts/login/')
+@data_admin_required
 def data_settings(request):
     """Settings page with data export and import controls."""
     if request.method == "POST":
@@ -1109,6 +1119,7 @@ def track_home_performance(request):
 
 
 @login_required(login_url='/accounts/login/')
+@data_admin_required
 def export_full_db_dump(request):
     """Export a full database dump as JSON using Django dumpdata."""
     from django.core.management import call_command
@@ -1130,6 +1141,7 @@ def export_full_db_dump(request):
 
 
 @login_required(login_url='/accounts/login/')
+@data_admin_required
 def import_full_db_dump(request):
     """Import a full JSON database dump after wiping existing data."""
     if request.method != "POST" or "import_file" not in request.FILES:
@@ -1232,6 +1244,7 @@ def import_full_db_dump(request):
 
 
 @login_required(login_url='/accounts/login/')
+@data_admin_required
 def export_all_data(request):
     from openpyxl import Workbook
     from django.http import HttpResponse
@@ -1465,6 +1478,7 @@ def export_all_data(request):
 
 
 @login_required(login_url='/accounts/login/')
+@data_admin_required
 def import_all_data(request):
     """Import all data from a multi-sheet Excel file."""
     if request.method != "POST" or "import_file" not in request.FILES:
@@ -1884,6 +1898,7 @@ def import_all_data(request):
 
 
 @login_required(login_url='/accounts/login/')
+@data_admin_required
 def delete_customer_purchases(request):
     """Delete all customer purchases with password protection."""
     if request.method != "POST":
@@ -1920,6 +1935,7 @@ def delete_customer_purchases(request):
 
 
 @login_required(login_url='/accounts/login/')
+@data_admin_required
 def export_all_data_json(request):
     """Export all data as JSON for faster backups - includes all models from all apps."""
     import json
@@ -2015,6 +2031,7 @@ def export_all_data_json(request):
 
 
 @login_required(login_url='/accounts/login/')
+@data_admin_required
 def import_all_data_json(request):
     """Import all data from a JSON file for faster restoration."""
     import json
@@ -2293,6 +2310,7 @@ def import_all_data_json(request):
 
 
 @login_required(login_url='/accounts/login/')
+@data_admin_required
 def delete_all_data(request):
     """Delete all data from ALL tables across all apps (with confirmation)."""
     if request.method != "POST":
@@ -2590,15 +2608,8 @@ class MetalStockListView(LoginRequiredMixin, ListView):
 @login_required(login_url='/accounts/login/')
 def metal_stock_detail(request, pk):
     """View stock details and its movement history"""
-    # Always re-fetch the MetalStock from the DB to get the latest quantity
-    from django.db.models import Sum
     metal_stock = MetalStock.objects.get(pk=pk)
-    # Recalculate quantity from all movements (defensive, in case of any desync)
-    total_in = metal_stock.movements.filter(movement_type='in').aggregate(total=Sum('quantity'))['total'] or 0
-    total_out = metal_stock.movements.filter(movement_type='out').aggregate(total=Sum('quantity'))['total'] or 0
-    total_adj = metal_stock.movements.filter(movement_type='adjustment').aggregate(total=Sum('quantity'))['total'] or 0
-    metal_stock.quantity = total_in - total_out + total_adj
-    metal_stock.save()
+    recalculate_metal_stock_quantity(metal_stock)
     movements = MetalStockMovement.objects.filter(metal_stock=metal_stock).order_by('-movement_date')
     # Calculate average unit cost from 'in' movements
     in_movements = movements.filter(movement_type='in')
@@ -2703,12 +2714,7 @@ class MetalStockMovementCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         form.instance.metal_stock = self.metal_stock
         response = super().form_valid(form)
-        # Update MetalStock quantity
-        if form.instance.movement_type == 'in':
-            self.metal_stock.quantity += form.instance.quantity
-        elif form.instance.movement_type == 'out':
-            self.metal_stock.quantity -= form.instance.quantity
-        self.metal_stock.save()
+        recalculate_metal_stock_quantity(self.metal_stock)
         return response
 
     def get_success_url(self):
@@ -2728,13 +2734,7 @@ class MetalStockMovementUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        # After saving, recalculate the stock quantity from all movements
-        metal_stock = self.object.metal_stock
-        total_in = metal_stock.movements.filter(movement_type='in').aggregate(total=Sum('quantity'))['total'] or 0
-        total_out = metal_stock.movements.filter(movement_type='out').aggregate(total=Sum('quantity'))['total'] or 0
-        total_adj = metal_stock.movements.filter(movement_type='adjustment').aggregate(total=Sum('quantity'))['total'] or 0
-        metal_stock.quantity = total_in - total_out + total_adj
-        metal_stock.save()
+        recalculate_metal_stock_quantity(self.object.metal_stock)
         return response
 
     def get_success_url(self):
@@ -2751,30 +2751,19 @@ class MetalStockMovementDeleteView(LoginRequiredMixin, DeleteView):
     model = MetalStockMovement
     template_name = 'goldsilverpurchase/metalstockmovement_confirm_delete.html'
 
+    def form_valid(self, form):
+        self.object = self.get_object()
+        metal_stock_id = self.object.metal_stock_id
+        response = super().form_valid(form)
+        recalculate_metal_stock_quantity(metal_stock_id)
+        return response
+
     def delete(self, request, *args, **kwargs):
         self.object = self.get_object()
         metal_stock_id = self.object.metal_stock_id
         response = super().delete(request, *args, **kwargs)
-        # After deletion, recalculate the stock quantity from all remaining movements
-        from .models import MetalStock
-        from django.db.models import Sum
-        metal_stock = MetalStock.objects.get(pk=metal_stock_id)
-        metal_stock_id = self.get_object().metal_stock_id
-        response = super().delete(request, *args, **kwargs)
-        from .models import MetalStock
-        from django.db.models import Sum
-        metal_stock = MetalStock.objects.get(pk=metal_stock_id)
-        movements = metal_stock.movements.all()
-        if not movements.exists():
-            metal_stock.quantity = 0
-        else:
-            total_in = movements.filter(movement_type='in').aggregate(total=Sum('quantity'))['total'] or 0
-            total_out = movements.filter(movement_type='out').aggregate(total=Sum('quantity'))['total'] or 0
-            total_adj = movements.filter(movement_type='adjustment').aggregate(total=Sum('quantity'))['total'] or 0
-            metal_stock.quantity = total_in - total_out + total_adj
-        metal_stock.save()
-        from django.urls import reverse
-        return redirect(reverse('gsp:metal_stock_detail', kwargs={'pk': metal_stock_id}))
+        recalculate_metal_stock_quantity(metal_stock_id)
+        return response
 
     def get_success_url(self):
         return reverse('gsp:metal_stock_detail', kwargs={'pk': self.object.metal_stock_id})
@@ -2786,12 +2775,14 @@ class MetalStockMovementDeleteView(LoginRequiredMixin, DeleteView):
 
 
 @login_required(login_url='/accounts/login/')
+@data_admin_required
 def import_wizard(request):
     """Display the import wizard interface."""
     return render(request, 'goldsilverpurchase/import_wizard.html')
 
 
 @login_required(login_url='/accounts/login/')
+@data_admin_required
 def import_wizard_process(request):
     """Process the import with progress tracking."""
     import json
