@@ -332,6 +332,9 @@ def customer_home(request):
     
     # Get latest gold and silver rates
     latest_rate = DailyRate.objects.order_by('-created_at').first()
+
+    from .models import CustomerPageImage
+    home_hero = CustomerPageImage.get_for_slot(CustomerPageImage.PageSlot.HOME_HERO)
     
     context = {
         'featured_products': featured_products,
@@ -341,6 +344,7 @@ def customer_home(request):
         'categories_by_metal': categories_by_metal,
         'total_products': featured_products.count(),
         'latest_rate': latest_rate,
+        'home_hero': home_hero,
     }
     
     return render(request, 'main/customer_home.html', context)

@@ -1313,6 +1313,7 @@
         {% url 'main:account_settings' as account_settings_url %}
         {% url 'main:role_list' as role_list_url %}
         {% url 'main:marketing_dashboard' as marketing_dashboard_url %}
+        {% url 'main:page_images_settings' as page_images_settings_url %}
 
         {% url 'ornament:list' as ornament_list_url %}
         {% url 'ornament:barcode_scanner' as ornament_barcode_scanner_url %}
@@ -1565,6 +1566,7 @@
             </a>
             <div class="collapse" id="settingsMenu">
                 <a href="{{ data_settings_url }}" class="nav-link">Data Settings</a>
+                <a href="{{ page_images_settings_url }}" class="nav-link">Customer Page Images</a>
                 <a href="{{ performance_report_url }}" class="nav-link">Performance Report</a>
                 <a href="{{ account_settings_url }}" class="nav-link">Account Settings</a>
                 <a href="{{ role_list_url }}" class="nav-link">Roles</a>

@@ -137,13 +137,13 @@
 <!-- Hero Carousel Section -->
 <section class="relative px-4 mt-2">
 <div class="relative overflow-hidden rounded-xl aspect-[4/5] md:aspect-[16/9] group">
-<img class="w-full h-full object-cover brightness-75 scale-105 group-hover:scale-100 transition-transform duration-1000" src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=1200&h=600&fit=crop" alt="Luxurious gold and diamond necklace"/>
+<img class="w-full h-full object-cover brightness-75 scale-105 group-hover:scale-100 transition-transform duration-1000" src="{{ home_hero.image_url }}" alt="{{ home_hero.title|default:'Luxurious gold and diamond necklace' }}"/>
 <div class="absolute inset-0 bg-gradient-to-t from-background-dark via-transparent to-transparent"></div>
 <div class="absolute bottom-8 left-8 right-8 text-center flex flex-col items-center gap-4">
-<p class="text-xs uppercase tracking-[0.3em] text-primary/80 font-medium">The Eternal Sparkle</p>
-<h2 class="text-3xl font-light tracking-tight text-white dark:text-white">Antique Gold Collections</h2>
+{% if home_hero.tagline %}<p class="text-xs uppercase tracking-[0.3em] text-primary/80 font-medium">{{ home_hero.tagline }}</p>{% endif %}
+<h2 class="text-3xl font-light tracking-tight text-white dark:text-white">{{ home_hero.title|default:"Antique Gold Collections" }}</h2>
 <button class="bg-primary text-background-dark font-bold px-8 py-3 rounded-full text-sm uppercase tracking-widest hover:bg-yellow-300 transition-colors" onclick="scrollToProducts()">
-Shop Collection
+{{ home_hero.button_text|default:"Shop Collection" }}
 </button>
 </div>
 </div>

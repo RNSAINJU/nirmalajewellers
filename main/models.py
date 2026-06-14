@@ -1,6 +1,7 @@
 from django.db import models
 from decimal import Decimal
 from datetime import datetime, date
+from cloudinary.models import CloudinaryField
 
 class DailyRate(models.Model):
     """Store daily gold and silver rates from FENEGOSIDA."""
@@ -227,3 +228,79 @@ class MetalCategoryPricingConfig(models.Model):
         """Get or create the single pricing configuration."""
         config, _ = cls.objects.get_or_create(pk=1)
         return config
+
+
+class CustomerPageImage(models.Model):
+    """Configurable images and hero text for the customer-facing storefront."""
+
+    class PageSlot(models.TextChoices):
+        HOME_HERO = 'home_hero', 'Customer Home — Main Hero Banner'
+        HOME_PROMO = 'home_promo', 'Customer Home — Promo / Newsletter Banner'
+        SHOP_BANNER = 'shop_banner', 'Shop Page — Top Banner'
+
+    DEFAULT_HERO_IMAGE = (
+        'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=1200&h=600&fit=crop'
+    )
+
+    slot = models.CharField(
+        max_length=50,
+        choices=PageSlot.choices,
+        unique=True,
+        help_text='Which page section this image belongs to',
+    )
+    image = CloudinaryField('image', folder='customer_pages/', blank=True, null=True)
+    tagline = models.CharField(
+        max_length=120,
+        blank=True,
+        default='The Eternal Sparkle',
+        help_text='Small text above the main title',
+    )
+    title = models.CharField(
+        max_length=200,
+        blank=True,
+        default='Antique Gold Collections',
+        help_text='Main headline on the banner',
+    )
+    button_text = models.CharField(
+        max_length=60,
+        blank=True,
+        default='Shop Collection',
+        help_text='Call-to-action button label',
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text='When off, the default placeholder image and text are shown',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Customer Page Image'
+        verbose_name_plural = 'Customer Page Images'
+        ordering = ['slot']
+
+    def __str__(self):
+        return self.get_slot_display()
+
+    @property
+    def image_url(self):
+        if self.is_active and self.image:
+            return self.image.url
+        return self.DEFAULT_HERO_IMAGE
+
+    @classmethod
+    def get_for_slot(cls, slot_key):
+        """Return config for a slot, creating defaults if missing."""
+        defaults = {
+            'tagline': 'The Eternal Sparkle',
+            'title': 'Antique Gold Collections',
+            'button_text': 'Shop Collection',
+            'is_active': True,
+        }
+        obj, _ = cls.objects.get_or_create(slot=slot_key, defaults=defaults)
+        return obj
+
+    @classmethod
+    def all_slots(cls):
+        """Ensure every defined slot has a row and return them in order."""
+        return [cls.get_for_slot(choice.value) for choice in cls.PageSlot]
