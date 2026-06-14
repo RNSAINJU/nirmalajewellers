@@ -70,6 +70,22 @@ class PagePerformanceCommandTests(SimpleTestCase):
 
         self.assertEqual(paths, ["/", "/shop/"])
 
+    @override_settings(ROOT_URLCONF="mysite.urls")
+    def test_discovery_skips_django_admin_pages(self):
+        command = Command()
+
+        paths = command._paths_to_check(
+            configured_paths="",
+            extra_paths="",
+            skip_paths="",
+            include_authenticated=True,
+        )
+
+        self.assertNotIn("/admin/", paths)
+        self.assertNotIn("/finance/bulk-export/", paths)
+        self.assertNotIn("/finance/bulk-import/", paths)
+        self.assertIn("/admin-dashboard/", paths)
+
     @patch("main.management.commands.check_page_performance.requests.Session")
     @patch("main.management.commands.check_page_performance.send_slack_message")
     def test_command_sends_slack_when_issue_found(self, send_slack_mock, session_mock):

@@ -33,15 +33,16 @@ PUBLIC_PREFIXES = (
     "/products/",
 )
 NON_PAGE_MARKERS = (
+    "/admin/",
     "/api/",
     "/ajax/",
     "barcode-scanner/detect",
     "/delete",
     "/destroy",
     "/download",
-    "/export",
+    "export",
     "/fetch",
-    "/import",
+    "import",
     "/logout",
     "/mark-",
     "/print",
