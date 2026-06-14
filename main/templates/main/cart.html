@@ -3,441 +3,133 @@
 
 {% block title %}Shopping Cart | Nirmala Jewellers{% endblock %}
 
+{% block customer_header %}
+<div class="px-4 py-3 flex items-center justify-between">
+    <button type="button" class="p-2 -ml-2" onclick="window.history.back()" aria-label="Go back">
+        <span class="material-icons-outlined">arrow_back</span>
+    </button>
+    <h1 class="text-base font-semibold m-0">Your Cart</h1>
+    <a href="{% url 'main:shop' %}" class="text-xs customer-link font-semibold uppercase tracking-wide">Shop</a>
+</div>
+{% if latest_rate %}
+<div class="px-4 pb-3 flex gap-4 text-xs text-stone-500 border-b border-primary/10">
+    <span><span class="text-primary font-semibold">Gold:</span> रू{{ latest_rate.gold_rate|floatformat:0 }}</span>
+    <span><span class="text-primary font-semibold">Silver:</span> रू{{ latest_rate.silver_rate|floatformat:0 }}</span>
+</div>
+{% endif %}
+{% endblock %}
+
 {% block content %}
-<style>
-    :root {
-        --primary-color: #FFD700;
-        --dark-bg: #1a1a1a;
-        --text-light: #e0e0e0;
-        --card-bg: #2a2a2a;
-    }
-
-    body {
-        background-color: var(--dark-bg);
-        color: var(--text-light);
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    }
-
-    .navbar {
-        background-color: var(--dark-bg);
-        padding: 1rem 1.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        border-bottom: 1px solid #333;
-        position: sticky;
-        top: 0;
-        z-index: 100;
-    }
-
-    .cart-container {
-        max-width: 1200px;
-        margin: 2rem auto;
-        padding: 0 1.5rem;
-    }
-
-    .cart-title {
-        font-size: 2rem;
-        font-weight: 700;
-        margin-bottom: 2rem;
-        color: var(--primary-color);
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-
-    .cart-wrapper {
-        display: grid;
-        grid-template-columns: 1fr 350px;
-        gap: 2rem;
-    }
-
-    .cart-items {
-        background-color: var(--card-bg);
-        border-radius: 8px;
-        padding: 2rem;
-    }
-
-    .empty-cart {
-        text-align: center;
-        padding: 3rem;
-    }
-
-    .empty-cart-icon {
-        font-size: 4rem;
-        color: var(--primary-color);
-        margin-bottom: 1rem;
-    }
-
-    .empty-cart-text {
-        font-size: 1.2rem;
-        margin-bottom: 2rem;
-        color: #aaa;
-    }
-
-    .continue-shopping {
-        background-color: var(--primary-color);
-        color: #000;
-        border: none;
-        padding: 0.75rem 2rem;
-        border-radius: 50px;
-        font-weight: 600;
-        cursor: pointer;
-        text-decoration: none;
-        display: inline-block;
-        transition: all 0.3s ease;
-    }
-
-    .continue-shopping:hover {
-        background-color: #ffc700;
-        transform: translateY(-2px);
-    }
-
-    .cart-item {
-        display: flex;
-        gap: 1rem;
-        padding: 1.5rem 0;
-        border-bottom: 1px solid #333;
-    }
-
-    .cart-item:last-child {
-        border-bottom: none;
-    }
-
-    .item-image {
-        width: 100px;
-        height: 100px;
-        background-color: #333;
-        border-radius: 8px;
-        overflow: hidden;
-    }
-
-    .item-image img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .item-details {
-        flex: 1;
-    }
-
-    .item-name {
-        font-size: 1rem;
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-    }
-
-    .item-specs {
-        font-size: 0.85rem;
-        color: #999;
-        margin-bottom: 0.75rem;
-    }
-
-    .item-price {
-        color: var(--primary-color);
-        font-weight: 700;
-        font-size: 1.1rem;
-    }
-
-    .item-actions {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        margin-top: 1rem;
-    }
-
-    .quantity-control {
-        display: flex;
-        align-items: center;
-        border: 1px solid #444;
-        border-radius: 4px;
-        overflow: hidden;
-    }
-
-    .quantity-control button {
-        background: none;
-        border: none;
-        color: var(--text-light);
-        padding: 0.5rem 0.75rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-
-    .quantity-control button:hover {
-        background-color: rgba(255, 215, 0, 0.1);
-        color: var(--primary-color);
-    }
-
-    .quantity-control input {
-        background: none;
-        border: none;
-        color: var(--text-light);
-        width: 40px;
-        text-align: center;
-        font-weight: 600;
-    }
-
-    .remove-btn {
-        background: none;
-        border: none;
-        color: #ff4444;
-        cursor: pointer;
-        font-size: 1.2rem;
-        transition: all 0.3s ease;
-    }
-
-    .remove-btn:hover {
-        color: #ff6666;
-    }
-
-    .cart-summary {
-        background-color: var(--card-bg);
-        border-radius: 8px;
-        padding: 2rem;
-        height: fit-content;
-        position: sticky;
-        top: 100px;
-    }
-
-    .summary-title {
-        font-size: 1.1rem;
-        font-weight: 700;
-        margin-bottom: 1.5rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .summary-row {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 1rem;
-        font-size: 0.95rem;
-    }
-
-    .summary-row.total {
-        border-top: 1px solid #333;
-        padding-top: 1rem;
-        margin-top: 1rem;
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: var(--primary-color);
-    }
-
-    .checkout-btn {
-        width: 100%;
-        background-color: var(--primary-color);
-        color: #000;
-        border: none;
-        padding: 1rem;
-        border-radius: 8px;
-        font-size: 1rem;
-        font-weight: 600;
-        cursor: pointer;
-        margin-top: 1.5rem;
-        transition: all 0.3s ease;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .checkout-btn:hover {
-        background-color: #ffc700;
-        transform: translateY(-2px);
-    }
-
-    .checkout-btn:disabled {
-        background-color: #666;
-        cursor: not-allowed;
-        transform: none;
-    }
-
-    .navbar-brand {
-        font-size: 1.5rem;
-        font-weight: 700;
-        letter-spacing: 2px;
-        color: var(--primary-color);
-        text-decoration: none;
-    }
-
-    .nav-actions {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-
-    @media (max-width: 768px) {
-        .cart-wrapper {
-            grid-template-columns: 1fr;
-        }
-
-        .cart-summary {
-            position: static;
-            top: auto;
-        }
-
-        .cart-items {
-            padding: 1rem;
-        }
-
-        .cart-item {
-            padding: 1rem 0;
-        }
-
-        .item-image {
-            width: 80px;
-            height: 80px;
-        }
-
-        .cart-title {
-            font-size: 1.5rem;
-        }
-    }
-</style>
-
-<!-- Navigation Bar -->
-<nav class="navbar">
-    <a href="{% url 'main:customer_home' %}" class="navbar-brand">NIRMALA</a>
-    <div class="nav-actions">
-        {% if latest_rate %}
-        <div style="font-size: 0.85rem; color: #999; display: flex; gap: 1rem; margin-right: 1rem; padding-right: 1rem; border-right: 1px solid #333;">
-            <div>
-                <span style="color: var(--primary-color); font-weight: 600;">Gold: </span>
-                <span>रु{{ latest_rate.gold_rate|floatformat:0 }}</span>
-            </div>
-            <div>
-                <span style="color: var(--primary-color); font-weight: 600;">Silver: </span>
-                <span>रु{{ latest_rate.silver_rate|floatformat:0 }}</span>
-            </div>
-        </div>
-        {% endif %}
-        <a href="{% url 'main:customer_home' %}" class="continue-shopping">← Continue Shopping</a>
-    </div>
-</nav>
-
-<!-- Cart Container -->
-<div class="cart-container">
-    <h1 class="cart-title">Shopping Cart</h1>
-
-    <div class="cart-wrapper">
-        <!-- Cart Items -->
-        <div class="cart-items" id="cartItems">
-            <div class="empty-cart">
-                <div class="empty-cart-icon">
-                    <i class="bi bi-handbag"></i>
-                </div>
-                <p class="empty-cart-text">Your cart is empty</p>
-                <a href="{% url 'main:shop' %}" class="continue-shopping">Start Shopping</a>
+<div class="max-w-5xl mx-auto px-4 py-4 pb-8">
+    <div class="md:grid md:grid-cols-[1fr_320px] md:gap-6 md:items-start">
+        <div id="cartItems" class="rounded-xl border border-stone-200 dark:border-stone-700 bg-white/50 dark:bg-surface-dark/40 min-h-[200px]">
+            <div class="text-center py-16 px-4 text-stone-500">
+                <span class="material-icons-outlined text-5xl text-primary mb-3 block">shopping_bag</span>
+                <p class="mb-4">Your cart is empty</p>
+                <a href="{% url 'main:shop' %}" class="inline-block bg-primary text-background-dark px-6 py-2 rounded-full text-sm font-bold uppercase tracking-wide customer-btn-primary">Start Shopping</a>
             </div>
         </div>
 
-        <!-- Cart Summary -->
-        <div class="cart-summary">
-            <div class="summary-title">Order Summary</div>
-            <div class="summary-row">
-                <span>Subtotal:</span>
-                <span id="subtotal">रु 0</span>
+        <div class="mt-6 md:mt-0 rounded-xl border border-primary/20 bg-primary/10 p-5 md:sticky md:top-24">
+            <h2 class="text-sm font-bold uppercase tracking-wide mb-4">Order Summary</h2>
+            <div class="flex justify-between text-sm mb-2">
+                <span class="text-stone-600 dark:text-stone-400">Subtotal</span>
+                <span id="subtotal" class="font-semibold">रू 0</span>
             </div>
-            <div class="summary-row">
-                <span>Shipping:</span>
-                <span id="shipping">FREE</span>
+            <div class="flex justify-between text-sm mb-4">
+                <span class="text-stone-600 dark:text-stone-400">Delivery</span>
+                <span class="text-stone-500">Calculated at checkout</span>
             </div>
-            <div class="summary-row total">
-                <span>Total:</span>
-                <span id="total">रु 0</span>
+            <div class="flex justify-between text-base font-bold border-t border-primary/20 pt-4 mb-4">
+                <span>Total</span>
+                <span id="total" class="text-primary">रू 0</span>
             </div>
-            <button class="checkout-btn" id="checkoutBtn" disabled onclick="checkout()">
-                Proceed to Checkout
+            <button type="button" id="checkoutBtn" class="w-full bg-primary text-background-dark py-3 rounded-xl font-bold uppercase tracking-wide disabled:opacity-40 customer-btn-primary" disabled onclick="checkout()">
+                Proceed to Inquiry
             </button>
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
-    // Cart management functions
-    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+let cart = JSON.parse(localStorage.getItem('cart') || '[]');
 
-    function renderCart() {
-        const cartItemsContainer = document.getElementById('cartItems');
-        
-        if (cart.length === 0) {
-            cartItemsContainer.innerHTML = `
-                <div class="empty-cart">
-                    <div class="empty-cart-icon">
-                        <i class="bi bi-handbag"></i>
-                    </div>
-                    <p class="empty-cart-text">Your cart is empty</p>
-                    <a href="{% url 'main:shop' %}" class="continue-shopping">Start Shopping</a>
-                </div>
-            `;
-            document.getElementById('checkoutBtn').disabled = true;
-            updateSummary();
-            return;
-        }
+function renderCart() {
+    const container = document.getElementById('cartItems');
+    if (!container) return;
 
-        const itemsHtml = cart.map((item, index) => `
-            <div class="cart-item">
-                <div class="item-image">
-                    <img src="${item.image || 'https://via.placeholder.com/100'}" alt="${item.name}">
-                </div>
-                <div class="item-details">
-                    <div class="item-name">${item.name}</div>
-                    <div class="item-specs">${item.category || 'Jewelry'}</div>
-                    <div class="item-price">रु ${(item.price || 0).toLocaleString()}</div>
-                    <div class="item-actions">
-                        <div class="quantity-control">
-                            <button onclick="updateQuantity(${index}, -1)">−</button>
-                            <input type="number" value="${item.quantity || 1}" readonly>
-                            <button onclick="updateQuantity(${index}, 1)">+</button>
-                        </div>
-                        <button class="remove-btn" onclick="removeFromCart(${index})">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `).join('');
-
-        cartItemsContainer.innerHTML = itemsHtml;
-        document.getElementById('checkoutBtn').disabled = false;
+    if (cart.length === 0) {
+        container.innerHTML = '<div class="text-center py-16 px-4 text-stone-500">' +
+            '<span class="material-icons-outlined text-5xl text-primary mb-3 block">shopping_bag</span>' +
+            '<p class="mb-4">Your cart is empty</p>' +
+            '<a href="{% url "main:shop" %}" class="inline-block bg-primary text-background-dark px-6 py-2 rounded-full text-sm font-bold uppercase tracking-wide customer-btn-primary">Start Shopping</a>' +
+            '</div>';
+        document.getElementById('checkoutBtn').disabled = true;
         updateSummary();
+        updateCustomerCartBadge();
+        return;
     }
 
-    function updateQuantity(index, change) {
-        if (cart[index]) {
-            cart[index].quantity = (cart[index].quantity || 1) + change;
-            if (cart[index].quantity <= 0) {
-                removeFromCart(index);
-            } else {
-                localStorage.setItem('cart', JSON.stringify(cart));
-                renderCart();
-            }
-        }
+    container.innerHTML = cart.map(function (item, index) {
+        return '<div class="flex gap-3 p-4 border-b border-stone-200 dark:border-stone-700 last:border-0">' +
+            '<div class="w-20 h-20 rounded-lg overflow-hidden bg-stone-200 dark:bg-background-dark flex-shrink-0">' +
+            (item.image ? '<img src="' + item.image + '" alt="" class="w-full h-full object-cover">' : '<div class="w-full h-full flex items-center justify-center"><span class="material-icons-outlined text-stone-400">image</span></div>') +
+            '</div>' +
+            '<div class="flex-1 min-w-0">' +
+            '<p class="font-semibold text-sm truncate">' + (item.name || 'Product') + '</p>' +
+            '<p class="text-xs text-stone-500 mt-1">' + (item.specs || item.category || 'Jewelry') + '</p>' +
+            '<p class="text-primary font-bold mt-2">रू ' + Number(item.price || 0).toLocaleString() + '</p>' +
+            '<div class="flex items-center gap-3 mt-3">' +
+            '<div class="flex items-center border border-stone-300 dark:border-stone-600 rounded-lg overflow-hidden">' +
+            '<button type="button" class="px-3 py-1" onclick="updateQuantity(' + index + ', -1)">−</button>' +
+            '<span class="px-2 text-sm font-semibold">' + (item.quantity || 1) + '</span>' +
+            '<button type="button" class="px-3 py-1" onclick="updateQuantity(' + index + ', 1)">+</button>' +
+            '</div>' +
+            '<button type="button" class="text-red-500 text-sm" onclick="removeFromCart(' + index + ')">Remove</button>' +
+            '</div></div></div>';
+    }).join('');
+
+    document.getElementById('checkoutBtn').disabled = false;
+    updateSummary();
+    updateCustomerCartBadge();
+}
+
+function updateQuantity(index, change) {
+    if (!cart[index]) return;
+    cart[index].quantity = (cart[index].quantity || 1) + change;
+    if (cart[index].quantity <= 0) {
+        removeFromCart(index);
+        return;
     }
-
-    function removeFromCart(index) {
-        cart.splice(index, 1);
-        localStorage.setItem('cart', JSON.stringify(cart));
-        localStorage.setItem('cartCount', cart.length);
-        renderCart();
-    }
-
-    function updateSummary() {
-        const subtotal = cart.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 1)), 0);
-        const total = subtotal;
-
-        document.getElementById('subtotal').textContent = `रु ${subtotal.toLocaleString()}`;
-        document.getElementById('total').textContent = `रु ${total.toLocaleString()}`;
-    }
-
-    function checkout() {
-        if (cart.length === 0) {
-            alert('Your cart is empty!');
-            return;
-        }
-        alert('Checkout functionality coming soon! Items in cart: ' + cart.length);
-    }
-
-    // Initial render
+    localStorage.setItem('cart', JSON.stringify(cart));
     renderCart();
-</script>
+}
 
+function removeFromCart(index) {
+    cart.splice(index, 1);
+    localStorage.setItem('cart', JSON.stringify(cart));
+    renderCart();
+    showCustomerToast('Item removed from cart');
+}
+
+function updateSummary() {
+    const subtotal = cart.reduce(function (sum, item) {
+        return sum + ((item.price || 0) * (item.quantity || 1));
+    }, 0);
+    document.getElementById('subtotal').textContent = 'रू ' + subtotal.toLocaleString();
+    document.getElementById('total').textContent = 'रू ' + subtotal.toLocaleString();
+}
+
+function checkout() {
+    if (cart.length === 0) {
+        showCustomerToast('Your cart is empty', 'error');
+        return;
+    }
+    showCustomerToast('Checkout inquiry coming soon — ' + cart.length + ' item(s) saved');
+}
+
+renderCart();
+</script>
 {% endblock %}

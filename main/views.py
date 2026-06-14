@@ -332,6 +332,9 @@ def customer_home(request):
     
     # Get latest gold and silver rates
     latest_rate = DailyRate.objects.order_by('-created_at').first()
+
+    for product in new_arrivals:
+        product.calculated_selling_amount = calculate_product_selling_amount(product, latest_rate)
     
     context = {
         'featured_products': featured_products,
@@ -341,6 +344,7 @@ def customer_home(request):
         'categories_by_metal': categories_by_metal,
         'total_products': featured_products.count(),
         'latest_rate': latest_rate,
+        'customer_nav_tab': 'home',
     }
     
     return render(request, 'main/customer_home.html', context)
@@ -416,6 +420,7 @@ def product_detail(request, product_id):
         'product': product,
         'latest_rate': latest_rate,
         'total_selling_amount': total_selling_amount,
+        'customer_nav_tab': 'shop',
     }
     
     return render(request, 'main/product_detail.html', context)
@@ -456,6 +461,7 @@ def category_products(request, category_id=None):
         'products': products,
         'selected_metal_type': selected_metal_type,
         'latest_rate': latest_rate,
+        'customer_nav_tab': 'shop',
     }
     
     return render(request, 'main/category_products.html', context)
@@ -468,6 +474,7 @@ def cart(request):
     
     context = {
         'latest_rate': latest_rate,
+        'customer_nav_tab': 'cart',
     }
     
     return render(request, 'main/cart.html', context)
