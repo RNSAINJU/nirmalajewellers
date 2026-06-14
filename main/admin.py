@@ -1,5 +1,8 @@
 from django.contrib import admin
-from .models import Stock, DailyRate, CustomerCampaignContact, CampaignMessageLog, MetalCategoryPricingConfig
+from .models import (
+    Stock, DailyRate, CustomerCampaignContact, CampaignMessageLog,
+    MetalCategoryPricingConfig, CustomerPageImage,
+)
 
 @admin.register(DailyRate)
 class DailyRateAdmin(admin.ModelAdmin):
@@ -117,3 +120,10 @@ class MetalCategoryPricingConfigAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         """Prevent deletion of the single configuration."""
         return False
+
+
+@admin.register(CustomerPageImage)
+class CustomerPageImageAdmin(admin.ModelAdmin):
+    list_display = ['slot', 'title', 'is_active', 'updated_at']
+    list_filter = ['is_active', 'slot']
+    readonly_fields = ['created_at', 'updated_at']

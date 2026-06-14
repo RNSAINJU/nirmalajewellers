@@ -2,7 +2,7 @@
 # Quick deploy script — run this on the live server after pulling changes
 set -e
 
-PROJECT_DIR="/home/django_user/nirmalajewellers"
+PROJECT_DIR="/home/rnsainju/nirmalajewellers"
 VENV="$PROJECT_DIR/venv/bin/activate"
 SERVICE="nirmalajewellers"
 

@@ -3,6 +3,7 @@ from . import views
 from . import views_accounts
 from . import views_assets
 from . import views_marketing
+from . import views_page_images
 
 app_name = 'main'
 
@@ -23,6 +24,7 @@ urlpatterns = [
     path('edit-stock/<int:year>/', views.edit_stock, name='edit_stock'),
     path('metal-pricing/', views.metal_pricing_config, name='metal_pricing_config'),
     path('silver-keyring-pricing/', views.silver_keyring_pricing_config, name='silver_keyring_pricing_config'),  # Backwards compatibility
+    path('settings/page-images/', views_page_images.page_images_settings, name='page_images_settings'),
     
     # Customer API Endpoints
     path('api/products/by-category/<int:category_id>/', views.api_products_by_category, name='api_products_by_category'),

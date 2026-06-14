@@ -317,10 +317,7 @@ class OrderCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         # Save the order first
-        print(f"[DEBUG] form_valid called")
-        print(f"[DEBUG] form.cleaned_data keys: {form.cleaned_data.keys()}")
         self.object = form.save()
-        print(f"[DEBUG] Order saved with sn={self.object.sn}")
 
 
         # Create per-line OrderOrnament entries from JSON payload
@@ -361,25 +358,15 @@ class OrderCreateView(LoginRequiredMixin, CreateView):
             ornament.save()
 
         # Save metal stock formset - NOW with the saved order instance
-        print(f"\n=== ORDER CREATE VIEW - Processing metal formset for order {self.object.sn} ===")
-        print(f"POST data keys with 'metal': {[k for k in self.request.POST.keys() if 'metal' in k][:5]}")
         metal_stock_formset = MetalStockFormSet(self.request.POST, instance=self.object)
-        print(f"Formset initialized, is_valid={metal_stock_formset.is_valid()}")
         
         if metal_stock_formset.is_valid():
             # Only save forms that have data (non-empty)
             saved_metals = []
             formset_forms = list(metal_stock_formset)
-            print(f"DEBUG: Formset has {len(formset_forms)} forms")
-            for idx, form in enumerate(formset_forms):
+            for form in formset_forms:
                 # Check if form marked for deletion
                 is_delete = form.cleaned_data.get('DELETE', False)
-                metal_type_val = form.cleaned_data.get('metal_type')
-                print(f"  Form {idx}: metal_type={metal_type_val}, DELETE={is_delete}")
-                
-                # NOW check metal_type again inside the loop
-                metal_type_inside = form.cleaned_data.get('metal_type')
-                print(f"    >> Inside loop: metal_type={metal_type_inside}")
                 
                 if is_delete:
                     # Handle deleted forms - restore to stock
@@ -420,31 +407,23 @@ class OrderCreateView(LoginRequiredMixin, CreateView):
                 # Check if form has actual data (metal_type is selected AND quantity is provided)
                 metal_type = form.cleaned_data.get('metal_type')
                 quantity = form.cleaned_data.get('quantity')
-                print(f"      After deletion check, metal_type={metal_type}, quantity={quantity}...")
                 
                 # Skip empty rows - must have both metal_type and non-zero quantity
                 if not metal_type or not quantity or quantity == 0:
-                    print(f"      Skipping empty/incomplete row: metal_type={metal_type}, quantity={quantity}")
                     # If this is an existing record being cleared, delete it
                     if form.instance.pk and not metal_type:
                         form.instance.delete()
                     continue
                 
-                print(f"      *** ENTERED IF BLOCK FOR FORM - metal_type={metal_type}, qty={quantity} ***")
                 # Check if this is a new record (no pk) before saving
                 is_new = not form.instance.pk
-                print(f"        is_new={is_new}")
                 
                 # Save the order metal entry
-                print(f"        About to save metal form...")
                 order_metal = form.save()
-                print(f"        SAVED! order_metal.pk={order_metal.pk}")
                 saved_metals.append(order_metal)
-                print(f"        Appended to saved_metals")
                 
                 # Deduct from existing metal stock if this is a new entry
                 if is_new:
-                    print(f"        >> Starting stock deduction for is_new={is_new}")
                     # This is a new metal addition to the order
                     quantity = order_metal.quantity
                     metal_type = order_metal.metal_type
@@ -590,10 +569,6 @@ class OrderUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         # Save the order
         self.object = form.save()
-        
-        # DEBUG: Check if metal stock data is in POST
-        print(f"DEBUG UPDATE: TOTAL_FORMS = {self.request.POST.get('ordermetal_stock_set-TOTAL_FORMS')}")
-        print(f"DEBUG UPDATE: POST keys with ordermetal: {[k for k in self.request.POST.keys() if 'ordermetal' in k][:10]}")
 
         # Rebuild per-line OrderOrnament entries from JSON payload
         order_lines_raw = form.cleaned_data.get('order_lines_json') or '[]'

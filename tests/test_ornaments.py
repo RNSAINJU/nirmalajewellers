@@ -1,22 +1,20 @@
-#!/usr/bin/env python
-import os
-import sys
-import django
+from django.test import TestCase
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mysite.settings')
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-APP_ROOT = os.path.join(REPO_ROOT, 'nirmalajewellers')
-sys.path.insert(0, APP_ROOT)
-django.setup()
+from ornament.models import Kaligar, Ornament
 
-from ornament.models import Ornament
 
-total = Ornament.objects.count()
-unassigned = Ornament.objects.filter(order__isnull=True).count()
+class OrnamentQueryTest(TestCase):
+    """Smoke test for ornament model queries used in order assignment."""
 
-print(f'Total ornaments: {total}')
-print(f'Unassigned: {unassigned}')
-print('\nFirst 3 unassigned ornaments:')
+    def test_unassigned_ornaments_query(self):
+        kaligar = Kaligar.objects.create(name='Test Kaligar', panno='123456789')
+        Ornament.objects.create(
+            code='TEST-001',
+            ornament_name='Test Ring',
+            metal_type='Gold',
+            weight=10,
+            kaligar=kaligar,
+        )
 
-for o in Ornament.objects.filter(order__isnull=True)[:3]:
-    print(f'  ID: {o.id}, Code: {o.code}, Name: {o.ornament_name}, Metal: {o.metal_type}')
+        self.assertEqual(Ornament.objects.count(), 1)
+        self.assertEqual(Ornament.objects.filter(order__isnull=True).count(), 1)

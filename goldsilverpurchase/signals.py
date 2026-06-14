@@ -1,7 +1,18 @@
 from django.db.models.signals import post_save, post_delete, pre_save
 from django.dispatch import receiver
 from decimal import Decimal
+import nepali_datetime as ndt
+
 from .models import MetalStock, MetalStockType, MetalStockMovement, GoldSilverPurchase
+
+
+def _movement_date_for_customer_purchase(instance):
+    """Return a NepaliDate for movement records, never a datetime."""
+    if instance.purchase_date:
+        return instance.purchase_date
+    if instance.created_at:
+        return ndt.date.from_datetime_date(instance.created_at.date())
+    return None
 
 # --- MetalStockMovement for GoldSilverPurchase (always create for any purchase) ---
 @receiver(post_save, sender=GoldSilverPurchase)
@@ -115,7 +126,7 @@ def add_refined_weight_to_metal_stock(sender, instance, created, **kwargs):
                     'quantity': instance.refined_weight,
                     'rate': instance.rate,
                     'notes': notes,
-                    'movement_date': instance.purchase_date or instance.created_at,
+                    'movement_date': _movement_date_for_customer_purchase(instance),
                 }
             )
             # Always recalculate MetalStock after movement update/create
@@ -153,7 +164,7 @@ def add_refined_weight_to_metal_stock(sender, instance, created, **kwargs):
                     'quantity': instance.refined_weight,
                     'rate': instance.rate,
                     'notes': notes,
-                    'movement_date': instance.purchase_date or instance.created_at,
+                    'movement_date': _movement_date_for_customer_purchase(instance),
                 }
             )
             # Always recalculate MetalStock after movement update/create

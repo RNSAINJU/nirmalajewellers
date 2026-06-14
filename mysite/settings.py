@@ -25,7 +25,7 @@ DEBUG = os.getenv('DEBUG', 'False') == 'True'
 # Local: leave unset or set DJANGO_ENV=local — runserver works over plain HTTP.
 IS_PRODUCTION = os.getenv('DJANGO_ENV', 'local').lower() == 'production'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'nirmalajewellers.net,www.nirmalajewellers.net,localhost,127.0.0.1,5.189.164.193,.ngrok-free.app,.ngrok.io').split(',')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'nirmalajewellers.net,www.nirmalajewellers.net,localhost,127.0.0.1,5.189.164.193,82.197.69.121,.ngrok-free.app,.ngrok.io').split(',')
 
 CSRF_TRUSTED_ORIGINS = os.getenv(
     'CSRF_TRUSTED_ORIGINS',
@@ -144,6 +144,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'main.context_processors.latest_rate',
+                'main.context_processors.site_branding',
                 'main.context_processors.customer_nav',
             ],
         },
