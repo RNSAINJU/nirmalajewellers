@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nirmala Jewellers — Unified Customer Design Preview</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#f4c025",
+            "primary-hover": "#ffd700",
+            "bg-light": "#f8f8f5",
+            "bg-dark": "#221e10",
+            "surface-dark": "#2a2418",
+            "text-dark": "#221e10",
+          },
+          fontFamily: { display: ["Manrope", "sans-serif"] },
+          borderRadius: { xl: "0.75rem", "2xl": "1rem", full: "9999px" },
+        },
+      },
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Manrope', sans-serif; margin: 0; background: #0f0f0f; color: #e5e5e5; }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Preview chrome */
+    .preview-header {
+      background: linear-gradient(135deg, #1a1813 0%, #0f0e0b 100%);
+      border-bottom: 1px solid rgba(244,192,37,0.2);
+      padding: 1.25rem 2rem;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .screen-tabs { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; }
+    .screen-tab {
+      padding: 0.5rem 1rem; border-radius: 9999px; border: 1px solid rgba(244,192,37,0.3);
+      background: transparent; color: #a8a6a3; cursor: pointer; font-size: 0.85rem; font-weight: 600;
+      transition: all 0.2s;
+    }
+    .screen-tab.active, .screen-tab:hover {
+      background: rgba(244,192,37,0.15); color: #f4c025; border-color: #f4c025;
+    }
+    .screen-panel { display: none; padding: 2rem; max-width: 1400px; margin: 0 auto; }
+    .screen-panel.active { display: block; }
+
+    /* Device frames */
+    .device-row { display: flex; gap: 2rem; flex-wrap: wrap; justify-content: center; align-items: flex-start; }
+    .device-frame {
+      background: #111; border-radius: 2rem; padding: 12px;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(244,192,37,0.1);
+      flex-shrink: 0;
+    }
+    .device-frame.mobile { width: 375px; }
+    .device-frame.desktop { width: 900px; max-width: 100%; }
+    .device-label {
+      text-align: center; font-size: 0.75rem; color: #6b6b6b; margin-bottom: 0.75rem;
+      text-transform: uppercase; letter-spacing: 0.1em;
+    }
+    .device-screen {
+      border-radius: 1.5rem; overflow: hidden; background: #221e10;
+      height: 720px; overflow-y: auto;
+    }
+    .device-screen.desktop-screen { height: 580px; border-radius: 0.75rem; }
+
+    /* Token swatches */
+    .token-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; }
+    .token-swatch {
+      border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08);
+    }
+    .token-color { height: 64px; }
+    .token-info { padding: 0.75rem; background: #1a1a1a; font-size: 0.75rem; }
+    .token-info strong { display: block; color: #f4c025; margin-bottom: 0.25rem; }
+
+    /* Mock UI components inside frames */
+    .mock-app { min-height: 100%; background: #221e10; color: #e8e6e3; font-size: 14px; }
+    .mock-app.light { background: #f8f8f5; color: #221e10; }
+    .mock-header {
+      padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;
+      background: rgba(34,30,16,0.95); backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(244,192,37,0.1); position: sticky; top: 0; z-index: 10;
+    }
+    .mock-app.light .mock-header { background: rgba(248,248,245,0.95); border-color: rgba(244,192,37,0.15); }
+    .mock-logo { font-size: 1.1rem; font-weight: 300; letter-spacing: 0.2em; color: #f4c025; text-transform: uppercase; }
+    .mock-search {
+      margin: 0 16px 12px; padding: 10px 12px 10px 36px; border-radius: 12px;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+      color: #e8e6e3; font-size: 13px; width: calc(100% - 32px); position: relative;
+    }
+    .mock-app.light .mock-search { background: #fff; border-color: #e5e5df; color: #221e10; }
+    .mock-hero {
+      margin: 8px 16px; border-radius: 12px; aspect-ratio: 4/5; overflow: hidden; position: relative;
+      background: linear-gradient(135deg, #3a3020 0%, #221e10 100%);
+    }
+    .mock-hero img { width: 100%; height: 100%; object-fit: cover; opacity: 0.85; }
+    .mock-hero-content {
+      position: absolute; bottom: 24px; left: 16px; right: 16px; text-align: center;
+    }
+    .mock-hero-content h2 { font-size: 1.5rem; font-weight: 300; color: #fff; margin: 8px 0 16px; }
+    .mock-btn-primary {
+      background: #f4c025; color: #221e10; padding: 10px 24px; border-radius: 9999px;
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em;
+      border: none; cursor: pointer;
+    }
+    .mock-section-title {
+      padding: 16px 16px 8px; font-size: 13px; font-weight: 300;
+      letter-spacing: 0.15em; text-transform: uppercase; color: #e8e6e3;
+    }
+    .mock-app.light .mock-section-title { color: #221e10; }
+    .mock-categories { display: flex; gap: 16px; padding: 0 16px 16px; overflow-x: auto; }
+    .mock-cat { flex-shrink: 0; text-align: center; }
+    .mock-cat-circle {
+      width: 72px; height: 72px; border-radius: 50%; border: 1px solid rgba(244,192,37,0.3);
+      overflow: hidden; margin-bottom: 6px;
+    }
+    .mock-cat-circle img { width: 100%; height: 100%; object-fit: cover; }
+    .mock-cat span { font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: #a8a6a3; }
+    .mock-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 16px 80px; }
+    .mock-product-card { border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.06); }
+    .mock-product-img { aspect-ratio: 3/4; background: #2a2418; position: relative; }
+    .mock-product-img img { width: 100%; height: 100%; object-fit: cover; }
+    .mock-product-info { padding: 10px; }
+    .mock-product-info .cat { font-size: 10px; color: #a8a6a3; text-transform: uppercase; }
+    .mock-product-info .name { font-size: 13px; font-weight: 600; margin: 4px 0; }
+    .mock-product-info .price { font-size: 14px; font-weight: 700; color: #f4c025; }
+    .mock-bottom-nav {
+      position: sticky; bottom: 0; display: flex; justify-content: space-around;
+      padding: 10px 0; background: rgba(34,30,16,0.98); border-top: 1px solid rgba(244,192,37,0.1);
+    }
+    .mock-nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px;
+      font-size: 9px; color: #6b6b6b; text-transform: uppercase; }
+    .mock-nav-item.active { color: #f4c025; }
+
+    /* Shop mock */
+    .mock-filter-bar { display: flex; gap: 8px; padding: 12px 16px; overflow-x: auto; }
+    .mock-filter-pill {
+      padding: 6px 14px; border-radius: 9999px; font-size: 12px; white-space: nowrap;
+      background: rgba(255,255,255,0.08); color: #e8e6e3; border: none;
+    }
+    .mock-filter-pill.active { background: #f4c025; color: #221e10; font-weight: 600; }
+
+    /* Product detail mock */
+    .mock-product-detail { padding-bottom: 80px; }
+    .mock-product-main-img { aspect-ratio: 1; background: #2a2418; margin: 16px; border-radius: 12px; overflow: hidden; }
+    .mock-specs { margin: 16px; padding: 16px; background: rgba(255,255,255,0.04); border-radius: 12px; }
+    .mock-spec-row { display: grid; grid-template-columns: 100px 1fr; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 13px; }
+    .mock-spec-row:last-child { border: none; }
+    .mock-spec-label { color: #a8a6a3; font-size: 11px; text-transform: uppercase; }
+    .mock-spec-value { color: #f4c025; font-weight: 600; }
+    .mock-actions { display: flex; gap: 12px; padding: 16px; }
+    .mock-btn-secondary {
+      flex: 1; padding: 14px; border-radius: 12px; border: 2px solid #f4c025;
+      background: transparent; color: #f4c025; font-weight: 600; font-size: 13px;
+    }
+
+    /* Cart mock */
+    .mock-cart-item { display: flex; gap: 12px; padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .mock-cart-img { width: 80px; height: 80px; border-radius: 8px; background: #2a2418; overflow: hidden; }
+    .mock-cart-summary {
+      margin: 16px; padding: 20px; background: rgba(244,192,37,0.08);
+      border: 1px solid rgba(244,192,37,0.2); border-radius: 12px;
+    }
+
+    .comparison-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 1rem; }
+    .comparison-table th, .comparison-table td { padding: 0.75rem 1rem; border: 1px solid rgba(255,255,255,0.08); text-align: left; }
+    .comparison-table th { background: rgba(244,192,37,0.1); color: #f4c025; }
+    .badge-new { background: rgba(34,197,94,0.2); color: #22c55e; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; }
+    .badge-old { background: rgba(239,68,68,0.2); color: #ef4444; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; }
+  </style>
+</head>
+<body>
+
+  <header class="preview-header">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+      <div>
+        <p style="color:#f4c025;font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;margin:0 0 0.25rem;">Design Preview — Not live site</p>
+        <h1 style="margin:0;font-size:1.75rem;font-weight:300;letter-spacing:0.05em;">Nirmala Jewellers · Unified Customer UI</h1>
+        <p style="margin:0.5rem 0 0;color:#9b9b9b;font-size:0.9rem;">Proposed look before changing your Django templates</p>
+      </div>
+      <button id="themeToggle" style="padding:0.5rem 1rem;border-radius:9999px;border:1px solid rgba(244,192,37,0.4);background:rgba(244,192,37,0.1);color:#f4c025;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;gap:0.5rem;">
+        <span class="material-icons-outlined" style="font-size:1.1rem;">dark_mode</span> Toggle light / dark
+      </button>
+    </div>
+    <nav class="screen-tabs">
+      <button class="screen-tab active" data-screen="overview">Overview & Tokens</button>
+      <button class="screen-tab" data-screen="home">Home</button>
+      <button class="screen-tab" data-screen="shop">Shop</button>
+      <button class="screen-tab" data-screen="product">Product</button>
+      <button class="screen-tab" data-screen="cart">Cart</button>
+      <button class="screen-tab" data-screen="compare">Before vs After</button>
+    </nav>
+  </header>
+
+  <!-- OVERVIEW -->
+  <section id="overview" class="screen-panel active">
+    <h2 style="font-size:1.25rem;font-weight:600;margin-bottom:1rem;color:#f4c025;">Design System Tokens</h2>
+    <p style="color:#9b9b9b;margin-bottom:1.5rem;max-width:640px;">One shared palette and typography across Home, Shop, Product, and Cart — based on your best page (current homepage).</p>
+    <div class="token-grid" style="margin-bottom:2.5rem;">
+      <div class="token-swatch"><div class="token-color" style="background:#f4c025;"></div><div class="token-info"><strong>Primary Gold</strong>#f4c025</div></div>
+      <div class="token-swatch"><div class="token-color" style="background:#ffd700;"></div><div class="token-info"><strong>Gold Hover</strong>#ffd700</div></div>
+      <div class="token-swatch"><div class="token-color" style="background:#221e10;"></div><div class="token-info"><strong>Dark BG</strong>#221e10</div></div>
+      <div class="token-swatch"><div class="token-color" style="background:#f8f8f5;"></div><div class="token-info"><strong>Light BG</strong>#f8f8f5</div></div>
+      <div class="token-swatch"><div class="token-color" style="background:#2a2418;"></div><div class="token-info"><strong>Surface</strong>#2a2418</div></div>
+      <div class="token-swatch"><div class="token-color" style="background:#e8e6e3;"></div><div class="token-info"><strong>Text Light</strong>#e8e6e3</div></div>
+    </div>
+
+    <h3 style="font-size:1rem;margin-bottom:1rem;">Typography & Icons</h3>
+    <p style="font-family:Manrope;font-size:2rem;font-weight:300;letter-spacing:0.1em;color:#f4c025;margin-bottom:0.5rem;">NIRMALA</p>
+    <p style="color:#9b9b9b;font-size:0.9rem;margin-bottom:2rem;">Manrope · Material Icons Outlined · Uppercase labels with wide letter-spacing</p>
+
+    <h3 style="font-size:1rem;margin-bottom:1rem;">Shared Components (all screens)</h3>
+    <div class="device-row">
+      <div class="device-frame mobile">
+        <div class="device-label">Mobile — unified chrome</div>
+        <div class="device-screen">
+          <div class="mock-app" id="componentDemo">
+            <div class="mock-header">
+              <span class="material-icons-outlined" style="color:#e8e6e3;">menu</span>
+              <span class="mock-logo">Nirmala</span>
+              <div style="display:flex;gap:4px;">
+                <span class="material-icons-outlined" style="color:#e8e6e3;">dark_mode</span>
+                <span class="material-icons-outlined" style="color:#e8e6e3;position:relative;">shopping_bag
+                  <span style="position:absolute;top:-4px;right:-4px;background:#f4c025;color:#221e10;font-size:9px;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;">2</span>
+                </span>
+              </div>
+            </div>
+            <input class="mock-search" placeholder="Search gold, diamonds, collections..." readonly>
+            <div style="padding:16px;">
+              <p style="font-size:11px;color:#a8a6a3;text-transform:uppercase;letter-spacing:0.15em;margin-bottom:12px;">Buttons</p>
+              <button class="mock-btn-primary" style="width:100%;margin-bottom:8px;">Add to Cart</button>
+              <button class="mock-btn-secondary" style="width:100%;">Wishlist</button>
+            </div>
+            <div class="mock-bottom-nav">
+              <div class="mock-nav-item active"><span class="material-icons-outlined" style="font-size:20px;">home</span>Home</div>
+              <div class="mock-nav-item"><span class="material-icons-outlined" style="font-size:20px;">search</span>Search</div>
+              <div class="mock-nav-item"><span class="material-icons-outlined" style="font-size:20px;">favorite_border</span>Wishlist</div>
+              <div class="mock-nav-item"><span class="material-icons-outlined" style="font-size:20px;">person_outline</span>Profile</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOME -->
+  <section id="home" class="screen-panel">
+    <h2 style="margin-bottom:1rem;color:#f4c025;">Home — unified design</h2>
+    <div class="device-row">
+      <div class="device-frame mobile">
+        <div class="device-label">Mobile (375px)</div>
+        <div class="device-screen">
+          <div class="mock-app mock-home">
+            <div class="mock-header">
+              <span class="material-icons-outlined">menu</span>
+              <span class="mock-logo">Nirmala</span>
+              <div style="display:flex;gap:4px;">
+                <span class="material-icons-outlined">dark_mode</span>
+                <span class="material-icons-outlined">shopping_bag</span>
+              </div>
+            </div>
+            <input class="mock-search" placeholder="Search gold, diamonds, collections..." readonly>
+            <div class="mock-hero">
+              <img src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&h=500&fit=crop" alt="">
+              <div class="mock-hero-content">
+                <p style="font-size:10px;color:rgba(244,192,37,0.8);letter-spacing:0.2em;text-transform:uppercase;">The Eternal Sparkle</p>
+                <h2>Antique Gold Collections</h2>
+                <button class="mock-btn-primary">Shop Collection</button>
+              </div>
+            </div>
+            <div class="mock-section-title">Categories</div>
+            <div class="mock-categories hide-scrollbar">
+              <div class="mock-cat"><div class="mock-cat-circle"><img src="https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=80&h=80&fit=crop" alt=""></div><span>Necklaces</span></div>
+              <div class="mock-cat"><div class="mock-cat-circle"><img src="https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=80&h=80&fit=crop" alt=""></div><span>Earrings</span></div>
+              <div class="mock-cat"><div class="mock-cat-circle"><img src="https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=80&h=80&fit=crop" alt=""></div><span>Rings</span></div>
+              <div class="mock-cat"><div class="mock-cat-circle"><img src="https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=80&h=80&fit=crop" alt=""></div><span>Bangles</span></div>
+            </div>
+            <div class="mock-section-title">New Arrivals</div>
+            <div class="mock-grid">
+              <div class="mock-product-card">
+                <div class="mock-product-img"><img src="https://images.unsplash.com/photo-1603561596112-0a132b757442?w=200&h=260&fit=crop" alt=""></div>
+                <div class="mock-product-info"><div class="cat">Necklace</div><div class="name">Temple Gold Haar</div><div class="price">रू 1,24,500</div></div>
+              </div>
+              <div class="mock-product-card">
+                <div class="mock-product-img"><img src="https://images.unsplash.com/photo-1596944924616-7b3847231f97?w=200&h=260&fit=crop" alt=""></div>
+                <div class="mock-product-info"><div class="cat">Ring</div><div class="name">Diamond Solitaire</div><div class="price">रू 89,000</div></div>
+              </div>
+            </div>
+            <div class="mock-bottom-nav">
+              <div class="mock-nav-item active"><span class="material-icons-outlined" style="font-size:20px;">home</span>Home</div>
+              <div class="mock-nav-item"><span class="material-icons-outlined" style="font-size:20px;">search</span>Search</div>
+              <div class="mock-nav-item"><span class="material-icons-outlined" style="font-size:20px;">favorite_border</span>Wishlist</div>
+              <div class="mock-nav-item"><span class="material-icons-outlined" style="font-size:20px;">person_outline</span>Profile</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SHOP -->
+  <section id="shop" class="screen-panel">
+    <h2 style="margin-bottom:1rem;color:#f4c025;">Shop / Category — unified design</h2>
+    <p style="color:#9b9b9b;margin-bottom:1rem;">Same header, search, filters styled as gold pills, 2-col grid, bottom nav.</p>
+    <div class="device-row">
+      <div class="device-frame mobile">
+        <div class="device-label">Shop listing</div>
+        <div class="device-screen">
+          <div class="mock-app">
+            <div class="mock-header">
+              <span class="material-icons-outlined">arrow_back</span>
+              <span style="font-weight:600;">Gold Necklaces</span>
+              <span class="material-icons-outlined">tune</span>
+            </div>
+            <div class="mock-filter-bar hide-scrollbar">
+              <button class="mock-filter-pill active">All</button>
+              <button class="mock-filter-pill">22K</button>
+              <button class="mock-filter-pill">18K</button>
+              <button class="mock-filter-pill">Under 50g</button>
+              <button class="mock-filter-pill">New</button>
+            </div>
+            <div style="padding:8px 16px;display:flex;justify-content:space-between;font-size:12px;color:#a8a6a3;">
+              <span style="color:#f4c025;font-weight:600;">24 ITEMS</span>
+              <span>Sort: Newest ▾</span>
+            </div>
+            <div class="mock-grid" style="padding-bottom:80px;">
+              <div class="mock-product-card">
+                <div class="mock-product-img"><img src="https://images.unsplash.com/photo-1603561596112-0a132b757442?w=200&h=200&fit=crop" alt=""><span style="position:absolute;top:8px;left:8px;background:#f4c025;color:#221e10;font-size:9px;padding:2px 8px;border-radius:4px;font-weight:700;">NEW</span></div>
+                <div class="mock-product-info"><div class="name">Temple Haar NL-102</div><div class="price">रू 1,24,500</div><button class="mock-btn-primary" style="width:100%;margin-top:8px;font-size:11px;padding:8px;">View</button></div>
+              </div>
+              <div class="mock-product-card">
+                <div class="mock-product-img"><img src="https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=200&h=200&fit=crop" alt=""></div>
+                <div class="mock-product-info"><div class="name">Classic Chain NL-88</div><div class="price">रू 98,200</div><button class="mock-btn-primary" style="width:100%;margin-top:8px;font-size:11px;padding:8px;">View</button></div>
+              </div>
+            </div>
+            <div class="mock-bottom-nav">
+              <div class="mock-nav-item"><span class="material-icons-outlined" style="font-size:20px;">home</span>Home</div>
+              <div class="mock-nav-item active"><span class="material-icons-outlined" style="font-size:20px;">search</span>Shop</div>
+              <div class="mock-nav-item"><span class="material-icons-outlined" style="font-size:20px;">favorite_border</span>Wishlist</div>
+              <div class="mock-nav-item"><span class="material-icons-outlined" style="font-size:20px;">shopping_bag</span>Cart</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRODUCT -->
+  <section id="product" class="screen-panel">
+    <h2 style="margin-bottom:1rem;color:#f4c025;">Product Detail — unified design</h2>
+    <div class="device-row">
+      <div class="device-frame mobile">
+        <div class="device-label">Product page</div>
+        <div class="device-screen">
+          <div class="mock-app mock-product-detail">
+            <div class="mock-header">
+              <span class="material-icons-outlined">arrow_back</span>
+              <span class="mock-logo" style="font-size:0.9rem;">Nirmala</span>
+              <span class="material-icons-outlined">shopping_bag</span>
+            </div>
+            <div class="mock-product-main-img">
+              <img src="https://images.unsplash.com/photo-1603561596112-0a132b757442?w=400&h=400&fit=crop" alt="" style="width:100%;height:100%;object-fit:cover;">
+            </div>
+            <div style="padding:0 16px;">
+              <span style="display:inline-block;background:#f4c025;color:#221e10;padding:4px 12px;border-radius:9999px;font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:8px;">Necklace</span>
+              <h1 style="font-size:1.35rem;font-weight:700;margin:0 0 16px;">Temple Gold Haar NL-102</h1>
+            </div>
+            <div class="mock-specs">
+              <div class="mock-spec-row"><span class="mock-spec-label">Metal</span><span class="mock-spec-value">Gold 22K</span></div>
+              <div class="mock-spec-row"><span class="mock-spec-label">Weight</span><span class="mock-spec-value">45.2 grams</span></div>
+              <div class="mock-spec-row"><span class="mock-spec-label">Price</span><span class="mock-spec-value">रू 1,24,500</span></div>
+            </div>
+            <div class="mock-actions">
+              <button class="mock-btn-primary" style="flex:2;">Add to Cart</button>
+              <button class="mock-btn-secondary" style="flex:1;padding:14px 8px;"><span class="material-icons-outlined">favorite_border</span></button>
+            </div>
+            <div style="margin:16px;padding:16px;background:rgba(244,192,37,0.08);border-left:3px solid #f4c025;border-radius:0 12px 12px 0;">
+              <p style="color:#f4c025;font-weight:600;margin:0 0 4px;">Interested in this piece?</p>
+              <p style="color:#a8a6a3;font-size:13px;margin:0;">Call us for customization · <span style="color:#f4c025;">+977 98X-XXXXXXX</span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="device-frame desktop">
+        <div class="device-label">Desktop layout (900px)</div>
+        <div class="device-screen desktop-screen">
+          <div class="mock-app" style="display:grid;grid-template-columns:1fr 1fr;gap:0;min-height:100%;">
+            <div class="mock-product-main-img" style="margin:0;border-radius:0;aspect-ratio:auto;min-height:100%;">
+              <img src="https://images.unsplash.com/photo-1603561596112-0a132b757442?w=600&h=600&fit=crop" alt="" style="width:100%;height:100%;object-fit:cover;">
+            </div>
+            <div style="padding:32px;">
+              <span style="background:#f4c025;color:#221e10;padding:4px 12px;border-radius:9999px;font-size:10px;font-weight:700;">NECKLACE</span>
+              <h1 style="font-size:1.75rem;margin:16px 0;">Temple Gold Haar NL-102</h1>
+              <div class="mock-specs" style="margin:0 0 24px;">
+                <div class="mock-spec-row"><span class="mock-spec-label">Metal</span><span class="mock-spec-value">Gold 22K</span></div>
+                <div class="mock-spec-row"><span class="mock-spec-label">Weight</span><span class="mock-spec-value">45.2 g</span></div>
+                <div class="mock-spec-row"><span class="mock-spec-label">Total</span><span class="mock-spec-value">रू 1,24,500</span></div>
+              </div>
+              <div class="mock-actions" style="padding:0;">
+                <button class="mock-btn-primary" style="flex:1;padding:16px;">Add to Cart</button>
+                <button class="mock-btn-secondary">Wishlist</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CART -->
+  <section id="cart" class="screen-panel">
+    <h2 style="margin-bottom:1rem;color:#f4c025;">Cart — unified design</h2>
+    <div class="device-row">
+      <div class="device-frame mobile">
+        <div class="device-label">Shopping cart</div>
+        <div class="device-screen">
+          <div class="mock-app">
+            <div class="mock-header">
+              <span class="material-icons-outlined">arrow_back</span>
+              <span style="font-weight:600;">Your Cart (2)</span>
+              <span></span>
+            </div>
+            <div class="mock-cart-item">
+              <div class="mock-cart-img"><img src="https://images.unsplash.com/photo-1603561596112-0a132b757442?w=80&h=80&fit=crop" alt="" style="width:100%;height:100%;object-fit:cover;"></div>
+              <div style="flex:1;">
+                <div style="font-weight:600;font-size:14px;">Temple Gold Haar</div>
+                <div style="font-size:12px;color:#a8a6a3;margin:4px 0;">22K · 45.2g</div>
+                <div style="color:#f4c025;font-weight:700;">रू 1,24,500</div>
+                <div style="display:flex;align-items:center;gap:12px;margin-top:8px;">
+                  <button style="width:28px;height:28px;border-radius:6px;border:1px solid #444;background:transparent;color:#e8e6e3;">−</button>
+                  <span>1</span>
+                  <button style="width:28px;height:28px;border-radius:6px;border:1px solid #444;background:transparent;color:#e8e6e3;">+</button>
+                </div>
+              </div>
+            </div>
+            <div class="mock-cart-summary">
+              <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:14px;"><span>Subtotal</span><span style="color:#f4c025;font-weight:700;">रू 2,13,500</span></div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:16px;font-size:12px;color:#a8a6a3;"><span>Delivery</span><span>Calculated at checkout</span></div>
+              <button class="mock-btn-primary" style="width:100%;padding:14px;">Proceed to Inquiry</button>
+            </div>
+            <div class="mock-bottom-nav">
+              <div class="mock-nav-item"><span class="material-icons-outlined" style="font-size:20px;">home</span>Home</div>
+              <div class="mock-nav-item"><span class="material-icons-outlined" style="font-size:20px;">search</span>Shop</div>
+              <div class="mock-nav-item active"><span class="material-icons-outlined" style="font-size:20px;">shopping_bag</span>Cart</div>
+              <div class="mock-nav-item"><span class="material-icons-outlined" style="font-size:20px;">person_outline</span>Profile</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMPARE -->
+  <section id="compare" class="screen-panel">
+    <h2 style="margin-bottom:1rem;color:#f4c025;">Before vs After</h2>
+    <table class="comparison-table">
+      <thead>
+        <tr><th>Aspect</th><th>Today (mixed)</th><th>Proposed (unified)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Primary gold</td><td><span class="badge-old">#FFD700 / #FFC107 / #f4c025</span></td><td><span class="badge-new">#f4c025 everywhere</span></td></tr>
+        <tr><td>Typography</td><td><span class="badge-old">System UI + Manrope mix</span></td><td><span class="badge-new">Manrope + Material Icons</span></td></tr>
+        <tr><td>Navigation</td><td><span class="badge-old">Different per page</span></td><td><span class="badge-new">Shared header + bottom nav</span></td></tr>
+        <tr><td>Product cards</td><td><span class="badge-old">"VIEW" on home, prices on shop</span></td><td><span class="badge-new">Price + weight on all lists</span></td></tr>
+        <tr><td>Dark / light</td><td><span class="badge-old">Home only</span></td><td><span class="badge-new">All customer pages</span></td></tr>
+        <tr><td>Alerts</td><td><span class="badge-old">browser alert()</span></td><td><span class="badge-new">Toast notifications</span></td></tr>
+      </tbody>
+    </table>
+
+    <div style="margin-top:2.5rem;display:grid;grid-template-columns:1fr 1fr;gap:2rem;">
+      <div>
+        <h3 style="color:#ef4444;margin-bottom:0.75rem;">Current shop page feel</h3>
+        <div style="background:#2C2416;border-radius:12px;padding:16px;border:1px solid #3a3020;">
+          <div style="color:#FFC107;font-weight:600;margin-bottom:8px;">Brown + amber · Bootstrap icons</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div style="background:#1a1410;border-radius:8px;height:80px;"></div>
+            <div style="background:#1a1410;border-radius:8px;height:80px;"></div>
+          </div>
+          <p style="font-size:12px;color:#a8a6a3;margin-top:8px;">Feels separate from homepage</p>
+        </div>
+      </div>
+      <div>
+        <h3 style="color:#22c55e;margin-bottom:0.75rem;">Proposed shop page feel</h3>
+        <div style="background:#221e10;border-radius:12px;padding:16px;border:1px solid rgba(244,192,37,0.2);">
+          <div style="color:#f4c025;font-weight:600;margin-bottom:8px;">Dark brown + gold · Manrope</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div style="background:#2a2418;border-radius:8px;height:80px;border:1px solid rgba(255,255,255,0.06);"></div>
+            <div style="background:#2a2418;border-radius:8px;height:8px;height:80px;border:1px solid rgba(255,255,255,0.06);"></div>
+          </div>
+          <p style="font-size:12px;color:#a8a6a3;margin-top:8px;">Matches homepage premium look</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    function showScreen(id) {
+      document.querySelectorAll('.screen-tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.screen === id);
+      });
+      document.querySelectorAll('.screen-panel').forEach(p => {
+        p.classList.toggle('active', p.id === id);
+      });
+    }
+
+    document.querySelectorAll('.screen-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        showScreen(tab.dataset.screen);
+        history.replaceState(null, '', '#' + tab.dataset.screen);
+      });
+    });
+
+    const initial = location.hash.replace('#', '') || 'overview';
+    if (document.getElementById(initial)) showScreen(initial);
+
+    const themeToggle = document.getElementById('themeToggle');
+    themeToggle.addEventListener('click', () => {
+      document.querySelectorAll('.mock-app').forEach(el => el.classList.toggle('light'));
+      const icon = themeToggle.querySelector('.material-icons-outlined');
+      icon.textContent = document.querySelector('.mock-app').classList.contains('light') ? 'light_mode' : 'dark_mode';
+    });
+  </script>
+</body>
+</html>
