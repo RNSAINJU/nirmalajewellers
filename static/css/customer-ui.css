@@ -1,0 +1,70 @@
+body.customer-storefront {
+  font-family: 'Manrope', sans-serif;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.sidebar-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.customer-brand-logo {
+  height: 42px;
+  width: auto;
+  object-fit: contain;
+}
+
+@media (max-width: 576px) {
+  .customer-brand-logo {
+    height: 34px;
+  }
+}
+
+.text-primary {
+  color: #f4c025 !important;
+}
+
+.bg-primary {
+  background-color: #f4c025 !important;
+}
+
+.border-primary {
+  border-color: #f4c025 !important;
+}
+
+button[class*="bg-primary"],
+.customer-btn-primary {
+  color: #221e10 !important;
+}
+
+.customer-link {
+  color: #f4c025;
+  text-decoration: none;
+}
+
+.customer-link:hover {
+  color: #ffd700;
+}
+
+#customerToast {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+#customerToast.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+#customerToast.is-hidden {
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+}

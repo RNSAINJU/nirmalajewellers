@@ -3,520 +3,110 @@
 
 {% block title %}Nirmala Jewellers - Premium Jewelry Collections{% endblock %}
 
-{% block content %}
-<!DOCTYPE html>
-<html id="htmlElement" class="dark" lang="en">
-<head>
-    <meta charset="utf-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Nirmala Jewellers Home</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"/>
-    <script id="tailwind-config">
-        tailwind.config = {
-          darkMode: "class",
-          theme: {
-            extend: {
-              colors: {
-                "primary": "#f4c025",
-                "background-light": "#f8f8f5",
-                "background-dark": "#221e10",
-              },
-              fontFamily: {
-                "display": ["Manrope", "sans-serif"]
-              },
-              borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
-            },
-          },
-        }
-    </script>
-    <style>
-        body { font-family: 'Manrope', sans-serif; }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .sidebar-scroll {
-          -webkit-overflow-scrolling: touch;
-          overscroll-behavior: contain;
-        }
-        body {
-          min-height: max(884px, 100dvh);
-        }
-        
-        /* Override all link colors to primary gold */
-        a {
-          color: #f4c025;
-        }
-        
-        a:hover {
-          color: #ffd700;
-        }
-        
-        /* Ensure text-primary is always gold */
-        .text-primary {
-          color: #f4c025 !important;
-        }
-        
-        /* Ensure background-primary is always gold */
-        .bg-primary {
-          background-color: #f4c025 !important;
-        }
-        
-        /* Ensure border-primary uses gold */
-        .border-primary {
-          border-color: #f4c025 !important;
-        }
-        
-        /* Override focus states */
-        input:focus {
-          outline: none;
-          border-color: #f4c025;
-        }
-        
-        /* Button hover states */
-        button:hover .material-icons-outlined {
-          color: #f4c025;
-        }
-        
-        /* Ensure all headings use consistent color */
-        h1, h2, h3, h4, h5, h6 {
-          color: inherit;
-        }
-        
-        /* Ensure button text color for dark backgrounds */
-        button[class*="bg-primary"] {
-          color: #221e10 !important;
-        }
-
-        .home-brand-logo {
-          height: 42px;
-          width: auto;
-          object-fit: contain;
-        }
-
-        @media (max-width: 576px) {
-          .home-brand-logo {
-            height: 34px;
-          }
-        }
-    </style>
-</head>
-<body class="bg-background-light dark:bg-background-dark text-stone-900 dark:text-stone-200 min-h-screen pb-24">
-<!-- Sticky Header -->
-<header id="topHeader" class="sticky top-0 z-50 bg-background-light dark:bg-background-dark/80 backdrop-blur-md border-b border-primary/10 transition-transform duration-300">
-<div class="px-4 py-3 flex flex-col gap-3">
-<div class="flex justify-between items-center">
-<button class="p-2 -ml-2" onclick="toggleMenu()">
-<span class="material-icons-outlined">menu</span>
-</button>
-<h1 class="m-0">
-<a href="{% url 'main:customer_home' %}" class="inline-flex items-center" style="text-decoration:none;">
-<img class="home-brand-logo" src="{% static 'images/nj-logo.png' %}" alt="Nirmala Jewellers logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-<span class="text-2xl font-light tracking-[0.2em] text-primary uppercase" style="display:none;">Nirmala</span>
-</a>
-</h1>
-<div class="flex items-center gap-1">
-<button class="p-2" onclick="toggleTheme()" title="Toggle dark/light mode">
-<span class="material-icons-outlined" id="themeIcon">dark_mode</span>
-</button>
-<button class="p-2" onclick="toggleCart()">
-<span class="material-icons-outlined">shopping_bag</span>
-<span id="cartCount" class="absolute text-[10px] bg-primary text-background-dark rounded-full w-5 h-5 flex items-center justify-center">0</span>
-</button>
-</div>
-</div>
-<!-- Search Bar -->
+{% block customer_search %}
 <div class="relative group">
-<span class="material-icons-outlined absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 dark:text-stone-400 group-focus-within:text-primary transition-colors">search</span>
-<input id="searchInput" class="w-full bg-stone-50 dark:bg-white/5 border border-stone-200 dark:border-none rounded-xl py-3 pl-10 pr-4 focus:ring-1 focus:ring-primary text-sm placeholder:text-stone-500 text-stone-900 dark:text-stone-200" placeholder="Search gold, diamonds, collections..." type="text"/>
+    <span class="material-icons-outlined absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 group-focus-within:text-primary transition-colors">search</span>
+    <input id="searchInput" class="w-full bg-stone-50 dark:bg-white/5 border border-stone-200 dark:border-none rounded-xl py-3 pl-10 pr-4 focus:ring-1 focus:ring-primary text-sm placeholder:text-stone-500 text-stone-900 dark:text-stone-200" placeholder="Search gold, diamonds, collections..." type="text">
 </div>
-</div>
-</header>
+{% endblock %}
 
-<main class="flex flex-col gap-8">
-<!-- Hero Carousel Section -->
-<section class="relative px-4 mt-2">
-<div class="relative overflow-hidden rounded-xl aspect-[4/5] md:aspect-[16/9] group">
-<img class="w-full h-full object-cover brightness-75 scale-105 group-hover:scale-100 transition-transform duration-1000" src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=1200&h=600&fit=crop" alt="Luxurious gold and diamond necklace"/>
-<div class="absolute inset-0 bg-gradient-to-t from-background-dark via-transparent to-transparent"></div>
-<div class="absolute bottom-8 left-8 right-8 text-center flex flex-col items-center gap-4">
-<p class="text-xs uppercase tracking-[0.3em] text-primary/80 font-medium">The Eternal Sparkle</p>
-<h2 class="text-3xl font-light tracking-tight text-white dark:text-white">Antique Gold Collections</h2>
-<button class="bg-primary text-background-dark font-bold px-8 py-3 rounded-full text-sm uppercase tracking-widest hover:bg-yellow-300 transition-colors" onclick="scrollToProducts()">
-Shop Collection
-</button>
-</div>
-</div>
-</section>
+{% block content %}
+<div class="flex flex-col gap-8">
+    <section class="relative px-4 mt-2">
+        <div class="relative overflow-hidden rounded-xl aspect-[4/5] md:aspect-[16/9] group">
+            <img class="w-full h-full object-cover brightness-75 scale-105 group-hover:scale-100 transition-transform duration-1000" src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=1200&h=600&fit=crop" alt="Luxurious gold and diamond necklace">
+            <div class="absolute inset-0 bg-gradient-to-t from-background-dark via-transparent to-transparent"></div>
+            <div class="absolute bottom-8 left-8 right-8 text-center flex flex-col items-center gap-4">
+                <p class="text-xs uppercase tracking-[0.3em] text-primary/80 font-medium">The Eternal Sparkle</p>
+                <h2 class="text-3xl font-light tracking-tight text-white">Antique Gold Collections</h2>
+                <button type="button" class="bg-primary text-background-dark font-bold px-8 py-3 rounded-full text-sm uppercase tracking-widest hover:bg-yellow-300 transition-colors customer-btn-primary" onclick="document.getElementById('arrivals').scrollIntoView({ behavior: 'smooth' })">
+                    Shop Collection
+                </button>
+            </div>
+        </div>
+    </section>
 
-<!-- Category Rail -->
-<section class="flex flex-col gap-4">
-<div class="px-4 flex justify-between items-end">
-<h3 class="text-lg font-light tracking-widest uppercase text-stone-900 dark:text-stone-100">Categories</h3>
-<a class="text-xs text-primary underline underline-offset-4" href="{% url 'main:shop' %}">View All</a>
-</div>
-<div class="flex overflow-x-auto gap-6 px-4 pb-2 hide-scrollbar">
-{% for category in categories %}
-<!-- Category Item -->
-<div class="flex flex-col items-center gap-2 flex-shrink-0">
-<div class="w-20 h-20 rounded-full border border-primary/20 p-1 bg-gradient-to-tr from-primary/10 to-transparent cursor-pointer hover:border-primary/60 transition-all" data-category-id="{{ category.id }}" onclick="filterByCategory(this)">
-<div class="w-full h-full rounded-full overflow-hidden">
-<img class="w-full h-full object-cover" src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=100&h=100&fit=crop" alt="{{ category.name }}"/>
-</div>
-</div>
-<span class="text-[10px] uppercase tracking-widest font-medium text-center text-stone-900 dark:text-stone-200">{{ category.name|truncatewords:1 }}</span>
-</div>
-{% endfor %}
-</div>
-</section>
+    <section class="flex flex-col gap-4">
+        <div class="px-4 flex justify-between items-end">
+            <h3 class="text-lg font-light tracking-widest uppercase text-stone-900 dark:text-stone-100">Categories</h3>
+            <a class="text-xs customer-link underline underline-offset-4" href="{% url 'main:shop' %}">View All</a>
+        </div>
+        <div class="flex overflow-x-auto gap-6 px-4 pb-2 hide-scrollbar">
+            {% for category in categories %}
+            <a href="{% url 'main:category_products' category.id %}" class="flex flex-col items-center gap-2 flex-shrink-0 customer-link" style="text-decoration:none;color:inherit;">
+                <div class="w-20 h-20 rounded-full border border-primary/20 p-1 bg-gradient-to-tr from-primary/10 to-transparent hover:border-primary/60 transition-all">
+                    <div class="w-full h-full rounded-full overflow-hidden bg-surface-dark flex items-center justify-center">
+                        <span class="material-icons-outlined text-primary/70">category</span>
+                    </div>
+                </div>
+                <span class="text-[10px] uppercase tracking-widest font-medium text-center text-stone-900 dark:text-stone-200">{{ category.name|truncatewords:1 }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
 
-<!-- New Arrivals Grid -->
-<section class="flex flex-col gap-4 px-4" id="arrivals">
-<div class="flex justify-between items-end">
-<h3 class="text-lg font-light tracking-widest uppercase text-stone-900 dark:text-stone-100">New Arrivals</h3>
-<span class="text-xs text-stone-600 dark:text-stone-500">{{ new_arrivals.count }} Items</span>
-</div>
-<div class="grid grid-cols-2 gap-4">
-{% for product in new_arrivals %}
-<!-- Product Card -->
-<a href="{% url 'main:product_detail' product.id %}" style="text-decoration: none; color: inherit;">
-<div class="flex flex-col gap-3 group">
-<div class="relative bg-white/5 dark:bg-white/5 rounded-xl aspect-[3/4] overflow-hidden border border-stone-200 dark:border-stone-700">
-{% if product.image %}
-<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="{{ product.image.url }}" alt="{{ product.ornament_name }}"/>
-{% else %}
-<div class="w-full h-full bg-stone-200 dark:bg-stone-700 flex items-center justify-center">
-<span class="material-icons-outlined text-stone-400 dark:text-stone-500 text-4xl">image</span>
-</div>
-{% endif %}
-<button class="absolute top-3 right-3 w-8 h-8 rounded-full bg-background-dark/40 dark:bg-background-dark/40 backdrop-blur-sm flex items-center justify-center text-white/80 hover:text-primary" onclick="toggleWishlist(event, {{ product.id }})">
-<span class="material-icons-outlined text-lg">favorite_border</span>
-</button>
-</div>
-<div class="flex flex-col gap-1">
-<h4 class="text-xs text-stone-500 dark:text-stone-400 font-medium uppercase tracking-wider">{% if product.maincategory %}{{ product.maincategory.name }}{% else %}JEWELRY{% endif %}</h4>
-<p class="text-sm font-semibold truncate text-stone-900 dark:text-stone-100">{{ product.ornament_name }}</p>
-<p class="text-primary font-bold text-base">VIEW</p>
-</div>
-</div>
-</a>
-{% endfor %}
-</div>
-</section>
+    <section class="flex flex-col gap-4 px-4" id="arrivals">
+        <div class="flex justify-between items-end">
+            <h3 class="text-lg font-light tracking-widest uppercase text-stone-900 dark:text-stone-100">New Arrivals</h3>
+            <span class="text-xs text-stone-600 dark:text-stone-500">{{ new_arrivals|length }} Items</span>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {% for product in new_arrivals %}
+            <a href="{% url 'main:product_detail' product.id %}" class="flex flex-col gap-3 group" style="text-decoration:none;color:inherit;" data-product-card>
+                <div class="relative bg-white/5 rounded-xl aspect-[3/4] overflow-hidden border border-stone-200 dark:border-stone-700">
+                    {% if product.image %}
+                    <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="{{ product.image.url }}" alt="{{ product.ornament_name }}">
+                    {% else %}
+                    <div class="w-full h-full bg-stone-200 dark:bg-stone-700 flex items-center justify-center">
+                        <span class="material-icons-outlined text-stone-400 text-4xl">image</span>
+                    </div>
+                    {% endif %}
+                    <button type="button" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-background-dark/40 backdrop-blur-sm flex items-center justify-center text-white/80 hover:text-primary" data-wishlist-id="{{ product.id }}" onclick="toggleCustomerWishlist(event, {{ product.id }}, this)">
+                        <span class="material-icons-outlined text-lg">favorite_border</span>
+                    </button>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <h4 class="text-xs text-stone-500 font-medium uppercase tracking-wider">{% if product.maincategory %}{{ product.maincategory.name }}{% else %}Jewelry{% endif %}</h4>
+                    <p class="text-sm font-semibold truncate text-stone-900 dark:text-stone-100" data-product-name>{{ product.ornament_name }}</p>
+                    {% if product.weight %}
+                    <p class="text-xs text-stone-500">{{ product.weight }}g · {{ product.get_type_display }}</p>
+                    {% endif %}
+                    {% if product.calculated_selling_amount != None %}
+                    <p class="text-primary font-bold text-base">रू {{ product.calculated_selling_amount|floatformat:0 }}</p>
+                    {% else %}
+                    <p class="text-primary font-bold text-sm">View details</p>
+                    {% endif %}
+                </div>
+            </a>
+            {% empty %}
+            <p class="col-span-2 text-stone-500 text-sm py-8 text-center">No new arrivals at the moment.</p>
+            {% endfor %}
+        </div>
+    </section>
 
-<!-- Newsletter / Promo Banner -->
-<section class="mx-4 mb-4">
-<div class="bg-primary/10 border border-primary/20 rounded-xl p-6 flex flex-col gap-4 items-center text-center">
-<span class="material-icons-outlined text-primary text-4xl">loyalty</span>
-<div class="flex flex-col gap-1">
-<h4 class="text-lg font-bold text-stone-900 dark:text-stone-100">Exclusive Perks</h4>
-<p class="text-xs text-stone-600 dark:text-stone-400">Join our Nirmala Circle for early access to new collections and special member pricing.</p>
+    <section class="mx-4 mb-4">
+        <div class="bg-primary/10 border border-primary/20 rounded-xl p-6 flex flex-col gap-4 items-center text-center">
+            <span class="material-icons-outlined text-primary text-4xl">loyalty</span>
+            <div class="flex flex-col gap-1">
+                <h4 class="text-lg font-bold text-stone-900 dark:text-stone-100">Exclusive Perks</h4>
+                <p class="text-xs text-stone-600 dark:text-stone-400">Join our Nirmala Circle for early access to new collections and special member pricing.</p>
+            </div>
+            <button type="button" class="bg-primary text-background-dark px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-yellow-300 transition-colors customer-btn-primary" onclick="showCustomerToast('Membership signup coming soon')">
+                Join Now
+            </button>
+        </div>
+    </section>
 </div>
-<button class="bg-primary text-background-dark px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-yellow-300 transition-colors">Join Now</button>
-</div>
-</section>
-</main>
+{% endblock %}
 
-<!-- Bottom Navigation Bar -->
-<nav id="bottomNav" class="fixed bottom-0 left-0 right-0 bg-background-light dark:bg-background-dark/95 backdrop-blur-lg border-t border-primary/10 transition-transform duration-300">
-<div class="flex justify-around items-center py-3 px-2">
-<button class="flex flex-col items-center gap-1 text-primary" onclick="window.location.href='{% url 'main:customer_home' %}'">
-<span class="material-icons-outlined">home</span>
-<span class="text-[10px] font-medium uppercase tracking-tighter">Home</span>
-</button>
-<button class="flex flex-col items-center gap-1 text-stone-500" onclick="document.getElementById('searchInput').focus()">
-<span class="material-icons-outlined">search</span>
-<span class="text-[10px] font-medium uppercase tracking-tighter">Search</span>
-</button>
-<button class="flex flex-col items-center gap-1 text-stone-500">
-<span class="material-icons-outlined">favorite_border</span>
-<span class="text-[10px] font-medium uppercase tracking-tighter">Wishlist</span>
-</button>
-<button class="flex flex-col items-center gap-1 text-stone-500">
-<span class="material-icons-outlined">person_outline</span>
-<span class="text-[10px] font-medium uppercase tracking-tighter">Profile</span>
-</button>
-</div>
-</nav>
-
-<!-- Mobile Sidebar Overlay -->
-<div class="fixed inset-0 bg-black/70 z-40 hidden" id="sidebarOverlay" onclick="closeMenu()"></div>
-
-<!-- Mobile Sidebar -->
-<aside class="fixed top-0 left-0 w-64 h-screen overflow-y-auto sidebar-scroll bg-background-light dark:bg-background-dark border-r border-primary/10 z-50 transform -translate-x-full transition-transform duration-300" id="mobileSidebar">
-<button class="p-2 absolute top-3 right-3 text-stone-600 dark:text-stone-400 hover:text-primary" onclick="closeMenu()">
-<span class="material-icons-outlined">close</span>
-</button>
-<div class="p-6 pt-12 pb-24">
-<h3 class="text-primary text-xs uppercase tracking-widest mb-4 font-bold">Menu</h3>
-<ul class="flex flex-col gap-2">
-<li><a href="{% url 'main:customer_home' %}" class="text-primary hover:text-primary text-sm" onclick="closeMenu()">Home</a></li>
-{% for metal in metal_type_pages %}
-<li><a href="{% url 'main:shop' %}?metal_type={{ metal.value|urlencode }}" class="text-primary hover:text-primary text-sm" onclick="closeMenu()">{{ metal.label }}</a></li>
-{% endfor %}
-<li><a href="{% url 'main:shop' %}" class="text-primary hover:text-primary text-sm" onclick="closeMenu()">Shop All</a></li>
-<li><hr class="my-2 border-stone-300 dark:border-stone-700"/></li>
-<li>
-<details class="group">
-<summary class="list-none cursor-pointer text-primary hover:text-primary text-sm flex items-center justify-between">
-Categories
-<span class="material-icons-outlined text-base transition-transform group-open:rotate-180">expand_more</span>
-</summary>
-<ul class="mt-2 ml-3 flex flex-col gap-2">
-{% for group in categories_by_metal %}
-<li>
-<details class="group/metal">
-<summary class="list-none cursor-pointer text-primary/90 hover:text-primary text-sm flex items-center justify-between font-medium">
-{{ group.metal_type }}
-<span class="material-icons-outlined text-base transition-transform group-open/metal:rotate-180">expand_more</span>
-</summary>
-<ul class="mt-1 ml-3 flex flex-col gap-1">
-{% for category in group.categories %}
-<li><a href="/shop/category/{{ category.id }}/" class="text-primary hover:text-primary text-sm" onclick="closeMenu()">{{ category.name }}</a></li>
-{% endfor %}
-</ul>
-</details>
-</li>
-{% empty %}
-<li class="text-stone-500 text-sm">No categories available</li>
-{% endfor %}
-</ul>
-</details>
-</li>
-</ul>
-</div>
-</aside>
-
+{% block extra_js %}
 <script>
-// Initialize theme on page load
-function initTheme() {
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    const htmlElement = document.getElementById('htmlElement');
-    const themeIcon = document.getElementById('themeIcon');
-    
-    if (savedTheme === 'light') {
-        htmlElement.classList.remove('dark');
-        themeIcon.textContent = 'light_mode';
-    } else {
-        htmlElement.classList.add('dark');
-        themeIcon.textContent = 'dark_mode';
-    }
-}
-
-// Toggle between dark and light mode
-function toggleTheme() {
-    const htmlElement = document.getElementById('htmlElement');
-    const themeIcon = document.getElementById('themeIcon');
-    
-    if (htmlElement.classList.contains('dark')) {
-        htmlElement.classList.remove('dark');
-        localStorage.setItem('theme', 'light');
-        themeIcon.textContent = 'light_mode';
-    } else {
-        htmlElement.classList.add('dark');
-        localStorage.setItem('theme', 'dark');
-        themeIcon.textContent = 'dark_mode';
-    }
-}
-
-function toggleMenu() {
-    const sidebar = document.getElementById('mobileSidebar');
-    const overlay = document.getElementById('sidebarOverlay');
-    sidebar.classList.toggle('-translate-x-full');
-    overlay.classList.toggle('hidden');
-}
-
-function closeMenu() {
-    const sidebar = document.getElementById('mobileSidebar');
-    const overlay = document.getElementById('sidebarOverlay');
-    sidebar.classList.add('-translate-x-full');
-    overlay.classList.add('hidden');
-}
-
-function toggleCart() {
-    window.location.href = '{% url "main:cart" %}';
-}
-
-function toggleWishlist(event, productId) {
-    event.preventDefault();
-    event.stopPropagation();
-    const button = event.currentTarget;
-    button.classList.toggle('active');
-    
-    // Visual feedback
-    if (button.classList.contains('active')) {
-        button.innerHTML = '<span class="material-icons-outlined text-lg">favorite</span>';
-        button.style.color = '#f4c025';
-    } else {
-        button.innerHTML = '<span class="material-icons-outlined text-lg">favorite_border</span>';
-        button.style.color = '#ccc';
-    }
-}
-
-function scrollToProducts() {
-    document.getElementById('arrivals').scrollIntoView({ behavior: 'smooth' });
-}
-
-function filterByCategory(element) {
-    const categoryId = element.getAttribute('data-category-id');
-    window.location.href = `/shop/category/${categoryId}/`;
-}
-
-let lastScrollY = window.scrollY;
-const bottomNav = document.getElementById('bottomNav');
-const topHeader = document.getElementById('topHeader');
-
-window.addEventListener('scroll', function() {
-  const currentScrollY = window.scrollY;
-
-  if (currentScrollY <= 0) {
-    bottomNav.classList.remove('translate-y-full');
-    topHeader.classList.remove('-translate-y-full');
-    lastScrollY = currentScrollY;
-    return;
-  }
-
-  if (Math.abs(currentScrollY - lastScrollY) < 8) {
-    return;
-  }
-
-  if (currentScrollY > lastScrollY) {
-    bottomNav.classList.add('translate-y-full');
-    topHeader.classList.add('-translate-y-full');
-  } else {
-    bottomNav.classList.remove('translate-y-full');
-    topHeader.classList.remove('-translate-y-full');
-  }
-
-  lastScrollY = currentScrollY;
-});
-
-// Search functionality
-document.getElementById('searchInput').addEventListener('input', function(e) {
+document.getElementById('searchInput').addEventListener('input', function (e) {
     const searchTerm = e.target.value.toLowerCase();
-    const productCards = document.querySelectorAll('a[href*="/products/"]');
-    
-    productCards.forEach(card => {
-        const productName = card.querySelector('.font-semibold')?.textContent.toLowerCase() || '';
-        const category = card.querySelector('.text-stone-400')?.textContent.toLowerCase() || '';
-        
-        if (productName.includes(searchTerm) || category.includes(searchTerm)) {
-            card.style.display = '';
-        } else {
-            card.style.display = 'none';
-        }
+    document.querySelectorAll('[data-product-card]').forEach(function (card) {
+        const productName = card.querySelector('[data-product-name]')?.textContent.toLowerCase() || '';
+        card.style.display = productName.includes(searchTerm) ? '' : 'none';
     });
 });
-
-// Initialize cart count from localStorage
-window.addEventListener('load', function() {
-    initTheme(); // Initialize theme
-    const cartCount = localStorage.getItem('cartCount') || '0';
-    document.getElementById('cartCount').textContent = cartCount;
-
-  // Collect lightweight web performance metrics and send to report endpoint.
-  setTimeout(function() {
-    try {
-      let lcp = null;
-      let cls = 0;
-
-      if ('PerformanceObserver' in window) {
-        try {
-          const lcpObserver = new PerformanceObserver(function(entryList) {
-            const entries = entryList.getEntries();
-            if (entries.length) {
-              lcp = entries[entries.length - 1].startTime;
-            }
-          });
-          lcpObserver.observe({ type: 'largest-contentful-paint', buffered: true });
-        } catch (e) {}
-
-        try {
-          const clsObserver = new PerformanceObserver(function(entryList) {
-            entryList.getEntries().forEach(function(entry) {
-              if (!entry.hadRecentInput) {
-                cls += entry.value;
-              }
-            });
-          });
-          clsObserver.observe({ type: 'layout-shift', buffered: true });
-        } catch (e) {}
-      }
-
-      setTimeout(function() {
-        const navEntries = performance.getEntriesByType('navigation');
-        const nav = navEntries && navEntries.length ? navEntries[0] : null;
-
-        let fcp = null;
-        const paintEntries = performance.getEntriesByType('paint');
-        paintEntries.forEach(function(entry) {
-          if (entry.name === 'first-contentful-paint') {
-            fcp = entry.startTime;
-          }
-        });
-
-        const resources = performance.getEntriesByType('resource') || [];
-        let transfer = 0;
-        let imageTransfer = 0;
-        let jsTransfer = 0;
-        let cssTransfer = 0;
-        let imageCount = 0;
-
-        resources.forEach(function(resource) {
-          const size = resource.transferSize || 0;
-          transfer += size;
-
-          const initiator = resource.initiatorType || '';
-          const name = resource.name || '';
-          if (initiator === 'img' || /\.(png|jpe?g|webp|gif|svg)(\?|$)/i.test(name)) {
-            imageCount += 1;
-            imageTransfer += size;
-          } else if (initiator === 'script' || /\.js(\?|$)/i.test(name)) {
-            jsTransfer += size;
-          } else if (initiator === 'css' || /\.css(\?|$)/i.test(name)) {
-            cssTransfer += size;
-          }
-        });
-
-        const payload = {
-          source: 'customer_home',
-          page_path: window.location.pathname,
-          ttfb_ms: nav ? nav.responseStart : null,
-          fcp_ms: fcp,
-          lcp_ms: lcp,
-          cls: cls,
-          dom_content_loaded_ms: nav ? nav.domContentLoadedEventEnd : null,
-          load_event_ms: nav ? nav.loadEventEnd : null,
-          resource_count: resources.length,
-          image_count: imageCount,
-          transfer_size_kb: transfer / 1024,
-          image_transfer_size_kb: imageTransfer / 1024,
-          js_transfer_size_kb: jsTransfer / 1024,
-          css_transfer_size_kb: cssTransfer / 1024
-        };
-
-        const url = '{% url "gsp:track_home_performance" %}';
-        const jsonPayload = JSON.stringify(payload);
-
-        if (navigator.sendBeacon) {
-          const blob = new Blob([jsonPayload], { type: 'application/json' });
-          navigator.sendBeacon(url, blob);
-        } else {
-          fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: jsonPayload,
-            keepalive: true
-          }).catch(function() {});
-        }
-      }, 1200);
-    } catch (error) {
-      // Ignore telemetry errors so customer UX is never interrupted.
-    }
-  }, 0);
-});
 </script>
-
-</body>
-</html>
 {% endblock %}

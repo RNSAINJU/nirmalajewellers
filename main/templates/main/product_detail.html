@@ -3,338 +3,134 @@
 
 {% block title %}{{ product.ornament_name }} | Nirmala Jewellers{% endblock %}
 
+{% block customer_header %}
+<div class="px-4 py-3 flex items-center justify-between">
+    <button type="button" class="p-2 -ml-2" onclick="window.history.back()" aria-label="Go back">
+        <span class="material-icons-outlined">arrow_back</span>
+    </button>
+    <a href="{% url 'main:customer_home' %}" class="customer-link inline-flex items-center" style="text-decoration:none;">
+        <img class="customer-brand-logo" src="{% static 'images/nj-logo.png' %}" alt="Nirmala Jewellers" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+        <span class="text-lg font-light tracking-[0.2em] text-primary uppercase" style="display:none;">Nirmala</span>
+    </a>
+    <button type="button" class="p-2 relative" onclick="goToCustomerCart()" aria-label="Shopping cart">
+        <span class="material-icons-outlined">shopping_bag</span>
+        <span data-cart-count class="absolute top-0 right-0 text-[10px] bg-primary text-background-dark rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
+    </button>
+</div>
+{% if latest_rate %}
+<div class="px-4 pb-3 flex gap-4 text-xs text-stone-500 border-b border-primary/10">
+    <span><span class="text-primary font-semibold">Gold:</span> रू{{ latest_rate.gold_rate|floatformat:0 }}</span>
+    <span><span class="text-primary font-semibold">Silver:</span> रू{{ latest_rate.silver_rate|floatformat:0 }}</span>
+</div>
+{% endif %}
+{% endblock %}
+
 {% block content %}
-<style>
-    :root {
-        --primary-color: #FFD700;
-        --dark-bg: #1a1a1a;
-        --text-light: #e0e0e0;
-        --card-bg: #2a2a2a;
-    }
-
-    body {
-        background-color: var(--dark-bg);
-        color: var(--text-light);
-    }
-
-    .product-detail-container {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 3rem;
-        padding: 3rem 1.5rem;
-        max-width: 1200px;
-        margin: 0 auto;
-    }
-
-    .product-image-section {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-    }
-
-    .main-product-image {
-        width: 100%;
-        aspect-ratio: 1;
-        background-color: #222;
-        border-radius: 8px;
-        overflow: hidden;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .main-product-image img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .product-info-section h1 {
-        font-size: 2rem;
-        font-weight: 700;
-        margin-bottom: 0.5rem;
-        letter-spacing: 0.5px;
-    }
-
-    .product-category-badge {
-        display: inline-block;
-        background-color: var(--primary-color);
-        color: #000;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        margin-bottom: 1.5rem;
-        letter-spacing: 0.5px;
-    }
-
-    .product-specs {
-        background-color: var(--card-bg);
-        padding: 1.5rem;
-        border-radius: 8px;
-        margin-bottom: 1.5rem;
-    }
-
-    .spec-item {
-        display: grid;
-        grid-template-columns: 150px 1fr;
-        gap: 2rem;
-        padding: 0.75rem 0;
-        border-bottom: 1px solid #444;
-    }
-
-    .spec-item:last-child {
-        border-bottom: none;
-    }
-
-    .spec-label {
-        color: #999;
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 0.85rem;
-    }
-
-    .spec-value {
-        font-size: 1rem;
-        color: var(--primary-color);
-    }
-
-    .action-buttons {
-        display: flex;
-        gap: 1rem;
-        margin-bottom: 2rem;
-    }
-
-    .btn-primary,
-    .btn-secondary {
-        flex: 1;
-        padding: 1rem;
-        border: none;
-        border-radius: 8px;
-        font-size: 1rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .btn-primary {
-        background-color: var(--primary-color);
-        color: #000;
-    }
-
-    .btn-primary:hover {
-        background-color: #ffc700;
-        transform: translateY(-2px);
-        box-shadow: 0 10px 25px rgba(255, 215, 0, 0.3);
-    }
-
-    .btn-secondary {
-        background-color: transparent;
-        color: var(--primary-color);
-        border: 2px solid var(--primary-color);
-    }
-
-    .btn-secondary:hover {
-        background-color: var(--primary-color);
-        color: #000;
-    }
-
-    .description-section {
-        margin-top: 2rem;
-    }
-
-    .description-section h3 {
-        font-size: 1.3rem;
-        margin-bottom: 1rem;
-        font-weight: 600;
-    }
-
-    .description-section p {
-        line-height: 1.6;
-        color: #bbb;
-    }
-
-    @media (max-width: 768px) {
-        .product-detail-container {
-            grid-template-columns: 1fr;
-            gap: 2rem;
-            padding: 1.5rem;
-        }
-
-        .product-info-section h1 {
-            font-size: 1.5rem;
-        }
-
-        .action-buttons {
-            flex-direction: column;
-        }
-    }
-</style>
-
-<!-- Navigation Bar -->
-<nav style="background-color: var(--dark-bg); padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 100;">
-    <a href="{% url 'main:customer_home' %}" style="font-size: 1.5rem; font-weight: 700; letter-spacing: 2px; color: var(--primary-color); text-decoration: none;">NIRMALA</a>
-    <div style="display: flex; align-items: center; gap: 1.5rem;">
-        {% if latest_rate %}
-        <div style="font-size: 0.85rem; color: #999; display: flex; gap: 1rem; padding-right: 1rem; border-right: 1px solid #333;">
-            <div>
-                <span style="color: var(--primary-color); font-weight: 600;">Gold: </span>
-                <span>रु{{ latest_rate.gold_rate|floatformat:0 }}</span>
-            </div>
-            <div>
-                <span style="color: var(--primary-color); font-weight: 600;">Silver: </span>
-                <span>रु{{ latest_rate.silver_rate|floatformat:0 }}</span>
-            </div>
+<div class="max-w-6xl mx-auto px-4 py-4 pb-8 md:grid md:grid-cols-2 md:gap-10 md:items-start">
+    <div class="rounded-xl overflow-hidden aspect-square bg-stone-100 dark:bg-surface-dark border border-stone-200 dark:border-stone-700 mb-6 md:mb-0">
+        {% if product.image %}
+        <img src="{{ product.image.url }}" alt="{{ product.ornament_name }}" class="w-full h-full object-cover">
+        {% else %}
+        <div class="w-full h-full flex items-center justify-center text-stone-400">
+            <span class="material-icons-outlined text-6xl">image</span>
         </div>
         {% endif %}
-        <button onclick="window.location.href='{% url 'main:cart' %}'" style="background: none; border: none; color: var(--text-light); font-size: 1.5rem; cursor: pointer; position: relative;">
-            <i class="bi bi-handbag"></i>
-            <span id="cartCount" style="position: absolute; top: -8px; right: -8px; background-color: #ff4444; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">0</span>
-        </button>
-    </div>
-</nav>
-
-<div class="product-detail-container">
-    <!-- Product Image Section -->
-    <div class="product-image-section">
-        <div class="main-product-image">
-            {% if product.image %}
-            <img src="{{ product.image.url }}" alt="{{ product.ornament_name }}">
-            {% else %}
-            <div style="font-size: 3rem; color: #555;">
-                <i class="bi bi-image"></i>
-            </div>
-            {% endif %}
-        </div>
     </div>
 
-    <!-- Product Info Section -->
-    <div class="product-info-section">
+    <div>
         {% if product.maincategory %}
-        <span class="product-category-badge">{{ product.maincategory.name }}</span>
+        <span class="inline-block bg-primary text-background-dark px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide mb-3">{{ product.maincategory.name }}</span>
         {% endif %}
+        <h1 class="text-2xl md:text-3xl font-bold mb-4 text-stone-900 dark:text-stone-100">{{ product.ornament_name }}</h1>
 
-        <h1>{{ product.ornament_name }}</h1>
-
-        <!-- Product Specifications -->
-        <div class="product-specs">
-            <div class="spec-item">
-                <span class="spec-label">Code</span>
-                <span class="spec-value">{{ product.code }}</span>
+        <div class="rounded-xl border border-stone-200 dark:border-stone-700 bg-white/50 dark:bg-surface-dark/50 p-4 mb-5 space-y-0">
+            <div class="grid grid-cols-[110px_1fr] gap-3 py-3 border-b border-stone-200 dark:border-stone-700 text-sm">
+                <span class="text-stone-500 uppercase text-xs font-semibold">Code</span>
+                <span class="text-primary font-semibold">{{ product.code }}</span>
             </div>
-            <div class="spec-item">
-                <span class="spec-label">Metal Type</span>
-                <span class="spec-value">{{ product.get_metal_type_display }}</span>
+            <div class="grid grid-cols-[110px_1fr] gap-3 py-3 border-b border-stone-200 dark:border-stone-700 text-sm">
+                <span class="text-stone-500 uppercase text-xs font-semibold">Metal</span>
+                <span class="text-primary font-semibold">{{ product.get_metal_type_display }}</span>
             </div>
-            <div class="spec-item">
-                <span class="spec-label">Karat</span>
-                <span class="spec-value">{{ product.get_type_display }}</span>
+            <div class="grid grid-cols-[110px_1fr] gap-3 py-3 border-b border-stone-200 dark:border-stone-700 text-sm">
+                <span class="text-stone-500 uppercase text-xs font-semibold">Karat</span>
+                <span class="text-primary font-semibold">{{ product.get_type_display }}</span>
             </div>
             {% if product.weight %}
-            <div class="spec-item">
-                <span class="spec-label">Weight</span>
-                <span class="spec-value">{{ product.weight }} grams</span>
+            <div class="grid grid-cols-[110px_1fr] gap-3 py-3 border-b border-stone-200 dark:border-stone-700 text-sm">
+                <span class="text-stone-500 uppercase text-xs font-semibold">Weight</span>
+                <span class="text-primary font-semibold">{{ product.weight }} grams</span>
             </div>
             {% endif %}
             {% if product.diamond_weight %}
-            <div class="spec-item">
-                <span class="spec-label">Diamond Weight</span>
-                <span class="spec-value">{{ product.diamond_weight }} carats</span>
+            <div class="grid grid-cols-[110px_1fr] gap-3 py-3 border-b border-stone-200 dark:border-stone-700 text-sm">
+                <span class="text-stone-500 uppercase text-xs font-semibold">Diamond</span>
+                <span class="text-primary font-semibold">{{ product.diamond_weight }} carats</span>
             </div>
             {% endif %}
             {% if product.stone_weight %}
-            <div class="spec-item">
-                <span class="spec-label">Stone Weight</span>
-                <span class="spec-value">{{ product.stone_weight }} grams</span>
+            <div class="grid grid-cols-[110px_1fr] gap-3 py-3 border-b border-stone-200 dark:border-stone-700 text-sm">
+                <span class="text-stone-500 uppercase text-xs font-semibold">Stone</span>
+                <span class="text-primary font-semibold">{{ product.stone_weight }} grams</span>
             </div>
             {% endif %}
             {% if total_selling_amount %}
-            <div class="spec-item">
-                <span class="spec-label">Total Selling Amount</span>
-                <span class="spec-value">रू {{ total_selling_amount|floatformat:2 }}</span>
+            <div class="grid grid-cols-[110px_1fr] gap-3 py-3 text-sm">
+                <span class="text-stone-500 uppercase text-xs font-semibold">Price</span>
+                <span class="text-primary font-bold text-lg">रू {{ total_selling_amount|floatformat:0 }}</span>
             </div>
             {% endif %}
         </div>
 
-        <!-- Action Buttons -->
-        <div class="action-buttons">
-            <button class="btn-primary" onclick="addToCart()">ADD TO CART</button>
-            <button class="btn-secondary" onclick="toggleWishlist()">
-                <i class="bi bi-heart"></i> WISHLIST
+        <div class="flex gap-3 mb-6">
+            <button type="button" class="flex-[2] bg-primary text-background-dark py-3 rounded-xl font-bold uppercase tracking-wide customer-btn-primary" onclick="addToCart()">Add to Cart</button>
+            <button type="button" id="wishlistBtn" class="flex-1 border-2 border-primary text-primary rounded-xl flex items-center justify-center" data-wishlist-id="{{ product.id }}" onclick="toggleCustomerWishlist(event, {{ product.id }}, this)">
+                <span class="material-icons-outlined">favorite_border</span>
             </button>
         </div>
 
-        <!-- Description -->
         {% if product.description %}
-        <div class="description-section">
-            <h3>Description</h3>
-            <p>{{ product.description }}</p>
+        <div class="mb-6">
+            <h3 class="text-lg font-semibold mb-2">Description</h3>
+            <p class="text-stone-600 dark:text-stone-400 leading-relaxed text-sm">{{ product.description }}</p>
         </div>
         {% endif %}
 
-        <!-- Contact for Details -->
-        <div style="background-color: rgba(255, 215, 0, 0.1); padding: 1.5rem; border-radius: 8px; margin-top: 2rem; border-left: 3px solid var(--primary-color);">
-            <h4 style="color: var(--primary-color); margin-bottom: 0.5rem;">Interested in this piece?</h4>
-            <p style="color: #999;">Contact us for pricing, customization options, and more details.</p>
-            <a href="tel:+977-XXX-XXXXXX" style="color: var(--primary-color); text-decoration: none; font-weight: 600;">
-                <i class="bi bi-telephone"></i> Call Now
+        <div class="bg-primary/10 border border-primary/20 rounded-xl p-4 border-l-4 border-l-primary">
+            <h4 class="text-primary font-semibold mb-1">Interested in this piece?</h4>
+            <p class="text-stone-600 dark:text-stone-400 text-sm mb-2">Contact us for pricing, customization, and delivery details.</p>
+            <a href="tel:+9779800000000" class="customer-link text-sm font-semibold inline-flex items-center gap-1">
+                <span class="material-icons-outlined text-base">call</span> Call Now
             </a>
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
 function addToCart() {
-    // Get or create cart array
     let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-    
-    // Check if product already in cart
-    const existingItem = cart.find(item => item.id === {{ product.id }});
-    
+    const productId = {{ product.id }};
+    const existingItem = cart.find(function (item) { return item.id === productId; });
+
     if (existingItem) {
         existingItem.quantity = (existingItem.quantity || 1) + 1;
     } else {
-        // Add new item to cart
         cart.push({
-            id: {{ product.id }},
-            name: '{{ product.ornament_name }}',
-            category: '{{ product.maincategory.name }}',
-            price: {{ product.rate|default:0 }},
-            image: '{% if product.image %}{{ product.image.url }}{% else %}https://via.placeholder.com/100{% endif %}',
+            id: productId,
+            name: '{{ product.ornament_name|escapejs }}',
+            category: '{% if product.maincategory %}{{ product.maincategory.name|escapejs }}{% else %}Jewelry{% endif %}',
+            specs: '{{ product.get_type_display|escapejs }}{% if product.weight %} · {{ product.weight }}g{% endif %}',
+            price: {{ total_selling_amount|default:0 }},
+            image: '{% if product.image %}{{ product.image.url|escapejs }}{% endif %}',
             quantity: 1
         });
     }
-    
-    // Save cart to localStorage
+
     localStorage.setItem('cart', JSON.stringify(cart));
-    
-    // Update cart count
-    const cartCount = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
-    localStorage.setItem('cartCount', cartCount);
-    document.getElementById('cartCount').textContent = cartCount;
-    
-    alert('{{ product.ornament_name }} added to cart!');
+    updateCustomerCartBadge();
+    showCustomerToast('{{ product.ornament_name|escapejs }} added to cart', 'success');
 }
-
-function toggleWishlist() {
-    const btn = event.target.closest('button');
-    btn.style.background = btn.style.background === 'var(--primary-color)' ? 'transparent' : 'var(--primary-color)';
-    btn.style.color = btn.style.color === 'rgb(0, 0, 0)' ? 'var(--primary-color)' : '#000';
-    alert('Added to wishlist!');
-}
-
-// Initialize cart count on page load
-window.addEventListener('load', function() {
-    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-    const cartCount = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
-    const cartCountElement = document.getElementById('cartCount');
-    if (cartCountElement) {
-        cartCountElement.textContent = cartCount;
-    }
-});
 </script>
-
 {% endblock %}
