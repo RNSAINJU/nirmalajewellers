@@ -31,8 +31,8 @@ def page_images_settings(request):
             form = CustomerPageImageForm(instance=page_image)
 
     context = {
-        'page_title': 'Customer Page Images',
-        'description': 'Upload and manage images shown on the public customer website.',
+        'page_title': 'Customer Site Images',
+        'description': 'Upload and manage the site logo, home page hero banner, and other customer-facing images.',
         'slots': slots,
         'edit_slot': edit_slot,
         'form': form,

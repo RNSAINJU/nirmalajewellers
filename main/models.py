@@ -234,6 +234,7 @@ class CustomerPageImage(models.Model):
     """Configurable images and hero text for the customer-facing storefront."""
 
     class PageSlot(models.TextChoices):
+        SITE_LOGO = 'site_logo', 'Site Logo — Header (Customer & Admin)'
         HOME_HERO = 'home_hero', 'Customer Home — Main Hero Banner'
         HOME_PROMO = 'home_promo', 'Customer Home — Promo / Newsletter Banner'
         SHOP_BANNER = 'shop_banner', 'Shop Page — Top Banner'
@@ -241,6 +242,34 @@ class CustomerPageImage(models.Model):
     DEFAULT_HERO_IMAGE = (
         'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=1200&h=600&fit=crop'
     )
+    DEFAULT_LOGO_PATH = 'images/nj-logo.png'
+
+    SLOT_DEFAULTS = {
+        'site_logo': {
+            'tagline': '',
+            'title': 'Nirmala Jewellers',
+            'button_text': '',
+            'is_active': True,
+        },
+        'home_hero': {
+            'tagline': 'The Eternal Sparkle',
+            'title': 'Antique Gold Collections',
+            'button_text': 'Shop Collection',
+            'is_active': True,
+        },
+        'home_promo': {
+            'tagline': '',
+            'title': '',
+            'button_text': '',
+            'is_active': True,
+        },
+        'shop_banner': {
+            'tagline': '',
+            'title': '',
+            'button_text': '',
+            'is_active': True,
+        },
+    }
 
     slot = models.CharField(
         max_length=50,
@@ -283,20 +312,27 @@ class CustomerPageImage(models.Model):
         return self.get_slot_display()
 
     @property
+    def is_logo_slot(self):
+        return self.slot == self.PageSlot.SITE_LOGO
+
+    @property
     def image_url(self):
         if self.is_active and self.image:
             return self.image.url
+        if self.is_logo_slot:
+            from django.templatetags.static import static
+            return static(self.DEFAULT_LOGO_PATH)
         return self.DEFAULT_HERO_IMAGE
 
     @classmethod
     def get_for_slot(cls, slot_key):
         """Return config for a slot, creating defaults if missing."""
-        defaults = {
-            'tagline': 'The Eternal Sparkle',
-            'title': 'Antique Gold Collections',
-            'button_text': 'Shop Collection',
+        defaults = cls.SLOT_DEFAULTS.get(slot_key, {
+            'tagline': '',
+            'title': '',
+            'button_text': '',
             'is_active': True,
-        }
+        })
         obj, _ = cls.objects.get_or_create(slot=slot_key, defaults=defaults)
         return obj
 

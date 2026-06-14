@@ -144,6 +144,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'main.context_processors.latest_rate',
+                'main.context_processors.site_branding',
             ],
         },
     },

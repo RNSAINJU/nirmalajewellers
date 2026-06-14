@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Customer Page Images{% endblock %}
+{% block title %}Customer Site Images{% endblock %}
 
 {% block content %}
 <div class="container mt-4 mb-5">
@@ -9,16 +9,15 @@
         <div class="col-12 col-lg-10 offset-lg-1">
             <div class="mb-4">
                 <h1 class="h2 mb-2">
-                    <i class="bi bi-image"></i> Customer Page Images
+                    <i class="bi bi-image"></i> Customer Site Images
                 </h1>
                 <p class="text-muted">{{ description }}</p>
             </div>
 
             <div class="alert alert-info border-0">
                 <i class="bi bi-info-circle me-2"></i>
-                Changes appear immediately on the public site at
-                <a href="{% url 'main:customer_home' %}" target="_blank" rel="noopener">nirmalajewellers.net</a>.
-                Recommended hero size: <strong>1200×600 px</strong> or larger (landscape).
+                Changes appear immediately on the public site and admin header.
+                Logo: PNG ~80–120 px tall. Hero banner: <strong>1200×600 px</strong> landscape.
             </div>
 
             <div class="row g-4">
@@ -34,19 +33,23 @@
                             {% endif %}
                         </div>
                         <div class="card-body p-0">
-                            <div style="aspect-ratio: 16/9; overflow: hidden; background: #1a1a1a;">
+                            <div style="aspect-ratio: {% if slot_obj.is_logo_slot %}3/1{% else %}16/9{% endif %}; overflow: hidden; background: {% if slot_obj.is_logo_slot %}#f8f9fa{% else %}#1a1a1a{% endif %}; display: flex; align-items: center; justify-content: center; padding: {% if slot_obj.is_logo_slot %}1rem{% else %}0{% endif %};">
                                 <img
                                     src="{{ slot_obj.image_url }}"
-                                    alt="{{ slot_obj.title }}"
-                                    class="w-100 h-100"
-                                    style="object-fit: cover;"
+                                    alt="{{ slot_obj.title|default:'Site image' }}"
+                                    class="{% if slot_obj.is_logo_slot %}img-fluid{% else %}w-100 h-100{% endif %}"
+                                    style="object-fit: {% if slot_obj.is_logo_slot %}contain{% else %}cover{% endif %}; max-height: {% if slot_obj.is_logo_slot %}80px{% else %}100%{% endif %};"
                                 >
                             </div>
                             <div class="p-3">
-                                {% if slot_obj.tagline %}
-                                    <p class="text-muted small mb-1 text-uppercase">{{ slot_obj.tagline }}</p>
+                                {% if slot_obj.is_logo_slot %}
+                                    <p class="text-muted small mb-2">Shown in the customer home header and admin navbar.</p>
+                                {% else %}
+                                    {% if slot_obj.tagline %}
+                                        <p class="text-muted small mb-1 text-uppercase">{{ slot_obj.tagline }}</p>
+                                    {% endif %}
+                                    <h6 class="mb-2">{{ slot_obj.title|default:"—" }}</h6>
                                 {% endif %}
-                                <h6 class="mb-2">{{ slot_obj.title|default:"—" }}</h6>
                                 <a href="?slot={{ slot_obj.slot }}" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-pencil"></i> Edit
                                 </a>
@@ -73,24 +76,34 @@
                         <div class="row g-4">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label fw-semibold">Banner Image</label>
+                                    <label class="form-label fw-semibold">
+                                        {% if form.instance.is_logo_slot %}Logo Image{% else %}Banner Image{% endif %}
+                                    </label>
                                     {{ form.image }}
+                                    {% if form.image.help_text %}
+                                        <div class="form-text">{{ form.image.help_text }}</div>
+                                    {% elif not form.instance.is_logo_slot %}
+                                        <div class="form-text">Leave empty to keep the current image. JPG or PNG recommended.</div>
+                                    {% endif %}
                                     {% if form.instance.image %}
-                                        <div class="mt-2">
-                                            <img src="{{ form.instance.image.url }}" alt="Current" class="img-fluid rounded" style="max-height: 200px;">
+                                        <div class="mt-2 p-3 bg-light rounded text-center">
+                                            <img src="{{ form.instance.image.url }}" alt="Current" class="img-fluid rounded" style="max-height: {% if form.instance.is_logo_slot %}100{% else %}200{% endif %}px; object-fit: contain;">
                                         </div>
                                     {% endif %}
-                                    <div class="form-text">Leave empty to keep the current image. JPG or PNG recommended.</div>
                                 </div>
 
                                 <div class="form-check form-switch mb-3">
                                     {{ form.is_active }}
                                     <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
-                                        Show on customer site
+                                        {% if form.instance.is_logo_slot %}Show uploaded logo on site{% else %}Show on customer site{% endif %}
                                     </label>
+                                    {% if form.instance.is_logo_slot %}
+                                        <div class="form-text">When off, the default static logo is used.</div>
+                                    {% endif %}
                                 </div>
                             </div>
 
+                            {% if not form.instance.is_logo_slot %}
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Tagline</label>
@@ -106,6 +119,7 @@
                                     {{ form.button_text }}
                                 </div>
                             </div>
+                            {% endif %}
                         </div>
 
                         <div class="d-flex gap-2 mt-3">

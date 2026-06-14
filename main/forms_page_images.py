@@ -32,3 +32,10 @@ class CustomerPageImageForm(forms.ModelForm):
                 'accept': 'image/*',
             }),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.is_logo_slot:
+            for field_name in ('tagline', 'title', 'button_text'):
+                self.fields.pop(field_name, None)
+            self.fields['image'].help_text = 'PNG with transparent background works best. Recommended height: 80–120 px.'
